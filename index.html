@@ -104,7 +104,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
 .bp{background:var(--accent);color:#fff}.bp:hover{background:var(--ah)}
 .bi{width:28px;height:28px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:6px;background:rgba(255,255,255,.06);border:none;color:var(--ht);cursor:pointer;font-size:13px}.bi:hover{background:rgba(255,255,255,.12)}
 /* ── Toolbar ── */
-.tb{display:flex;align-items:center;gap:4px;padding:0 16px;background:rgba(5,8,16,.7);border-bottom:1px solid var(--bdr);flex-wrap:wrap;min-height:42px;backdrop-filter:blur(12px)}
+.tb{display:flex;align-items:center;gap:4px;padding:0 16px;background:rgba(5,8,16,.7);border-bottom:1px solid var(--bdr);flex-wrap:wrap;min-height:42px;backdrop-filter:blur(12px);position:relative;z-index:50}
 .tg{display:flex;align-items:center;gap:4px}
 .tsp{width:1px;height:16px;background:var(--bdr);margin:0 5px;opacity:.5}
 .tb label{font-size:10px;color:var(--tm);font-weight:500;letter-spacing:.1px}
@@ -123,7 +123,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
 .srch-ico{position:absolute;left:8px;font-size:11px;opacity:.35;pointer-events:none}
 .srch-clr{position:absolute;right:8px;cursor:pointer;font-size:11px;opacity:.4;line-height:1;transition:opacity .1s}
 .srch-clr:hover{opacity:.9}
-.srch-dd{position:absolute;top:calc(100% + 5px);left:0;width:260px;background:rgba(10,14,26,.97);border:1px solid var(--bdr);border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.5);z-index:300;overflow:hidden;backdrop-filter:blur(20px)}
+.srch-dd{position:absolute;top:calc(100% + 5px);right:0;width:280px;background:rgba(10,14,26,.97);border:1px solid var(--bdr);border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.5);z-index:300;overflow:hidden;backdrop-filter:blur(20px)}
 .srch-section{padding:4px 0}
 .srch-label{padding:4px 12px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tm);opacity:.5}
 .srch-item{padding:7px 12px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .1s}
@@ -458,6 +458,23 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
 /* Toast notifications */
 .toast-wrap{position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:6px;pointer-events:none}
 .toast{padding:10px 16px;border-radius:10px;font-size:12px;font-family:inherit;color:#fff;backdrop-filter:blur(16px);box-shadow:0 8px 24px rgba(0,0,0,.4);pointer-events:auto;animation:toastIn .2s ease-out;max-width:340px;line-height:1.4}
+/* ── Notification tray ── */
+.notif-icon{position:relative;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:rgba(255,255,255,.06);border:none;color:var(--ht);cursor:pointer;font-size:13px;margin-left:6px}
+.notif-icon:hover{background:rgba(255,255,255,.12)}
+.notif-badge{position:absolute;top:-3px;right:-3px;min-width:14px;height:14px;border-radius:7px;background:#dc2626;color:#fff;font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px}
+.notif-tray{position:absolute;top:100%;right:0;margin-top:6px;width:320px;max-height:400px;overflow-y:auto;background:rgba(10,14,26,.97);border:1px solid var(--bdr);border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.5);z-index:500;backdrop-filter:blur(20px);padding:6px}
+.notif-tray-hd{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;font-size:11px;font-weight:600;color:var(--text);border-bottom:1px solid var(--bdr);margin-bottom:4px}
+.notif-item{padding:7px 10px;border-radius:6px;font-size:11px;line-height:1.4;display:flex;gap:8px;align-items:flex-start;transition:background .1s;cursor:default}
+.notif-item:hover{background:rgba(255,255,255,.04)}
+.notif-item .ni-icon{font-size:12px;flex-shrink:0;margin-top:1px}
+.notif-item .ni-body{flex:1;min-width:0}
+.notif-item .ni-msg{color:var(--text)}
+.notif-item .ni-time{font-size:8px;color:var(--tm);margin-top:2px;font-family:'JetBrains Mono',monospace}
+.notif-item.ni-ok .ni-icon{color:var(--early)}
+.notif-item.ni-err .ni-icon{color:#dc2626}
+.notif-item.ni-info .ni-icon{color:var(--accent)}
+.notif-item.ni-warn .ni-icon{color:var(--wknd)}
+.notif-empty{padding:20px;text-align:center;color:var(--tm);font-size:11px}
 .toast.t-ok{background:rgba(34,197,94,.9);border:1px solid rgba(34,197,94,.3)}
 .toast.t-err{background:rgba(220,38,38,.9);border:1px solid rgba(220,38,38,.3)}
 .toast.t-info{background:rgba(99,102,241,.9);border:1px solid rgba(99,102,241,.3)}
@@ -798,7 +815,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
 <div class="app">
 <div id="mobOv" class="mob-overlay" onclick="S.tbOpen=false;ren()"></div>
 <div id="toasts" class="toast-wrap"></div>
-<div class="hd"><div class="hd-b"><div class="hd-l">📋</div><div class="hd-titles"><h1>Schedule Cleaner</h1><div class="hd-dept" id="fl">Messy rosters → clean schedules</div></div></div><div class="hd-a" id="ha" style="display:none"><button class="mob-ham" id="mobHam" onclick="S.tbOpen=!S.tbOpen;ren()" title="Filters">☰</button><div class="tp" id="tp"></div><button class="bi" onclick="removeDept(S.activeDept)" title="Close department">✕</button><div class="ew"><button class="btn bp" onclick="expSavePlus('month')" title="Save+ (This Month)">💾 Save+</button><button class="btn bp" onclick="togExp()" style="padding:4px 6px;margin-left:-1px;border-left:1px solid rgba(255,255,255,.15)">▾</button><div class="em" id="exm" style="display:none"><div style="font-size:8px;color:var(--tm);padding:6px 10px 2px;letter-spacing:.5px;text-transform:uppercase">Save+</div><button class="ei" onclick="expSavePlus('month')">💾 This Month (session + analytics)</button><button class="ei" onclick="expSavePlus('all')">💾 All Months (full dataset)</button><div style="font-size:8px;color:var(--tm);padding:6px 10px 2px;letter-spacing:.5px;text-transform:uppercase;border-top:1px solid var(--bdr)">Download</div><button class="ei" onclick="expCurrentMonth()">📋 Current Month · Styled Report</button><button class="ei" onclick="expAIcsv()">🤖 AI-Ready Data (flat table)</button><button class="ei" onclick="expClean()">📊 Clean Reformat (legacy)</button><div style="font-size:8px;color:var(--tm);padding:6px 10px 2px;letter-spacing:.5px;text-transform:uppercase;border-top:1px solid var(--bdr)">Share &amp; Capture</div><button class="ei" onclick="genEmail()">✉ Copy day roster (email)</button><button class="ei" onclick="expPNG()">🖼 Save as PNG</button><button class="ei" onclick="window.print();hExp()">🖨 Print / PDF</button></div></div></div></div>
+<div class="hd"><div class="hd-b"><div class="hd-l">📋</div><div class="hd-titles"><h1>Schedule Cleaner</h1><div class="hd-dept" id="fl">Messy rosters → clean schedules</div></div></div><div class="hd-a" id="ha" style="display:none"><button class="mob-ham" id="mobHam" onclick="S.tbOpen=!S.tbOpen;ren()" title="Filters">☰</button><div class="tp" id="tp"></div><button class="bi" onclick="removeDept(S.activeDept)" title="Close department">✕</button><div class="ew"><button class="btn bp" onclick="expSavePlus('month')" title="Save+ (This Month)">💾 Save+</button><button class="btn bp" onclick="togExp()" style="padding:4px 6px;margin-left:-1px;border-left:1px solid rgba(255,255,255,.15)">▾</button><div class="em" id="exm" style="display:none"><div style="font-size:8px;color:var(--tm);padding:6px 10px 2px;letter-spacing:.5px;text-transform:uppercase">Save+</div><button class="ei" onclick="expSavePlus('month')">💾 This Month (session + analytics)</button><button class="ei" onclick="expSavePlus('all')">💾 All Months (full dataset)</button><div style="font-size:8px;color:var(--tm);padding:6px 10px 2px;letter-spacing:.5px;text-transform:uppercase;border-top:1px solid var(--bdr)">Download</div><button class="ei" onclick="expCurrentMonth()">📋 Current Month · Styled Report</button><button class="ei" onclick="expAIcsv()">🤖 AI-Ready Data (flat table)</button><button class="ei" onclick="expClean()">📊 Clean Reformat (legacy)</button><div style="font-size:8px;color:var(--tm);padding:6px 10px 2px;letter-spacing:.5px;text-transform:uppercase;border-top:1px solid var(--bdr)">Share &amp; Capture</div><button class="ei" onclick="genEmail()">✉ Copy day roster (email)</button><button class="ei" onclick="expPNG()">🖼 Save as PNG</button><button class="ei" onclick="window.print();hExp()">🖨 Print / PDF</button></div></div><div style="position:relative"><button class="notif-icon" id="notifBtn" onclick="toggleNotifTray()">🔔<span class="notif-badge" id="notifBadge" style="display:none">0</span></button><div class="notif-tray" id="notifTray" style="display:none"><div class="notif-tray-hd"><span>Notifications</span><button style="font-size:8px;background:none;border:none;color:var(--tm);cursor:pointer" onclick="clearNotifs()">Clear all</button></div><div id="notifList"><div class="notif-empty">No notifications yet</div></div></div></div></div></div>
 <div id="deptStrip" class="dept-strip"></div>
 <input type="file" id="fiAdd" accept=".xlsx,.xls,.csv" style="display:none" onchange="hFile(this)">
 <div class="uz" id="us"
@@ -2471,7 +2488,7 @@ function ren(){
   const hasResults=allResults.length>0;
   const activeLabel=S.emp!=="all"?S.emp:S.dayFilter?S.dayFilter+" (day)":S.shiftFilter?S.shiftFilter+" (shift)":"";
   if(S.srchIdx===undefined)S.srchIdx=-1;
-  tb+=`<div class="tg"><div class="srch-wrap" id="srchWrap">
+  tb+=`<div class="tg" style="margin-left:auto"><div class="srch-wrap" id="srchWrap">
     <span class="srch-ico">🔍</span>
     <input class="srch-inp" id="srchInp" type="text" placeholder="Leader, day, time, date…" value="${X(S.srch)}"
       oninput="S.srch=this.value;S.srchIdx=-1;ren();document.getElementById('srchInp')?.focus()"
@@ -4651,33 +4668,55 @@ function rPlanner(el){
 
   h+=`</div>`; // close bento grid
 
+  // ═══ COVERAGE DASHBOARD — right after blueprint config ═══
+  if(genData&&genData.length){
+    const cov=analyzeCoverage(genData);
+    if(cov){
+      const covOpen=S.plCovOpen!==false;
+      h+=`<div class="pl-section" style="padding:10px 14px">`;
+      h+=`<div class="pl-cov-toggle" onclick="S.plCovOpen=!S.plCovOpen;ren()" style="margin-bottom:${covOpen?"6":"0"}px">`;
+      h+=`<span style="font-size:11px;font-weight:700">Coverage</span>`;
+      h+=`<span style="font-size:8px;padding:2px 6px;border-radius:5px;background:var(--al);color:var(--accent)">${cov.avgWorking} avg · ${cov.gapDays} gaps</span>`;
+      h+=`<span style="margin-left:auto;font-size:9px;color:var(--tm)">${covOpen?"▼":"▶"}</span>`;
+      h+=`</div>`;
+      if(covOpen){
+        h+=`<div class="cov-grid" style="margin-top:4px">`;
+        cov.days.forEach(d=>{
+          const dow=(d.date.getDay()+6)%7;
+          let cls="cov-day";
+          if(d.working===0)cls+=" cov-off";
+          else if(d.isGap&&!d.isDesignedLow)cls+=" cov-low";
+          else if(d.isDesignedLow)cls+=" cov-designed";
+          else cls+=" cov-ok";
+          if(dow===5)cls+=" wknd-col";
+          h+=`<div class="${cls}" title="${fD(d.date)} ${d.dowName}: ${d.working} working"><div class="cd-date">${d.date.getDate()}</div><div class="cd-count">${d.working}</div></div>`;
+        });
+        h+=`</div>`;
+      }
+      h+=`</div>`;
+    }
+  }
+
   // ═══ WEEK BLOCKS ═══
   if(!isConfirmed||!hasPositions){
     h+=`<div class="pl-section" style="padding:20px;text-align:center">`;
     h+=`<div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:10px">`;
-    // Step 1: Blueprint
     const s1Done=isConfirmed;
     h+=`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">`;
     h+=`<div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;${s1Done?'background:var(--early);color:#fff':'background:var(--al);color:var(--accent);border:2px solid var(--accent)'}">1</div>`;
     h+=`<span style="font-size:10px;font-weight:600;color:${s1Done?'var(--early)':'var(--accent)'}">${s1Done?'✓ Blueprint':'Blueprint'}</span>`;
     h+=`</div>`;
-    // Arrow
     h+=`<div style="width:40px;height:2px;background:${s1Done?'var(--early)':'var(--bdr)'}"></div>`;
-    // Step 2: Positions
-    const s2Done=hasPositions;
-    const s2Active=s1Done&&!s2Done;
+    const s2Done=hasPositions;const s2Active=s1Done&&!s2Done;
     h+=`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">`;
     h+=`<div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;${s2Done?'background:var(--early);color:#fff':s2Active?'background:var(--al);color:var(--wknd);border:2px solid var(--wknd)':'background:rgba(255,255,255,.05);color:var(--tm);border:2px solid var(--bdr)'}">2</div>`;
     h+=`<span style="font-size:10px;font-weight:600;color:${s2Done?'var(--early)':s2Active?'var(--wknd)':'var(--tm)'}">${s2Done?'✓ Positions':s2Active?'⚠ Positions':'Positions'}</span>`;
     h+=`</div>`;
-    // Arrow
     h+=`<div style="width:40px;height:2px;background:var(--bdr)"></div>`;
-    // Step 3: Generate
     h+=`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">`;
     h+=`<div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;background:rgba(255,255,255,.05);color:var(--tm);border:2px solid var(--bdr)">▶</div>`;
     h+=`<span style="font-size:10px;font-weight:600;color:var(--tm)">Generate</span>`;
     h+=`</div></div>`;
-    // Contextual hint
     if(!isConfirmed)h+=`<div style="font-size:11px;color:var(--accent)">Review the blueprint grid above, then click <strong>✓ Confirm</strong></div>`;
     else if(!hasPositions)h+=`<div style="font-size:11px;color:var(--wknd)">Set each leader's current rotation week in the Positions panel →</div>`;
     h+=`</div>`;
@@ -4769,43 +4808,32 @@ function rPlanner(el){
       monday.setDate(monday.getDate()+7);
     }
 
-    // ═══ COVERAGE DASHBOARD (collapsible) ═══
-    const cov=analyzeCoverage(genData);
-    if(cov){
-      const covOpen=S.plCovOpen!==false;
-      h+=`<div class="pl-section" style="padding:10px 14px">`;
-      h+=`<div class="pl-cov-toggle" onclick="S.plCovOpen=!S.plCovOpen;ren()" style="margin-bottom:${covOpen?"6":"0"}px">`;
-      h+=`<span style="font-size:11px;font-weight:700">Coverage</span>`;
-      h+=`<span style="font-size:8px;padding:2px 6px;border-radius:5px;background:var(--al);color:var(--accent)">${cov.avgWorking} avg · ${cov.gapDays} gaps</span>`;
-      h+=`<span style="margin-left:auto;font-size:9px;color:var(--tm)">${covOpen?"▼":"▶"}</span>`;
-      h+=`</div>`;
-      if(covOpen){
-        h+=`<div class="cov-grid" style="margin-top:4px">`;
-        cov.days.forEach(d=>{
-          const dow=(d.date.getDay()+6)%7;
-          let cls="cov-day";
-          if(d.working===0)cls+=" cov-off";
-          else if(d.isGap&&!d.isDesignedLow)cls+=" cov-low";
-          else if(d.isDesignedLow)cls+=" cov-designed";
-          else cls+=" cov-ok";
-          if(dow===5)cls+=" wknd-col";
-          h+=`<div class="${cls}" title="${fD(d.date)} ${d.dowName}: ${d.working} working"><div class="cd-date">${d.date.getDate()}</div><div class="cd-count">${d.working}</div></div>`;
-        });
-        h+=`</div>`;
-      }
-      h+=`</div>`;
+    // ═══ SAVE / REMOVE BAR ═══
+    h+=`<div class="pl-save-bar">`;
+    h+=`<span class="ps-info">💾 Save to merge this projection into Calendar, Cards, Table & Analytics</span>`;
+    h+=`<div style="display:flex;gap:6px;align-items:center">`;
+    const savedKey=`${targetYear}-${targetMonth}`;
+    if(S.savedMonths&&S.savedMonths[dk]&&S.savedMonths[dk][savedKey]){
+      h+=`<button class="rm-month-btn" onclick="removeSavedMonth('${XJ(dk)}','${savedKey}')">✕ Remove ${MOFULL[targetMonth]}</button>`;
     }
+    h+=`<button class="btn bp" style="font-size:10px;padding:4px 12px" onclick="savePlannedToSchedule()">Save ${MOFULL[S.plGenMonth]} to Schedule</button>`;
+    h+=`</div></div>`;
 
-    // ═══ COACHING SCHEDULER (collapsible) ═══
+  } else if(isConfirmed&&hasPositions){
+    h+=`<div class="pl-section" style="text-align:center;padding:20px;color:var(--tm);font-size:11px">No schedule generated — check blueprint has shift times and positions are set.</div>`;
+  }
+
+  // ═══ COACHING SCHEDULER — independent panel ═══
+  if(isConfirmed&&hasPositions){
     const coachData=generateCoachingPlan(dk,S.plGenYear,S.plGenMonth);
     if(coachData){
       const coachOpen=S.plCoachOpen!==false;
-      h+=`<div class="pl-section coach-panel">`;
+      h+=`<div class="pl-section coach-panel" style="margin-top:8px;border-top:2px solid var(--bdr)">`;
       h+=`<div class="coach-hd" onclick="S.plCoachOpen=!S.plCoachOpen;ren()">`;
       const doneCount=Object.values(coachData.personStatus).filter(p=>p.done).length;
       const schedCount=Object.values(coachData.personStatus).filter(p=>p.date&&!p.done).length;
       const missedCount=Object.values(coachData.personStatus).filter(p=>p.missed).length;
-      h+=`<span style="font-size:11px;font-weight:700">🎯 Coaching</span>`;
+      h+=`<span style="font-size:11px;font-weight:700">🎯 Coaching · ${MOFULL[S.plGenMonth]}</span>`;
       h+=`<span style="font-size:8px;padding:2px 6px;border-radius:5px;background:var(--al);color:var(--accent)">${doneCount} done · ${schedCount} scheduled${missedCount?' · <span style="color:var(--wknd)">'+missedCount+' missed</span>':''}</span>`;
       h+=`<div style="display:flex;gap:6px;align-items:center;margin-left:auto" onclick="event.stopPropagation()">`;
       h+=`<select onchange="S.coachDuration=+this.value;ren()" style="padding:2px 6px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);color:var(--text);font-size:9px">`;
@@ -4815,7 +4843,6 @@ function rPlanner(el){
       h+=`</div></div>`;
 
       if(coachOpen){
-        // Per-person status strip
         h+=`<div class="coach-status">`;
         names.forEach(name=>{
           const ps=coachData.personStatus[name]||{};
@@ -4830,7 +4857,6 @@ function rPlanner(el){
         });
         h+=`</div>`;
 
-        // Week-by-week day grid
         const weekBuckets={};
         coachData.days.forEach(day=>{
           const mon=new Date(day.date);mon.setDate(mon.getDate()-((mon.getDay()+6)%7));
@@ -4838,55 +4864,34 @@ function rPlanner(el){
           if(!weekBuckets[wk])weekBuckets[wk]=[];
           weekBuckets[wk].push(day);
         });
-        const weekKeys=Object.keys(weekBuckets).sort();
-
-        weekKeys.forEach(wk=>{
-          const wDays=weekBuckets[wk];
-          const wkMon=new Date(wk);
+        Object.keys(weekBuckets).sort().forEach(wk=>{
+          const wDays=weekBuckets[wk];const wkMon=new Date(wk);
           h+=`<div class="coach-week">`;
           h+=`<div class="coach-week-hd"><span>${fD(wkMon)} – ${fD(new Date(wkMon.getTime()+6*864e5))}</span></div>`;
           wDays.forEach(day=>{
             const WSDN=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
             const surpCls=day.surplus>0?'pos':day.surplus===0?'zero':'neg';
-            // Find who's scheduled for coaching this day
             const coachees=Object.entries(coachData.personStatus).filter(([n,ps])=>ps.date===day.dKey).map(([n,ps])=>({name:n,...ps}));
-
             h+=`<div class="coach-day${day.isBlackout?' blackout':''}${day.isPast?' past':''}">`;
             h+=`<span class="cd-dow">${WSDN[day.dow]}</span>`;
             h+=`<span class="cd-date">${day.date.getDate()} ${MO[day.date.getMonth()]}</span>`;
             h+=`<span class="cd-floor">Floor: ${day.actualFloor.length}</span>`;
             h+=`<span class="cd-surplus ${surpCls}">Surplus: ${day.surplus>0?'+':''}${day.surplus}</span>`;
             h+=`<span class="cd-suggest">`;
-            if(day.isBlackout){
-              h+=`<span class="coach-chip blackout">Blackout</span>`;
-            } else if(day.surplus<=0&&!coachees.length){
-              h+=`<span style="font-size:8px;color:var(--tm);opacity:.4">No capacity</span>`;
-            } else {
+            if(day.isBlackout){h+=`<span class="coach-chip blackout">Blackout</span>`;}
+            else if(day.surplus<=0&&!coachees.length){h+=`<span style="font-size:8px;color:var(--tm);opacity:.4">No capacity</span>`;}
+            else{
               coachees.forEach(c=>{
-                let cls='pending';
-                if(c.done)cls='done';
-                else if(c.missed)cls='missed';
-                else if(c.confirmed)cls='confirmed';
+                let cls='pending';if(c.done)cls='done';else if(c.missed)cls='missed';else if(c.confirmed)cls='confirmed';
                 const first=c.name.split(' ')[0];
-                if(c.done){
-                  h+=`<span class="coach-chip done">${first} ✓</span>`;
-                } else if(c.missed){
-                  h+=`<span class="coach-chip missed" onclick="rescheduleCoach('${XJ(c.name)}')" title="Click to reschedule">${first} ⚠</span>`;
-                } else if(c.confirmed){
-                  h+=`<span class="coach-chip confirmed" onclick="markCoachDone('${XJ(c.name)}')" title="Click when done">${first} 📅</span>`;
-                } else {
-                  h+=`<span class="coach-chip pending" onclick="confirmCoaching('${XJ(c.name)}','${day.dKey}')" title="Click to confirm">${first}</span>`;
-                }
+                if(c.done)h+=`<span class="coach-chip done">${first} ✓</span>`;
+                else if(c.missed)h+=`<span class="coach-chip missed" onclick="rescheduleCoach('${XJ(c.name)}')" title="Click to reschedule">${first} ⚠</span>`;
+                else if(c.confirmed)h+=`<span class="coach-chip confirmed" onclick="markCoachDone('${XJ(c.name)}')" title="Click when done">${first} 📅</span>`;
+                else h+=`<span class="coach-chip pending" onclick="confirmCoaching('${XJ(c.name)}','${day.dKey}')" title="Click to confirm">${first}</span>`;
               });
-              // Show available but unassigned people if surplus allows
               if(day.surplus>coachees.length&&!day.isPast){
-                const available=day.actualFloor.filter(n=>{
-                  const ps=coachData.personStatus[n];
-                  return!ps||(!ps.date&&!ps.done);
-                });
-                if(available.length){
-                  h+=`<span style="font-size:8px;color:var(--tm);opacity:.4">+${Math.min(available.length,day.surplus-coachees.length)} avail</span>`;
-                }
+                const available=day.actualFloor.filter(n=>{const ps=coachData.personStatus[n];return!ps||(!ps.date&&!ps.done);});
+                if(available.length)h+=`<span style="font-size:8px;color:var(--tm);opacity:.4">+${Math.min(available.length,day.surplus-coachees.length)} avail</span>`;
               }
             }
             h+=`</span>`;
@@ -4898,20 +4903,6 @@ function rPlanner(el){
       }
       h+=`</div>`;
     }
-
-    // ═══ SAVE / REMOVE BAR ═══
-    h+=`<div class="pl-save-bar">`;
-    h+=`<span class="ps-info">💾 Save to merge this projection into Calendar, Cards, Table & Analytics</span>`;
-    h+=`<div style="display:flex;gap:6px;align-items:center">`;
-    const savedKey=`${targetYear}-${targetMonth}`;
-    if(S.savedMonths&&S.savedMonths[dk]&&S.savedMonths[dk][savedKey]){
-      h+=`<button class="rm-month-btn" onclick="removeSavedMonth('${XJ(dk)}','${savedKey}')">✕ Remove ${MOFULL[targetMonth]}</button>`;
-    }
-    h+=`<button class="btn bp" style="font-size:10px;padding:4px 12px" onclick="savePlannedToSchedule()">Save ${MOFULL[S.plGenMonth]} to Schedule</button>`;
-    h+=`</div></div>`;
-
-  } else if(isConfirmed&&hasPositions){
-    h+=`<div class="pl-section" style="text-align:center;padding:20px;color:var(--tm);font-size:11px">No schedule generated — check blueprint has shift times and positions are set.</div>`;
   }
 
   h+=`</div>`;
@@ -5821,17 +5812,47 @@ const _origRen=ren;
 ren=function(){_origRen();saveSettings();};
 
 /* ═══ TOAST NOTIFICATIONS ═══ */
+// ═══ NOTIFICATION SYSTEM ═══
+const _notifs=[];
 function toast(msg,type,dur){
-  type=type||"info";dur=dur||3000;
-  const wrap=document.getElementById("toasts");if(!wrap)return;
-  while(wrap.children.length>=3){wrap.children[0].remove();}
-  const el=document.createElement("div");
-  el.className="toast t-"+type;el.textContent=msg;el.style.cursor="pointer";
-  el.onclick=function(){dismiss();};
-  wrap.appendChild(el);
-  function dismiss(){el.style.opacity="0";el.style.transform="translateX(40px)";el.style.transition="all .2s";setTimeout(function(){if(el.parentNode)el.remove();},200);}
-  setTimeout(dismiss,dur);
+  type=type||"info";
+  const icons={ok:'✓',err:'✕',info:'ℹ',warn:'⚠'};
+  const now=new Date();
+  _notifs.unshift({msg,type,time:now,icon:icons[type]||'ℹ'});
+  if(_notifs.length>30)_notifs.length=30;
+  // Update badge
+  const badge=$("notifBadge");
+  if(badge){const unread=Math.min(_notifs.length,99);badge.textContent=unread;badge.style.display=unread>0?"flex":"none";}
+  // Update tray if open
+  renderNotifList();
+  // Brief flash on the notification icon
+  const btn=$("notifBtn");
+  if(btn){btn.style.background='rgba(122,180,255,.2)';setTimeout(()=>{btn.style.background='';},600);}
 }
+function toggleNotifTray(){
+  const tray=$("notifTray");if(!tray)return;
+  tray.style.display=tray.style.display==="none"?"block":"none";
+  if(tray.style.display==="block")renderNotifList();
+}
+function renderNotifList(){
+  const list=$("notifList");if(!list)return;
+  if(!_notifs.length){list.innerHTML='<div class="notif-empty">No notifications yet</div>';return;}
+  list.innerHTML=_notifs.map(n=>{
+    const timeStr=n.time.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    return`<div class="notif-item ni-${n.type}"><span class="ni-icon">${n.icon}</span><div class="ni-body"><div class="ni-msg">${X(n.msg)}</div><div class="ni-time">${timeStr}</div></div></div>`;
+  }).join('');
+}
+function clearNotifs(){
+  _notifs.length=0;
+  const badge=$("notifBadge");if(badge){badge.textContent="0";badge.style.display="none";}
+  renderNotifList();
+}
+// Close tray when clicking outside
+document.addEventListener("mousedown",function(e){
+  if(!e.target.closest("#notifBtn")&&!e.target.closest("#notifTray")){
+    const tray=$("notifTray");if(tray)tray.style.display="none";
+  }
+});
 
 // Toast with action buttons — centred, stays until dismissed
 
