@@ -877,7 +877,7 @@ let S={wb:null,fn:"",shs:[],sh:"",raw:[],entries:[],team:"all",emp:"all",tz:true
   month:null,months:[],mIdx:0,shiftFilter:"",compare:false,cmp2:"",calDay:null,rawSheet:"",collapsed:{},hlToday:true,srch:"",dayFilter:"",allMonths:false,covMin:3,hrsMax:45,att:{},hc:{},notes:{},noteOpen:false,anDay:null,anMode:"roster",plMonths:2,plRemoved:{},plLeave:[],plOverrides:{},plHires:[],plEdit:null,tbOpen:false,rotationDef:null,rotPanelOpen:false,parseInfo:[],workspace:{},activeDept:null,plBlueprints:{},plPositions:{},plBpOpen:false,plPosOpen:true,plGenMonth:null,plGenYear:null,
   tblDay:"all",tblWk:"all",tblType:"all",tblLeader:"all",tblHrsMin:"",tblHrsMax:"",tblDateFrom:"",tblDateTo:"",tblEra:"all",
   plCellEdit:null,plCovOpen:true,savedMonths:{},plCellOverrides:{},exceptions:[],dayClosed:{},anView:"coverage",
-  plCoachOpen:true,coachDuration:30,coachBlackouts:{},coachPlan:{}};
+  plCoachOpen:true,coachDuration:30,coachBlackouts:{},coachPlan:{},plSubTab:"schedule",coachTargetDaily:1,coachTargetMonthly:0};
 
 // Each theme: d=dot color, bg=page bg, c=card bg, ac=accent, al=accent light, ah=accent hover,
 // t=text, tm=muted text, bd=border, hb=header bg, ht=header text,
@@ -2124,10 +2124,52 @@ function restoreFromSaveFile(wb,filename){
     const restoreKeys=["months","month","mIdx","rotationDef","plBlueprints","plPositions",
       "plCellOverrides","savedMonths","plLeave","plHires","plRemoved","notes","hc","att",
       "exceptions","dayClosed",
-      "coachPlan","coachBlackouts","coachDuration",
+      "coachPlan","coachBlackouts","coachDuration","coachTargetDaily","plSubTab",
       "tab","th","tz","hlToday","covMin","hrsMax","collapsed","team","emp","dayFilter",
       "allMonths","parseInfo","anDay","anMode","shiftFilter"];
     restoreKeys.forEach(k=>{if(snap[k]!==undefined)S[k]=snap[k];});
+
+    // Defensive: ensure exceptions is an array and coaching plan dates are strings
+    if(!Array.isArray(S.exceptions))S.exceptions=[];
+    if(!S.dayClosed||typeof S.dayClosed!=='object')S.dayClosed={};
+    if(!S.coachPlan||typeof S.coachPlan!=='object')S.coachPlan={};
+    if(!S.coachBlackouts||typeof S.coachBlackouts!=='object')S.coachBlackouts={};
+    // Validate coaching plan date strings
+    Object.keys(S.coachPlan).forEach(k=>{
+      const p=S.coachPlan[k];
+      if(p&&p.date&&typeof p.date!=='string')p.date=String(p.date);
+      if(p&&!p.date)p.date=null;
+    });
+
+    // Fallback: if _app_state had no exceptions, try parsing from Exceptions sheet
+    if(!S.exceptions.length&&wb.SheetNames.includes('Exceptions')){
+      try{
+        const excWs=wb.Sheets['Exceptions'];
+        const excData=XLSX.utils.sheet_to_json(excWs,{defval:'',raw:false});
+        excData.forEach(r=>{
+          if(!r.leader_name||!r.date||r.type==='No exceptions logged')return;
+          const parts=String(r.date).split(/[-\/]/);
+          let dk='';
+          if(parts.length===3){
+            // Try to parse — could be dd-mmm-yyyy or yyyy-mm-dd
+            const d=new Date(r.date);
+            if(!isNaN(d))dk=d.getFullYear()+'-'+P(d.getMonth()+1)+'-'+P(d.getDate());
+          }
+          if(!dk)return;
+          S.exceptions.push({
+            id:'exc_'+Math.random().toString(36).substring(2,8),
+            dept:S.activeDept||'',person:r.leader_name,date:dk,
+            type:r.type||'admin',severity:r.severity||'full-day',
+            hoursLost:parseFloat(r.hours_lost)||0,
+            hoursWorked:parseFloat(r.hours_worked)||0,
+            scheduledHrs:parseFloat(r.scheduled_hours)||0,
+            notes:r.notes||'',loggedAt:r.logged_at||new Date().toISOString(),
+            source:r.source||'imported'
+          });
+        });
+        if(S.exceptions.length)toast("Restored "+S.exceptions.length+" exceptions from sheet","info");
+      }catch(e){console.warn("Exception sheet parse failed:",e);}
+    }
 
     // Rebuild months from entries if not in snap
     if(!S.months||!S.months.length){
@@ -2146,7 +2188,7 @@ function restoreFromSaveFile(wb,filename){
       "calDay","rawSheet","shiftFilter","srch","srchIdx","dayFilter","allMonths","collapsed","tab",
       "rotationDef","rotPanelOpen","plMonths","plLeave","plOverrides","plHires","plRemoved","plEdit",
       "anDay","anMode","parseInfo","_anomDismissed","_generatedMonth","exceptions","dayClosed",
-      "coachPlan","coachBlackouts","coachDuration","plCoachOpen","anView"];
+      "coachPlan","coachBlackouts","coachDuration","plCoachOpen","anView","plSubTab","coachTargetDaily"];
     FIELDS.forEach(f=>{if(f in S)S.workspace[S.activeDept][f]=S[f];});
     $("us").style.display="none";$("mv").classList.remove("hid");$("mv").style.display="flex";
     $("ha").style.display="flex";$("fl").textContent=S.activeDept||S.fn;
@@ -2229,7 +2271,7 @@ const DEPT_FIELDS=['wb','fn','shs','sh','raw','entries','team','emp','month','mo
   'calDay','rawSheet','shiftFilter','srch','srchIdx','dayFilter','allMonths','collapsed','tab',
   'rotationDef','rotPanelOpen','plMonths','plLeave','plOverrides','plHires','plRemoved','plEdit',
   'anDay','anMode','parseInfo','_anomDismissed','_generatedMonth','exceptions','dayClosed','anView',
-  'coachPlan','coachBlackouts','coachDuration','plCoachOpen'];
+  'coachPlan','coachBlackouts','coachDuration','plCoachOpen','plSubTab','coachTargetDaily'];
 
 function saveDeptSnap(name){
   if(!name)return;
@@ -2630,6 +2672,14 @@ function rCal(el){
     if(dayWkLabel)weekStrip+=`<div class="ws-wk">${dayWkLabel}</div>`;
     weekStrip+=`</div>`;
   }
+  // Close week button — batch close all days in this week strip
+  const lastStripDay=new Date(selDate);lastStripDay.setDate(lastStripDay.getDate()+(6-((lastStripDay.getDay()+6)%7)));
+  const allStripClosed=Array.from({length:7},(_,i)=>{const d=new Date(selDate);d.setDate(d.getDate()-(((d.getDay()+6)%7))+i);return isDayClosed(d)&&d.getMonth()===m;}).every(Boolean);
+  if(!allStripClosed){
+    weekStrip+=`<button onclick="closeDaysThrough(new Date(${lastStripDay.getFullYear()},${lastStripDay.getMonth()},${lastStripDay.getDate()}))" style="padding:2px 8px;border:1px solid var(--bdr);border-radius:4px;background:rgba(52,211,153,.06);color:var(--early);font-size:8px;font-weight:600;cursor:pointer;margin-left:6px;white-space:nowrap;font-family:inherit">Close week</button>`;
+  } else {
+    weekStrip+=`<span style="font-size:8px;color:var(--early);opacity:.5;margin-left:6px">✓ Week closed</span>`;
+  }
   weekStrip+=`</div>`;
 
   // ── LEFT: Mini Calendar ──
@@ -2702,7 +2752,25 @@ function rCal(el){
         // Show logged exceptions for this person
         personExcs.forEach(ex=>{
           const t=EXC_TYPES.find(t=>t.id===ex.type);
-          mid+=`<div class="exc-logged" style="width:100%"><span>${t?t.icon:'⚠'}</span><span>${t?t.label:ex.type}</span><span style="opacity:.6">${ex.severity}</span><span style="font-family:'JetBrains Mono',monospace;font-size:9px">${ex.hoursLost}h lost</span>${ex.notes?`<span style="opacity:.5;font-size:9px">${X(ex.notes).substring(0,30)}</span>`:''}<span class="exc-del" onclick="removeException('${ex.id}')" title="Remove">✕</span></div>`;
+          const editKey=formKey+'|edit|'+ex.id;
+          mid+=`<div class="exc-logged" style="width:100%"><span>${t?t.icon:'⚠'}</span><span>${t?t.label:ex.type}</span><span style="opacity:.6">${ex.severity}</span><span style="font-family:'JetBrains Mono',monospace;font-size:9px">${ex.hoursLost}h lost</span>${ex.notes?`<span style="opacity:.5;font-size:9px">${X(ex.notes).substring(0,30)}</span>`:''}<span class="exc-del" style="opacity:.4;cursor:pointer;font-size:9px" onclick="S._excFormOpen='${editKey}';S._excEditId='${ex.id}';ren()" title="Edit">✎</span><span class="exc-del" onclick="removeException('${ex.id}')" title="Remove">✕</span></div>`;
+          // Inline edit form for this exception
+          if(S._excFormOpen===editKey){
+            mid+=`<div class="exc-form" style="width:100%">`;
+            mid+=`<div style="font-size:9px;font-weight:600;color:var(--wknd);margin-bottom:4px">Edit exception</div>`;
+            mid+=`<div class="exc-types">`;
+            EXC_TYPES.forEach(et=>{
+              mid+=`<button class="exc-type-btn${et.id===ex.type?' sel':''}" onclick="editException('${ex.id}',{type:'${et.id}'});S._excFormOpen=null">${et.icon} ${et.label}</button>`;
+            });
+            mid+=`</div>`;
+            mid+=`<div style="width:100%;display:flex;gap:6px;align-items:center;margin-top:4px">`;
+            mid+=`<select id="excEditSev" class="exc-sev"><option value="full-day"${ex.severity==='full-day'?' selected':''}>Full day</option><option value="half-day"${ex.severity==='half-day'?' selected':''}>Half day</option><option value="partial"${ex.severity==='partial'?' selected':''}>Partial</option></select>`;
+            mid+=`<input type="number" id="excEditHrs" min="0" max="24" step="0.5" value="${ex.hoursLost||''}" style="width:56px;padding:3px 5px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);color:var(--text);font-size:9px">`;
+            mid+=`<input type="text" id="excEditNote" value="${X(ex.notes||'')}" placeholder="note..." style="flex:1;padding:3px 6px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);color:var(--text);font-size:9px">`;
+            mid+=`<button class="exc-type-btn sel" onclick="const sv=$('excEditSev').value;const h=$('excEditHrs').value;const n=$('excEditNote').value;editException('${ex.id}',{severity:sv,hoursLost:h?+h:null,notes:n});S._excFormOpen=null">Update</button>`;
+            mid+=`<button class="exc-type-btn" onclick="S._excFormOpen=null;ren()">Cancel</button>`;
+            mid+=`</div></div>`;
+          }
         });
         // Inline exception form
         if(formOpen){
@@ -3035,6 +3103,22 @@ function removeException(id){
   S.exceptions=S.exceptions.filter(x=>x.id!==id);
   saveSettings();ren();
 }
+function editException(id,changes){
+  if(!S.exceptions)return;
+  const ex=S.exceptions.find(x=>x.id===id);
+  if(!ex)return;
+  if(changes.type!==undefined)ex.type=changes.type;
+  if(changes.severity!==undefined)ex.severity=changes.severity;
+  if(changes.hoursLost!==undefined&&changes.hoursLost!==null)ex.hoursLost=changes.hoursLost;
+  else if(changes.severity){
+    // Recalculate hours from severity if not explicitly set
+    const s=ex.scheduledHrs||8;
+    if(changes.severity==='full-day'){ex.hoursLost=s;ex.hoursWorked=0;}
+    else if(changes.severity==='half-day'){ex.hoursLost=Math.round(s/2*10)/10;ex.hoursWorked=Math.round(s/2*10)/10;}
+  }
+  if(changes.notes!==undefined)ex.notes=changes.notes;
+  saveSettings();ren();
+}
 function isDayClosed(date){return!!(S.dayClosed&&S.dayClosed[excKey(date)]);}
 function closeDay(date){
   if(!S.dayClosed)S.dayClosed={};
@@ -3227,7 +3311,10 @@ function renderCard(n,ent,mlabel){
     // Exception badge
     const personExcCount=(S.exceptions||[]).filter(x=>x.person===n).length;
     if(personExcCount>0){
-      h+=`<div style="margin-top:2px"><span class="cs-exc-badge">⚡ ${personExcCount} exception${personExcCount>1?'s':''}</span></div>`;
+      const latestExc=(S.exceptions||[]).filter(x=>x.person===n).sort((a,b)=>b.date.localeCompare(a.date))[0];
+      const excParts=latestExc?latestExc.date.split('-').map(Number):null;
+      const excClick=excParts?`S.calDay=new Date(${excParts[0]},${excParts[1]-1},${excParts[2]});S.tab='calendar';ren()`:'';
+      h+=`<div style="margin-top:2px"><span class="cs-exc-badge" style="cursor:pointer" onclick="${excClick}" title="View in Calendar">⚡ ${personExcCount} exception${personExcCount>1?'s':''}</span></div>`;
     }
 
     if(anom.length)h+=`<div>${anom.map(a=>`<span class="anom">${a.icon||"⚠"} ${X(a.msg)}</span>`).join("")}</div>`;
@@ -3349,8 +3436,8 @@ function rTbl(el){
   }
   h+=`<span class="tf-count">${all.length} row${all.length!==1?"s":""}</span>`;
   h+=`</div>`;
-  h+=`<div class="ftw" style="border-radius:0 0 10px 10px"><table class="ft"><thead><tr><th>Leader</th><th>Date</th><th>Day</th><th>UK Time</th>${S.tz?'<th>SA Time</th>':''}<th>Hrs</th><th>Wk</th></tr></thead><tbody>`;
-  all.forEach(e=>{const hrs=e.isOff?"":(calcHrs(S.tz&&e.saS?e.saS:e.ukS,S.tz&&e.saE?e.saE:e.ukE)).toFixed(1);h+=`<tr class="${rCls(e)}"><td>${X(e.name)}</td><td>${e.date?fDF(e.date):"—"}</td><td>${e.day?e.day.substring(0,3):"—"}</td><td class="${shiftCls(e)}">${e.isOff?offLabel(e):X(uD(e))}</td>${S.tz?`<td class="${shiftCls(e)}">${e.isOff?offLabel(e):X(sAD(e))}</td>`:''}<td class="sc" style="opacity:.5">${hrs}</td><td class="wk-lbl">${e.week||""}</td></tr>`;});
+  h+=`<div class="ftw" style="border-radius:0 0 10px 10px"><table class="ft"><thead><tr><th>Leader</th><th>Date</th><th>Day</th><th>UK Time</th>${S.tz?'<th>SA Time</th>':''}<th>Hrs</th><th>Wk</th><th style="font-size:8px">Flags</th></tr></thead><tbody>`;
+  all.forEach(e=>{const hrs=e.isOff?"":(calcHrs(S.tz&&e.saS?e.saS:e.ukS,S.tz&&e.saE?e.saE:e.ukE)).toFixed(1);const dayExc=e.date?getExcForPerson(e.date,e.name):[];const excIcons=dayExc.map(x=>{const t=EXC_TYPES.find(t=>t.id===x.type);return t?t.icon:'⚠';}).join('');h+=`<tr class="${rCls(e)}"><td>${X(e.name)}</td><td>${e.date?fDF(e.date):"—"}</td><td>${e.day?e.day.substring(0,3):"—"}</td><td class="${shiftCls(e)}">${e.isOff?offLabel(e):X(uD(e))}</td>${S.tz?`<td class="${shiftCls(e)}">${e.isOff?offLabel(e):X(sAD(e))}</td>`:''}<td class="sc" style="opacity:.5">${hrs}</td><td class="wk-lbl">${e.week||""}</td><td style="font-size:10px">${excIcons}</td></tr>`;});
   el.innerHTML=h+`</tbody></table></div>`;
 }
 
@@ -3793,17 +3880,33 @@ function rCapacityWaterfall(y,m,numDays,monthEnt){
     h+=`<div class="wf-week">`;
     h+=`<div class="wf-week-label">${wkLabel}</div>`;
     h+=`<div class="wf-bar">`;
-    h+=`<div class="wf-seg ${isProjected?'projected':'actual'}" style="width:${pctActual}%" title="Floor: ${wk.actualFloor}h">${wk.actualFloor>10?wk.actualFloor+'h':''}</div>`;
+    h+=`<div class="wf-seg ${isProjected||isPartial?'projected':'actual'}" style="width:${pctActual}%" title="Floor: ${wk.actualFloor}h${isPartial?' (partial — '+wk.futureDays+' future days)':''}">${wk.actualFloor>10?wk.actualFloor+'h':''}</div>`;
     if(pctOps>0)h+=`<div class="wf-seg operational" style="width:${pctOps}%" title="Ops adjustment: ${wk.operational}h">${wk.operational>5?wk.operational+'h':''}</div>`;
     if(pctUnplanned>0)h+=`<div class="wf-seg unplanned" style="width:${pctUnplanned}%" title="Unplanned: ${wk.unplannedAbs}h">${wk.unplannedAbs>5?wk.unplannedAbs+'h':''}</div>`;
     if(pctPlanned>0)h+=`<div class="wf-seg planned-abs" style="width:${pctPlanned}%" title="Planned: ${wk.plannedAbs}h"></div>`;
     h+=`</div>`;
-    h+=`<div class="wf-week-stat">${wk.utilPct}%${isPartial?' ◐':isProjected?' ◯':wk.closedDays===wk.dayCount?' ✓':''}</div>`;
+    const pastDays=wk.dayCount-wk.futureDays;
+    const closeStatus=isProjected?' ◯':wk.closedDays>=pastDays&&pastDays>0?' ✓':isPartial?' ◐':wk.closedDays>0?' '+wk.closedDays+'/'+pastDays:'';
+    h+=`<div class="wf-week-stat">${wk.utilPct}%${closeStatus}</div>`;
     h+=`</div>`;
   });
-  h+=`</div></div>`;
+  h+=`</div></div>`; // close wf-bar-wrap + card
 
-  // Breakdown table
+  // Month total summary
+  const mtGross=Math.round(weekData.reduce((s,w)=>s+w.gross,0));
+  const mtPlanned=Math.round(weekData.reduce((s,w)=>s+w.plannedAbs,0)*10)/10;
+  const mtUnplanned=Math.round(weekData.reduce((s,w)=>s+w.unplannedAbs,0)*10)/10;
+  const mtOps=Math.round(weekData.reduce((s,w)=>s+w.operational,0)*10)/10;
+  const mtFloor=Math.round(weekData.reduce((s,w)=>s+w.actualFloor,0));
+  const mtNet=mtGross-mtPlanned;
+  const mtUtil=mtNet>0?Math.round(mtFloor/mtNet*100):0;
+  const mtLost=Math.round((mtPlanned+mtUnplanned+mtOps)*10)/10;
+  h+=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0">`;
+  h+=`<div style="padding:8px;border-radius:6px;text-align:center;background:rgba(122,180,255,.04);border:1px solid var(--bdr)"><div style="font-size:15px;font-weight:700;color:var(--accent)">${mtGross}h</div><div style="font-size:8px;color:var(--tm)">Gross</div></div>`;
+  h+=`<div style="padding:8px;border-radius:6px;text-align:center;background:rgba(220,38,38,.04);border:1px solid var(--bdr)"><div style="font-size:15px;font-weight:700;color:var(--late)">${mtLost}h</div><div style="font-size:8px;color:var(--tm)">Total Lost</div></div>`;
+  h+=`<div style="padding:8px;border-radius:6px;text-align:center;background:rgba(52,211,153,.04);border:1px solid var(--bdr)"><div style="font-size:15px;font-weight:700;color:var(--early)">${mtFloor}h</div><div style="font-size:8px;color:var(--tm)">Actual Floor</div></div>`;
+  h+=`<div style="padding:8px;border-radius:6px;text-align:center;background:${mtUtil>=90?'rgba(52,211,153,.04)':mtUtil>=75?'rgba(251,191,36,.04)':'rgba(220,38,38,.04)'};border:1px solid var(--bdr)"><div style="font-size:15px;font-weight:700;color:${mtUtil>=90?'var(--early)':mtUtil>=75?'var(--wknd)':'var(--late)'}">${mtUtil}%</div><div style="font-size:8px;color:var(--tm)">Utilisation</div></div>`;
+  h+=`</div>`;
   h+=`<div class="an-card an-c4"><div class="an-card-hd"><h4>Exception Breakdown</h4><span>${monthExcs.length} exceptions this month</span></div>`;
   if(monthExcs.length){
     // Group by type
@@ -3845,7 +3948,8 @@ function rCapacityWaterfall(y,m,numDays,monthEnt){
       const actualHrs=Math.round((schedHrs-lostHrs)*10)/10;
       const util=schedHrs>0?Math.round(actualHrs/schedHrs*100):100;
       const excSummary=pExcs.length?pExcs.map(x=>{const t=EXC_TYPES.find(t=>t.id===x.type);return t?t.icon:x.type;}).join(' '):'—';
-      h+=`<tr><td><strong>${X(name)}</strong></td><td style="font-family:'JetBrains Mono',monospace">${schedHrs}h</td>`;
+      const rowBg=util<75?' style="background:rgba(220,38,38,.06)"':util<90?' style="background:rgba(251,191,36,.04)"':'';
+      h+=`<tr${rowBg}><td><strong>${X(name)}</strong></td><td style="font-family:'JetBrains Mono',monospace">${schedHrs}h</td>`;
       h+=`<td style="font-family:'JetBrains Mono',monospace;color:${lostHrs>0?'var(--late)':'var(--tm)'}">${lostHrs>0?'-'+lostHrs+'h':'—'}</td>`;
       h+=`<td style="font-family:'JetBrains Mono',monospace">${actualHrs}h</td>`;
       h+=`<td style="color:${util>=90?'var(--early)':util>=75?'var(--wknd)':'var(--late)'}">${util}%</td>`;
@@ -4036,7 +4140,7 @@ function addHire(){
   S.plHires.push({name,startDate,copyFrom,cycleWeek});ren();
 }
 function rmHire(i){S.plHires.splice(i,1);ren();}
-function openCellEdit(dateStr,name,curShift,curOff){
+function _legacyCellEdit(dateStr,name,curShift,curOff){
   S.plEdit={dateStr,name,shift:curOff?"":"09:00-17:00",isOff:curOff};ren();
 }
 function saveCellEdit(){
@@ -4495,23 +4599,25 @@ function generateCoachingPlan(dk,targetYear,targetMonth){
     }
   });
 
-  // For unscheduled people, find the best day
+  // For unscheduled people, find the best day — respect daily target
   const unscheduled=names.filter(n=>!personStatus[n].date&&!personStatus[n].done);
-  // Track how many coaching sessions per day to spread them out
-  const dayCounts={};
+  const dayCounts={};// how many sessions already assigned per day
   names.forEach(n=>{if(personStatus[n].date)dayCounts[personStatus[n].date]=(dayCounts[personStatus[n].date]||0)+1;});
+  const dailyTarget=S.coachTargetDaily||1;
 
-  // Sort unscheduled by name for determinism
   unscheduled.forEach(name=>{
-    // Find the best available day: future, not blackout, person is on floor, surplus > 0, fewest existing sessions
     let bestDay=null,bestScore=-999;
     days.forEach(day=>{
       if(day.isPast||day.isBlackout)return;
-      if(!day.actualFloor.includes(name))return;// person must be on floor
-      if(day.surplus<=0)return;// need surplus
+      if(!day.actualFloor.includes(name))return;
+      if(day.surplus<=0)return;
       const sessionsThisDay=dayCounts[day.dKey]||0;
-      // Score: prefer days with more surplus, fewer existing sessions, earlier in month
-      const score=day.surplus*3-sessionsThisDay*5-(day.date.getDate()*0.1);
+      // Allow up to dailyTarget sessions per day before heavy penalty
+      const overTarget=Math.max(0,sessionsThisDay-dailyTarget);
+      const atCapacity=sessionsThisDay>=day.surplus;// can't exceed floor surplus
+      if(atCapacity)return;
+      // Score: prefer filling to target first, then spread across days
+      const score=day.surplus*2-overTarget*10-sessionsThisDay*0.5-(day.date.getDate()*0.05);
       if(score>bestScore){bestScore=score;bestDay=day;}
     });
     if(bestDay){
@@ -4554,32 +4660,41 @@ function toggleBlackout(dateKey){
 
 function rPlanner(el){
   if(!S.entries.length){el.innerHTML='<div class="es-empty"><h3>Load a schedule first</h3></div>';return;}
-  const DSHORT=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  if(!S.plSubTab)S.plSubTab="schedule";
   const dk=S.activeDept||"default";
-  const bp=S.plBlueprints[dk];
+  const bp=S.plBlueprints[dk];const isConfirmed=bp&&bp.confirmed;
+  const hasPositions=Object.keys(S.plPositions[dk]||{}).length>0;
+
+  // Sub-tab bar
+  let h=`<div style="display:flex;align-items:center;gap:0;border-bottom:1px solid var(--bdr);padding:0 16px">`;
+  h+=`<button style="padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;background:none;border:none;border-bottom:2px solid ${S.plSubTab==='schedule'?'var(--accent)':'transparent'};color:${S.plSubTab==='schedule'?'var(--accent)':'var(--tm)'};font-family:inherit;transition:all .12s" onclick="S.plSubTab='schedule';ren()">📅 Schedule</button>`;
+  h+=`<button style="padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;background:none;border:none;border-bottom:2px solid ${S.plSubTab==='coaching'?'var(--accent)':'transparent'};color:${S.plSubTab==='coaching'?'var(--accent)':'var(--tm)'};font-family:inherit;transition:all .12s" onclick="S.plSubTab='coaching';ren()">🎯 Coaching</button>`;
+  h+=`</div>`;
+
+  if(S.plSubTab==='coaching'){
+    h+=rCoachingTab(dk);
+    el.innerHTML=h;return;
+  }
+
+  // ═══ SCHEDULE PLANNER (existing) ═══
+  const DSHORT=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
   const positions=S.plPositions[dk]||{};
   const det=S.rotationDef?S.rotationDef._detected:null;
   const bpCycleLen=bp?bp.cycleLen:(det?det.cycleLen:5);
   const hasBp=bp&&bp.weeks&&Object.keys(bp.weeks).length>0;
-  const isConfirmed=bp&&bp.confirmed;
-  const hasPositions=Object.keys(positions).length>0;
   const names=[...new Set(S.entries.map(e=>e.name))].sort();
   const now=new Date();const todayStr=now.toISOString().split("T")[0];
   if(!S.plGenYear)S.plGenYear=now.getFullYear();
   if(S.plGenMonth===null||S.plGenMonth===undefined)S.plGenMonth=now.getMonth();
-
-  // Build shift slot options
   const slotSet=new Set();
   if(det&&det.shiftSlots)det.shiftSlots.forEach(s=>slotSet.add(s));
   if(bp&&bp.weeks)Object.values(bp.weeks).forEach(w=>Object.values(w).forEach(v=>{if(v&&v!=="OFF")slotSet.add(v);}));
   S.entries.forEach(e=>{if(!e.isOff&&e.ukS&&e.ukE)slotSet.add(e.ukS+"-"+e.ukE);});
   const slots=[...slotSet].sort();
-
-  // Auto-generate
   let genData=null;
   if(isConfirmed&&hasPositions){genData=generateMonth(dk,S.plGenYear,S.plGenMonth);}
 
-  let h='<div class="pl-wrap">';
+  h+=`<div class="pl-wrap">`;
 
   // ═══ TOP: Title + month nav + actions (single row) ═══
   h+=`<div class="pl-section" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;padding:8px 14px">`;
@@ -4823,93 +4938,175 @@ function rPlanner(el){
     h+=`<div class="pl-section" style="text-align:center;padding:20px;color:var(--tm);font-size:11px">No schedule generated — check blueprint has shift times and positions are set.</div>`;
   }
 
-  // ═══ COACHING SCHEDULER — independent panel ═══
-  if(isConfirmed&&hasPositions){
-    const coachData=generateCoachingPlan(dk,S.plGenYear,S.plGenMonth);
-    if(coachData){
-      const coachOpen=S.plCoachOpen!==false;
-      h+=`<div class="pl-section coach-panel" style="margin-top:8px;border-top:2px solid var(--bdr)">`;
-      h+=`<div class="coach-hd" onclick="S.plCoachOpen=!S.plCoachOpen;ren()">`;
-      const doneCount=Object.values(coachData.personStatus).filter(p=>p.done).length;
-      const schedCount=Object.values(coachData.personStatus).filter(p=>p.date&&!p.done).length;
-      const missedCount=Object.values(coachData.personStatus).filter(p=>p.missed).length;
-      h+=`<span style="font-size:11px;font-weight:700">🎯 Coaching · ${MOFULL[S.plGenMonth]}</span>`;
-      h+=`<span style="font-size:8px;padding:2px 6px;border-radius:5px;background:var(--al);color:var(--accent)">${doneCount} done · ${schedCount} scheduled${missedCount?' · <span style="color:var(--wknd)">'+missedCount+' missed</span>':''}</span>`;
-      h+=`<div style="display:flex;gap:6px;align-items:center;margin-left:auto" onclick="event.stopPropagation()">`;
-      h+=`<select onchange="S.coachDuration=+this.value;ren()" style="padding:2px 6px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);color:var(--text);font-size:9px">`;
-      [30,45,60].forEach(m=>{h+=`<option value="${m}"${m===S.coachDuration?' selected':''}>${m}min</option>`;});
-      h+=`</select>`;
-      h+=`<span style="font-size:9px;color:var(--tm)">${coachOpen?'▼':'▶'}</span>`;
-      h+=`</div></div>`;
-
-      if(coachOpen){
-        h+=`<div class="coach-status">`;
-        names.forEach(name=>{
-          const ps=coachData.personStatus[name]||{};
-          let icon='⏳',cls='';
-          if(ps.done){icon='✓';cls=' style="color:var(--early)"';}
-          else if(ps.missed){icon='⚠';cls=' style="color:var(--wknd)"';}
-          else if(ps.confirmed){icon='📅';cls=' style="color:var(--accent)"';}
-          else if(ps.date){icon='○';cls=' style="color:var(--tm)"';}
-          else{icon='✕';cls=' style="color:var(--late);opacity:.5"';}
-          const dateLabel=ps.date?ps.date.split('-').slice(2).join('')+' '+MO[+ps.date.split('-')[1]-1]:'—';
-          h+=`<div class="coach-person"${cls}><span class="cp-icon">${icon}</span><span>${X(name.split(' ')[0])}</span><span style="font-size:8px;opacity:.5">${ps.done?'done':ps.date?dateLabel:'unset'}</span></div>`;
-        });
-        h+=`</div>`;
-
-        const weekBuckets={};
-        coachData.days.forEach(day=>{
-          const mon=new Date(day.date);mon.setDate(mon.getDate()-((mon.getDay()+6)%7));
-          const wk=mon.toISOString().split('T')[0];
-          if(!weekBuckets[wk])weekBuckets[wk]=[];
-          weekBuckets[wk].push(day);
-        });
-        Object.keys(weekBuckets).sort().forEach(wk=>{
-          const wDays=weekBuckets[wk];const wkMon=new Date(wk);
-          h+=`<div class="coach-week">`;
-          h+=`<div class="coach-week-hd"><span>${fD(wkMon)} – ${fD(new Date(wkMon.getTime()+6*864e5))}</span></div>`;
-          wDays.forEach(day=>{
-            const WSDN=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-            const surpCls=day.surplus>0?'pos':day.surplus===0?'zero':'neg';
-            const coachees=Object.entries(coachData.personStatus).filter(([n,ps])=>ps.date===day.dKey).map(([n,ps])=>({name:n,...ps}));
-            h+=`<div class="coach-day${day.isBlackout?' blackout':''}${day.isPast?' past':''}">`;
-            h+=`<span class="cd-dow">${WSDN[day.dow]}</span>`;
-            h+=`<span class="cd-date">${day.date.getDate()} ${MO[day.date.getMonth()]}</span>`;
-            h+=`<span class="cd-floor">Floor: ${day.actualFloor.length}</span>`;
-            h+=`<span class="cd-surplus ${surpCls}">Surplus: ${day.surplus>0?'+':''}${day.surplus}</span>`;
-            h+=`<span class="cd-suggest">`;
-            if(day.isBlackout){h+=`<span class="coach-chip blackout">Blackout</span>`;}
-            else if(day.surplus<=0&&!coachees.length){h+=`<span style="font-size:8px;color:var(--tm);opacity:.4">No capacity</span>`;}
-            else{
-              coachees.forEach(c=>{
-                let cls='pending';if(c.done)cls='done';else if(c.missed)cls='missed';else if(c.confirmed)cls='confirmed';
-                const first=c.name.split(' ')[0];
-                if(c.done)h+=`<span class="coach-chip done">${first} ✓</span>`;
-                else if(c.missed)h+=`<span class="coach-chip missed" onclick="rescheduleCoach('${XJ(c.name)}')" title="Click to reschedule">${first} ⚠</span>`;
-                else if(c.confirmed)h+=`<span class="coach-chip confirmed" onclick="markCoachDone('${XJ(c.name)}')" title="Click when done">${first} 📅</span>`;
-                else h+=`<span class="coach-chip pending" onclick="confirmCoaching('${XJ(c.name)}','${day.dKey}')" title="Click to confirm">${first}</span>`;
-              });
-              if(day.surplus>coachees.length&&!day.isPast){
-                const available=day.actualFloor.filter(n=>{const ps=coachData.personStatus[n];return!ps||(!ps.date&&!ps.done);});
-                if(available.length)h+=`<span style="font-size:8px;color:var(--tm);opacity:.4">+${Math.min(available.length,day.surplus-coachees.length)} avail</span>`;
-              }
-            }
-            h+=`</span>`;
-            h+=`<button class="coach-blackout-btn${day.isBlackout?' is-bo':''}" onclick="toggleBlackout('${day.dKey}')" title="${day.isBlackout?'Remove blackout':'Mark as blackout'}">✕</button>`;
-            h+=`</div>`;
-          });
-          h+=`</div>`;
-        });
-      }
-      h+=`</div>`;
-    }
-  }
-
   h+=`</div>`;
   el.innerHTML=h;
 }
 
-// Save generated month into main S.entries so it appears in Calendar/Cards/Table/Analytics
+// ═══ COACHING TAB — daily target-based view ═══
+function rCoachingTab(dk){
+  const bp=S.plBlueprints[dk];const positions=S.plPositions[dk]||{};
+  const isConfirmed=bp&&bp.confirmed;
+  const hasPositions=Object.keys(positions).length>0;
+  const names=[...new Set(S.entries.map(e=>e.name))].sort();
+  const now=new Date();
+  if(!S.plGenYear)S.plGenYear=now.getFullYear();
+  if(S.plGenMonth===null||S.plGenMonth===undefined)S.plGenMonth=now.getMonth();
+  const targetY=S.plGenYear,targetM=S.plGenMonth;
+  const numDays=new Date(targetY,targetM+1,0).getDate();
+  const duration=S.coachDuration||30;
+  const durationHrs=duration/60;
+  const dailyTarget=S.coachTargetDaily||1;// coaching sessions needed per day
+  const monthlyTarget=S.coachTargetMonthly||0;// 0 = auto from daily × working days
+
+  let h=`<div class="pl-wrap">`;
+
+  // ── Header with month nav + targets ──
+  h+=`<div class="pl-section" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;padding:8px 14px">`;
+  h+=`<div style="display:flex;align-items:center;gap:10px">`;
+  h+=`<h3 style="margin:0;font-size:14px">🎯 Coaching</h3>`;
+  h+=`<span class="pl-hd-sub">${names.length} leaders · ${duration}min sessions</span>`;
+  h+=`</div>`;
+  h+=`<div style="display:flex;align-items:center;gap:6px">`;
+  h+=`<div class="pl-nav"><button class="pl-nav-btn" onclick="S.plGenMonth--;if(S.plGenMonth<0){S.plGenMonth=11;S.plGenYear--;}ren()">◀</button>`;
+  h+=`<span class="pl-nav-label">${MOFULL[targetM]} ${targetY}</span>`;
+  h+=`<button class="pl-nav-btn" onclick="S.plGenMonth++;if(S.plGenMonth>11){S.plGenMonth=0;S.plGenYear++;}ren()">▶</button></div>`;
+  h+=`</div></div>`;
+
+  // ── Targets config bar ──
+  h+=`<div class="pl-section" style="display:flex;align-items:center;gap:12px;padding:8px 14px;flex-wrap:wrap">`;
+  h+=`<label style="font-size:10px;color:var(--tm);display:flex;align-items:center;gap:4px">Duration: <select onchange="S.coachDuration=+this.value;ren()" style="padding:2px 6px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);color:var(--text);font-size:10px">`;
+  [30,45,60].forEach(m=>{h+=`<option value="${m}"${m===duration?' selected':''}>${m}min</option>`;});
+  h+=`</select></label>`;
+  h+=`<label style="font-size:10px;color:var(--tm);display:flex;align-items:center;gap:4px">Daily target: <input type="number" min="0" max="10" value="${dailyTarget}" onchange="S.coachTargetDaily=+this.value;ren()" style="width:40px;padding:2px 4px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);color:var(--text);font-size:10px;text-align:center"> sessions</label>`;
+  h+=`<span style="font-size:9px;color:var(--tm)">= ${Math.round(dailyTarget*durationHrs*10)/10}h coaching/day needed</span>`;
+  h+=`</div>`;
+
+  if(!isConfirmed||!hasPositions){
+    h+=`<div class="pl-section" style="padding:20px;text-align:center;color:var(--tm);font-size:11px">Confirm blueprint and set positions in the Schedule tab first.</div>`;
+    h+=`</div>`;return h;
+  }
+
+  // ── Generate coaching data ──
+  const coachData=generateCoachingPlan(dk,targetY,targetM);
+  if(!coachData){h+=`<div class="pl-section" style="padding:20px;text-align:center;color:var(--tm)">No data for coaching plan.</div></div>`;return h;}
+
+  // ── Month KPIs ──
+  const doneCount=Object.values(coachData.personStatus).filter(p=>p.done).length;
+  const schedCount=Object.values(coachData.personStatus).filter(p=>p.date&&!p.done).length;
+  const missedCount=Object.values(coachData.personStatus).filter(p=>p.missed).length;
+  const unsetCount=names.length-doneCount-schedCount;
+  const totalAvailDays=coachData.days.filter(d=>!d.isBlackout&&!d.isPast&&d.surplus>0).length;
+  const totalAvailSlots=coachData.days.filter(d=>!d.isBlackout&&d.surplus>0).reduce((s,d)=>s+Math.min(d.surplus,dailyTarget),0);
+  const requiredSlots=names.length;
+  const slotsPct=requiredSlots>0?Math.round(totalAvailSlots/requiredSlots*100):0;
+  // Fairness: std deviation of sessions per person (0=perfect equity)
+  const sessionCounts=names.map(n=>{const ps=coachData.personStatus[n]||{};return(ps.done?1:0)+(ps.confirmed?1:0)+(ps.date&&!ps.done&&!ps.confirmed?1:0);});
+  const avgSessions=sessionCounts.length?sessionCounts.reduce((a,b)=>a+b,0)/sessionCounts.length:0;
+  const fairnessSD=sessionCounts.length>1?Math.round(Math.sqrt(sessionCounts.reduce((s,v)=>s+Math.pow(v-avgSessions,2),0)/sessionCounts.length)*100)/100:0;
+
+  h+=`<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:0 14px 8px">`;
+  h+=`<div class="pl-section" style="padding:10px;text-align:center"><div style="font-size:18px;font-weight:700;color:var(--early)">${doneCount}</div><div style="font-size:9px;color:var(--tm)">Done</div></div>`;
+  h+=`<div class="pl-section" style="padding:10px;text-align:center"><div style="font-size:18px;font-weight:700;color:var(--accent)">${schedCount}</div><div style="font-size:9px;color:var(--tm)">Scheduled</div></div>`;
+  h+=`<div class="pl-section" style="padding:10px;text-align:center"><div style="font-size:18px;font-weight:700;color:${missedCount?'var(--wknd)':'var(--tm)'}">${missedCount}</div><div style="font-size:9px;color:var(--tm)">Missed</div></div>`;
+  h+=`<div class="pl-section" style="padding:10px;text-align:center"><div style="font-size:18px;font-weight:700;color:${slotsPct>=100?'var(--early)':'var(--late)'}">${slotsPct}%</div><div style="font-size:9px;color:var(--tm)">Capacity</div></div>`;
+  h+=`<div class="pl-section" style="padding:10px;text-align:center"><div style="font-size:18px;font-weight:700;color:${fairnessSD<=0.3?'var(--early)':fairnessSD<=0.5?'var(--wknd)':'var(--late)'}">${fairnessSD}σ</div><div style="font-size:9px;color:var(--tm)">Fairness</div></div>`;
+  h+=`</div>`;
+
+  // ── Per-person status strip ──
+  h+=`<div class="pl-section" style="padding:8px 14px"><div class="coach-status">`;
+  names.forEach(name=>{
+    const ps=coachData.personStatus[name]||{};
+    let icon='⏳',cls='';
+    if(ps.done){icon='✓';cls=' style="color:var(--early)"';}
+    else if(ps.missed){icon='⚠';cls=' style="color:var(--wknd)"';}
+    else if(ps.confirmed){icon='📅';cls=' style="color:var(--accent)"';}
+    else if(ps.date){icon='○';cls=' style="color:var(--tm)"';}
+    else{icon='✕';cls=' style="color:var(--late);opacity:.5"';}
+    const dateLabel=ps.date?ps.date.split('-').slice(2).join('')+' '+MO[+ps.date.split('-')[1]-1]:'—';
+    h+=`<div class="coach-person"${cls}><span class="cp-icon">${icon}</span><span>${X(name.split(' ')[0])}</span><span style="font-size:8px;opacity:.5">${ps.done?'done':ps.date?dateLabel:'unset'}</span></div>`;
+  });
+  h+=`</div></div>`;
+
+  // ── Daily view — each day as a row with target vs actual ──
+  const weekBuckets={};
+  coachData.days.forEach(day=>{
+    const mon=new Date(day.date);mon.setDate(mon.getDate()-((mon.getDay()+6)%7));
+    const wk=mon.toISOString().split('T')[0];
+    if(!weekBuckets[wk])weekBuckets[wk]=[];
+    weekBuckets[wk].push(day);
+  });
+
+  Object.keys(weekBuckets).sort().forEach(wk=>{
+    const wDays=weekBuckets[wk];const wkMon=new Date(wk);
+    h+=`<div class="coach-week">`;
+    h+=`<div class="coach-week-hd"><span>${fD(wkMon)} – ${fD(new Date(wkMon.getTime()+6*864e5))}</span></div>`;
+    wDays.forEach(day=>{
+      const WSDN=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+      const surpCls=day.surplus>0?'pos':day.surplus===0?'zero':'neg';
+      const coachees=Object.entries(coachData.personStatus).filter(([n,ps])=>ps.date===day.dKey).map(([n,ps])=>({name:n,...ps}));
+      const scheduled=coachees.length;
+      const availSlots=day.isBlackout?0:Math.max(0,Math.min(day.surplus,dailyTarget));
+      const hrsAvail=Math.round(availSlots*durationHrs*10)/10;
+      const hrsNeeded=Math.round(dailyTarget*durationHrs*10)/10;
+      const met=scheduled>=dailyTarget;
+      const overTarget=scheduled>dailyTarget;
+
+      h+=`<div class="coach-day${day.isBlackout?' blackout':''}${day.isPast?' past':''}">`;
+      h+=`<span class="cd-dow">${WSDN[day.dow]}</span>`;
+      h+=`<span class="cd-date">${day.date.getDate()} ${MO[day.date.getMonth()]}</span>`;
+      h+=`<span class="cd-floor">Floor: ${day.actualFloor.length}</span>`;
+      h+=`<span class="cd-surplus ${surpCls}">+${Math.max(0,day.surplus)}</span>`;
+      // Daily target indicator
+      h+=`<span style="font-size:9px;font-family:'JetBrains Mono',monospace;min-width:70px;color:${day.isBlackout?'var(--tm)':met?'var(--early)':availSlots>=dailyTarget?'var(--accent)':'var(--late)'}">${scheduled}/${dailyTarget} · ${hrsAvail}h</span>`;
+      h+=`<span class="cd-suggest">`;
+      if(day.isBlackout){h+=`<span class="coach-chip blackout">Blackout</span>`;}
+      else if(day.surplus<=0&&!coachees.length){h+=`<span style="font-size:8px;color:var(--tm);opacity:.4">No capacity</span>`;}
+      else{
+        coachees.forEach(c=>{
+          const first=c.name.split(' ')[0];
+          if(c.done)h+=`<span class="coach-chip done">${first} ✓</span>`;
+          else if(c.missed)h+=`<span class="coach-chip missed" onclick="rescheduleCoach('${XJ(c.name)}')" title="Reschedule">${first} ⚠</span>`;
+          else if(c.confirmed)h+=`<span class="coach-chip confirmed" onclick="markCoachDone('${XJ(c.name)}')" title="Mark done">${first} 📅</span>`;
+          else h+=`<span class="coach-chip pending" onclick="confirmCoaching('${XJ(c.name)}','${day.dKey}')" title="Confirm">${first}</span>`;
+        });
+        if(!day.isPast&&availSlots>scheduled){
+          const available=day.actualFloor.filter(n=>{const ps=coachData.personStatus[n];return!ps||(!ps.date&&!ps.done);});
+          if(available.length)h+=`<span style="font-size:8px;color:var(--tm);opacity:.4">+${Math.min(available.length,availSlots-scheduled)} avail</span>`;
+        }
+      }
+      h+=`</span>`;
+      h+=`<button class="coach-blackout-btn${day.isBlackout?' is-bo':''}" onclick="toggleBlackout('${day.dKey}')" title="${day.isBlackout?'Remove blackout':'Blackout'}">✕</button>`;
+      h+=`</div>`;
+    });
+    h+=`</div>`;
+  });
+
+  // ── Monthly fairness summary ──
+  h+=`<div class="pl-section" style="padding:10px 14px;margin-top:8px">`;
+  h+=`<div style="font-size:11px;font-weight:700;margin-bottom:6px">Monthly Fairness</div>`;
+  h+=`<table class="wf-breakdown"><thead><tr><th>Leader</th><th>Status</th><th>Date</th><th>Sessions</th></tr></thead><tbody>`;
+  const today2=new Date();const midMonth=new Date(targetY,targetM,15);
+  names.forEach(name=>{
+    const ps=coachData.personStatus[name]||{};
+    let status='',statusClr='var(--tm)';
+    if(ps.done){status='✓ Done';statusClr='var(--early)';}
+    else if(ps.missed){status='⚠ Missed';statusClr='var(--wknd)';}
+    else if(ps.confirmed){status='📅 Confirmed';statusClr='var(--accent)';}
+    else if(ps.date){status='○ Suggested';statusClr='var(--tm)';}
+    else{
+      status=today2>midMonth?'✕ Not scheduled':'⏳ Pending';
+      statusClr=today2>midMonth?'var(--late)':'var(--tm)';
+    }
+    const dateStr=ps.date?ps.date.split('-')[2]+' '+MO[+ps.date.split('-')[1]-1]:'—';
+    // Count total sessions this month (done + confirmed + scheduled)
+    const totalSessions=(ps.done?1:0)+(ps.confirmed?1:0);
+    h+=`<tr><td><strong>${X(name.split(' ')[0])}</strong></td><td style="color:${statusClr}">${status}</td><td style="font-family:'JetBrains Mono',monospace;font-size:9px">${dateStr}</td><td style="text-align:center">${totalSessions||'—'}</td></tr>`;
+  });
+  h+=`</tbody></table></div>`;
+
+  h+=`</div>`;
+  return h;
+}
 function savePlannedToSchedule(){
   const dk=S.activeDept||"default";
   const genData=generateMonth(dk,S.plGenYear,S.plGenMonth);
@@ -5679,6 +5876,50 @@ function buildSheetPositions(wb){
   sC(ws.getCell(ws.lastRow.number,1),{fontSize:9,color:EXC.MUTED,italic:true});
 }
 
+function buildSheetExceptions(wb){
+  const ws=wb.addWorksheet('Exceptions',{properties:{tabColor:{argb:EXC.AMBER}}});
+  ws.addRow(['date','leader_name','type','severity','hours_lost','hours_worked','scheduled_hours','notes','logged_at','source']).eachCell(c=>{sC(c,{bold:true,color:EXC.ACCENT,fill:EXC.HDR,border:EXC.BORDER});});
+  const excs=(S.exceptions||[]).sort((a,b)=>a.date.localeCompare(b.date));
+  if(!excs.length){ws.addRow(['','','No exceptions logged','','','','','','','']);return;}
+  excs.forEach(ex=>{
+    const parts=ex.date.split('-').map(Number);
+    const d=new Date(parts[0],parts[1]-1,parts[2]);
+    ws.addRow([d,ex.person,ex.type,ex.severity,ex.hoursLost,ex.hoursWorked,ex.scheduledHrs||'',ex.notes||'',ex.loggedAt||'',ex.source||'manual']);
+    ws.getCell(ws.lastRow.number,1).numFmt='dd-mmm-yyyy';
+  });
+  for(let i=1;i<=10;i++)ws.getColumn(i).width=Math.max(12,['date','leader_name','type','severity','hours_lost','hours_worked','scheduled_hours','notes','logged_at','source'][i-1].length+2);
+  ws.getColumn(2).width=20;ws.getColumn(8).width=30;
+}
+
+function buildSheetCoaching(wb){
+  const ws=wb.addWorksheet('Coaching',{properties:{tabColor:{argb:EXC.INDIGO}}});
+  const dk=S.activeDept||'default';
+  const ml=S.month?monthLabel():'All';
+  ws.mergeCells('A1:F1');sC(ws.getCell('A1'),{bold:true,fontSize:13,color:'FFFFFFFF',fill:EXC.ACCENT});
+  ws.getCell('A1').value='Coaching Plan · '+(S.activeDept||'')+' · '+ml;
+  ws.addRow([]);
+  ws.addRow(['Duration',(S.coachDuration||30)+'min','Daily target',S.coachTargetDaily||1]).eachCell(c=>{sC(c,{fontSize:10,border:EXC.BORDER});});
+  ws.addRow([]);
+  ws.addRow(['leader_name','status','scheduled_date','confirmed','done','missed']).eachCell(c=>{sC(c,{bold:true,color:EXC.ACCENT,fill:EXC.HDR,border:EXC.BORDER});});
+  const plan=S.coachPlan||{};
+  const names=[...new Set(S.entries.map(e=>e.name))].sort();
+  names.forEach(name=>{
+    const ps=plan[name]||{};
+    let status='Unset';
+    if(ps.done)status='Done';else if(ps.missed)status='Missed';else if(ps.confirmed)status='Confirmed';else if(ps.date)status='Suggested';
+    const d=ps.date?new Date(ps.date.split('-')[0],+ps.date.split('-')[1]-1,ps.date.split('-')[2]):null;
+    ws.addRow([name,status,d||'',ps.confirmed?'YES':'',ps.done?'YES':'',ps.missed?'YES':'']).eachCell(c=>{sC(c,{border:EXC.BORDER});});
+    if(d)ws.getCell(ws.lastRow.number,3).numFmt='dd-mmm-yyyy';
+  });
+  ws.getColumn(1).width=20;ws.getColumn(2).width=12;ws.getColumn(3).width=14;
+  const bos=Object.keys(S.coachBlackouts||{}).sort();
+  if(bos.length){
+    ws.addRow([]);ws.addRow([]);
+    ws.addRow(['Blackout Dates']).eachCell(c=>{sC(c,{bold:true,color:EXC.AMBER});});
+    bos.forEach(b=>{const p=b.split('-').map(Number);ws.addRow([new Date(p[0],p[1]-1,p[2])]);ws.getCell(ws.lastRow.number,1).numFmt='dd-mmm-yyyy';});
+  }
+}
+
 function buildSheetAppState(wb){
   const ws=wb.addWorksheet('_app_state',{properties:{tabColor:{argb:EXC.OFF}}});
   ws.state='veryHidden';
@@ -5693,6 +5934,7 @@ function buildSheetAppState(wb){
     notes:S.notes,hc:S.hc,att:S.att,
     exceptions:S.exceptions||[],dayClosed:S.dayClosed||{},
     coachPlan:S.coachPlan||{},coachBlackouts:S.coachBlackouts||{},coachDuration:S.coachDuration||30,
+    coachTargetDaily:S.coachTargetDaily||1,plSubTab:S.plSubTab||'schedule',
     tab:S.tab,th:S.th,tz:S.tz,hlToday:S.hlToday,covMin:S.covMin,hrsMax:S.hrsMax,
     collapsed:S.collapsed,team:S.team,emp:S.emp,dayFilter:S.dayFilter,
     allMonths:S.allMonths,parseInfo:S.parseInfo
@@ -5715,6 +5957,8 @@ async function expSavePlus(scope){
     buildSheetNotes(workbook);
     buildSheetBlueprint(workbook);
     buildSheetPositions(workbook);
+    buildSheetExceptions(workbook);
+    buildSheetCoaching(workbook);
     buildSheetAppState(workbook);
     const buffer=await workbook.xlsx.writeBuffer();
     const blob=new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
@@ -5772,7 +6016,7 @@ function saveSettings(){
   try{if(Object.keys(S.plPositions).length)localStorage.setItem("sc_positions",JSON.stringify(S.plPositions));}catch(e){}
   try{if(S.exceptions&&S.exceptions.length)localStorage.setItem("sc_exceptions",JSON.stringify(S.exceptions));}catch(e){}
   try{if(S.dayClosed&&Object.keys(S.dayClosed).length)localStorage.setItem("sc_dayclosed",JSON.stringify(S.dayClosed));}catch(e){}
-  try{if(S.coachPlan&&Object.keys(S.coachPlan).length)localStorage.setItem("sc_coaching",JSON.stringify({plan:S.coachPlan,blackouts:S.coachBlackouts,duration:S.coachDuration}));}catch(e){}
+  try{if(S.coachPlan&&Object.keys(S.coachPlan).length)localStorage.setItem("sc_coaching",JSON.stringify({plan:S.coachPlan,blackouts:S.coachBlackouts,duration:S.coachDuration,targetDaily:S.coachTargetDaily}));}catch(e){}
 }
 function loadSettings(){
   try{
@@ -5800,7 +6044,7 @@ function loadSettings(){
   try{const ps=localStorage.getItem("sc_positions");if(ps)S.plPositions=JSON.parse(ps);}catch(e){}
   try{const ex=localStorage.getItem("sc_exceptions");if(ex)S.exceptions=JSON.parse(ex);}catch(e){}
   try{const dc=localStorage.getItem("sc_dayclosed");if(dc)S.dayClosed=JSON.parse(dc);}catch(e){}
-  try{const cc=localStorage.getItem("sc_coaching");if(cc){const c=JSON.parse(cc);if(c.plan)S.coachPlan=c.plan;if(c.blackouts)S.coachBlackouts=c.blackouts;if(c.duration)S.coachDuration=c.duration;}}catch(e){}
+  try{const cc=localStorage.getItem("sc_coaching");if(cc){const c=JSON.parse(cc);if(c.plan)S.coachPlan=c.plan;if(c.blackouts)S.coachBlackouts=c.blackouts;if(c.duration)S.coachDuration=c.duration;if(c.targetDaily)S.coachTargetDaily=c.targetDaily;}}catch(e){}
 }
 // Restore settings on page load
 loadSettings();
