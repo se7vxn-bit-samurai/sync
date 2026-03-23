@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="referrer" content="no-referrer">
-<title>MirrorFlow Sync v42.5</title>
+<title>MirrorFlow Sync v43</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
@@ -13,6 +13,50 @@
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#070A12;--card:rgba(255,255,255,.07);--accent:#7AB4FF;--al:rgba(122,180,255,.12);--ah:#5a9fff;--text:rgba(255,255,255,.92);--tm:rgba(255,255,255,.52);--bdr:rgba(255,255,255,.10);--hbg:#050810;--ht:rgba(255,255,255,.92);--r:14px;--sh:0 8px 32px rgba(0,0,0,.45);--sl:0 16px 48px rgba(0,0,0,.6);--early:#34D399;--mid:#7AB4FF;--late:#F472B6;--wknd:#FBBF24;--glow1:rgba(122,180,255,.18);--glow2:rgba(185,139,255,.14);--dot:rgba(255,255,255,.12);--card-border:rgba(255,255,255,.11);--card-top:rgba(255,255,255,.06)}
 body,html{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+/* ── Help system ── */
+.help-overlay{position:fixed;inset:0;z-index:800;display:flex;align-items:flex-start;justify-content:flex-end;padding:0;pointer-events:none}
+.help-overlay.open{pointer-events:all}
+.help-overlay-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);opacity:0;transition:opacity .2s;pointer-events:none}
+.help-overlay.open .help-overlay-bg{opacity:1;pointer-events:all}
+.help-drawer{position:relative;z-index:1;width:min(480px,100vw);height:100vh;background:var(--hbg);border-left:1px solid var(--bdr);overflow-y:auto;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .22s cubic-bezier(.4,0,.2,1);backdrop-filter:blur(20px)}
+.help-overlay.open .help-drawer{transform:translateX(0)}
+.help-drawer::-webkit-scrollbar{width:4px}.help-drawer::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:2px}
+.help-drawer-hd{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--bdr);position:sticky;top:0;background:var(--hbg);z-index:2}
+.help-drawer-hd h2{font-size:16px;font-weight:700}
+.help-close{background:none;border:1px solid var(--bdr);color:var(--text);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .1s}
+.help-close:hover{background:var(--al);color:var(--accent)}
+.help-section{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.06)}
+.help-section h3{font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.help-section p,.help-section li{font-size:12px;color:var(--tm);line-height:1.6;margin-bottom:4px}
+.help-section ul{padding-left:14px}
+.help-section li{list-style:disc}
+.help-section strong{color:var(--text);font-weight:600}
+.help-shortcut{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--tm);margin-top:4px;flex-wrap:wrap}
+.help-shortcut kbd{background:rgba(255,255,255,.1);padding:1px 6px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text)}
+.help-workflow{background:var(--al);border-radius:10px;padding:12px 14px;margin-bottom:8px}
+.help-workflow-step{display:flex;align-items:flex-start;gap:8px;padding:4px 0;font-size:12px}
+.help-workflow-step .ws-num{width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.help-workflow-step .ws-text{color:var(--text);line-height:1.5}
+.help-workflow-step .ws-text span{color:var(--tm);font-size:11px;display:block}
+.ctx-help{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid var(--bdr);color:var(--tm);font-size:9px;cursor:pointer;transition:all .1s;flex-shrink:0;font-weight:700;line-height:1;vertical-align:middle;margin-left:5px}
+.ctx-help:hover{background:var(--al);border-color:var(--accent);color:var(--accent)}
+.ctx-panel{position:fixed;z-index:600;background:var(--hbg);border:1px solid var(--bdr);border-radius:10px;padding:10px 13px;font-size:11px;box-shadow:var(--sl);backdrop-filter:blur(20px);max-width:260px;min-width:200px}
+.ctx-panel-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.ctx-panel-hd span{font-weight:600;font-size:12px;color:var(--accent)}
+.ctx-panel-hd button{background:none;border:none;color:var(--tm);cursor:pointer;font-size:12px;line-height:1;padding:0}
+.ctx-panel p{color:var(--tm);line-height:1.55;margin-bottom:4px}
+.load-splash{position:fixed;inset:0;z-index:700;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);animation:fadeIn .25s ease-out}
+.load-splash-card{background:var(--card);border:1px solid var(--card-border);border-radius:18px;padding:24px 28px;max-width:440px;width:90%;box-shadow:var(--sl);backdrop-filter:blur(20px)}
+.load-splash-card h2{font-size:18px;font-weight:700;margin-bottom:4px}
+.load-splash-card .ls-sub{font-size:12px;color:var(--tm);margin-bottom:16px}
+.ls-quickstarts{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.ls-qs{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;background:var(--al);cursor:pointer;transition:background .1s;border:none;font-family:inherit;text-align:left;width:100%}
+.ls-qs:hover{background:var(--bdr)}
+.ls-qs .qs-ico{font-size:16px;width:28px;flex-shrink:0;text-align:center}
+.ls-qs .qs-text{font-size:12px;font-weight:500;color:var(--text)}
+.ls-qs .qs-sub{font-size:10px;color:var(--tm);margin-top:1px}
+.ls-actions{display:flex;gap:8px}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
 body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(900px 700px at 15% 10%,var(--glow1),transparent 60%),radial-gradient(700px 600px at 85% 20%,var(--glow2),transparent 60%),radial-gradient(800px 600px at 50% 100%,rgba(122,180,255,.07),transparent 60%)}
 body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.55;background-image:radial-gradient(circle at 1px 1px,var(--dot) 0 1px,transparent 1.2px);background-size:28px 28px}
 .app{min-height:100vh;display:flex;flex-direction:column;position:relative;z-index:1}
@@ -850,7 +894,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
 <div class="app">
 <div id="mobOv" class="mob-overlay" onclick="S.tbOpen=false;ren()"></div>
 <div id="toasts" class="toast-wrap"></div>
-<div class="hd"><div class="hd-b"><div class="hd-l">📋</div><div class="hd-titles"><h1>MirrorFlow Sync</h1><div class="hd-dept" id="fl">Messy rosters → clean schedules</div><div style="font-size:11px;color:var(--tm);margin-top:2px;font-family:'JetBrains Mono',monospace">v42.5 · intelligence layer</div></div></div><div class="hd-a" id="ha" style="display:none"><button id="navBackBtn" onclick="navBack()" title="Back" style="display:none;align-items:center;gap:4px;padding:4px 10px;border:1px solid var(--bdr);border-radius:6px;background:rgba(255,255,255,.06);color:var(--ht);font-family:inherit;font-size:11px;font-weight:500;cursor:pointer;transition:all .12s;white-space:nowrap">← Back</button><button class="mob-ham" id="mobHam" onclick="S.tbOpen=!S.tbOpen;ren()" title="Filters">☰</button><div class="tp" id="tp"></div><button class="bi" onclick="removeDept(S.activeDept)" title="Close department">✕</button><div class="ew"><button class="btn bp" onclick="expSavePlus('month')" title="Save+ (This Month)">💾 Save+</button><button class="btn bp" onclick="togExp()" style="padding:4px 6px;margin-left:-1px;border-left:1px solid rgba(255,255,255,.15)">▾</button><div class="em" id="exm" style="display:none"><div style="font-size:9px;color:var(--tm);padding:6px 10px 2px;letter-spacing:.5px;text-transform:uppercase">Save+</div><button class="ei" onclick="expSavePlus('month')">💾 This Month (session + analytics)</button><button class="ei" onclick="expSavePlus('all')">💾 All Months (full dataset)</button><div style="font-size:9px;color:var(--tm);padding:6px 10px 2px;letter-spacing:.5px;text-transform:uppercase;border-top:1px solid var(--bdr)">Download</div><button class="ei" onclick="expCurrentMonth()">📋 Current Month · Styled Report</button><button class="ei" onclick="expAIcsv()">🤖 AI-Ready Data (flat table)</button><button class="ei" onclick="expClean()">📊 Clean Reformat (legacy)</button><div style="font-size:9px;color:var(--tm);padding:6px 10px 2px;letter-spacing:.5px;text-transform:uppercase;border-top:1px solid var(--bdr)">Share &amp; Capture</div><button class="ei" onclick="genEmail()">✉ Copy day roster (email)</button><button class="ei" onclick="genWeeklyDigest()">📋 Weekly digest (clipboard)</button><button class="ei" onclick="expPNG()">🖼 Save as PNG</button><button class="ei" onclick="window.print();hExp()">🖨 Print / PDF</button></div></div><div style="position:relative"><button class="notif-icon" id="notifBtn" onclick="toggleNotifTray()">🔔<span class="notif-badge" id="notifBadge" style="display:none">0</span></button><div class="notif-tray" id="notifTray" style="display:none"><div class="notif-tray-hd"><span>Notifications</span><button style="font-size:9px;background:none;border:none;color:var(--tm);cursor:pointer" onclick="clearNotifs()">Clear all</button></div><div id="notifList"><div class="notif-empty">No notifications yet</div></div></div></div></div></div>
+<div class="hd"><div class="hd-b"><div class="hd-l">📋</div><div class="hd-titles"><h1>MirrorFlow Sync</h1><div class="hd-dept" id="fl">Messy rosters → clean schedules</div><div style="font-size:11px;color:var(--tm);margin-top:2px;font-family:'JetBrains Mono',monospace">v43 · clarity release</div></div></div><div class="hd-a" id="ha" style="display:none"><button id="navBackBtn" onclick="navBack()" title="Back" style="display:none;align-items:center;gap:4px;padding:4px 10px;border:1px solid var(--bdr);border-radius:6px;background:rgba(255,255,255,.06);color:var(--ht);font-family:inherit;font-size:11px;font-weight:500;cursor:pointer;transition:all .12s;white-space:nowrap">← Back</button><button class="mob-ham" id="mobHam" onclick="S.tbOpen=!S.tbOpen;ren()" title="Filters">☰</button><div class="tp" id="tp"></div><button class="bi" onclick="removeDept(S.activeDept)" title="Close department">✕</button><div class="ew"><button class="btn bp" onclick="expSavePlus('month')" title="Save+ (This Month)">💾 Save+</button><button class="btn bp" onclick="togExp()" style="padding:4px 6px;margin-left:-1px;border-left:1px solid rgba(255,255,255,.15)">▾</button><div class="em" id="exm" style="display:none"><div style="font-size:9px;color:var(--tm);padding:6px 10px 2px;letter-spacing:.5px;text-transform:uppercase">Save+</div><button class="ei" onclick="expSavePlus('month')">💾 This Month (session + analytics)</button><button class="ei" onclick="expSavePlus('all')">💾 All Months (full dataset)</button><div style="font-size:9px;color:var(--tm);padding:6px 10px 2px;letter-spacing:.5px;text-transform:uppercase;border-top:1px solid var(--bdr)">Download</div><button class="ei" onclick="expCurrentMonth()">📋 Current Month · Styled Report</button><button class="ei" onclick="expAIcsv()">🤖 AI-Ready Data (flat table)</button><button class="ei" onclick="expClean()">📊 Clean Reformat (legacy)</button><div style="font-size:9px;color:var(--tm);padding:6px 10px 2px;letter-spacing:.5px;text-transform:uppercase;border-top:1px solid var(--bdr)">Share &amp; Capture</div><button class="ei" onclick="genEmail()">✉ Copy day roster (email)</button><button class="ei" onclick="genWeeklyDigest()">📋 Weekly digest (clipboard)</button><button class="ei" onclick="expPNG()">🖼 Save as PNG</button><button class="ei" onclick="window.print();hExp()">🖨 Print / PDF</button></div></div><button class="bi" onclick="openHelp()" title="Help &amp; Guide" style="font-size:13px;font-weight:700">?</button><div style="position:relative"><button class="notif-icon" id="notifBtn" onclick="toggleNotifTray()">🔔<span class="notif-badge" id="notifBadge" style="display:none">0</span></button><div class="notif-tray" id="notifTray" style="display:none"><div class="notif-tray-hd"><span>Notifications</span><button style="font-size:9px;background:none;border:none;color:var(--tm);cursor:pointer" onclick="clearNotifs()">Clear all</button></div><div id="notifList"><div class="notif-empty">No notifications yet</div></div></div></div></div></div>
 <div id="deptStrip" class="dept-strip"></div>
 <input type="file" id="fiAdd" accept=".xlsx,.xls,.csv" style="display:none" onchange="hFile(this)">
 <div class="uz" id="us"
@@ -900,8 +944,43 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
   </div>
 </div>
 <div id="mv" class="hid" style="flex:1;display:flex;flex-direction:column"><div class="ib" id="ib"></div><div class="tb" id="toolbar"></div><div class="tabs" id="tbar"></div><div id="contBar"></div><div class="ct" id="ca"></div></div>
-<div class="kb-hint" id="kbh" style="display:none"><span><kbd>←</kbd><kbd>→</kbd> month <kbd>↑</kbd><kbd>↓</kbd> person <kbd>T</kbd> today <kbd>I</kbd> intel <kbd>C</kbd> calendar <kbd>W</kbd> digest</span><span class="wm-inline">© theGuide.Club · Sel K. Naicker · 2026</span></div>
+<div class="kb-hint" id="kbh" style="display:none"><span><kbd>←</kbd><kbd>→</kbd> month <kbd>↑</kbd><kbd>↓</kbd> person <kbd>T</kbd> today <kbd>C</kbd> calendar <kbd>W</kbd> digest <kbd>?</kbd> help</span><span class="wm-inline">© theGuide.Club · Sel K. Naicker · 2026</span></div>
 <div class="wm-print">© theGuide.Club · Sel K. Naicker · 2026 · All rights reserved</div>
+<!-- Help overlay drawer -->
+<div class="help-overlay" id="helpOverlay">
+  <div class="help-overlay-bg" onclick="closeHelp()"></div>
+  <div class="help-drawer" id="helpDrawer"><div id="helpContent"></div></div>
+</div>
+<!-- Context help panel (anchored to click position) -->
+<div class="ctx-panel" id="ctxPanel" style="display:none">
+  <div class="ctx-panel-hd"><span id="ctxTitle">?</span><button onclick="closeCtx()">✕</button></div>
+  <div id="ctxBody"></div>
+</div>
+<!-- First-load splash -->
+<div class="load-splash" id="loadSplash" style="display:none">
+  <div class="load-splash-card">
+    <h2 id="splashTitle">File loaded ✓</h2>
+    <div class="ls-sub" id="splashSub">Where do you want to start?</div>
+    <div class="ls-quickstarts">
+      <button class="ls-qs" onclick="closeSplash();setTab('calendar')">
+        <span class="qs-ico">📅</span>
+        <div><div class="qs-text">Today's roster</div><div class="qs-sub">Calendar → see who's on, share to Teams</div></div>
+      </button>
+      <button class="ls-qs" onclick="closeSplash();setTab('analytics');setAnalyticsView('ops')">
+        <span class="qs-ico">⚡</span>
+        <div><div class="qs-text">Team intelligence</div><div class="qs-sub">Analytics → Ops → coaching queue, signals, risk</div></div>
+      </button>
+      <button class="ls-qs" onclick="closeSplash();setTab('planner')">
+        <span class="qs-ico">🔮</span>
+        <div><div class="qs-text">Project forward</div><div class="qs-sub">Planner → rotations, leave, scenarios</div></div>
+      </button>
+    </div>
+    <div class="ls-actions">
+      <button class="btn bp" onclick="closeSplash()">Got it</button>
+      <button class="btn" style="background:var(--al);color:var(--accent)" onclick="closeSplash();openHelp()">Show me around →</button>
+    </div>
+  </div>
+</div>
 </div>
 <script>
 /* ═══════════════════════════════════════════════════════════════
@@ -911,7 +990,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
 let S={wb:null,fn:"",shs:[],sh:"",raw:[],entries:[],team:"all",emp:"all",tz:true,tab:"calendar",th:"midnight",
   month:null,months:[],mIdx:0,shiftFilter:"",compare:false,cmp2:"",calDay:null,rawSheet:"",collapsed:{},hlToday:true,srch:"",dayFilter:"",allMonths:false,covMin:3,hrsMax:45,att:{},hc:{},notes:{},noteOpen:false,anDay:null,anMode:"roster",plMonths:2,plRemoved:{},plLeave:[],plOverrides:{},plHires:[],plEdit:null,tbOpen:false,rotationDef:null,rotPanelOpen:false,parseInfo:[],workspace:{},activeDept:null,plBlueprints:{},plPositions:{},plBpOpen:false,plPosOpen:true,plGenMonth:null,plGenYear:null,
   tblDay:"all",tblWk:"all",tblType:"all",tblLeader:"all",tblHrsMin:"",tblHrsMax:"",tblDateFrom:"",tblDateTo:"",tblEra:"all",tblSortCol:"date",tblSortDir:"asc",
-  plCellEdit:null,plCovOpen:true,plDriftOpen:true,plShowRotWk:true,plWkRemap:{},changeLog:null,changeLogOpen:true,showCardWk:true,coachBudgetHrs:{},coachManualSessions:[],swaps:[],_swapFormDay:null,_bpDragWeek:null,_bpDropTarget:null,_bpDropDir:null,_sumShowIntel:true,_sumHealthOpen:false,_bpDraft:null,_bpEditMode:false,savedMonths:{},plCellOverrides:{},exceptions:[],dayClosed:{},anView:"coverage",dayIntelName:"",dayIntelDate:"",dayIntelSource:"",
+  plCellEdit:null,plCovOpen:true,plDriftOpen:true,plShowRotWk:true,plWkRemap:{},changeLog:null,changeLogOpen:true,showCardWk:true,coachBudgetHrs:{},coachManualSessions:[],swaps:[],_swapFormDay:null,_bpDragWeek:null,_bpDropTarget:null,_bpDropDir:null,_sumShowIntel:true,_sumHealthOpen:false,_bpDraft:null,_bpEditMode:false,savedMonths:{},plCellOverrides:{},exceptions:[],dayClosed:{},anView:"coverage",dayIntelName:"",dayIntelDate:"",dayIntelSource:"",sumMode:"month",_helpOpen:false,
   plCoachOpen:true,coachDuration:30,coachBlackouts:{},coachPlan:{},coachHistory:[],plSubTab:"schedule",coachTargetDaily:1,coachTargetMonthly:0,targetHours:0,ratePerHour:0,cache:{},entriesVer:0};
 
 const APP_VERSION="v42.5";
@@ -1208,7 +1287,6 @@ function rerenderCurrentSurface(){
   else if(S.tab==="cards")rCards(host);
   else if(S.tab==="planner")rPlanner(host);
   else if(S.tab==="summary")rSum(host);
-  else if(S.tab==="intel")rIntel(host);
   else if(S.tab==="raw")rRaw(host);
 }
 function rerenderPlannerSubTab(sub){
@@ -1253,6 +1331,9 @@ function setLeader(name){
   rerenderInfoBarOnly();
 }
 function setTab(tab){
+  // Intel is no longer a top-level tab — it lives as Analytics > Ops
+  if(tab==="intel"){S.tab="analytics";S.anView="ops";renderChrome();rerenderCurrentSurface();return;}
+
   if(S.tab===tab)return;
   _navPush();
   S.tab=tab;
@@ -3482,6 +3563,9 @@ function showMV(){
   $("ha").style.display="flex";$("fl").textContent=S.activeDept||S.fn;
   $("tp").innerHTML=Object.entries(TH).map(([k,t])=>`<div class="td${k===S.th?" ac":""}" style="background:${t.d}" onclick="setTh('${k}')" title="${t.n}"></div>`).join("");
   $("kbh").style.display="flex";updateDeptStrip();_navStack.length=0;_navRenderBack();ren();
+  // First-load splash (once per session)
+  const leaderCount=[...new Set(S.entries.map(e=>e.name))].length;
+  setTimeout(()=>showLoadSplash(leaderCount,S.months.length),400);
 }
 
 function buildToolbarHTML(){
@@ -3548,18 +3632,43 @@ function renderToolbar(){
   const mobOv=$("mobOv");if(mobOv)mobOv.style.display=S.tbOpen?"block":"none";
 }
 function renderTabs(){
-  const TB=[{id:"calendar",l:"Calendar"},{id:"cards",l:"Cards"},{id:"table",l:"Table"},{id:"analytics",l:"Analytics"},{id:"planner",l:"Planner"},{id:"intel",l:"⚡ Intel"},{id:"summary",l:"Summary"},{id:"raw",l:"Raw Data"}];
-  $("tbar").innerHTML=TB.map(t=>`<button class="tab${t.id===S.tab?" a":""}" onclick="setTab('${t.id}')">${t.l}</button>`).join("");
+  // Count Act Now signals for Analytics badge
+  let opsActNow=0;
+  if(S.entries&&S.entries.length&&S.month){
+    try{
+      const[y,m]=S.month.split("-").map(Number);
+      let me=S.entries.filter(e=>e.date&&e.date.getFullYear()===y&&e.date.getMonth()===m);
+      if(S.team!=="all")me=me.filter(e=>e.team===S.team);
+      const em2={};[...new Set(me.map(e=>e.name))].forEach(n=>{em2[n]=me.filter(e=>e.name===n);});
+      const dk=S.activeDept||"default";const bp=S.plBlueprints[dk];const pos=S.plPositions[dk]||{};
+      Object.entries(em2).forEach(([n,ent])=>{
+        const sigs=computeSignals(n,ent,bp,pos,dk)||[];
+        opsActNow+=sigs.filter(s=>s.severity==="high").length;
+      });
+    }catch(e){}
+  }
+  const anLabel=opsActNow>0?`Analytics <span style="background:#dc2626;color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;font-weight:700;margin-left:3px">${opsActNow}</span>`:"Analytics";
+  const TB=[
+    {id:"calendar",l:"Calendar"},
+    {id:"summary",l:"Summary"},
+    {id:"cards",l:"Cards"},
+    {id:"table",l:"Table"},
+    {id:"analytics",l:anLabel,raw:true},
+    {id:"planner",l:"Planner"},
+    {id:"raw",l:"Raw Data"}
+  ];
+  $("tbar").innerHTML=TB.map(t=>`<button class="tab${t.id===S.tab?" a":""}" onclick="setTab('${t.id}')">${t.raw?t.l:t.l}</button>`).join("");
 }
 function renderKeyboardHints(){
+  const help='<kbd>?</kbd> help';
   const kbHints={
-    calendar:'<kbd>←</kbd><kbd>→</kbd> month <kbd>T</kbd> today <kbd>↑</kbd><kbd>↓</kbd> day',
-    cards:'<kbd>←</kbd><kbd>→</kbd> month <kbd>↑</kbd><kbd>↓</kbd> person <kbd>C</kbd> calendar',
-    table:'<kbd>←</kbd><kbd>→</kbd> month <kbd>C</kbd> calendar',
-    analytics:'<kbd>←</kbd><kbd>→</kbd> month <kbd>C</kbd> calendar',
-    planner:'<kbd>C</kbd> calendar',
-    summary:'<kbd>←</kbd><kbd>→</kbd> month <kbd>↑</kbd><kbd>↓</kbd> person',
-    raw:'<kbd>←</kbd><kbd>→</kbd> month'
+    calendar:`<kbd>←</kbd><kbd>→</kbd> month <kbd>T</kbd> today <kbd>↑</kbd><kbd>↓</kbd> day ${help}`,
+    cards:`<kbd>←</kbd><kbd>→</kbd> month <kbd>↑</kbd><kbd>↓</kbd> person <kbd>C</kbd> calendar ${help}`,
+    table:`<kbd>←</kbd><kbd>→</kbd> month <kbd>C</kbd> calendar ${help}`,
+    analytics:`<kbd>←</kbd><kbd>→</kbd> month <kbd>I</kbd> ops <kbd>C</kbd> calendar ${help}`,
+    planner:`<kbd>C</kbd> calendar ${help}`,
+    summary:`<kbd>←</kbd><kbd>→</kbd> month ${help}`,
+    raw:`<kbd>←</kbd><kbd>→</kbd> month ${help}`
   };
   const kbEl=$("kbh");if(kbEl){const kbSpan=kbEl.querySelector("span");if(kbSpan)kbSpan.innerHTML=kbHints[S.tab]||kbHints.cards;}
 }
@@ -3594,7 +3703,7 @@ function buildInfoBarHTML(){
   let teamHealthBadge="";
   if(S.month){
     const ths=computeTeamHealthScore(S.month);
-    if(ths)teamHealthBadge=`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:${ths.gradeCol}18;color:${ths.gradeCol};border:1px solid ${ths.gradeCol}33;cursor:pointer;font-family:'JetBrains Mono',monospace" onclick="setTab('intel')" title="Team health — click for Intel">${ths.grade} ${ths.avg}</span>`;
+    if(ths)teamHealthBadge=`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:${ths.gradeCol}18;color:${ths.gradeCol};border:1px solid ${ths.gradeCol}33;cursor:pointer;font-family:'JetBrains Mono',monospace" onclick="setTab('analytics');setAnalyticsView('ops')" title="Team health — click for Ops view">${ths.grade} ${ths.avg}</span>`;
   }
   return `<span class="l">${ec}</span><span class="ib-muted" style="font-size:11px">leaders</span><span class="ib-sep">·</span><span class="ib-stat">${wk}</span><span class="ib-muted" style="font-size:11px">shifts</span><span class="ib-sep">·</span><span class="ib-stat">${of2}</span><span class="ib-muted" style="font-size:11px">off</span><span class="ib-sep">·</span><span class="ib-stat">${Math.round(tHrs)}h</span><span class="ib-muted" style="font-size:11px">(${avgPerPerson}h avg)</span>${teamHealthBadge}${anomBadge}${changeBadge}${rotBadge} ${wkBadge} ${legacyBadge} ${parseBadge}${S.calDay&&S.tab==="calendar"?`<span class="ib-sep">·</span><span class="l" style="cursor:pointer;font-size:12px" onclick="clearCalendarDaySelection()">✕ ${fDF(S.calDay)}</span>`:""}${S.dayFilter?`<span class="ib-sep">·</span><span class="l" style="cursor:pointer;font-size:12px" onclick="clearDayFilter()">✕ ${S.dayFilter}s only</span>`:""}${tzToggle}`;
 }
@@ -3618,7 +3727,7 @@ function renderContinuityBar(){if($("contBar"))$("contBar").innerHTML=buildConti
 function renderActiveTab(){
   const a=$("ca");
   if(!S.entries.length){a.innerHTML='<div class="es-empty"><h3>No data</h3><p>Try a different sheet.</p></div>';if($("contBar"))$("contBar").innerHTML="";return;}
-  ({calendar:rCal,cards:rCards,table:rTbl,analytics:rAnalytics,planner:rPlanner,intel:rIntel,summary:rSum,raw:rRaw})[S.tab](a);
+  ({calendar:rCal,cards:rCards,table:rTbl,analytics:rAnalytics,planner:rPlanner,summary:rSum,raw:rRaw})[S.tab]?.(a);
 }
 function renderChrome(){renderToolbar();renderTabs();renderKeyboardHints();renderInfoBar();renderContinuityBar();}
 function ren(){renderChrome();renderActiveTab();}
@@ -4565,7 +4674,7 @@ function rAnalytics(el){
   let h=`<div id="analyticsSurface">`;
   // ── Change Log (always shown at top if present) ──
   if(S.changeLog){h+=renderChangeLogPanel();}
-  h+=`<div id="analyticsModeControls" class="an-mode-toggle"><button class="an-mode-btn${S.anView==="coverage"?" active":""}" onclick="setAnalyticsView('coverage')">Coverage</button><button class="an-mode-btn${S.anView==="capacity"?" active":""}" onclick="setAnalyticsView('capacity')">Capacity</button><button class="an-mode-btn${S.anView==="history"?" active":""}" onclick="setAnalyticsView('history')">History</button><button class="an-mode-btn${S.anView==="signals"?" active":""}" onclick="setAnalyticsView('signals')">Signals</button></div>`;
+  h+=`<div id="analyticsModeControls" class="an-mode-toggle"><button class="an-mode-btn${S.anView==="coverage"?" active":""}" onclick="setAnalyticsView('coverage')">Coverage</button><button class="an-mode-btn${S.anView==="capacity"?" active":""}" onclick="setAnalyticsView('capacity')">Capacity</button><button class="an-mode-btn${S.anView==="history"?" active":""}" onclick="setAnalyticsView('history')">History</button><button class="an-mode-btn${S.anView==="signals"?" active":""}" onclick="setAnalyticsView('signals')">Signals</button><button class="an-mode-btn${S.anView==="ops"?" active":""}" onclick="setAnalyticsView('ops')" style="${S.anView==='ops'?'':''}">⚡ Ops</button></div>`;
 
   if(S.anView==="capacity"){
     h+=rCapacityWaterfall(y,m,numDays,monthEnt);
@@ -4581,6 +4690,16 @@ function rAnalytics(el){
     h+=rSignalsView(monthEnt,y,m);
     h+=`</div>`;
     el.innerHTML=h;return;
+  }
+  if(S.anView==="ops"){
+    // Ops is Intel rendered inside Analytics — no tab switch, just inline
+    h+=`</div>`;
+    el.innerHTML=h;
+    const opsHost=document.createElement("div");
+    opsHost.style.cssText="margin-top:0";
+    el.appendChild(opsHost);
+    rIntel(opsHost);
+    return;
   }
   // ── COVERAGE VIEW (existing) ──
 
@@ -4777,7 +4896,7 @@ function rAnalytics(el){
   h+=`</div></div>`;
 
   // Shift distribution fairness
-  h+=`<div class="an-card an-c2"><div class="an-card-hd"><h4>Shift Distribution</h4><span>Early · Mid · Late · Wknd · Off</span></div>`;
+  h+=`<div class="an-card an-c2"><div class="an-card-hd"><h4>Shift Distribution${ctxChip('fairness_bars')}</h4><span>Early · Mid · Late · Wknd · Off</span></div>`;
   h+=`<div style="padding:10px 16px;display:flex;flex-direction:column;gap:8px">`;
   names.forEach(n=>{
     const ent=byName[n];
@@ -4797,7 +4916,7 @@ function rAnalytics(el){
   h+=`</div></div>`;
 
   // ── ROW 5: Coverage heatmap (full width) ──
-  h+=`<div class="an-card an-c4"><div class="an-card-hd"><h4>Coverage Heatmap</h4><span>${MOFULL[m]} ${y} · Headcount per 30-min slot${S.tz?" (SA time)":""}</span></div>`;
+  h+=`<div class="an-card an-c4"><div class="an-card-hd"><h4>Coverage Heatmap${ctxChip('coverage_heatmap')}</h4><span>${MOFULL[m]} ${y} · Headcount per 30-min slot${S.tz?" (SA time)":""}</span></div>`;
   h+=`<div class="hm-grid-wrap"><div class="hm-grid" style="grid-template-columns:60px repeat(${numDays},minmax(32px,1fr))">`;
   h+=`<div class="hm-corner"></div>`;
   for(let d=1;d<=numDays;d++){
@@ -4846,7 +4965,7 @@ function rAnalytics(el){
   });
   const wkKeys=Object.keys(weekEnts).sort();
   if(wkKeys.length>=2){
-    h+=`<div class="an-card an-c4"><div class="an-card-hd"><h4>By Rotation Week</h4><span>Coverage and hours by cycle position</span></div>`;
+    h+=`<div class="an-card an-c4"><div class="an-card-hd"><h4>By Rotation Week${ctxChip('planner_rotation')}</h4><span>Coverage and hours by cycle position</span></div>`;
     h+=`<div style="display:flex;gap:6px;padding:4px 0;flex-wrap:wrap">`;
     const maxWkHrs=Math.max(...wkKeys.map(k=>weekEnts[k].hrs),1);
     wkKeys.forEach(wk=>{
@@ -5003,7 +5122,7 @@ function rSignalsView(monthEnt,y,m){
 
   // Summary bar
   h+=`<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;flex-wrap:wrap">`;
-  h+=`<span style="font-size:14px;font-weight:700">Signals · ${MOFULL[m]} ${y}</span>`;
+  h+=`<span style="font-size:14px;font-weight:700">Signals · ${MOFULL[m]} ${y}${ctxChip('signals_view')}</span>`;
   h+=`<span style="font-size:11px;color:var(--tm)">${totalSigs} signals across ${names.length} leaders</span>`;
   if(highCount)h+=`<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:rgba(220,38,38,.1);color:#dc2626;font-weight:700">${highCount} high</span>`;
   if(medCount)h+=`<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:rgba(251,191,36,.08);color:var(--wknd);font-weight:700">${medCount} watch</span>`;
@@ -5337,7 +5456,7 @@ function rCapacityWaterfall(y,m,numDays,monthEnt){
   h+=`<div class="an-card an-c1"><div class="kpi-tile"><div class="kpi-n" style="color:${surplus>0?'var(--early)':'var(--late)'}">${surplus>0?'+':''}${surplus}h</div><div class="kpi-l">Dev Surplus</div><div class="kpi-sub">above ${S.covMin} min coverage</div></div></div>`;
 
   // Waterfall bars
-  h+=`<div class="an-card an-c4"><div class="an-card-hd"><h4>Capacity Waterfall</h4><span>Week by week · ${MOFULL[m]} ${y}</span></div>`;
+  h+=`<div class="an-card an-c4"><div class="an-card-hd"><h4>Capacity Waterfall${ctxChip('capacity_waterfall')}</h4><span>Week by week · ${MOFULL[m]} ${y}</span></div>`;
 
   // Legend
   h+=`<div class="wf-legend">`;
@@ -6648,7 +6767,7 @@ function rPlanner(el){
   h+=`<div class="pl-section" style="padding:14px 16px">`;
   h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">`;
   h+=`<div style="display:flex;align-items:center;gap:8px">`;
-  h+=`<span style="font-size:14px;font-weight:700">Blueprint</span>`;
+  h+=`<span style="font-size:14px;font-weight:700">Blueprint${ctxChip('planner_blueprint')}</span>`;
   if(S._bpEditMode){
     h+=`<span style="font-size:10px;padding:3px 8px;border-radius:6px;background:rgba(251,191,36,.12);color:var(--wknd);font-weight:600">✎ editing</span>`;
     h+=`<span id="bpChangedBadge" style="font-size:10px;padding:1px 6px;border-radius:10px;background:rgba(251,191,36,.15);color:var(--wknd);display:none"></span>`;
@@ -8306,7 +8425,7 @@ function renderTeamRiskPanel(risk){
   const SEV_COLOR={high:"#dc2626",medium:"var(--wknd)",info:"#b98bff"};
   const SEV_BG={high:"rgba(220,38,38,.07)",medium:"rgba(251,191,36,.07)",info:"rgba(185,139,255,.06)"};
   let h=`<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px">`;
-  h+=`<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">📊 Coverage Risk — ${risk.riskDays.length} risk days · ${risk.avgCoverage} avg</div>`;
+  h+=`<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">📊 Coverage Risk${ctxChip('ops_risk')} — ${risk.riskDays.length} risk days · ${risk.avgCoverage} avg</div>`;
   risk.recommendations.forEach(r=>{
     const col=SEV_COLOR[r.severity]||"var(--tm)";
     const bg=SEV_BG[r.severity]||"var(--al)";
@@ -8447,7 +8566,7 @@ function rIntel(el){
   if(coachNeeded.length>0||coachDone.length>0){
     h+=`<div style="padding:12px 14px;background:var(--card);border:1px solid var(--bdr);border-radius:10px">`;
     h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">`;
-    h+=`<div style="font-size:13px;font-weight:700">🎯 Coaching Queue</div>`;
+    h+=`<div style="font-size:13px;font-weight:700">🎯 Coaching Queue${ctxChip('ops_coaching')}</div>`;
     h+=`<div style="font-size:11px;color:var(--tm)">${coachDone.length}/${names.length} done · ${coachNeeded.length} pending</div>`;
     h+=`<button onclick="_navPush();setTab('planner')" style="padding:3px 9px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--accent);font-family:inherit;font-size:10px;cursor:pointer">Open Planner →</button>`;
     h+=`</div>`;
@@ -8504,7 +8623,7 @@ function rIntel(el){
   if(overtimeRisks.length>0){
     h+=`<div style="padding:12px 14px;background:var(--card);border:1px solid var(--bdr);border-radius:10px">`;
     h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">`;
-    h+=`<div style="font-size:13px;font-weight:700">⏱ Hours Risk · <span style="font-family:'JetBrains Mono',monospace;font-size:11px">${hrsMax2}h/wk limit</span></div>`;
+    h+=`<div style="font-size:13px;font-weight:700">⏱ Hours Risk${ctxChip('ops_hours')} · <span style="font-family:'JetBrains Mono',monospace;font-size:11px">${hrsMax2}h/wk limit</span></div>`;
     if(atRiskCount)h+=`<span style="font-size:11px;font-weight:600;color:#dc2626">${atRiskCount} at risk</span>`;
     else h+=`<span style="font-size:11px;color:var(--early)">All within limit ✓</span>`;
     h+=`</div>`;
@@ -8607,19 +8726,58 @@ function rIntel(el){
 }
 
 function rSum(el){
-  const all=gD(),em=gE(),nm=Object.keys(em);
+  // ── Mode: day | week | month (defaults to month) ──
+  const mode=S.sumMode||"month";
+  const now=new Date();
+
+  // Gather entries for the correct window
+  let windowLabel="";
+  let all=[];
+  if(mode==="day"){
+    const d=S.calDay||now;
+    all=S.entries.filter(e=>{
+      if(!e.date)return false;
+      return e.date.getFullYear()===d.getFullYear()&&e.date.getMonth()===d.getMonth()&&e.date.getDate()===d.getDate();
+    });
+    if(S.team!=="all")all=all.filter(x=>x.team===S.team);
+    all=all.map(x=>(!S.tz||x.isOff||!x.ukS)?{...x,saS:null,saE:null}:{...x,saS:u2s(x.ukS,x.date),saE:u2s(x.ukE,x.date)});
+    windowLabel=`${DOW[(S.calDay||now).getDay()]} ${fDF(S.calDay||now)}`;
+  } else if(mode==="week"){
+    const anchor=S.calDay||now;
+    const mon=new Date(anchor);mon.setDate(mon.getDate()-((mon.getDay()+6)%7));
+    const sun=new Date(mon);sun.setDate(sun.getDate()+6);
+    all=S.entries.filter(e=>e.date&&e.date>=mon&&e.date<=sun);
+    if(S.team!=="all")all=all.filter(x=>x.team===S.team);
+    all=all.map(x=>(!S.tz||x.isOff||!x.ukS)?{...x,saS:null,saE:null}:{...x,saS:u2s(x.ukS,x.date),saE:u2s(x.ukE,x.date)});
+    windowLabel=`Week of ${fD(mon)} – ${fD(sun)}`;
+  } else {
+    all=gD();
+    windowLabel=monthLabel();
+  }
+
+  const em2={};all.forEach(e=>{if(!em2[e.name])em2[e.name]=[];em2[e.name].push(e);});
+  const nm=Object.keys(em2).sort();
   const tHrs=all.reduce((s,e)=>s+(e.isOff?0:calcHrs(S.tz&&e.saS?e.saS:e.ukS,S.tz&&e.saE?e.saE:e.ukE)),0);
-  const offTots={LEAVE:0,SICK:0,PH:0,TRAINING:0};
+  const offTots={LEAVE:0,SICK:0,PH:0};
   all.filter(e=>e.isOff).forEach(e=>{const cat=(e.offL||"OFF").toUpperCase();if(offTots[cat]!==undefined)offTots[cat]++;});
   const hasOffTypes=Object.values(offTots).some(v=>v>0);
-
   const dk=S.activeDept||"default";
-  const bp=S.plBlueprints[dk];const positions=S.plPositions[dk]||{};
+  const ths=(mode==="month"&&S.month)?computeTeamHealthScore(S.month):null;
 
   let h='';
 
-  // ── KPI strip — snapshot numbers ──
-  h+=`<div class="sg">`;
+  // ── Header: mode toggle ──
+  h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">`;
+  h+=`<div><div style="font-size:17px;font-weight:700">${windowLabel}</div><div style="font-size:11px;color:var(--tm);margin-top:2px">${nm.length} leaders · ${all.filter(e=>!e.isOff).length} shifts · ${Math.round(tHrs)}h total</div></div>`;
+  h+=`<div style="display:flex;gap:3px;background:rgba(255,255,255,.05);border-radius:8px;padding:3px">`;
+  ['day','week','month'].forEach(m2=>{
+    h+=`<button onclick="S.sumMode='${m2}';ren()" style="padding:4px 12px;border:none;border-radius:6px;font-family:inherit;font-size:11px;font-weight:500;cursor:pointer;transition:all .1s;${mode===m2?'background:var(--accent);color:#fff':'background:transparent;color:var(--tm)'}">
+      ${m2==='day'?'Day':m2==='week'?'Week':'Month'}</button>`;
+  });
+  h+=`</div></div>`;
+
+  // ── KPI strip ──
+  h+=`<div class="sg" style="margin-bottom:14px">`;
   h+=`<div class="scd"><div class="n">${nm.length}</div><div class="lb">Leaders</div></div>`;
   h+=`<div class="scd"><div class="n">${all.filter(e=>!e.isOff).length}</div><div class="lb">Shifts</div></div>`;
   h+=`<div class="scd"><div class="n">${all.filter(e=>e.isOff).length}</div><div class="lb">Off</div></div>`;
@@ -8629,21 +8787,19 @@ function rSum(el){
     h+=`<div class="scd"><div class="n" style="color:#F472B6">${offTots.SICK}</div><div class="lb">Sick</div></div>`;
     if(offTots.PH)h+=`<div class="scd"><div class="n" style="color:#b98bff">${offTots.PH}</div><div class="lb">🏛 PH</div></div>`;
   }
-  // Health score tile
-  const ths=S.month?computeTeamHealthScore(S.month):null;
-  if(ths)h+=`<div class="scd" style="background:${ths.gradeCol}0d;cursor:pointer" onclick="S._sumHealthOpen=!S._sumHealthOpen;ren()" title="Team health — click for breakdown"><div class="n" style="color:${ths.gradeCol};font-family:'JetBrains Mono',monospace">${ths.grade} ${ths.avg}</div><div class="lb">Health</div></div>`;
+  if(ths)h+=`<div class="scd" style="background:${ths.gradeCol}0d;cursor:pointer" onclick="S._sumHealthOpen=!S._sumHealthOpen;ren()" title="Health score — click to expand/collapse"><div class="n" style="color:${ths.gradeCol};font-family:'JetBrains Mono',monospace">${ths.grade} ${ths.avg}</div><div class="lb">Health</div></div>`;
   h+=`</div>`;
 
-  // ── Health score breakdown (expandable) ──
+  // ── Health breakdown (expandable, month mode only) ──
   if(ths&&S._sumHealthOpen){
-    h+=`<div style="background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:12px 14px;margin-bottom:10px">`;
+    h+=`<div style="background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:12px 14px;margin-bottom:14px">`;
     h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">`;
-    h+=`<span style="font-size:13px;font-weight:700">Health Breakdown</span>`;
-    h+=`<span style="font-size:24px;font-weight:700;font-family:'JetBrains Mono',monospace;color:${ths.gradeCol}">${ths.grade} ${ths.avg}<span style="font-size:11px;color:var(--tm);font-weight:400">/100</span></span>`;
+    h+=`<span style="font-size:13px;font-weight:700">Health Breakdown${ctxChip('summary_health')}</span>`;
+    h+=`<div style="display:flex;align-items:center;gap:8px"><span style="font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace;color:${ths.gradeCol}">${ths.grade} ${ths.avg}<span style="font-size:10px;color:var(--tm);font-weight:400">/100</span></span><button onclick="setTab('analytics');setAnalyticsView('ops')" style="padding:3px 8px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--accent);font-family:inherit;font-size:10px;cursor:pointer">Full detail →</button></div>`;
     h+=`</div>`;
     h+=`<table class="ft" style="font-size:11px"><thead><tr><th>Leader</th><th title="Coverage">Cov</th><th title="Exceptions">Exc</th><th title="Coaching">Coach</th><th title="Hours">Hrs</th><th title="Anomalies">Anom</th><th>Score</th><th>Grade</th></tr></thead><tbody>`;
     ths.personScores.sort((a,b)=>b.total-a.total).forEach(ps=>{
-      h+=`<tr onclick="_navPush();S.emp='${XJ(ps.name)}';S.tab='cards';ren()" style="cursor:pointer" title="${ps.details.coverage} · ${ps.details.exceptions} · ${ps.details.coaching} · ${ps.details.hours} · ${ps.details.anomalies}">`;
+      h+=`<tr onclick="_navPush();S.emp='${XJ(ps.name)}';S.tab='cards';ren()" style="cursor:pointer">`;
       h+=`<td style="font-weight:500">${X(ps.name.split(" ")[0])}</td>`;
       ['coverage','exceptions','coaching','hours','anomalies'].forEach(dim=>{
         const v=ps.scores[dim];
@@ -8655,91 +8811,69 @@ function rSum(el){
       h+=`</tr>`;
     });
     h+=`</tbody></table>`;
-    h+=`<div style="font-size:10px;color:var(--tm);margin-top:8px">Scoring: Coverage /20 · Exceptions /20 · Coaching /20 · Hours /20 · Anomalies /20</div>`;
+    h+=`<div style="font-size:10px;color:var(--tm);margin-top:8px">Coverage /20 · Exceptions /20 · Coaching /20 · Hours /20 · Anomalies /20</div>`;
     h+=`</div>`;
   }
 
-  // ── Compact leader table ──
-  h+=`<div style="font-size:13px;font-weight:700;margin-bottom:6px">Team Overview</div>`;
-  h+=`<div class="ftw"><table class="ft"><thead><tr><th>Leader</th><th>Team</th><th>Work</th><th>Off</th>${hasOffTypes?'<th style="color:var(--accent)">Lv</th><th style="color:#F472B6">Sk</th>':''}<th>Hours</th><th style="color:var(--wknd)">Wknd%</th><th>Wk Avg</th>${S.showCardWk!==false?'<th>Wk</th>':''}<th>Status</th></tr></thead><tbody>`;
-  nm.forEach(n=>{const e=em[n];const st=cardStats(e);
-  const dates=e.filter(x=>x.date).map(x=>x.date.getTime());
-  const span=dates.length>=2?Math.max(1,Math.round((Math.max(...dates)-Math.min(...dates))/604800000)):1;
-  const wkAvg=Math.round(st.hrs/span*10)/10;
-  const overHrs=wkAvg>S.hrsMax;
-  const workShifts=e.filter(x=>!x.isOff);
-  const wkndShifts=workShifts.filter(x=>x.day==="Saturday"||x.day==="Sunday").length;
-  const wkndPct=workShifts.length?Math.round(wkndShifts/workShifts.length*100):0;
-  const pOff={LEAVE:0,SICK:0};
-  e.filter(x=>x.isOff).forEach(x=>{const cat=(x.offL||"OFF").toUpperCase();if(pOff[cat]!==undefined)pOff[cat]++;});
-  const lastWk=e.filter(x=>x.week).sort((a,b)=>(b.date||0)-(a.date||0))[0];
-  const wkLabel=lastWk?lastWk.week:"";
-  // Simple status: health grade badge if available, else check for hours alert
-  const personHs=ths?ths.personScores.find(p=>p.name===n):null;
-  const statusBadge=personHs?`<span style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${personHs.gradeCol}">${personHs.grade}</span>`:
-    overHrs?`<span style="color:#dc2626;font-weight:600">⚠</span>`:
-    `<span style="color:var(--early)">✓</span>`;
-  h+=`<tr onclick="_navPush();S.emp='${XJ(n)}';S.tab='cards';ren()" style="cursor:pointer">`;
-  h+=`<td style="font-weight:500">${X(n)}</td><td style="font-size:11px;color:var(--tm)">${X(e[0]?.team||"")}</td><td>${workShifts.length}</td><td>${e.filter(x=>x.isOff).length}</td>`;
-  if(hasOffTypes)h+=`<td style="font-size:11px">${pOff.LEAVE||""}</td><td style="font-size:11px">${pOff.SICK||""}</td>`;
-  h+=`<td class="sc">${st.hrs}h</td><td class="sc" style="color:var(--wknd)">${wkndPct}%</td><td class="sc${overHrs?" hrs-alert":""}">${wkAvg}h</td>${S.showCardWk!==false?`<td class="wk-lbl">${wkLabel}</td>`:''}<td>${statusBadge}</td></tr>`;
+  // ── Leader table ──
+  h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">`;
+  h+=`<div style="font-size:13px;font-weight:700">Team Overview</div>`;
+  h+=`</div>`;
+  h+=`<div class="ftw"><table class="ft"><thead><tr><th>Leader</th><th>Team</th><th>Work</th><th>Off</th>${hasOffTypes?'<th style="color:var(--accent)">Lv</th><th style="color:#F472B6">Sk</th>':''}<th>Hours</th><th style="color:var(--wknd)">Wknd%</th><th>Wk Avg</th><th>Status</th></tr></thead><tbody>`;
+  nm.forEach(n=>{
+    const e=em2[n];const st=cardStats(e);
+    const dates=e.filter(x=>x.date).map(x=>x.date.getTime());
+    const span=dates.length>=2?Math.max(1,Math.round((Math.max(...dates)-Math.min(...dates))/604800000)):1;
+    const wkAvg=Math.round(st.hrs/span*10)/10;
+    const overHrs=wkAvg>S.hrsMax;
+    const workShifts=e.filter(x=>!x.isOff);
+    const wkndShifts=workShifts.filter(x=>x.day==="Saturday"||x.day==="Sunday").length;
+    const wkndPct=workShifts.length?Math.round(wkndShifts/workShifts.length*100):0;
+    const pOff={LEAVE:0,SICK:0};
+    e.filter(x=>x.isOff).forEach(x=>{const cat=(x.offL||"OFF").toUpperCase();if(pOff[cat]!==undefined)pOff[cat]++;});
+    const personHs=ths?ths.personScores.find(p=>p.name===n):null;
+    const statusBadge=personHs?`<span style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${personHs.gradeCol}">${personHs.grade}</span>`:
+      overHrs?`<span style="color:#dc2626;font-weight:600">⚠</span>`:`<span style="color:var(--early)">✓</span>`;
+    h+=`<tr onclick="_navPush();S.emp='${XJ(n)}';S.tab='cards';ren()" style="cursor:pointer">`;
+    h+=`<td style="font-weight:500">${X(n)}</td><td style="font-size:11px;color:var(--tm)">${X(e[0]?.team||"")}</td><td>${workShifts.length}</td><td>${e.filter(x=>x.isOff).length}</td>`;
+    if(hasOffTypes)h+=`<td style="font-size:11px">${pOff.LEAVE||""}</td><td style="font-size:11px">${pOff.SICK||""}</td>`;
+    h+=`<td class="sc">${st.hrs}h</td><td class="sc" style="color:var(--wknd)">${wkndPct}%</td><td class="sc${overHrs?" hrs-alert":""}">${wkAvg}h</td><td>${statusBadge}</td></tr>`;
   });
   h+=`</tbody></table></div>`;
 
-  // ── Swap Impact (keep — operational snapshot) ──
+  // ── Swap Impact (operational snapshot — stays in Summary) ──
   const allSwaps=(S.swaps||[]).filter(s=>{
     if(!s.date)return false;
+    if(mode==="day"){const d=S.calDay||now;const sd=new Date(s.date);return sd.toDateString()===d.toDateString();}
     if(S.month){const[sy,sm]=S.month.split('-').map(Number);const sd=new Date(s.date);return sd.getFullYear()===sy&&sd.getMonth()===sm;}
     return true;
   });
   if(allSwaps.length){
     const impact=getSwapImpact(allSwaps);
-    h+=`<div style="margin-top:14px">`;
-    h+=`<div style="font-size:13px;font-weight:700;margin-bottom:8px">⇄ Shift Swaps <span style="font-size:11px;font-weight:400;color:var(--tm)">${allSwaps.length} logged · ${Object.keys(impact).length} people affected</span></div>`;
+    h+=`<div style="margin-top:14px"><div style="font-size:13px;font-weight:700;margin-bottom:8px">⇄ Shift Swaps <span style="font-size:11px;font-weight:400;color:var(--tm)">${allSwaps.length} logged</span></div>`;
     h+=`<div style="display:flex;flex-direction:column;gap:3px;margin-bottom:10px">`;
     allSwaps.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(sw=>{
       const hrs=sw.originalShift?calcHrs(...sw.originalShift.split('-').map(t=>t.trim())):0;
       const sd=new Date(sw.date);
-      h+=`<div class="swap-impact-row">`;
-      h+=`<span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--tm);min-width:60px">${fD(sd)}</span>`;
-      h+=`<span class="swap-tag absent">${X(sw.absentLeader.split(' ')[0])}</span>`;
-      h+=`<span style="color:var(--tm);font-size:11px">→</span>`;
-      h+=`<span class="swap-tag">${X(sw.coverLeader.split(' ')[0])}</span>`;
-      if(sw.originalShift)h+=`<span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--tm)">${sw.originalShift}</span>`;
-      if(hrs)h+=`<span style="color:var(--accent);font-weight:600;margin-left:auto">${hrs}h</span>`;
-      if(sw.reason)h+=`<span style="font-size:10px;color:var(--tm);font-style:italic">${X(sw.reason)}</span>`;
-      h+=`<button style="background:none;border:none;color:var(--tm);cursor:pointer;font-size:10px;padding:1px 5px;border-radius:3px" onmouseenter="this.style.color='#dc2626'" onmouseleave="this.style.color='var(--tm)'" onclick="removeSwap('${sw.id}')">✕</button>`;
-      h+=`</div>`;
+      h+=`<div class="swap-impact-row"><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--tm);min-width:60px">${fD(sd)}</span><span class="swap-tag absent">${X(sw.absentLeader.split(' ')[0])}</span><span style="color:var(--tm);font-size:11px">→</span><span class="swap-tag">${X(sw.coverLeader.split(' ')[0])}</span>${sw.originalShift?`<span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--tm)">${sw.originalShift}</span>`:''}${hrs?`<span style="color:var(--accent);font-weight:600;margin-left:auto">${hrs}h</span>`:''}${sw.reason?`<span style="font-size:10px;color:var(--tm);font-style:italic">${X(sw.reason)}</span>`:''}
+      <button style="background:none;border:none;color:var(--tm);cursor:pointer;font-size:10px;padding:1px 5px;border-radius:3px" onmouseenter="this.style.color='#dc2626'" onmouseleave="this.style.color='var(--tm)'" onclick="removeSwap('${sw.id}')">✕</button></div>`;
     });
-    h+=`</div>`;
-    h+=`<div style="font-size:11px;font-weight:600;color:var(--tm);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px">Net Hours Impact</div>`;
-    h+=`<div class="ftw"><table class="ft" style="font-size:11px"><thead><tr><th>Leader</th><th>Role</th><th>Hrs Given</th><th>Hrs Received</th><th>Net</th><th>Swaps</th></tr></thead><tbody>`;
-    Object.entries(impact).sort((a,b)=>(b[1].received-b[1].given)-(a[1].received-a[1].given)).forEach(([name,p])=>{
-      const net=Math.round((p.received-p.given)*10)/10;
-      const netCol=net>0?"var(--early)":net<0?"#dc2626":"var(--tm)";
-      const role=p.given>0&&p.received>0?"both":p.given>0?"absent":"covering";
-      h+=`<tr onclick="S.emp='${XJ(name)}';S.tab='cards';ren()" style="cursor:pointer">`;
-      h+=`<td style="font-weight:500">${X(name.split(' ')[0])}</td>`;
-      h+=`<td style="font-size:10px;color:var(--tm)">${role}</td>`;
-      h+=`<td style="color:#dc2626;font-family:'JetBrains Mono',monospace">${p.given>0?p.given+'h':'—'}</td>`;
-      h+=`<td style="color:var(--early);font-family:'JetBrains Mono',monospace">${p.received>0?p.received+'h':'—'}</td>`;
-      h+=`<td style="color:${netCol};font-weight:700;font-family:'JetBrains Mono',monospace">${net>0?'+':''}${net}h</td>`;
-      h+=`<td style="color:var(--tm)">${p.swaps.length}</td>`;
-      h+=`</tr>`;
-    });
-    h+=`</tbody></table></div></div>`;
+    h+=`</div></div>`;
   }
 
-  // ── Quick nav to deeper views ──
-  h+=`<div style="display:flex;gap:6px;flex-wrap:wrap;padding:10px 0;border-top:1px solid var(--bdr);margin-top:10px">`;
+  // ── Dispatch nav ──
+  h+=`<div style="display:flex;gap:6px;flex-wrap:wrap;padding:12px 0 4px;border-top:1px solid var(--bdr);margin-top:12px">`;
   h+=`<span style="font-size:10px;color:var(--tm);align-self:center;margin-right:4px">Go deeper:</span>`;
-  h+=`<button onclick="setTab('intel')" style="padding:3px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--accent);font-family:inherit;font-size:10px;cursor:pointer">⚡ Intel</button>`;
-  h+=`<button onclick="setTab('analytics')" style="padding:3px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:10px;cursor:pointer">📊 Analytics & Signals</button>`;
-  h+=`<button onclick="setTab('planner')" style="padding:3px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:10px;cursor:pointer">🔮 Planner</button>`;
+  h+=`<button onclick="setTab('calendar')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:10px;cursor:pointer;transition:all .1s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--bdr)';this.style.color='var(--tm)'">📅 Calendar</button>`;
+  h+=`<button onclick="setTab('analytics');setAnalyticsView('ops')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--accent);font-family:inherit;font-size:10px;cursor:pointer;font-weight:500">⚡ Ops</button>`;
+  h+=`<button onclick="setTab('analytics');setAnalyticsView('signals')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:10px;cursor:pointer;transition:all .1s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--bdr)';this.style.color='var(--tm)'">📊 Signals</button>`;
+  h+=`<button onclick="setTab('analytics');setAnalyticsView('coverage')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:10px;cursor:pointer;transition:all .1s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--bdr)';this.style.color='var(--tm)'">📈 Coverage</button>`;
+  h+=`<button onclick="setTab('planner')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:10px;cursor:pointer;transition:all .1s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--bdr)';this.style.color='var(--tm)'">🔮 Planner</button>`;
   h+=`</div>`;
 
   el.innerHTML=h;
 }
+
 
 /* ═══ RAW DATA (with sheet tabs) ═══ */
 function rRaw(el){
@@ -9043,16 +9177,18 @@ document.addEventListener("keydown",e=>{
   if(e.key==="ArrowRight"){e.preventDefault();navM(1);}
   if(e.key==="ArrowUp"||e.key==="ArrowDown"){e.preventDefault();const ns=gN();if(!ns.length)return;let idx=ns.indexOf(S.emp);if(e.key==="ArrowUp")idx=idx<=0?ns.length-1:idx-1;else idx=idx>=ns.length-1?0:idx+1;S.emp=ns[idx];ren();}
   if(e.key.toLowerCase()==="t"){goToday();}
-  if(e.key.toLowerCase()==="i"){S.tab="intel";ren();}
+  if(e.key.toLowerCase()==="i"){S.tab="analytics";S.anView="ops";ren();}
   if(e.key.toLowerCase()==="c"){S.tab="calendar";ren();}
   if(e.key.toLowerCase()==="w"){genWeeklyDigest();}
+  if(e.key==="?"){openHelp();}
+  if(e.key==="Escape"){closeHelp();closeCtx();}
 });
 
 function goToday(){
   const now=new Date();const ck=now.getFullYear()+"-"+P(now.getMonth());
   const ci=S.months.indexOf(ck);
   if(ci>=0){S.mIdx=ci;S.month=ck;S.calDay=new Date(now.getFullYear(),now.getMonth(),now.getDate());}
-  S.tab="intel";ren();
+  S.tab="calendar";ren();
 }
 
 /* ═══ DRAG & DROP ═══ */
@@ -9892,7 +10028,8 @@ async function expCurrentMonth(){
 function saveSettings(){
   try{localStorage.setItem("sc_settings",JSON.stringify({
     th:S.th,tz:S.tz,hlToday:S.hlToday,covMin:S.covMin,hrsMax:S.hrsMax,tab:S.tab,
-    targetHours:S.targetHours||0,ratePerHour:S.ratePerHour||0,showCardWk:S.showCardWk!==false
+    targetHours:S.targetHours||0,ratePerHour:S.ratePerHour||0,showCardWk:S.showCardWk!==false,
+    sumMode:S.sumMode||"month",anView:S.anView||"coverage"
   }));}catch(e){}
   try{localStorage.setItem("sc_planner",JSON.stringify({
     plOverrides:S.plOverrides,plLeave:S.plLeave,plHires:S.plHires,plRemoved:S.plRemoved,plMonths:S.plMonths
@@ -9933,6 +10070,8 @@ function loadSettings(){
       if(typeof s.ratePerHour==="number")S.ratePerHour=s.ratePerHour;
       if(typeof s.showCardWk==="boolean")S.showCardWk=s.showCardWk;
       if(s.tab)S.tab=s.tab;
+      if(s.sumMode)S.sumMode=s.sumMode;
+      if(s.anView&&s.anView!=="intel")S.anView=s.anView;
     }
   }catch(e){}
   try{
@@ -10271,7 +10410,6 @@ function renderChangeLogPanel(){
 function clearAllData(){
   if(!confirm("Clear all attendance records, planner scenarios, blueprints, and settings from this browser?"))return;
   try{localStorage.removeItem("sc_att");localStorage.removeItem("sc_settings");localStorage.removeItem("sc_planner");localStorage.removeItem("sc_hc");localStorage.removeItem("sc_notes");localStorage.removeItem("sc_blueprints");localStorage.removeItem("sc_positions");localStorage.removeItem("sc_exceptions");localStorage.removeItem("sc_dayclosed");localStorage.removeItem("sc_coaching");
-  // Clear all per-dept snapshots and swaps
   const snapKeys=Object.keys(localStorage).filter(k=>k.startsWith("sc_snap_")||k.startsWith("sc_swaps_"));
   snapKeys.forEach(k=>localStorage.removeItem(k));
   }catch(e){}
@@ -10286,6 +10424,117 @@ function clearAllData(){
   _persistSig="";
   ren();
   toast("All stored data cleared","ok");
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HELP SYSTEM v43
+   Registry · Drawer · Context chips · First-load splash
+   ═══════════════════════════════════════════════════════════════ */
+const HELP_CONTENT={
+  workflow:{
+    title:"Getting started",
+    steps:[
+      {n:1,text:"Load a file",sub:"Drop your .xlsx, .xls, or .csv roster onto the upload screen — or paste directly from Excel (Ctrl+V)"},
+      {n:2,text:"Check today",sub:"Calendar tab → day roster is auto-selected. Share to Teams with the 📋 button"},
+      {n:3,text:"Read the team",sub:"Summary tab → Day / Week / Month toggle. Health tile expands for a per-person breakdown"},
+      {n:4,text:"Act on signals",sub:"Analytics → Ops → coaching queue is sorted by urgency. Act Now items are highlighted"},
+      {n:5,text:"Plan ahead",sub:"Planner → rotation detection is automatic. Add leave, new hires, or what-if scenarios"},
+      {n:6,text:"Save your work",sub:"💾 Save+ preserves your session data, attendance records, and planner state across reloads"},
+    ]
+  },
+  tabs:{
+    calendar:{icon:"📅",title:"Calendar",body:"Your day-by-day view. Click any date to see the full roster. The right panel shows coverage stats and shift breakdown. Click 📋 Share to copy the roster for Teams or WhatsApp. Red outline on dates = below minimum coverage.",shortcuts:["← → month","T today","↑ ↓ day"]},
+    summary:{icon:"📋",title:"Summary",body:"The hub. Toggle between Day, Week, and Month to see the right window of data. KPI strip is always current. Health tile (month mode) is expandable — click it to see per-person scores, then 'Full detail →' to go to Ops.",shortcuts:[]},
+    cards:{icon:"🃏",title:"Cards",body:"Per-person schedule cards. Each card shows every shift with colour-coded shift types, anomaly flags, and a heatmap strip. Use ⊞ All Months to see the full history in one view.",shortcuts:["← → month","↑ ↓ person","C calendar"]},
+    table:{icon:"📊",title:"Table",body:"Flat view of all entries. Sortable, filterable. Good for spot-checking raw data or exporting a clean list. Use the filter row to narrow by name, team, shift type, or day.",shortcuts:["← → month","C calendar"]},
+    analytics:{icon:"📈",title:"Analytics",body:"Five sub-views: Coverage (heatmap by time slot), Capacity (hours waterfall), History (multi-month trends), Signals (per-person signal cards), and Ops (coaching queue + team triage). The tab badge shows active Act Now count.",shortcuts:["← → month","C calendar"]},
+    planner:{icon:"🔮",title:"Planner",body:"Rotation detection is automatic from your uploaded data. The blueprint editor lets you define the intended schedule. Projection shows the next 1–6 months. Add leave periods, new hires, or cell-level overrides. Export sends to Excel.",shortcuts:["C calendar"]},
+    raw:{icon:"🗂",title:"Raw Data",body:"The raw sheet view. Use the tab strip to switch between sheets. Useful for diagnosing parse issues — compare what you see here with what the parser produces.",shortcuts:[]}
+  },
+  ctx:{
+    coverage_heatmap:{title:"Coverage Heatmap",body:"Each cell = number of leaders scheduled in that 30-min window on that day. Colour scale: red = 1, green = 6+. Hover any cell to see names. Time is SA time when UK→SA is on."},
+    fairness_bars:{title:"Shift Distribution",body:"Stacked bar per person showing the split between Early / Mid / Late / Weekend / Off shifts. Wider segments = more of that shift type. Hover bars for counts."},
+    capacity_waterfall:{title:"Capacity Waterfall",body:"Total available hours per day vs scheduled hours. Gap = unscheduled capacity. Leave-aware — approved leave is subtracted from the available pool."},
+    signals_view:{title:"Signals",body:"Per-person signal cards sorted by severity. High = red = Act Now. Medium = amber = Watch. Each signal links to the source data. Use the action buttons to log exceptions or open coaching."},
+    ops_coaching:{title:"Coaching Queue",body:"Auto-generated list sorted by urgency. People with high-severity signals appear at the top. Click any row to open a coaching session. Confirmed and done sessions are tracked separately."},
+    ops_risk:{title:"Coverage Risk",body:"Days where scheduled headcount falls below your minimum threshold. Ordered by date. Click any day to jump to the Calendar view for that date."},
+    ops_hours:{title:"Hours Risk",body:"People projected to exceed the weekly hours limit based on current rotation pattern. Accounts for leave periods when a blueprint is set."},
+    planner_rotation:{title:"Rotation Patterns",body:"Detected automatically from your uploaded schedule history. Cycle length is inferred from explicit week labels (W1–W4 etc.) or from pattern similarity. Click a name to toggle them from the projection."},
+    planner_blueprint:{title:"Blueprint",body:"The intended schedule — what each person should be working each week of their cycle. Upload populates this automatically, or edit manually. Blueprint drift signals fire when actuals diverge from blueprint."},
+    summary_health:{title:"Health Score",body:"Composite score out of 100 across five dimensions: Coverage compliance, Exception rate, Coaching completeness, Hours discipline, and Anomaly frequency. A = 85+, B = 70+, C = 55+, D = below."},
+  }
+};
+
+function openHelp(section){
+  const ov=$("helpOverlay");const dc=$("helpContent");
+  if(!ov||!dc)return;
+  const wf=HELP_CONTENT.workflow;
+  const tabs=HELP_CONTENT.tabs;
+  let h='';
+  // Workflow walkthrough at top
+  h+=`<div class="help-section"><h3>🗺 Recommended workflow</h3><div class="help-workflow">`;
+  wf.steps.forEach(s=>{h+=`<div class="help-workflow-step"><div class="ws-num">${s.n}</div><div class="ws-text">${s.text}<span>${s.sub}</span></div></div>`;});
+  h+=`</div></div>`;
+  // Tab sections
+  Object.entries(tabs).forEach(([id,t])=>{
+    const isActive=S.tab===id;
+    h+=`<div class="help-section">`;
+    h+=`<h3>${t.icon} ${t.title}${isActive?` <span style="font-size:9px;padding:1px 6px;border-radius:8px;background:var(--al);color:var(--accent);font-weight:600;text-transform:lowercase;letter-spacing:0">current</span>`:""}</h3>`;
+    h+=`<p>${t.body}</p>`;
+    if(t.shortcuts.length){
+      h+=`<div class="help-shortcut">`;
+      t.shortcuts.forEach(sc=>{h+=`<kbd>${sc}</kbd>`;});
+      h+=`</div>`;
+    }
+    h+=`</div>`;
+  });
+  // Footer
+  h+=`<div class="help-section" style="border-bottom:none"><p style="font-size:10px">MirrorFlow Sync v43 · <a href="https://theGuide.club" target="_blank" style="color:var(--accent)">theGuide.Club</a> · Sel K. Naicker · 2026</p></div>`;
+  dc.innerHTML=`<div class="help-drawer-hd"><h2>📖 How to use MirrorFlow Sync</h2><button class="help-close" onclick="closeHelp()">✕</button></div>${h}`;
+  ov.classList.add("open");
+  document.body.style.overflow="hidden";
+  if(section){setTimeout(()=>{const el=dc.querySelector('[data-section="'+section+'"]');if(el)el.scrollIntoView({behavior:'smooth'});},100);}
+}
+function closeHelp(){
+  const ov=$("helpOverlay");if(ov)ov.classList.remove("open");
+  document.body.style.overflow="";
+}
+
+function showCtxHelp(ev,key){
+  ev.stopPropagation();
+  const data=HELP_CONTENT.ctx[key];if(!data)return;
+  const panel=$("ctxPanel");const title=$("ctxTitle");const body=$("ctxBody");
+  if(!panel||!title||!body)return;
+  title.textContent=data.title;
+  body.innerHTML=`<p>${data.body}</p>`;
+  // Position near click
+  const x=Math.min(ev.clientX+12,window.innerWidth-280);
+  const y=Math.min(ev.clientY-10,window.innerHeight-120);
+  panel.style.left=x+"px";panel.style.top=y+"px";panel.style.display="block";
+}
+function closeCtx(){const p=$("ctxPanel");if(p)p.style.display="none";}
+document.addEventListener("click",function(e){
+  const p=$("ctxPanel");
+  if(p&&p.style.display!=="none"&&!p.contains(e.target)&&!e.target.classList.contains("ctx-help"))closeCtx();
+});
+
+// Helper to build a context chip inline
+function ctxChip(key){
+  return `<span class="ctx-help" onclick="showCtxHelp(event,'${key}')" title="What is this?">?</span>`;
+}
+
+// First-load splash — shown once per session after file loads
+function showLoadSplash(leaders,months){
+  try{if(sessionStorage.getItem("mfs_splashed"))return;}catch(e){}
+  const splash=$("loadSplash");const title=$("splashTitle");const sub=$("splashSub");
+  if(!splash)return;
+  if(title)title.textContent=`${leaders} leader${leaders!==1?'s':''} loaded ✓`;
+  if(sub)sub.textContent=`${months} month${months!==1?'s':''} of schedule data · Where do you want to start?`;
+  splash.style.display="flex";
+}
+function closeSplash(){
+  const splash=$("loadSplash");if(splash)splash.style.display="none";
+  try{sessionStorage.setItem("mfs_splashed","1");}catch(e){}
 }
 </script>
 </body>
