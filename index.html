@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="referrer" content="no-referrer">
-<title>MirrorFlow Sync v43</title>
+<title>MirrorFlow Sync v43.6</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
@@ -894,7 +894,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
 <div class="app">
 <div id="mobOv" class="mob-overlay" onclick="S.tbOpen=false;ren()"></div>
 <div id="toasts" class="toast-wrap"></div>
-<div class="hd"><div class="hd-b"><div class="hd-l">📋</div><div class="hd-titles"><h1>MirrorFlow Sync</h1><div class="hd-dept" id="fl">Messy rosters → clean schedules</div><div style="font-size:11px;color:var(--tm);margin-top:2px;font-family:'JetBrains Mono',monospace">v43 · clarity release</div></div></div><div class="hd-a" id="ha" style="display:none"><button id="navBackBtn" onclick="navBack()" title="Back" style="display:none;align-items:center;gap:4px;padding:4px 10px;border:1px solid var(--bdr);border-radius:6px;background:rgba(255,255,255,.06);color:var(--ht);font-family:inherit;font-size:11px;font-weight:500;cursor:pointer;transition:all .12s;white-space:nowrap">← Back</button><button class="mob-ham" id="mobHam" onclick="S.tbOpen=!S.tbOpen;ren()" title="Filters">☰</button><div class="tp" id="tp"></div><button class="bi" onclick="removeDept(S.activeDept)" title="Close department">✕</button><div class="ew"><button class="btn bp" onclick="expSavePlus('month')" title="Save+ (This Month)">💾 Save+</button><button class="btn bp" onclick="togExp()" style="padding:4px 6px;margin-left:-1px;border-left:1px solid rgba(255,255,255,.15)">▾</button><div class="em" id="exm" style="display:none"><div style="font-size:9px;color:var(--tm);padding:6px 10px 2px;letter-spacing:.5px;text-transform:uppercase">Save+</div><button class="ei" onclick="expSavePlus('month')">💾 This Month (session + analytics)</button><button class="ei" onclick="expSavePlus('all')">💾 All Months (full dataset)</button><div style="font-size:9px;color:var(--tm);padding:6px 10px 2px;letter-spacing:.5px;text-transform:uppercase;border-top:1px solid var(--bdr)">Download</div><button class="ei" onclick="expCurrentMonth()">📋 Current Month · Styled Report</button><button class="ei" onclick="expAIcsv()">🤖 AI-Ready Data (flat table)</button><button class="ei" onclick="expClean()">📊 Clean Reformat (legacy)</button><div style="font-size:9px;color:var(--tm);padding:6px 10px 2px;letter-spacing:.5px;text-transform:uppercase;border-top:1px solid var(--bdr)">Share &amp; Capture</div><button class="ei" onclick="genEmail()">✉ Copy day roster (email)</button><button class="ei" onclick="genWeeklyDigest()">📋 Weekly digest (clipboard)</button><button class="ei" onclick="expPNG()">🖼 Save as PNG</button><button class="ei" onclick="window.print();hExp()">🖨 Print / PDF</button></div></div><button class="bi" onclick="openHelp()" title="Help &amp; Guide" style="font-size:13px;font-weight:700">?</button><div style="position:relative"><button class="notif-icon" id="notifBtn" onclick="toggleNotifTray()">🔔<span class="notif-badge" id="notifBadge" style="display:none">0</span></button><div class="notif-tray" id="notifTray" style="display:none"><div class="notif-tray-hd"><span>Notifications</span><button style="font-size:9px;background:none;border:none;color:var(--tm);cursor:pointer" onclick="clearNotifs()">Clear all</button></div><div id="notifList"><div class="notif-empty">No notifications yet</div></div></div></div></div></div>
+<div class="hd"><div class="hd-b"><div class="hd-l">📋</div><div class="hd-titles"><h1>MirrorFlow Sync</h1><div class="hd-dept" id="fl">Messy rosters → clean schedules</div><div style="font-size:11px;color:var(--tm);margin-top:2px;font-family:'JetBrains Mono',monospace">v43.6 · clarity release</div></div></div><div class="hd-a" id="ha" style="display:none"><button id="navBackBtn" onclick="navBack()" title="Back" style="display:none;align-items:center;gap:4px;padding:4px 10px;border:1px solid var(--bdr);border-radius:6px;background:rgba(255,255,255,.06);color:var(--ht);font-family:inherit;font-size:11px;font-weight:500;cursor:pointer;transition:all .12s;white-space:nowrap">← Back</button><button class="mob-ham" id="mobHam" onclick="S.tbOpen=!S.tbOpen;ren()" title="Filters">☰</button><div class="tp" id="tp"></div><button class="bi" onclick="removeDept(S.activeDept)" title="Close department">✕</button><div class="ew"><button class="btn bp" onclick="expSavePlus('month')" title="Save+ (This Month)">💾 Save+</button><button class="btn bp" onclick="togExp()" style="padding:4px 6px;margin-left:-1px;border-left:1px solid rgba(255,255,255,.15)">▾</button><div class="em" id="exm" style="display:none"><div style="font-size:9px;color:var(--tm);padding:6px 10px 2px;letter-spacing:.5px;text-transform:uppercase">Save+</div><button class="ei" onclick="expSavePlus('month')">💾 This Month (session + analytics)</button><button class="ei" onclick="expSavePlus('all')">💾 All Months (full dataset)</button><div style="font-size:9px;color:var(--tm);padding:6px 10px 2px;letter-spacing:.5px;text-transform:uppercase;border-top:1px solid var(--bdr)">Download</div><button class="ei" onclick="expCurrentMonth()">📋 Current Month · Styled Report</button><button class="ei" onclick="expAIcsv()">🤖 AI-Ready Data (flat table)</button><button class="ei" onclick="expClean()">📊 Clean Reformat (legacy)</button><div style="font-size:9px;color:var(--tm);padding:6px 10px 2px;letter-spacing:.5px;text-transform:uppercase;border-top:1px solid var(--bdr)">Share &amp; Capture</div><button class="ei" onclick="genEmail()">✉ Copy day roster (email)</button><button class="ei" onclick="genWeeklyDigest()">📋 Weekly digest (clipboard)</button><button class="ei" onclick="expPNG()">🖼 Save as PNG</button><button class="ei" onclick="window.print();hExp()">🖨 Print / PDF</button></div></div><button class="bi" onclick="openHelp()" title="Help &amp; Guide" style="font-size:13px;font-weight:700">?</button><div style="position:relative"><button class="notif-icon" id="notifBtn" onclick="toggleNotifTray()">🔔<span class="notif-badge" id="notifBadge" style="display:none">0</span></button><div class="notif-tray" id="notifTray" style="display:none"><div class="notif-tray-hd"><span>Notifications</span><button style="font-size:9px;background:none;border:none;color:var(--tm);cursor:pointer" onclick="clearNotifs()">Clear all</button></div><div id="notifList"><div class="notif-empty">No notifications yet</div></div></div></div></div></div>
 <div id="deptStrip" class="dept-strip"></div>
 <input type="file" id="fiAdd" accept=".xlsx,.xls,.csv" style="display:none" onchange="hFile(this)">
 <div class="uz" id="us"
@@ -908,7 +908,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
     <div class="uz-mark">
       <div class="uz-logo">📋</div>
       <div class="uz-title">MirrorFlow Sync</div>
-      <div class="uz-sub">Messy rosters → structured, analysable data · v42.5 · UI restructure + page hierarchy</div>
+      <div class="uz-sub">Messy rosters → structured, analysable data · v43.6 · flags completion</div>
     </div>
 
     <!-- Drop tile -->
@@ -990,11 +990,30 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
 let S={wb:null,fn:"",shs:[],sh:"",raw:[],entries:[],team:"all",emp:"all",tz:true,tab:"calendar",th:"midnight",
   month:null,months:[],mIdx:0,shiftFilter:"",compare:false,cmp2:"",calDay:null,rawSheet:"",collapsed:{},hlToday:true,srch:"",dayFilter:"",allMonths:false,covMin:3,hrsMax:45,att:{},hc:{},notes:{},noteOpen:false,anDay:null,anMode:"roster",plMonths:2,plRemoved:{},plLeave:[],plOverrides:{},plHires:[],plEdit:null,tbOpen:false,rotationDef:null,rotPanelOpen:false,parseInfo:[],workspace:{},activeDept:null,plBlueprints:{},plPositions:{},plBpOpen:false,plPosOpen:true,plGenMonth:null,plGenYear:null,
   tblDay:"all",tblWk:"all",tblType:"all",tblLeader:"all",tblHrsMin:"",tblHrsMax:"",tblDateFrom:"",tblDateTo:"",tblEra:"all",tblSortCol:"date",tblSortDir:"asc",
-  plCellEdit:null,plCovOpen:true,plDriftOpen:true,plShowRotWk:true,plWkRemap:{},changeLog:null,changeLogOpen:true,showCardWk:true,coachBudgetHrs:{},coachManualSessions:[],swaps:[],_swapFormDay:null,_bpDragWeek:null,_bpDropTarget:null,_bpDropDir:null,_sumShowIntel:true,_sumHealthOpen:false,_bpDraft:null,_bpEditMode:false,savedMonths:{},plCellOverrides:{},exceptions:[],dayClosed:{},anView:"coverage",dayIntelName:"",dayIntelDate:"",dayIntelSource:"",sumMode:"month",_helpOpen:false,
-  plCoachOpen:true,coachDuration:30,coachBlackouts:{},coachPlan:{},coachHistory:[],plSubTab:"schedule",coachTargetDaily:1,coachTargetMonthly:0,targetHours:0,ratePerHour:0,cache:{},entriesVer:0};
+  plCellEdit:null,plCovOpen:true,plDriftOpen:true,plShowRotWk:true,plWkRemap:{},changeLog:null,changeLogOpen:true,showCardWk:true,
+  // Card display toggles — what's visible on the summary card
+  cardShow:{hrs:true,shifts:true,off:true,health:true,heatmap:true,typeGrid:true,weekStrip:true,stats:true,window:true},
+  coachBudgetHrs:{},coachManualSessions:[],swaps:[],_swapFormDay:null,_bpDragWeek:null,_bpDropTarget:null,_bpDropDir:null,_sumShowIntel:true,_sumHealthOpen:false,_bpDraft:null,_bpEditMode:false,savedMonths:{},plCellOverrides:{},exceptions:[],dayClosed:{},anView:"coverage",dayIntelName:"",dayIntelDate:"",dayIntelSource:"",sumMode:"month",_helpOpen:false,
+  plCoachOpen:true,coachDuration:30,coachBlackouts:{},coachPlan:{},coachHistory:[],plSubTab:"schedule",coachTargetDaily:1,coachTargetMonthly:0,targetHours:0,ratePerHour:0,cache:{},entriesVer:0,
+  flagSettings:{
+    // Data quality flags — always on, can be dismissed per-instance
+    dataIssues:true,
+    // Configurable alert rules — user toggles these on/off
+    alerts:{
+      overHours:{on:true,label:"Over hours",threshold:null},// null = use S.hrsMax
+      lowCoverage:{on:true,label:"Coverage below minimum",threshold:null},// null = use S.covMin
+      consecutiveDays:{on:false,label:"Max consecutive work days",threshold:7},
+      longShift:{on:false,label:"Long shift (single entry)",threshold:10},// hours
+      weekendBalance:{on:false,label:"Weekend distribution imbalance",threshold:15},// % delta
+      coachingDue:{on:false,label:"Coaching not scheduled",threshold:0},
+      shiftDrift:{on:false,label:"Shift differs from blueprint",threshold:20}// % deviation
+    },
+    dismissed:{},// flagId → {at, note} for dismissed flags
+    notes:{}// flagId → string
+  }};
 
-const APP_VERSION="v42.5";
-const APP_BUILD_LABEL="UI restructure · fairness engine · PH-aware · page hierarchy";
+const APP_VERSION="v43.6";
+const APP_BUILD_LABEL="clarity release · flags completion · merge · whitelist · mark-as-leave";
 const APP_BUILD=APP_VERSION+" · "+APP_BUILD_LABEL;
 const DEFAULT_COACH_START_BUFFER=90;   // min after shift start
 const DEFAULT_COACH_END_BUFFER=60;     // min before shift end
@@ -1568,7 +1587,8 @@ function getPersistSignature(){
     targetHours:S.targetHours||0,ratePerHour:S.ratePerHour||0,
     plOverrides:S.plOverrides,plLeave:S.plLeave,plHires:S.plHires,plRemoved:S.plRemoved,plMonths:S.plMonths,
     plBlueprints:S.plBlueprints,plPositions:S.plPositions,exceptions:S.exceptions,dayClosed:S.dayClosed,
-    coachPlan:S.coachPlan,coachHistory:S.coachHistory,coachBlackouts:S.coachBlackouts,coachDuration:S.coachDuration,coachTargetDaily:S.coachTargetDaily
+    coachPlan:S.coachPlan,coachHistory:S.coachHistory,coachBlackouts:S.coachBlackouts,coachDuration:S.coachDuration,coachTargetDaily:S.coachTargetDaily,
+    flagSettings:S.flagSettings
   });
 }
 function schedulePersist(force){
@@ -1665,7 +1685,7 @@ function getWk(v){const m=String(v||"").trim().match(/^week\s*(\d+)$/i);return m
 function isNs(v){const s=String(v||"").trim();if(!s||s==="·")return true;if(/^\d+(\.\d+)?$/.test(s)&&!s.includes("-")&&!s.includes(":"))return true;return false;}
 
 // ═══ HEADER / NOISE ROW DETECTION ═══
-const SKIP_RE=/^(team\s*leaders?|shift\s*leaders?|supervisors?|managers?|employees?|agents?|staff|names?|total|totals|grand\s*total|sub\s*total|summary|count|notes?|comments?|instructions?|legends?|keys?|weekly\s*rotation|all\s*times|rsa\s*roster|schedules?|rosters?|date|day|time|shift|hours?)$/i;
+const SKIP_RE=/^(team\s*leaders?|shift\s*leaders?|supervisors?|managers?|employees?|agents?|staff|names?|total|totals|grand\s*total|sub\s*total|summary|count|notes?|comments?|instructions?|legends?|keys?|weekly\s*rotation|all\s*times|rsa\s*roster|schedules?|rosters?|date|day|time|shift|hours?|persons?|resources?|headcount|coverage|averages?|tl|dept|department|team|week|month|year|rota|rotation|pattern)$/i;
 const SKIP_STARTS=/^(all\s*times|weekly\s*rotation|rsa\s*roster)/i;
 function isHeaderRow(v){
   if(!v)return false;const s=String(v).trim();if(!s||s.length<2)return false;
@@ -2503,11 +2523,162 @@ function assignPatternWeeks(entries,detected,boundary){
 }
 
 // ═══ PARSERS (unchanged logic, added week label tracking) ═══
+/* ═══════════════════════════════════════════════════════════════
+   WIDE HORIZONTAL PARSER — annual / multi-month single-sheet rotas
+   Handles:
+   - Day names row present or absent (derives from dates if missing)
+   - Extra header rows (title, dept name, month labels) above data
+   - "Team leader", "Name", "Agent", "TL", "Staff", blank in col A
+   - Spacer columns between month blocks
+   - Week number columns mixed in with dates
+   - Text-format dates (30-Mar, 31/03/2026, etc.)
+   - Totals/summary/hours rows at bottom
+   - Names with roles ("Sharon (TL)", "Linolan - Senior")
+   - Mixed shift formats within same file
+   Returns {entries, reason} or null if format doesn't match
+   ═══════════════════════════════════════════════════════════════ */
+function parseWideHoriz(data){
+  if(!data||data.length<2)return null;
+  const maxCols=Math.max(...data.slice(0,5).map(r=>(r||[]).length));
+  if(maxCols<30)return null;
+
+  // ── Step 1: Find the date row (scan first 10 rows) ──
+  let dateRowIdx=-1;let dayRowIdx=-1;
+  let bestDateCount=0;
+  for(let i=0;i<Math.min(data.length,10);i++){
+    const row=data[i]||[];
+    let dateCount=0;
+    for(let j=0;j<row.length;j++){if(pDt(row[j]))dateCount++;}
+    if(dateCount>bestDateCount){bestDateCount=dateCount;dateRowIdx=i;}
+  }
+  if(dateRowIdx<0||bestDateCount<10)return null;
+
+  // ── Step 2: Find the day names row (row above dates, or derive) ──
+  if(dateRowIdx>0){
+    const candidateRow=data[dateRowIdx-1]||[];
+    let dayCount=0;
+    for(let j=0;j<candidateRow.length;j++){if(nD(candidateRow[j]))dayCount++;}
+    if(dayCount>=5)dayRowIdx=dateRowIdx-1;
+  }
+
+  // ── Step 3: Build date columns array, skipping spacers and week cols ──
+  const dateRow=data[dateRowIdx]||[];
+  const dayRow=dayRowIdx>=0?(data[dayRowIdx]||[]):[];
+  const dateCols=[];
+  for(let j=0;j<dateRow.length;j++){
+    const d=pDt(dateRow[j]);
+    if(!d)continue;// skip spacer/week/empty columns
+    const dayFromRow=dayRowIdx>=0?nD(dayRow[j]):null;
+    const dayName=dayFromRow||DOW[d.getDay()];
+    dateCols.push({col:j,date:d,day:dayName});
+  }
+  if(dateCols.length<10)return null;
+
+  // ── Step 4: Find data rows (people with shifts) ──
+  const dataStartRow=dateRowIdx+1;
+  const entries=[];
+  let peopleCount=0;
+
+  for(let i=dataStartRow;i<data.length;i++){
+    const row=data[i]||[];
+    const rawName=String(row[0]||"").trim();
+
+    // Skip empty, header, totals, week label, month label rows
+    if(!rawName||rawName==="·")continue;
+    if(isHeaderRow(rawName))continue;
+    if(isWk(rawName))continue;
+    if(/^(total|totals|grand total|sub total|sum|average|avg|hours|count|headcount|coverage|notes|comments)$/i.test(rawName))continue;
+    // Skip month name rows ("April", "May 2026", etc.)
+    if(/^(january|february|march|april|may|june|july|august|september|october|november|december)(\s+\d{4})?$/i.test(rawName))continue;
+    // Skip if row is all numbers (totals row)
+    let allNums=true;let hasAny=false;
+    for(let j=1;j<Math.min(row.length,20);j++){
+      const v=String(row[j]||"").trim();
+      if(!v)continue;
+      hasAny=true;
+      if(!/^\d+(\.\d+)?$/.test(v)){allNums=false;break;}
+    }
+    if(hasAny&&allNums)continue;
+
+    // Clean the name: strip role tags
+    const nm=cleanPersonName(rawName);
+    if(!nm||nm.length<2)continue;
+
+    // Check this row actually has shift-like data (at least a few parseable times or off values)
+    let shiftHits=0;
+    for(let j=0;j<Math.min(dateCols.length,30);j++){
+      const cv=String(row[dateCols[j].col]||"").trim();
+      if(cv&&(pTm(cv)||isOf(cv)))shiftHits++;
+    }
+    if(shiftHits<3)continue;// not a person row — probably a label or noise
+
+    peopleCount++;
+
+    // ── Step 5: Extract entries for this person ──
+    // Find active range (first and last non-empty shift column)
+    let firstCol=-1,lastCol=-1;
+    for(const dc of dateCols){
+      const cv=String(row[dc.col]||"").trim();
+      if(cv&&cv!=="·"&&!isWk(cv)&&!isNs(cv)){
+        if(firstCol<0)firstCol=dc.col;
+        lastCol=dc.col;
+      }
+    }
+
+    for(const dc of dateCols){
+      const cv=row[dc.col];
+      const cs=String(cv||"").trim();
+
+      // Skip week labels in shift cells
+      if(isWk(cs))continue;
+
+      // Empty/noise within active range = OFF
+      if(isNs(cs)){
+        if(dc.col>=firstCol&&dc.col<=lastCol&&firstCol>=0){
+          entries.push(mkE(nm,dc.date,dc.day,"OFF","Main",""));
+        }
+        continue;
+      }
+
+      // Check if it's an off-type value
+      if(isOf(cv)&&!pTm(cs)){
+        entries.push(mkE(nm,dc.date,dc.day,cv,"Main",""));
+        continue;
+      }
+
+      // Regular shift entry
+      entries.push(mkE(nm,dc.date,dc.day,cv,"Main",""));
+    }
+  }
+
+  if(!entries.length)return null;
+
+  // Build reason string
+  const months=new Set();
+  entries.forEach(e=>{if(e.date)months.add(e.date.getFullYear()+"-"+P(e.date.getMonth()));});
+  const reason=`Wide rota: ${maxCols} columns, ${dateCols.length} dates, ${peopleCount} people, ${months.size} months, ${entries.length} entries`+
+    (dayRowIdx>=0?"":" (day names derived from dates)")+
+    (dateRowIdx>1?` (${dateRowIdx} header rows skipped)`:"");
+
+  return{entries,reason};
+}
+
+// Clean person name: strip role tags, trailing spaces, brackets
+function cleanPersonName(raw){
+  let nm=String(raw||"").trim();
+  // Remove role suffixes: "(TL)", "- Senior", "(Team Lead)", "- Snr", "[Claims]"
+  nm=nm.replace(/\s*[\(\[]\s*(TL|team\s*lead(er)?|snr|senior|junior|jnr|sup(ervisor)?|mgr|manager|claims|retentions|ccs|quality|admin)\s*[\)\]]\s*$/i,"");
+  nm=nm.replace(/\s*[-–]\s*(TL|team\s*lead(er)?|snr|senior|junior|jnr|sup(ervisor)?|mgr|manager)\s*$/i,"");
+  // Remove trailing whitespace and dots
+  nm=nm.replace(/[\s.]+$/,"");
+  return nm;
+}
+
 function parseHoriz(data){
   const entries=[];if(!data||data.length<3)return entries;
   const sections=[];
   for(let i=0;i<data.length;i++){
-    const row=data[i]||[];let dc=0;for(let j=1;j<Math.min(row.length,30);j++){if(nD(row[j]))dc++;}
+    const row=data[i]||[];let dc=0;for(let j=1;j<row.length;j++){if(nD(row[j]))dc++;}
     if(dc>=5){
       // Check: is the next row dates, or does THIS row's next row have dates merged with a name?
       const nextRow=data[i+1]||[];
@@ -2540,7 +2711,7 @@ function parseHoriz(data){
         const nm=String(nameRow[0]||"").trim();
         if(!nm||isHeaderRow(nm)||nm==="·")continue;
         // Get week label from name row
-        let weekLbl="";for(let j=1;j<Math.min(nameRow.length,30);j++){const wk=getWk(nameRow[j]);if(wk){weekLbl="W"+wk;break;}}
+        let weekLbl="";for(let j=1;j<nameRow.length;j++){const wk=getWk(nameRow[j]);if(wk){weekLbl="W"+wk;break;}}
         // Find active range from shift row
         let firstCol=-1,lastCol=-1;
         for(const dc of sec.dateCols){
@@ -2563,7 +2734,7 @@ function parseHoriz(data){
         const row=data[i]||[];const nm=String(row[0]||"").trim();
         if(!nm||isHeaderRow(nm)||isWk(nm)||nm==="·")continue;
         let weekLbl="";
-        if(i+1<data.length){const nr=data[i+1]||[];for(let j=1;j<Math.min(nr.length,30);j++){const wk=getWk(nr[j]);if(wk){weekLbl="W"+wk;break;}}}
+        if(i+1<data.length){const nr=data[i+1]||[];for(let j=1;j<nr.length;j++){const wk=getWk(nr[j]);if(wk){weekLbl="W"+wk;break;}}}
         let firstCol=-1,lastCol=-1;
         for(const dc of sec.dateCols){
           const cv=row[dc.col];const cs=String(cv||"").trim();
@@ -2831,6 +3002,16 @@ function autoParse(data,sn){
   if(s.includes("horizontal")){const e=parseHoriz(data);return logParse("parseHoriz","high","Sheet name contains 'horizontal'",e);}
   if(s.includes("vertic")){const e=parseVert(data);return logParse("parseVert","high","Sheet name contains 'vertical'",e);}
 
+  // ── WIDE HORIZONTAL FAST PATH ──
+  // Detect annual/multi-month rota: few rows, many columns, dates somewhere in top rows
+  // Handles: no day names row, extra header rows, spacer columns, text dates, totals rows
+  if(data.length<=30&&data[0]&&data[0].length>30){
+    const wideResult=parseWideHoriz(data);
+    if(wideResult&&wideResult.entries.length>=10){
+      return logParse("parseWideHoriz","high",wideResult.reason,wideResult.entries);
+    }
+  }
+
   // Detect per-person alternating pattern
   let altScore=0;
   for(let i=7;i<Math.min(15,data.length);i++){
@@ -2852,7 +3033,7 @@ function autoParse(data,sn){
   if(dayHeaderRows>=2){const e=parseBlocks(data);return logParse("parseBlocks","high",dayHeaderRows+" day-header rows found",e);}
 
   // Single day-header row = horizontal or vertical
-  const r0=data[0]||[];let dc=0;for(let j=0;j<Math.min(r0.length,30);j++){if(nD(r0[j]))dc++;}
+  const r0=data[0]||[];let dc=0;for(let j=0;j<r0.length;j++){if(nD(r0[j]))dc++;}
   if(dc>=5){
     const cAD=data.slice(1,20).filter(r=>nD((r||[])[0])).length;
     if(cAD>=5){const e=parseVert(data);return logParse("parseVert","medium","Single day-header row with "+cAD+" day names in col A",e);}
@@ -3678,7 +3859,9 @@ function buildInfoBarHTML(){
   const tHrs=all.reduce((s,e)=>s+(e.isOff?0:calcHrs(S.tz&&e.saS?e.saS:e.ukS,S.tz&&e.saE?e.saE:e.ukE)),0);
   const anomalySummary=getAnomalySummary(all);
   const anomTotal=anomalySummary.total;
-  const anomBadge=anomTotal>0?`<span class="ib-anom" onclick="openAnomalySummary()" title="Review anomalies">⚠ ${anomTotal} anomal${anomTotal===1?"y":"ies"}</span>`:"";
+  // Flags indicator — replaces old anomaly count
+  const flagCount=computeFlags().filter(f=>f.category!=="info").length;
+  const flagsBadge=flagCount>0?`<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;background:rgba(220,38,38,.1);color:#dc2626;font-size:10px;font-weight:600;cursor:pointer;border:1px solid rgba(220,38,38,.2)" onclick="S.tab='analytics';S.anView='flags';ren()" title="${flagCount} flags — click to review"><span style="width:5px;height:5px;border-radius:50%;background:currentColor"></span>Flags</span>`:`<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;border:1px solid var(--bdr);color:var(--early);font-size:10px;cursor:pointer;opacity:.6" onclick="S.tab='analytics';S.anView='flags';ren()" title="No flags">✓</span>`;
   // Change log badge
   const cl=S.changeLog;
   const changeBadge=cl&&!cl.clean?`<span style="font-size:10px;padding:2px 7px;border-radius:4px;cursor:pointer;font-weight:600;background:rgba(251,191,36,.12);color:var(--wknd);margin-left:2px" onclick="S.changeLogOpen=true;S.tab='analytics';ren()" title="View load changes">↕ ${cl.total} change${cl.total!==1?"s":""}</span>`:"";
@@ -3705,7 +3888,7 @@ function buildInfoBarHTML(){
     const ths=computeTeamHealthScore(S.month);
     if(ths)teamHealthBadge=`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:${ths.gradeCol}18;color:${ths.gradeCol};border:1px solid ${ths.gradeCol}33;cursor:pointer;font-family:'JetBrains Mono',monospace" onclick="setTab('analytics');setAnalyticsView('ops')" title="Team health — click for Ops view">${ths.grade} ${ths.avg}</span>`;
   }
-  return `<span class="l">${ec}</span><span class="ib-muted" style="font-size:11px">leaders</span><span class="ib-sep">·</span><span class="ib-stat">${wk}</span><span class="ib-muted" style="font-size:11px">shifts</span><span class="ib-sep">·</span><span class="ib-stat">${of2}</span><span class="ib-muted" style="font-size:11px">off</span><span class="ib-sep">·</span><span class="ib-stat">${Math.round(tHrs)}h</span><span class="ib-muted" style="font-size:11px">(${avgPerPerson}h avg)</span>${teamHealthBadge}${anomBadge}${changeBadge}${rotBadge} ${wkBadge} ${legacyBadge} ${parseBadge}${S.calDay&&S.tab==="calendar"?`<span class="ib-sep">·</span><span class="l" style="cursor:pointer;font-size:12px" onclick="clearCalendarDaySelection()">✕ ${fDF(S.calDay)}</span>`:""}${S.dayFilter?`<span class="ib-sep">·</span><span class="l" style="cursor:pointer;font-size:12px" onclick="clearDayFilter()">✕ ${S.dayFilter}s only</span>`:""}${tzToggle}`;
+  return `<span class="l">${ec}</span><span class="ib-muted" style="font-size:11px">leaders</span><span class="ib-sep">·</span><span class="ib-stat">${wk}</span><span class="ib-muted" style="font-size:11px">shifts</span><span class="ib-sep">·</span><span class="ib-stat">${of2}</span><span class="ib-muted" style="font-size:11px">off</span><span class="ib-sep">·</span><span class="ib-stat">${Math.round(tHrs)}h</span><span class="ib-muted" style="font-size:11px">(${avgPerPerson}h avg)</span>${teamHealthBadge}${flagsBadge}${changeBadge}${rotBadge} ${wkBadge} ${legacyBadge} ${parseBadge}${S.calDay&&S.tab==="calendar"?`<span class="ib-sep">·</span><span class="l" style="cursor:pointer;font-size:12px" onclick="clearCalendarDaySelection()">✕ ${fDF(S.calDay)}</span>`:""}${S.dayFilter?`<span class="ib-sep">·</span><span class="l" style="cursor:pointer;font-size:12px" onclick="clearDayFilter()">✕ ${S.dayFilter}s only</span>`:""}${tzToggle}`;
 }
 function renderInfoBar(){$("ib").innerHTML=buildInfoBarHTML();}
 function buildContinuityHTML(){
@@ -4357,7 +4540,7 @@ function rCards(el){
   controls+=`</div>`;
 
   if(S.allMonths){rCardsAllMonths(el,controls);return;}
-  const em=gE();let h=anomBannerHTML()+controls+'<div class="cg">';
+  const em=gE();let h=controls+'<div class="cg">';
   for(const[n,ent]of Object.entries(em)){
     h+=renderCard(n,ent,monthLabel());
   }
@@ -4419,8 +4602,13 @@ function renderCardShell(name,inner){
   return `<div class="ec print-page" id="cardWrap-${domKey(name)}">${inner}</div>`;
 }
 function renderCardHeaderBlock(ctx){
-  const hsPart=ctx.hsBadge?`<div style="align-self:flex-start;margin-top:2px">${ctx.hsBadge}</div>`:"";
-  return `<div class="ech${ctx.expanded?" collapsed":""}" style="cursor:default"><div class="ech-top"><div><h3 style="cursor:pointer" onclick="navToPerson('${XJ(ctx.name)}')">${X(ctx.name)}<span class="collapse-icon" style="cursor:pointer" onclick="event.stopPropagation();togCard('${XJ(ctx.name)}')" title="${ctx.expanded?'Collapse to summary':'Expand full table'}">▼</span></h3><div class="month-label">${ctx.mlabel}</div></div>${hsPart}</div><div class="ech-meta"><span class="hrs-badge">${ctx.st.hrs}h</span><span class="meta-pill"><strong>${ctx.workCount}</strong> shifts</span><span class="meta-pill"><strong>${ctx.offCount}</strong> off</span>${ctx.offBreak}${ctx.weekBadge}${ctx.teamBadge}</div></div>`;
+  const cs=S.cardShow||{};
+  const hsPart=ctx.hsBadge&&cs.health!==false?`<div style="align-self:flex-start;margin-top:2px">${ctx.hsBadge}</div>`:"";
+  const hrsPart=cs.hrs!==false?`<span class="hrs-badge">${ctx.st.hrs}h</span>`:"";
+  const shiftsPart=cs.shifts!==false?`<span class="meta-pill"><strong>${ctx.workCount}</strong> shifts</span>`:"";
+  const offPart=cs.off!==false?`<span class="meta-pill"><strong>${ctx.offCount}</strong> off</span>`:"";
+  const metaContent=[hrsPart,shiftsPart,offPart,ctx.offBreak,ctx.weekBadge,ctx.teamBadge].filter(Boolean).join("");
+  return `<div class="ech${ctx.expanded?" collapsed":""}" style="cursor:default"><div class="ech-top"><div><h3 style="cursor:pointer" onclick="navToPerson('${XJ(ctx.name)}')">${X(ctx.name)}<span class="collapse-icon" style="cursor:pointer" onclick="event.stopPropagation();togCard('${XJ(ctx.name)}')" title="${ctx.expanded?'Collapse to summary':'Expand full table'}">▼</span></h3><div class="month-label">${ctx.mlabel}</div></div>${hsPart}</div>${metaContent?`<div class="ech-meta">${metaContent}</div>`:""}</div>`;
 }
 
 function renderCard(n,ent,mlabel){
@@ -4450,10 +4638,14 @@ function renderCard(n,ent,mlabel){
 
   if(!expanded){
     // DEFAULT: Summary view — heatmap + type grid + stats + week strip
+    const cs=S.cardShow||{};
     h+=`<div class="card-summary">`;
+    if(cs.heatmap!==false){
     h+=`<div class="cs-heatmap">`;
     ent.forEach(e=>{const t=shiftType(e);h+=`<div class="hm-d hm-${t}" title="${e.date?fD(e.date):""}: ${e.isOff?(e.offL||"OFF"):uD(e)}"></div>`;});
     h+=`</div>`;
+    }
+    if(cs.typeGrid!==false){
     h+=`<div class="cs-type-grid">`;
     h+=`<div class="cs-type ct-early"><div class="ct-n">${typeCounts.early}</div><div class="ct-l">Early</div></div>`;
     h+=`<div class="cs-type ct-mid"><div class="ct-n">${typeCounts.mid}</div><div class="ct-l">Mid</div></div>`;
@@ -4461,6 +4653,7 @@ function renderCard(n,ent,mlabel){
     h+=`<div class="cs-type ct-wknd"><div class="ct-n">${typeCounts.wknd}</div><div class="ct-l">Wknd</div></div>`;
     h+=`<div class="cs-type ct-off"><div class="ct-n">${typeCounts.off}</div><div class="ct-l">Off</div></div>`;
     h+=`</div>`;
+    }
 
     // ── Current week mini-strip ──
     const today=new Date();
@@ -4476,7 +4669,7 @@ function renderCard(n,ent,mlabel){
       const last=stripEnts[stripEnts.length-1];
       stripWeekMon=new Date(last.date);stripWeekMon.setDate(stripWeekMon.getDate()-((stripWeekMon.getDay()+6)%7));stripWeekMon.setHours(0,0,0,0);
     }
-    if(stripWeekMon){
+    if(cs.weekStrip!==false&&stripWeekMon){
       const WDOW=['M','T','W','T','F','S','S'];
       h+=`<div class="cs-week-strip">`;
       for(let d=0;d<7;d++){
@@ -4498,9 +4691,11 @@ function renderCard(n,ent,mlabel){
     const floorClose=ends.length?ends[ends.length-1]:null;
 
     const wkndPct=workCount>0?Math.round(typeCounts.wknd/workCount*100):0;
+    if(cs.stats!==false){
     h+=`<div class="cs-stats"><span>Avg <strong>${st.avg}h</strong>/day</span><span>Top <strong class="sc" style="font-size:11px">${X(st.topShift)}</strong></span><span><strong>${st.maxCon}</strong> consec</span><span style="color:var(--wknd)">${wkndPct}% wknd</span></div>`;
+    }
 
-    if(floorOpen&&floorClose){
+    if(cs.window!==false&&floorOpen&&floorClose){
       h+=`<div class="cs-floor-window">Window: <strong>${floorOpen}</strong> → <strong>${floorClose}</strong></div>`;
     }
 
@@ -4524,10 +4719,25 @@ function renderCard(n,ent,mlabel){
       h+=`</div>`;
     }
 
-    // ── Summary card controls: week toggle ──
-    h+=`<div style="display:flex;align-items:center;gap:8px;margin-top:4px;padding-top:4px;border-top:1px solid var(--bdr)">`;
-    h+=`<span style="font-size:10px;color:var(--tm)">Show week #</span>`;
-    h+=`<label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:10px;color:var(--tm)"><input type="checkbox" ${S.showCardWk!==false?"checked":""} onchange="S.showCardWk=this.checked;ren()" style="width:11px;height:11px"> Wk col</label>`;
+    // ── Card display toggles ──
+    const cs2=S.cardShow||{};
+    const togs=[
+      {key:"hrs",label:"Hours",on:cs2.hrs!==false},
+      {key:"shifts",label:"Shifts",on:cs2.shifts!==false},
+      {key:"off",label:"Off",on:cs2.off!==false},
+      {key:"health",label:"Health",on:cs2.health!==false},
+      {key:"heatmap",label:"Heatmap",on:cs2.heatmap!==false},
+      {key:"typeGrid",label:"Types",on:cs2.typeGrid!==false},
+      {key:"weekStrip",label:"Week",on:cs2.weekStrip!==false},
+      {key:"stats",label:"Stats",on:cs2.stats!==false},
+      {key:"window",label:"Window",on:cs2.window!==false}
+    ];
+    h+=`<div style="display:flex;align-items:center;gap:6px;margin-top:4px;padding-top:4px;border-top:1px solid var(--bdr);flex-wrap:wrap">`;
+    h+=`<span style="font-size:9px;color:var(--tm);text-transform:uppercase;letter-spacing:.3px">Show:</span>`;
+    togs.forEach(t=>{
+      h+=`<label style="display:flex;align-items:center;gap:2px;cursor:pointer;font-size:10px;color:${t.on?"var(--text)":"var(--tm)"};opacity:${t.on?1:.5}"><input type="checkbox" ${t.on?"checked":""} onchange="if(!S.cardShow)S.cardShow={};S.cardShow.${t.key}=this.checked;ren()" style="width:10px;height:10px;accent-color:var(--accent)"> ${t.label}</label>`;
+    });
+    h+=`<label style="display:flex;align-items:center;gap:2px;cursor:pointer;font-size:10px;color:${S.showCardWk!==false?"var(--text)":"var(--tm)"};opacity:${S.showCardWk!==false?1:.5}"><input type="checkbox" ${S.showCardWk!==false?"checked":""} onchange="S.showCardWk=this.checked;ren()" style="width:10px;height:10px;accent-color:var(--accent)"> Wk col</label>`;
     h+=`</div>`;
 
     h+=`<div class="card-expand-hint" onclick="togCard('${XJ(n)}')" style="text-align:center;padding:4px 0 2px;font-size:10px;color:var(--accent);opacity:.6;cursor:pointer;letter-spacing:.5px">▾ full schedule</div>`;
@@ -4650,7 +4860,7 @@ function rerenderTableBodyBlock(){
 }
 function rTbl(el){
   const vm=buildTableViewModel();
-  let h=anomBannerHTML();
+  let h='';
   h+=`<div id="tableSurface">`;
   h+=`<div id="tableControls">${renderTableControls(vm)}</div>`;
   h+=`<div id="tableSummary">${renderTableSummary(vm)}</div>`;
@@ -4674,7 +4884,7 @@ function rAnalytics(el){
   let h=`<div id="analyticsSurface">`;
   // ── Change Log (always shown at top if present) ──
   if(S.changeLog){h+=renderChangeLogPanel();}
-  h+=`<div id="analyticsModeControls" class="an-mode-toggle"><button class="an-mode-btn${S.anView==="coverage"?" active":""}" onclick="setAnalyticsView('coverage')">Coverage</button><button class="an-mode-btn${S.anView==="capacity"?" active":""}" onclick="setAnalyticsView('capacity')">Capacity</button><button class="an-mode-btn${S.anView==="history"?" active":""}" onclick="setAnalyticsView('history')">History</button><button class="an-mode-btn${S.anView==="signals"?" active":""}" onclick="setAnalyticsView('signals')">Signals</button><button class="an-mode-btn${S.anView==="ops"?" active":""}" onclick="setAnalyticsView('ops')" style="${S.anView==='ops'?'':''}">⚡ Ops</button></div>`;
+  h+=`<div id="analyticsModeControls" class="an-mode-toggle"><button class="an-mode-btn${S.anView==="coverage"?" active":""}" onclick="setAnalyticsView('coverage')">Coverage</button><button class="an-mode-btn${S.anView==="capacity"?" active":""}" onclick="setAnalyticsView('capacity')">Capacity</button><button class="an-mode-btn${S.anView==="history"?" active":""}" onclick="setAnalyticsView('history')">History</button><button class="an-mode-btn${S.anView==="signals"?" active":""}" onclick="setAnalyticsView('signals')">Signals</button><button class="an-mode-btn${S.anView==="flags"?" active":""}" onclick="setAnalyticsView('flags')">Flags${(()=>{const fc=computeFlags().length;return fc?` <span style="font-size:9px;padding:1px 5px;border-radius:8px;background:rgba(220,38,38,.15);color:#dc2626;font-weight:700">${fc}</span>`:""})()}</button><button class="an-mode-btn${S.anView==="ops"?" active":""}" onclick="setAnalyticsView('ops')">⚡ Ops</button></div>`;
 
   if(S.anView==="capacity"){
     h+=rCapacityWaterfall(y,m,numDays,monthEnt);
@@ -4688,6 +4898,11 @@ function rAnalytics(el){
   }
   if(S.anView==="signals"){
     h+=rSignalsView(monthEnt,y,m);
+    h+=`</div>`;
+    el.innerHTML=h;return;
+  }
+  if(S.anView==="flags"){
+    h+=rFlagsView();
     h+=`</div>`;
     el.innerHTML=h;return;
   }
@@ -5167,6 +5382,232 @@ function rSignalsView(monthEnt,y,m){
     h+=`</div></div>`;
   });
   h+=`</div></div>`;
+  return h;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FLAGS VIEW — v43.3
+   Hybrid B (severity grouping) + C (expand/collapse with inline resolution)
+   Two sections: Data Issues + Configured Alerts + Settings
+   ═══════════════════════════════════════════════════════════════ */
+function rFlagsView(){
+  const flags=computeFlags();
+  const fs=S.flagSettings||{};
+  const alerts=fs.alerts||{};
+  const notes=fs.notes||{};
+  const dataFlags=flags.filter(f=>f.category==="data");
+  const alertFlags=flags.filter(f=>f.category==="alert");
+  const infoFlags=flags.filter(f=>f.category==="info");
+  const highFlags=flags.filter(f=>f.severity==="high");
+  const medFlags=flags.filter(f=>f.severity==="medium");
+  const dismissedCount=Object.keys(fs.dismissed||{}).length;
+
+  let h=`<div class="an-wrap" style="padding:12px 16px">`;
+
+  // ── Header ──
+  h+=`<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px">`;
+  h+=`<span style="font-size:15px;font-weight:500">Flags</span>`;
+  if(dataFlags.length)h+=`<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(220,38,38,.1);color:#dc2626;font-weight:600">${dataFlags.length} data</span>`;
+  if(alertFlags.length)h+=`<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(251,191,36,.1);color:var(--wknd);font-weight:600">${alertFlags.length} alert${alertFlags.length!==1?"s":""}</span>`;
+  if(!flags.length)h+=`<span style="font-size:12px;color:var(--early);font-weight:500">All clear ✓</span>`;
+  if(dismissedCount)h+=`<button onclick="resetDismissed()" style="margin-left:auto;padding:3px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:10px;cursor:pointer">${dismissedCount} dismissed — reset</button>`;
+  h+=`</div>`;
+
+  // ── DATA ISSUES ──
+  if(dataFlags.length){
+    h+=`<div style="margin-bottom:16px">`;
+    h+=`<div style="font-size:12px;font-weight:600;color:#dc2626;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#dc2626"></span>Data issues</div>`;
+    dataFlags.forEach(f=>h+=renderFlagRow(f,notes));
+    h+=`</div>`;
+  }
+
+  // ── CONFIGURED ALERTS ──
+  if(alertFlags.length){
+    h+=`<div style="margin-bottom:16px">`;
+    h+=`<div style="font-size:12px;font-weight:600;color:var(--wknd);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--wknd)"></span>Configured alerts</div>`;
+    // Sort: high first, then medium, then low
+    const sevOrder={high:0,medium:1,low:2};
+    [...alertFlags].sort((a,b)=>(sevOrder[a.severity]||3)-(sevOrder[b.severity]||3)).forEach(f=>h+=renderFlagRow(f,notes));
+    h+=`</div>`;
+  }
+
+  // ── INFO NOTES ──
+  if(infoFlags.length){
+    h+=`<div style="margin-bottom:16px">`;
+    h+=`<div style="font-size:12px;font-weight:600;color:#b98bff;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#b98bff"></span>Info</div>`;
+    infoFlags.forEach(f=>h+=renderFlagRow(f,notes));
+    h+=`</div>`;
+  }
+
+  // ── EMPTY STATE ──
+  if(!flags.length){
+    h+=`<div style="text-align:center;padding:40px 20px;color:var(--tm)">`;
+    h+=`<div style="font-size:32px;margin-bottom:8px">✓</div>`;
+    h+=`<div style="font-size:14px;font-weight:500">No flags</div>`;
+    h+=`<div style="font-size:12px;margin-top:4px">Data is clean and all configured alert thresholds are met.</div>`;
+    h+=`</div>`;
+  }
+
+  // ── SETTINGS / WHITELIST ──
+  h+=`<div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--bdr)">`;
+  h+=`<div style="font-size:13px;font-weight:500;margin-bottom:10px">Flag settings</div>`;
+  h+=`<div style="font-size:11px;color:var(--tm);margin-bottom:10px">Configure which alerts are active and at what thresholds. Data issues are always checked.</div>`;
+
+  h+=`<div style="display:flex;flex-direction:column;gap:6px">`;
+  Object.entries(alerts).forEach(([key,cfg])=>{
+    const isOn=cfg.on;
+    const thresholdLabel=key==="overHours"?"h/wk":key==="lowCoverage"?"TLs":key==="weekendBalance"?"%":key==="shiftDrift"?"%":"";
+    const currentThreshold=cfg.threshold||(key==="overHours"?S.hrsMax:key==="lowCoverage"?S.covMin:cfg.threshold||"");
+
+    h+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:${isOn?"var(--al)":"rgba(255,255,255,.02)"};border:1px solid ${isOn?"var(--accent)22":"var(--bdr)"}">`;
+    h+=`<label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex:1;min-width:0">`;
+    h+=`<input type="checkbox" ${isOn?"checked":""} onchange="toggleFlagAlert('${key}')" style="width:14px;height:14px;accent-color:var(--accent)">`;
+    h+=`<span style="font-size:12px;font-weight:500;color:${isOn?"var(--text)":"var(--tm)"}">${X(cfg.label)}</span>`;
+    h+=`</label>`;
+    if(thresholdLabel){
+      h+=`<div style="display:flex;align-items:center;gap:4px">`;
+      h+=`<input type="number" value="${currentThreshold}" onchange="setFlagThreshold('${key}',this.value)" style="width:50px;padding:3px 6px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);color:var(--text);font-size:11px;text-align:center;font-family:'JetBrains Mono',monospace">`;
+      h+=`<span style="font-size:10px;color:var(--tm)">${thresholdLabel}</span>`;
+      h+=`</div>`;
+    }
+    h+=`</div>`;
+  });
+  h+=`</div>`;
+
+  // ── WHITELIST RULES ──
+  const wl=fs.whitelist||[];
+  if(wl.length){
+    h+=`<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--bdr)">`;
+    h+=`<div style="font-size:12px;font-weight:500;margin-bottom:6px">Whitelisted patterns <span style="font-size:10px;color:var(--tm);font-weight:400">${wl.length} rule${wl.length!==1?"s":""}</span></div>`;
+    wl.forEach((rule,idx)=>{
+      const typeLabel=rule.type==="fingerprint"?"Shift pattern":rule.type==="shortwk"?"Short week":rule.type==="gap"?"Schedule gap":rule.type==="dup"?"Duplicate":rule.type;
+      h+=`<div style="display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:5px;margin-bottom:2px;background:rgba(255,255,255,.02)">`;
+      h+=`<span style="font-size:11px;flex:1">${X(typeLabel)}${rule.person?" — "+X(rule.person.split(" ")[0]):""}${rule.reason?" · "+X(rule.reason):""}</span>`;
+      h+=`<button onclick="removeWhitelistRule(${idx})" style="padding:2px 6px;border:1px solid var(--bdr);border-radius:4px;background:none;color:var(--tm);font-size:10px;cursor:pointer;font-family:inherit">Remove</button>`;
+      h+=`</div>`;
+    });
+    h+=`</div>`;
+  }
+
+  h+=`</div>`;
+
+  h+=`</div>`;
+  return h;
+}
+
+function renderFlagRow(f,notes){
+  const sevCol=f.severity==="high"?"#dc2626":f.severity==="medium"?"var(--wknd)":"var(--tm)";
+  const sevBg=f.severity==="high"?"rgba(220,38,38,.06)":f.severity==="medium"?"rgba(251,191,36,.05)":"transparent";
+  const isExpanded=S._expandedFlag===f.id;
+  const safeId=f.id.replace(/[|]/g,"_");
+  const existingNote=notes[f.id]||"";
+
+  let h=`<div style="border:1px solid ${isExpanded?"var(--accent)":"var(--bdr)"};border-radius:8px;margin-bottom:4px;overflow:hidden;border-left:3px solid ${sevCol}">`;
+
+  // ── Collapsed row ──
+  h+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;background:${isExpanded?sevBg:"transparent"}" onclick="S._expandedFlag=S._expandedFlag==='${XJ(f.id)}'?null:'${XJ(f.id)}';ren()">`;
+  h+=`<div style="flex:1;min-width:0">`;
+  h+=`<span style="font-size:13px;font-weight:500">${X(f.title)}</span>`;
+  h+=`<span style="font-size:12px;color:var(--tm);margin-left:8px">${X(f.detail.length>80?f.detail.substring(0,77)+"…":f.detail)}</span>`;
+  h+=`</div>`;
+  if(f.person)h+=`<span style="font-size:10px;padding:1px 6px;border-radius:4px;border:1px solid var(--bdr);color:var(--tm)">${X(f.person.split(" ")[0])}</span>`;
+  h+=`<span style="font-size:10px;padding:1px 6px;border-radius:4px;background:${f.category==="data"?"rgba(220,38,38,.08);color:#dc2626":"rgba(251,191,36,.08);color:var(--wknd)"}">${f.category}</span>`;
+  if(existingNote)h+=`<span style="font-size:10px;color:var(--accent)" title="${X(existingNote)}">📝</span>`;
+  h+=`<span style="font-size:11px;color:var(--tm)">${isExpanded?"▴":"▾"}</span>`;
+  h+=`</div>`;
+
+  // ── Expanded detail ──
+  if(isExpanded){
+    h+=`<div style="padding:12px 16px;border-top:1px solid var(--bdr);background:${sevBg}">`;
+    h+=`<div style="font-size:12px;color:var(--tm);margin-bottom:10px">${X(f.detail)}</div>`;
+
+    // Context data — show surrounding schedule if relevant
+    if(f.context&&f.context.days&&Array.isArray(f.context.days)){
+      h+=`<div style="background:rgba(255,255,255,.03);border-radius:6px;padding:8px 10px;margin-bottom:10px;font-size:11px;font-family:'JetBrains Mono',monospace">`;
+      f.context.days.slice(0,7).forEach(d=>{
+        const col=d.working<d.min?"#dc2626":"var(--tm)";
+        h+=`<div style="display:flex;gap:12px;color:${col}"><span>${X(d.date)}</span><span>${d.working} TLs${d.ph?" (PH)":""}${d.working<d.min?" ⚠ below "+d.min:""}</span></div>`;
+      });
+      if(f.context.days.length>7)h+=`<div style="color:var(--tm)">+ ${f.context.days.length-7} more days</div>`;
+      h+=`</div>`;
+    }
+    if(f.context&&f.context.shifts){
+      h+=`<div style="background:rgba(255,255,255,.03);border-radius:6px;padding:8px 10px;margin-bottom:10px;font-size:11px;font-family:'JetBrains Mono',monospace">`;
+      f.context.shifts.forEach(s=>{h+=`<div style="color:var(--tm)">${X(s)}</div>`;});
+      h+=`</div>`;
+    }
+    if(f.context&&f.context.wkAvg){
+      h+=`<div style="background:rgba(255,255,255,.03);border-radius:6px;padding:8px 10px;margin-bottom:10px;font-size:11px;font-family:'JetBrains Mono',monospace">`;
+      h+=`<div>Weekly avg: <span style="color:#dc2626;font-weight:600">${f.context.wkAvg}h</span> / limit: ${f.context.limit}h</div>`;
+      h+=`<div style="color:var(--tm)">Total: ${f.context.totalHrs}h over ${f.context.weeks} weeks</div>`;
+      h+=`</div>`;
+    }
+
+    // Existing note
+    if(existingNote){
+      h+=`<div style="font-size:11px;padding:6px 8px;border-radius:5px;background:rgba(122,180,255,.06);border:1px solid rgba(122,180,255,.15);margin-bottom:8px;color:var(--accent)">📝 ${X(existingNote)}</div>`;
+    }
+
+    // Resolution actions
+    h+=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">`;
+    f.actions.forEach(act=>{
+      const labels={
+        merge:"Merge names",not_same:"Not same person",
+        mark_leave:"Mark as leave",mark_sick:"Mark as sick",
+        expected:"Expected pattern",ignore:"Dismiss",
+        acknowledge:"Acknowledge",adjust_limit:"Adjust limit",
+        view_calendar:"View in calendar",note:"Add note"
+      };
+      const isPrimary=act==="merge"||act==="mark_leave"||act==="adjust_limit"||act==="view_calendar";
+      if(act==="note")return;// note input below
+      // ── Merge names action ──
+      if(act==="merge"&&f.context&&f.context.nameA&&f.context.nameB){
+        h+=`<button onclick="mergeNames('${XJ(f.context.nameA)}','${XJ(f.context.nameB)}')" style="padding:4px 10px;border:1px solid var(--accent);border-radius:5px;background:rgba(122,180,255,.08);color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer;font-weight:500">Merge → ${X(f.context.nameA.split(" ")[0])}</button>`;
+        h+=`<button onclick="mergeNames('${XJ(f.context.nameB)}','${XJ(f.context.nameA)}')" style="padding:4px 10px;border:1px solid var(--accent);border-radius:5px;background:rgba(122,180,255,.08);color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer;font-weight:500">Merge → ${X(f.context.nameB.split(" ")[0])}</button>`;
+      }
+      // ── Mark as leave action ──
+      else if(act==="mark_leave"&&f.context&&f.context.from&&f.context.to){
+        h+=`<button onclick="markGapAsLeave('${XJ(f.person)}','${f.context.from}','${f.context.to}','LEAVE')" style="padding:4px 10px;border:1px solid var(--accent);border-radius:5px;background:rgba(122,180,255,.08);color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer;font-weight:500">${labels[act]}</button>`;
+      }
+      // ── Mark as sick action ──
+      else if(act==="mark_sick"&&f.context&&f.context.from&&f.context.to){
+        h+=`<button onclick="markGapAsLeave('${XJ(f.person)}','${f.context.from}','${f.context.to}','SICK')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">${labels[act]}</button>`;
+      }
+      // ── Dismiss/acknowledge/expected/not_same ──
+      else if(act==="ignore"||act==="acknowledge"||act==="not_same"){
+        h+=`<button onclick="dismissFlag('${XJ(f.id)}')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">${labels[act]||act}</button>`;
+      }
+      // ── Expected pattern → whitelist ──
+      else if(act==="expected"){
+        h+=`<button onclick="addWhitelistRule('${XJ(f.id)}','Expected pattern')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">${labels[act]} (whitelist)</button>`;
+      }
+      // ── View in calendar ──
+      else if(act==="view_calendar"){
+        h+=`<button onclick="S.tab='calendar';ren()" style="padding:4px 10px;border:1px solid var(--accent);border-radius:5px;background:rgba(122,180,255,.08);color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer;font-weight:500">${labels[act]}</button>`;
+      }
+      // ── Adjust limit ──
+      else if(act==="adjust_limit"){
+        h+=`<button onclick="document.getElementById('flagNote_${safeId}').focus()" style="padding:4px 10px;border:1px solid var(--accent);border-radius:5px;background:rgba(122,180,255,.08);color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer;font-weight:500">${labels[act]}</button>`;
+      }
+      // ── Default dismiss ──
+      else {
+        h+=`<button onclick="dismissFlag('${XJ(f.id)}','${act}')" style="padding:4px 10px;border:1px solid ${isPrimary?"var(--accent)":"var(--bdr)"};border-radius:5px;background:${isPrimary?"rgba(122,180,255,.08)":"none"};color:${isPrimary?"var(--accent)":"var(--tm)"};font-family:inherit;font-size:11px;cursor:pointer;${isPrimary?"font-weight:500":""}">${labels[act]||act}</button>`;
+      }
+    });
+    h+=`</div>`;
+
+    // Note input
+    if(f.actions.includes("note")){
+      h+=`<div style="display:flex;gap:6px">`;
+      h+=`<input type="text" id="flagNote_${safeId}" placeholder="Add a note about this flag..." value="${X(existingNote)}" style="flex:1;padding:4px 8px;border:1px solid var(--bdr);border-radius:5px;background:var(--bg);color:var(--text);font-size:11px">`;
+      h+=`<button onclick="addFlagNote('${XJ(f.id)}')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">Save</button>`;
+      h+=`</div>`;
+    }
+
+    h+=`</div>`;// close expanded
+  }
+
+  h+=`</div>`;// close flag row
   return h;
 }
 
@@ -8262,6 +8703,413 @@ function computeFairnessSwap(overloadedName, teamWkndPcts, teamAvg, blueprint, p
   };
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   FLAGS ENGINE — v43.3
+   Two categories:
+   1. Data issues — always computed, problems with the imported data
+   2. Configured alerts — user-toggled operational thresholds
+   Each flag: {id, category, severity, title, detail, person, context, actions[]}
+   ═══════════════════════════════════════════════════════════════ */
+function computeFlags(){
+  const flags=[];
+  const fs=S.flagSettings||{};
+  const dismissed=fs.dismissed||{};
+  if(!S.entries||!S.entries.length)return flags;
+
+  const names=[...new Set(S.entries.map(e=>e.name))].sort();
+  const byName={};names.forEach(n=>{byName[n]=S.entries.filter(e=>e.name===n);});
+
+  // ═══ DATA ISSUES — always active ═══
+  if(fs.dataIssues!==false){
+
+    // 1. Duplicate names
+    for(let i=0;i<names.length;i++){
+      for(let j=i+1;j<names.length;j++){
+        const a=names[i].toLowerCase(),b=names[j].toLowerCase();
+        const ap=a.split(/\s+/),bp=b.split(/\s+/);
+        if(ap[0]===bp[0]){
+          const al=ap[1]||"",bl=bp[1]||"";
+          let reason=null;
+          if(!al||!bl)reason="same first name, one missing surname";
+          else if(al.length<=2||bl.length<=2)reason="possible abbreviation";
+          else{let diff=0;const ml=Math.min(al.length,bl.length);for(let c=0;c<ml;c++){if(al[c]!==bl[c])diff++;}diff+=Math.abs(al.length-bl.length);if(diff<=2)reason="similar surname ("+diff+" char difference)";}
+          if(reason){
+            const id="dup|"+names[i]+"|"+names[j];
+            flags.push({id,category:"data",severity:"medium",title:"Possible duplicate names",
+              detail:`${names[i]} ↔ ${names[j]} — ${reason}`,person:names[i],
+              context:{nameA:names[i],nameB:names[j],reason},
+              actions:["merge","not_same","note"]});
+          }
+        }
+      }
+    }
+
+    // 2. Schedule gaps
+    names.forEach(name=>{
+      const ents=[...byName[name]].filter(e=>e.date).sort((a,b)=>a.date-b.date);
+      for(let i=1;i<ents.length;i++){
+        const diff=Math.round((ents[i].date-ents[i-1].date)/864e5);
+        if(diff>1&&diff<8&&!ents[i-1].isOff&&!ents[i].isOff){
+          const id="gap|"+name+"|"+excKey(ents[i].date);
+          flags.push({id,category:"data",severity:"low",title:"Schedule gap",
+            detail:`${name.split(" ")[0]}: ${diff-1} day gap between ${fD(ents[i-1].date)} and ${fD(ents[i].date)}`,
+            person:name,context:{from:excKey(ents[i-1].date),to:excKey(ents[i].date),days:diff-1},
+            actions:["mark_leave","mark_sick","ignore","note"]});
+        }
+      }
+    });
+
+    // 3. Shift fingerprint anomalies
+    names.forEach(name=>{
+      const work=byName[name].filter(e=>!e.isOff&&e.ukS&&e.ukE&&e.date);
+      if(work.length<3)return;
+      const weeks={};
+      work.forEach(e=>{
+        const d=e.date;const mon=new Date(d);mon.setDate(mon.getDate()-((mon.getDay()+6)%7));
+        const wk=mon.toISOString().split("T")[0];
+        if(!weeks[wk])weeks[wk]=[];weeks[wk].push(e);
+      });
+      Object.entries(weeks).forEach(([wk,ents])=>{
+        if(ents.length<2)return;
+        const starts=ents.map(e=>parseInt(e.ukS.split(":")[0])*60+parseInt(e.ukS.split(":")[1]));
+        const uniq=[...new Set(starts)];
+        if(uniq.length<2)return;
+        const spread=Math.max(...uniq)-Math.min(...uniq);
+        if(spread>=180){
+          const shifts=[...new Set(ents.map(e=>e.ukS+"-"+e.ukE))];
+          if(shifts.length>=2){
+            const id="fingerprint|"+name+"|"+wk;
+            flags.push({id,category:"data",severity:"low",title:"Shift pattern variation",
+              detail:`${name.split(" ")[0]}: ${shifts.length} different shift windows in week of ${wk.split("-")[2]}/${wk.split("-")[1]} (${Math.round(spread/60)}h spread)`,
+              person:name,context:{week:wk,shifts,spread},
+              actions:["expected","ignore","note"]});
+          }
+        }
+      });
+    });
+
+    // 4. Duplicate entries (same person same date)
+    names.forEach(name=>{
+      const seen={};
+      byName[name].filter(e=>e.date).forEach(e=>{
+        const dk=excKey(e.date);
+        if(seen[dk]){
+          const id="dupentry|"+name+"|"+dk;
+          if(!flags.find(f=>f.id===id)){
+            flags.push({id,category:"data",severity:"medium",title:"Duplicate entry",
+              detail:`${name.split(" ")[0]}: two entries for ${fD(e.date)}`,
+              person:name,context:{date:dk},
+              actions:["ignore","note"]});
+          }
+        }
+        seen[dk]=true;
+      });
+    });
+  }
+
+  // 5. Short work weeks — week with entries but very few working days
+  names.forEach(name=>{
+    const sorted=[...byName[name]].filter(e=>e.date).sort((a,b)=>a.date-b.date);
+    const byWeek={};
+    sorted.forEach(e=>{
+      const d=new Date(e.date);const mon=new Date(d);mon.setDate(mon.getDate()-((mon.getDay()+6)%7));
+      const wk=mon.toISOString().split("T")[0];
+      if(!byWeek[wk])byWeek[wk]={work:0,total:0,date:new Date(mon)};
+      byWeek[wk].total++;if(!e.isOff)byWeek[wk].work++;
+    });
+    for(const[wk,cnt]of Object.entries(byWeek)){
+      if(cnt.total>=5&&cnt.work>0&&cnt.work<3){
+        const id="shortwk|"+name+"|"+wk;
+        flags.push({id,category:"data",severity:"low",title:"Short work week",
+          detail:`${name.split(" ")[0]}: only ${cnt.work} working day${cnt.work!==1?"s":""} in week of ${wk.split("-")[2]}/${wk.split("-")[1]} (${cnt.total} entries total)`,
+          person:name,context:{week:wk,working:cnt.work,total:cnt.total},
+          actions:["expected","ignore","note"]});
+      }
+    }
+  });
+
+  // 6. Low-confidence parse — parser had to guess
+  if(S.parseInfo&&S.parseInfo.length){
+    const lowConf=S.parseInfo.filter(p=>p.confidence==="low");
+    if(lowConf.length){
+      const id="lowparse|"+lowConf.map(p=>p.sheet).join(",");
+      const sheets=lowConf.map(p=>p.sheet).join(", ");
+      const warnings=lowConf.flatMap(p=>p.warnings||[]);
+      flags.push({id,category:"data",severity:"medium",title:"Low-confidence parse",
+        detail:`Parser fell back to best-guess mode for: ${sheets}. Results may need manual verification.${warnings.length?" "+warnings[0]:""}`,
+        person:null,context:{sheets:lowConf.map(p=>p.sheet),parsers:lowConf.map(p=>p.parser),warnings},
+        actions:["ignore","note"]});
+    }
+  }
+
+  // 7. PH delivery impact — informational note, not a flag
+  if(S.month){
+    const[py,pm]=S.month.split("-").map(Number);
+    const lastDay=new Date(py,pm+1,0).getDate();
+    let phCount=0;const phNames=[];
+    for(let d=1;d<=lastDay;d++){
+      const dt=new Date(py,pm,d);
+      const ph=isPH(dt);
+      if(ph){phCount++;phNames.push(ph.name);}
+    }
+    if(phCount>0){
+      // Estimate impact: avg shift hours × people × PH days with reduced headcount
+      const avgShiftHrs=names.length?Math.round(S.entries.filter(e=>!e.isOff&&e.ukS&&e.ukE).slice(0,50).reduce((s,e)=>s+calcHrs(e.ukS,e.ukE),0)/Math.min(50,S.entries.filter(e=>!e.isOff).length)*10)/10:8;
+      const estReduction=Math.round(phCount*avgShiftHrs*0.3);// rough: 30% fewer hours on PH days
+      const id="phimpact|"+S.month;
+      flags.push({id,category:"info",severity:"info",title:`${phCount} public holiday${phCount!==1?"s":""} this month`,
+        detail:`${phNames.slice(0,3).join(", ")}${phNames.length>3?" +more":""}. Expect approximately ${estReduction}h fewer scheduled hours. Plan coverage accordingly.`,
+        person:null,context:{phCount,phNames,estReduction,avgShiftHrs},
+        actions:["acknowledge","note"]});
+    }
+  }
+
+  // ═══ CONFIGURED ALERTS — user-toggled ═══
+  const alerts=(fs.alerts||{});
+
+  // Over hours
+  if(alerts.overHours&&alerts.overHours.on){
+    const limit=alerts.overHours.threshold||S.hrsMax||45;
+    names.forEach(name=>{
+      const work=byName[name].filter(e=>!e.isOff&&e.date);
+      const hrs=work.reduce((s,e)=>s+calcHrs(e.ukS,e.ukE),0);
+      const dates=work.map(x=>x.date.getTime());
+      const span=dates.length>=2?Math.max(1,Math.round((Math.max(...dates)-Math.min(...dates))/604800000)):1;
+      const wkAvg=span>0?Math.round(hrs/span*10)/10:0;
+      if(wkAvg>limit){
+        const id="overhours|"+name;
+        flags.push({id,category:"alert",severity:wkAvg>limit*1.1?"high":"medium",title:"Over hours",
+          detail:`${name.split(" ")[0]}: ${wkAvg}h/wk avg (limit ${limit}h)`,
+          person:name,context:{wkAvg,limit,totalHrs:Math.round(hrs),weeks:span},
+          actions:["adjust_limit","acknowledge","note"]});
+      }
+    });
+  }
+
+  // Low coverage
+  if(alerts.lowCoverage&&alerts.lowCoverage.on&&S.month){
+    const min=alerts.lowCoverage.threshold||S.covMin||3;
+    const[y,m]=S.month.split("-").map(Number);
+    const last=new Date(y,m+1,0).getDate();
+    const monthEnt=S.entries.filter(e=>e.date&&e.date.getFullYear()===y&&e.date.getMonth()===m);
+    const gapDays=[];
+    for(let d=1;d<=last;d++){
+      const dt=new Date(y,m,d);
+      const working=monthEnt.filter(e=>e.date.getDate()===d&&!e.isOff).length;
+      const total=monthEnt.filter(e=>e.date.getDate()===d).length;
+      const ph=isPH(dt);
+      const effectiveMin=ph?Math.max(1,min-1):min;
+      if(total>0&&working<effectiveMin)gapDays.push({date:dt,working,min:effectiveMin,ph});
+    }
+    if(gapDays.length){
+      const id="lowcov|"+S.month;
+      flags.push({id,category:"alert",severity:gapDays.some(d=>d.working===0)?"high":"medium",
+        title:"Coverage below minimum",
+        detail:`${gapDays.length} day${gapDays.length!==1?"s":""} below ${min} TLs in ${MO[m]} ${y}`,
+        person:null,context:{days:gapDays.map(d=>({date:fD(d.date),working:d.working,min:d.min,ph:d.ph}))},
+        actions:["view_calendar","acknowledge","note"]});
+    }
+  }
+
+  // Consecutive work days
+  if(alerts.consecutiveDays&&alerts.consecutiveDays.on){
+    const maxDays=alerts.consecutiveDays.threshold||7;
+    names.forEach(name=>{
+      const sorted=[...byName[name]].filter(e=>e.date).sort((a,b)=>a.date-b.date);
+      let streak=0;let streakStart=null;let worstStreak=0;let worstStart=null;
+      sorted.forEach(e=>{
+        if(!e.isOff){
+          if(streak===0)streakStart=e.date;
+          streak++;
+          if(streak>worstStreak){worstStreak=streak;worstStart=streakStart;}
+        } else {streak=0;streakStart=null;}
+      });
+      if(worstStreak>=maxDays){
+        const id="consec|"+name;
+        flags.push({id,category:"alert",severity:worstStreak>=maxDays+3?"high":"medium",
+          title:"Long work streak",
+          detail:`${name.split(" ")[0]}: ${worstStreak} consecutive work days${worstStart?" starting "+fD(worstStart):""} (limit ${maxDays})`,
+          person:name,context:{streak:worstStreak,start:worstStart?excKey(worstStart):null,limit:maxDays},
+          actions:["acknowledge","note"]});
+      }
+    });
+  }
+
+  // Long shift
+  if(alerts.longShift&&alerts.longShift.on){
+    const maxHrs=alerts.longShift.threshold||10;
+    names.forEach(name=>{
+      const work=byName[name].filter(e=>!e.isOff&&e.ukS&&e.ukE&&e.date);
+      work.forEach(e=>{
+        const hrs=calcHrs(e.ukS,e.ukE);
+        if(hrs>=maxHrs){
+          const id="longshift|"+name+"|"+excKey(e.date);
+          flags.push({id,category:"alert",severity:hrs>=maxHrs+2?"high":"medium",
+            title:"Long shift",
+            detail:`${name.split(" ")[0]}: ${Math.round(hrs*10)/10}h shift on ${fD(e.date)} (${e.ukS}–${e.ukE}) — threshold ${maxHrs}h`,
+            person:name,context:{date:excKey(e.date),shift:e.ukS+"–"+e.ukE,hours:Math.round(hrs*10)/10,limit:maxHrs},
+            actions:["expected","ignore","note"]});
+        }
+      });
+    });
+  }
+
+  // Weekend balance (off by default)
+  if(alerts.weekendBalance&&alerts.weekendBalance.on){
+    const threshold=alerts.weekendBalance.threshold||15;
+    const allWork=S.entries.filter(e=>!e.isOff&&e.date);
+    const teamNames=[...new Set(allWork.map(e=>e.name))];
+    if(teamNames.length>1){
+      const pcts={};
+      teamNames.forEach(n=>{
+        const tw=allWork.filter(e=>e.name===n);
+        const wk=tw.filter(e=>e.day==="Saturday"||e.day==="Sunday").length;
+        pcts[n]=tw.length>=5?Math.round(wk/tw.length*100):null;
+      });
+      const valid=Object.values(pcts).filter(v=>v!==null);
+      if(valid.length>1){
+        const avg=Math.round(valid.reduce((a,b)=>a+b,0)/valid.length);
+        teamNames.forEach(n=>{
+          if(pcts[n]===null)return;
+          const delta=pcts[n]-avg;
+          if(Math.abs(delta)>=threshold){
+            const id="wkndbal|"+n;
+            flags.push({id,category:"alert",severity:"low",title:"Weekend distribution",
+              detail:`${n.split(" ")[0]}: ${pcts[n]}% weekend vs ${avg}% team avg (${delta>0?"+":""}${delta}%)`,
+              person:n,context:{pct:pcts[n],avg,delta},
+              actions:["acknowledge","note"]});
+          }
+        });
+      }
+    }
+  }
+
+  // Filter out dismissed flags and whitelisted patterns
+  const whitelist=fs.whitelist||[];
+  return flags.filter(f=>{
+    if(dismissed[f.id])return false;
+    // Check whitelist: exact id match, or type+person match for recurring patterns
+    if(whitelist.some(w=>{
+      if(w.id===f.id)return true;
+      // Type+person match covers recurring instances (e.g. fingerprint for same person different weeks)
+      if(w.type===f.id.split("|")[0]&&w.person===f.person)return true;
+      return false;
+    }))return false;
+    return true;
+  });
+}
+
+function dismissFlag(flagId,note){
+  if(!S.flagSettings.dismissed)S.flagSettings.dismissed={};
+  S.flagSettings.dismissed[flagId]={at:new Date().toISOString(),note:note||""};
+  schedulePersist(true);
+  if(S.tab==="analytics"&&S.anView==="flags")rerenderAnalyticsSurface("view");
+  else ren();
+}
+
+function addFlagNote(flagId){
+  const input=document.getElementById("flagNote_"+flagId.replace(/[|]/g,"_"));
+  const note=input?input.value.trim():"";
+  if(!note){toast("Enter a note first","warn");return;}
+  if(!S.flagSettings.notes)S.flagSettings.notes={};
+  S.flagSettings.notes[flagId]=note;
+  schedulePersist(true);
+  toast("Note saved","ok");
+  if(S.tab==="analytics"&&S.anView==="flags")rerenderAnalyticsSurface("view");
+}
+
+function toggleFlagAlert(alertKey){
+  if(!S.flagSettings.alerts[alertKey])return;
+  S.flagSettings.alerts[alertKey].on=!S.flagSettings.alerts[alertKey].on;
+  schedulePersist(true);
+  if(S.tab==="analytics"&&S.anView==="flags")rerenderAnalyticsSurface("view");
+  else ren();
+}
+
+function setFlagThreshold(alertKey,value){
+  if(!S.flagSettings.alerts[alertKey])return;
+  S.flagSettings.alerts[alertKey].threshold=value?+value:null;
+  schedulePersist(true);
+}
+
+function resetDismissed(){
+  S.flagSettings.dismissed={};
+  schedulePersist(true);
+  if(S.tab==="analytics"&&S.anView==="flags")rerenderAnalyticsSurface("view");
+  else ren();
+}
+
+// ── FLAG ACTIONS: Merge duplicate names ──
+function mergeNames(keepName,mergeName){
+  if(!keepName||!mergeName||keepName===mergeName)return;
+  let count=0;
+  S.entries.forEach(e=>{if(e.name===mergeName){e.name=keepName;count++;}});
+  if(count){
+    invalidateDerivedCache();
+    dismissFlag("dup|"+keepName+"|"+mergeName);
+    dismissFlag("dup|"+mergeName+"|"+keepName);
+    toast(`Merged ${count} entries: "${mergeName}" → "${keepName}"`,"ok");
+    schedulePersist(true);
+    ren();
+  } else {toast("No entries found to merge","warn");}
+}
+
+// ── FLAG ACTIONS: Mark schedule gap as leave ──
+function markGapAsLeave(name,fromDate,toDate,leaveType){
+  if(!name||!fromDate||!toDate)return;
+  const from=new Date(fromDate+"T00:00:00");
+  const to=new Date(toDate+"T00:00:00");
+  if(isNaN(from)||isNaN(to)||from>to)return;
+  let count=0;
+  for(let d=new Date(from);d<=to;d.setDate(d.getDate()+1)){
+    const dk=excKey(d);
+    // Check if entry already exists for this person+date
+    const exists=S.entries.some(e=>e.name===name&&e.date&&excKey(e.date)===dk);
+    if(!exists){
+      const day=DOW[d.getDay()];
+      const entry={name,date:new Date(d),day,isOff:true,offL:leaveType||"LEAVE",
+        ukS:null,ukE:null,saS:null,saE:null,team:S.entries.find(e=>e.name===name)?.team||"Main",
+        week:"",era:"current"};
+      S.entries.push(entry);
+      count++;
+    }
+  }
+  if(count){
+    S.entriesVer=(S.entriesVer||0)+1;
+    invalidateDerivedCache();
+    // Dismiss the gap flag
+    dismissFlag("gap|"+name+"|"+toDate);
+    toast(`Added ${count} ${leaveType||"LEAVE"} entries for ${name.split(" ")[0]}`,"ok");
+    ren();
+  } else {toast("No gap days to fill — entries already exist","warn");}
+}
+
+// ── WHITELIST PATTERNS ──
+// Named exclusion rules that suppress specific flags permanently per-dept
+function addWhitelistRule(flagId,reason){
+  if(!S.flagSettings.whitelist)S.flagSettings.whitelist=[];
+  // Extract pattern info from flagId
+  const parts=flagId.split("|");
+  const rule={id:flagId,type:parts[0],person:parts[1]||null,detail:parts[2]||null,
+    reason:reason||"Expected pattern",created:new Date().toISOString(),
+    dept:S.activeDept||"default"};
+  // Don't add duplicate rules
+  if(S.flagSettings.whitelist.some(r=>r.id===flagId))return;
+  S.flagSettings.whitelist.push(rule);
+  // Also dismiss the current instance
+  dismissFlag(flagId,reason);
+  schedulePersist(true);
+  toast("Whitelisted — this pattern won't be flagged again","ok");
+}
+
+function removeWhitelistRule(idx){
+  if(!S.flagSettings.whitelist)return;
+  S.flagSettings.whitelist.splice(idx,1);
+  schedulePersist(true);
+  if(S.tab==="analytics"&&S.anView==="flags")rerenderAnalyticsSurface("view");
+  else ren();
+}
+
 function computeTeamRisk(monthKey){
   if(!monthKey)return null;
   const[y,m]=monthKey.split("-").map(Number);
@@ -9693,18 +10541,10 @@ function buildSheetsPerLeader(wb,scope){
       if(isPHDay&&!e.isOff){r.getCell(8).value='PH — '+phLabel(e.date)+' (BPO: expected)';sC(r.getCell(8),{color:'FFB98BFF',italic:true});}
     });
 
-    // ── Excel Table (auto-filter, sortable, works with slicers) ──
+    // ── Auto-filter on header row (lightweight, no formal Table object) ──
     const dataEndRow=dataStartRow+ents.length-1;
     if(ents.length>0){
-      ws.addTable({
-        name:'Schedule_'+sanitiseSheetName(name).replace(/\s/g,'_'),
-        ref:`A7:H${dataEndRow}`,
-        headerRow:true,
-        totalsRow:false,
-        style:{theme:'TableStyleMedium2',showRowStripes:true},
-        columns:HDR.map(h=>({name:h,filterButton:true})),
-        rows:[] // already added via addRow
-      });
+      try{ws.autoFilter=`A7:H${dataEndRow}`;}catch(e){}
     }
 
     // ── Non-PH anomalies only (BPO: PH work is expected) ──
@@ -10029,7 +10869,9 @@ function saveSettings(){
   try{localStorage.setItem("sc_settings",JSON.stringify({
     th:S.th,tz:S.tz,hlToday:S.hlToday,covMin:S.covMin,hrsMax:S.hrsMax,tab:S.tab,
     targetHours:S.targetHours||0,ratePerHour:S.ratePerHour||0,showCardWk:S.showCardWk!==false,
-    sumMode:S.sumMode||"month",anView:S.anView||"coverage"
+    sumMode:S.sumMode||"month",anView:S.anView||"coverage",
+    flagSettings:S.flagSettings||{},
+    cardShow:S.cardShow||{}
   }));}catch(e){}
   try{localStorage.setItem("sc_planner",JSON.stringify({
     plOverrides:S.plOverrides,plLeave:S.plLeave,plHires:S.plHires,plRemoved:S.plRemoved,plMonths:S.plMonths
@@ -10069,9 +10911,26 @@ function loadSettings(){
       if(typeof s.targetHours==="number")S.targetHours=s.targetHours;
       if(typeof s.ratePerHour==="number")S.ratePerHour=s.ratePerHour;
       if(typeof s.showCardWk==="boolean")S.showCardWk=s.showCardWk;
+      if(s.cardShow&&typeof s.cardShow==="object")S.cardShow=s.cardShow;
       if(s.tab)S.tab=s.tab;
       if(s.sumMode)S.sumMode=s.sumMode;
       if(s.anView&&s.anView!=="intel")S.anView=s.anView;
+      if(s.flagSettings&&typeof s.flagSettings==="object"){
+        // Merge saved flag settings with defaults (so new alert types added in future versions aren't lost)
+        const saved=s.flagSettings;
+        if(typeof saved.dataIssues==="boolean")S.flagSettings.dataIssues=saved.dataIssues;
+        if(saved.alerts&&typeof saved.alerts==="object"){
+          Object.keys(saved.alerts).forEach(k=>{
+            if(S.flagSettings.alerts[k]){
+              if(typeof saved.alerts[k].on==="boolean")S.flagSettings.alerts[k].on=saved.alerts[k].on;
+              if(saved.alerts[k].threshold!==undefined)S.flagSettings.alerts[k].threshold=saved.alerts[k].threshold;
+            }
+          });
+        }
+        if(saved.dismissed&&typeof saved.dismissed==="object")S.flagSettings.dismissed=saved.dismissed;
+        if(saved.notes&&typeof saved.notes==="object")S.flagSettings.notes=saved.notes;
+        if(Array.isArray(saved.whitelist))S.flagSettings.whitelist=saved.whitelist;
+      }
     }
   }catch(e){}
   try{
