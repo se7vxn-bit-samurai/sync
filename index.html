@@ -1455,7 +1455,6 @@ function renderDayIntelligencePanel(intelOrName,dateInput,sourceLabel){
   h+=`<div class="day-drill-row"><span>Coverage impact</span><strong style="color:${intel.lowCoverage?'var(--late)':'var(--early)'}">${intel.coverageDelta>=0?'+':''}${intel.coverageDelta} vs min ${S.covMin}</strong></div>`;
   h+=`<div class="day-drill-row"><span>HC</span><strong>${intel.hc.total||intel.hc.present?`${intel.hc.present||0}/${intel.hc.total||0}${intel.hcPct!==null?` · ${intel.hcPct}%`:''}`:'not entered'}</strong></div>`;
   h+=`<div class="day-drill-row"><span>Exceptions logged</span><strong>${intel.personExcs.length?`${intel.personExcs.length} · ${intel.lostToday}h lost`:'none'}</strong></div>`;
-  if(intel.dayAnoms.length)h+=`<div class="day-drill-row"><span>Anomalies touching this day</span><strong>${X(intel.dayAnoms.map(a=>a.msg).join(' · '))}</strong></div>`;
   if(intel.note)h+=`<div class="dd-note">${X(intel.note.length>220?intel.note.slice(0,220)+'…':intel.note)}</div>`;
   h+=`<div class="dd-actions"><button class="dd-mini-btn" onclick="navToPerson('${XJ(intel.name)}')">Open month card</button><button class="dd-mini-btn" onclick="S.noteOpen=true;S.calDay=new Date(${intel.date.getFullYear()},${intel.date.getMonth()},${intel.date.getDate()});ren()">Open notes</button>`;
   if(intel.personExcs.length)h+=`<button class="dd-mini-btn" onclick="S._excFormOpen='${XJ(intel.name)}|${intel.dateKey}';S.calDay=new Date(${intel.date.getFullYear()},${intel.date.getMonth()},${intel.date.getDate()});ren()">Open flags</button>`;
@@ -3777,7 +3776,6 @@ function loadIntoWorkspace(wb,sourceName){
   const _priorSnap=loadSnapshot(_pendingDeptName);
 
   const rotDef=scanRotationDef(wb);
-  if(rotDef){toast(rotDef.cycleLen+"-week rotation detected (Overview)","ok",3500);}
   const all=wb.SheetNames;
   const ok=all.filter(s=>{const n=s.toLowerCase();return n!=="out time"&&!(n==="overview"&&all.some(x=>x.toLowerCase().includes("horizontal")||x.toLowerCase().includes("vertic")));});
   const shs=ok.length?ok:all;
@@ -3790,15 +3788,15 @@ function loadIntoWorkspace(wb,sourceName){
   S.plLeave=[];S.plOverrides={};S.plHires=[];S.plRemoved={};S.plEdit=null;
   S.parseInfo=[];S._anomDismissed=false;
   load(S.sh);
-  // Pattern detection toast
+  // v48.2: Single consolidated rotation toast
   if(S.rotationDef&&S.rotationDef._detected){
     const det=S.rotationDef._detected;
-    toast(det.cycleLen+"-week rotation detected ("+det.confidence+") — SC uses its own week system to clean your data","ok",5000);
-  }
-  // Boundary detection toast
-  if(S.rotationDef&&S.rotationDef._boundary){
     const bnd=S.rotationDef._boundary;
-    toast("Cycle boundary: "+bnd.legacyEntryCount+" legacy entries before "+fDF(bnd.cycleStartMonday)+" ("+bnd.method+")","ok",4000);
+    let msg=det.cycleLen+"-week rotation detected ("+det.confidence+")";
+    if(bnd&&bnd.legacyEntryCount>0)msg+=" · "+bnd.legacyEntryCount+" legacy entries excluded";
+    toast(msg,"ok",4000);
+  } else if(rotDef&&rotDef.cycleLen){
+    toast(rotDef.cycleLen+"-week rotation detected","ok",3500);
   }
   S.activeDept=deptName;
   // Auto-populate blueprint + positions NOW that activeDept is the correct key
@@ -4038,24 +4036,11 @@ function renderTabs(){
   // Redirect legacy tab IDs
   if(S.tab==="table")S.tab="cards";
   if(S.tab==="raw")S.tab="analytics";
-  // Count Act Now signals for badge
-  let opsActNow=0;
-  if(S.entries&&S.entries.length&&S.month){
-    try{
-      const[y,m]=S.month.split("-").map(Number);
-      let me=S.entries.filter(e=>e.date&&e.date.getFullYear()===y&&e.date.getMonth()===m);
-      if(S.team!=="all")me=me.filter(e=>e.team===S.team);
-      const em2={};[...new Set(me.map(e=>e.name))].forEach(n=>{em2[n]=me.filter(e=>e.name===n);});
-      const dk=S.activeDept||"default";const bp=S.plBlueprints[dk];const pos=S.plPositions[dk]||{};
-      Object.entries(em2).forEach(([n,ent])=>{const sigs=computeSignals(n,ent,bp,pos,dk)||[];opsActNow+=sigs.filter(s=>s.severity==="high").length;});
-    }catch(e){}
-  }
-  const anBadge=opsActNow>0?` <span style="background:#dc2626;color:#fff;font-size:10px;padding:1px 5px;border-radius:8px;font-weight:700;margin-left:2px">${opsActNow}</span>`:"";
   const TB=[
     {id:"calendar",l:"Calendar"},
     {id:"summary",l:"Summary"},
     {id:"cards",l:"People"},
-    {id:"analytics",l:"Analytics"+anBadge,raw:true},
+    {id:"analytics",l:"Analytics"},
     {id:"planner",l:"Planner"}
   ];
   $("tbar").innerHTML=TB.map(t=>`<button class="tab${t.id===S.tab?" a":""}" onclick="setTab('${t.id}')">${t.raw?t.l:X(t.l)}</button>`).join("");
@@ -4075,13 +4060,10 @@ function buildInfoBarHTML(){
   // Health
   let healthBit="";
   if(S.month){const ths=computeTeamHealthScore(S.month);if(ths)healthBit=` · <span style="font-weight:700;padding:1px 6px;border-radius:8px;background:${ths.gradeCol}18;color:${ths.gradeCol};font-family:'JetBrains Mono',monospace;cursor:pointer" onclick="setTab('analytics');setAnalyticsView('dashboard')" title="Team health">${ths.grade} ${ths.avg}</span>`;}
-  // Flags
-  const flagCount=computeFlags().filter(f=>f.category!=="info").length;
-  const flagBit=flagCount>0?` · <span style="color:#dc2626;cursor:pointer;font-weight:600" onclick="setTab('analytics');setAnalyticsView('issues')" title="${flagCount} issues">⚠ ${flagCount}</span>`:` · <span style="color:var(--early);opacity:.6;cursor:pointer" onclick="setTab('analytics');setAnalyticsView('issues')" title="No issues">✓</span>`;
   // Active filters
   const filterBit=S.calDay&&S.tab==="calendar"?` · <span class="l" style="cursor:pointer;font-size:12px" onclick="clearCalendarDaySelection()">✕ ${fDF(S.calDay)}</span>`:S.dayFilter?` · <span class="l" style="cursor:pointer;font-size:12px" onclick="clearDayFilter()">✕ ${S.dayFilter}s</span>`:"";
   // Primary line
-  return `<span class="l">${ec}</span> <span class="ib-muted">leaders</span>${agentBit} · <span class="ib-stat">${Math.round(tHrs)}h</span>${healthBit}${flagBit}${filterBit}`;
+  return `<span class="l">${ec}</span> <span class="ib-muted">leaders</span>${agentBit} · <span class="ib-stat">${Math.round(tHrs)}h</span>${healthBit}${filterBit}`;
 }
 function renderInfoBar(){$("ib").innerHTML=buildInfoBarHTML();}
 function renderQuickActions(){
@@ -6629,22 +6611,6 @@ function renderCard(n,ent,mlabel){
 
     if(cs.window!==false&&floorOpen&&floorClose){
       h+=`<div class="cs-floor-window">Window: <strong>${floorOpen}</strong> → <strong>${floorClose}</strong></div>`;
-    }
-
-    // Exception badge
-    const personExcCount=(S.exceptions||[]).filter(x=>x.person===n).length;
-    if(personExcCount>0){
-      const latestExc=(S.exceptions||[]).filter(x=>x.person===n).sort((a,b)=>b.date.localeCompare(a.date))[0];
-      h+=`<div style="margin-top:2px"><span class="cs-exc-badge" style="cursor:pointer" onclick="openDayInvestigation('${XJ(n)}','${latestExc?latestExc.date:''}','cards')" title="Inspect latest exception day">⚡ ${personExcCount} exception${personExcCount>1?'s':''}</span></div>`;
-    }
-
-    // ── PH work summary (BPO context — expected, informational) ──
-    const phAnoms=anom.filter(a=>a.type==='ph_work');
-    if(phAnoms.length){
-      h+=`<div style="margin-top:3px;padding:4px 8px;border-radius:5px;background:rgba(185,139,255,.07);border:1px solid rgba(185,139,255,.18)">`;
-      h+=`<span style="font-size:11px;color:#b98bff;font-weight:600">🏛 ${phAnoms.length} PH shift${phAnoms.length!==1?'s':''}</span>`;
-      h+=`<span style="font-size:11px;color:var(--tm);margin-left:5px">Expected in BPO · lower headcount advised</span>`;
-      h+=`</div>`;
     }
 
     // ── Card display toggles ──
@@ -11767,25 +11733,10 @@ function rIntel(el){
   const names=[...new Set(monthEnt.map(e=>e.name))].sort();
   const em={};names.forEach(n=>{em[n]=monthEnt.filter(e=>e.name===n);});
 
-  // Compute all signals + health scores
+  // Compute health scores + team risk (signals moved to Issues view)
   const allSignals={};names.forEach(n=>{allSignals[n]=computeSignals(n,em[n],bp,positions,dk);});
   const ths=computeTeamHealthScore(S.month);
   const teamRisk=computeTeamRisk(S.month);
-
-  // Bucket signals: high → Act Now · medium/low → Watch · ok/info → Good
-  const actNow=[];const watch=[];const good=[];
-  names.forEach(n=>{
-    const sigs=allSignals[n]||[];
-    sigs.forEach(sig=>{
-      const entry={...sig,person:n};
-      if(sig.severity==="high")actNow.push(entry);
-      else if(sig.severity==="medium"||sig.severity==="low")watch.push(entry);
-      else good.push(entry);
-    });
-  });
-
-  const SEV_COLOR={high:"#dc2626",medium:"var(--wknd)",low:"var(--accent)",ok:"var(--early)",info:"#b98bff"};
-  const SEV_BG={high:"rgba(220,38,38,.08)",medium:"rgba(251,191,36,.07)",low:"rgba(122,180,255,.07)",ok:"rgba(52,211,153,.07)",info:"rgba(185,139,255,.06)"};
 
   let h=`<div style="display:flex;flex-direction:column;gap:12px">`;
 
@@ -11899,81 +11850,13 @@ function rIntel(el){
     h+=`</div></div>`;
   }
 
-  // ── THREE-COLUMN SIGNAL TRIAGE ──
-  h+=`<div class="intel-triage">`;
-
-  // Col 1: Act Now
-  h+=`<div style="display:flex;flex-direction:column;gap:6px">`;
-  h+=`<div style="font-size:12px;font-weight:700;color:#dc2626;display:flex;align-items:center;gap:5px;padding-bottom:4px;border-bottom:2px solid rgba(220,38,38,.25)">🔴 Act Now <span style="font-size:11px;font-weight:400;color:var(--tm)">${actNow.length}</span></div>`;
-  if(actNow.length===0){
-    h+=`<div style="padding:10px;font-size:12px;color:var(--tm);font-style:italic;text-align:center">Nothing critical this month ✓</div>`;
-  } else {
-    actNow.forEach(sig=>{
-      const idx=_sigActions.length;if(sig.actionFn)_sigActions.push(sig.actionFn);
-      h+=`<div style="padding:9px 10px;border-radius:8px;background:rgba(220,38,38,.07);border:1px solid rgba(220,38,38,.18);display:flex;flex-direction:column;gap:3px">`;
-      h+=`<div style="display:flex;align-items:center;gap:6px;justify-content:space-between">`;
-      h+=`<span style="font-size:11px;font-weight:600;color:var(--text)">${sig.icon} ${sig.title}</span>`;
-      h+=`<span style="font-size:11px;color:#dc2626;font-weight:600;cursor:pointer;white-space:nowrap" onclick="_navPush();S.emp='${XJ(sig.person)}';S.tab='cards';ren()">${X(sig.person.split(" ")[0])}</span>`;
-      h+=`</div>`;
-      h+=`<div style="font-size:11px;color:var(--tm)">${sig.msg}</div>`;
-      if(sig.action&&sig.actionFn)h+=`<button onclick="_sigActions[${idx}]()" style="margin-top:2px;padding:2px 7px;border:1px solid rgba(220,38,38,.3);border-radius:4px;background:none;color:#dc2626;font-family:inherit;font-size:11px;cursor:pointer;width:fit-content">${sig.action}</button>`;
-      h+=`</div>`;
-    });
-  }
-  h+=`</div>`;
-
-  // Col 2: Watch
-  h+=`<div style="display:flex;flex-direction:column;gap:6px">`;
-  h+=`<div style="font-size:12px;font-weight:700;color:var(--wknd);display:flex;align-items:center;gap:5px;padding-bottom:4px;border-bottom:2px solid rgba(251,191,36,.25)">🟡 Watch <span style="font-size:11px;font-weight:400;color:var(--tm)">${watch.length}</span></div>`;
-  if(watch.length===0){
-    h+=`<div style="padding:10px;font-size:12px;color:var(--tm);font-style:italic;text-align:center">Nothing to watch ✓</div>`;
-  } else {
-    watch.forEach(sig=>{
-      const col=SEV_COLOR[sig.severity]||"var(--tm)";
-      const idx=_sigActions.length;if(sig.actionFn)_sigActions.push(sig.actionFn);
-      h+=`<div style="padding:9px 10px;border-radius:8px;background:${SEV_BG[sig.severity]||"var(--al)"};border:1px solid ${col}22;display:flex;flex-direction:column;gap:3px">`;
-      h+=`<div style="display:flex;align-items:center;gap:6px;justify-content:space-between">`;
-      h+=`<span style="font-size:11px;font-weight:600;color:var(--text)">${sig.icon} ${sig.title}</span>`;
-      h+=`<span style="font-size:11px;color:${col};font-weight:600;cursor:pointer;white-space:nowrap" onclick="_navPush();S.emp='${XJ(sig.person)}';S.tab='cards';ren()">${X(sig.person.split(" ")[0])}</span>`;
-      h+=`</div>`;
-      h+=`<div style="font-size:11px;color:var(--tm)">${sig.msg}</div>`;
-      if(sig.action&&sig.actionFn)h+=`<button onclick="_sigActions[${idx}]()" style="margin-top:2px;padding:2px 7px;border:1px solid ${col}33;border-radius:4px;background:none;color:${col};font-family:inherit;font-size:11px;cursor:pointer;width:fit-content">${sig.action}</button>`;
-      h+=`</div>`;
-    });
-  }
-  h+=`</div>`;
-
-  // Col 3: Good
-  h+=`<div style="display:flex;flex-direction:column;gap:6px">`;
-  h+=`<div style="font-size:12px;font-weight:700;color:var(--early);display:flex;align-items:center;gap:5px;padding-bottom:4px;border-bottom:2px solid rgba(52,211,153,.25)">🟢 Good <span style="font-size:11px;font-weight:400;color:var(--tm)">${good.length}</span></div>`;
-  if(good.length===0){
-    h+=`<div style="padding:10px;font-size:12px;color:var(--tm);font-style:italic;text-align:center">No confirmed positives yet</div>`;
-  } else {
-    good.forEach(sig=>{
-      const col=SEV_COLOR[sig.severity]||"var(--early)";
-      h+=`<div style="padding:7px 10px;border-radius:8px;background:${SEV_BG[sig.severity]||"var(--al)"};border:1px solid ${col}22;display:flex;align-items:center;gap:7px">`;
-      h+=`<span style="font-size:13px">${sig.icon}</span>`;
-      h+=`<div style="flex:1;min-width:0">`;
-      h+=`<div style="font-size:11px;font-weight:600;color:var(--text)">${sig.title}</div>`;
-      h+=`<div style="font-size:11px;color:var(--tm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${X(sig.person.split(" ")[0])} · ${sig.msg}</div>`;
-      h+=`</div></div>`;
-    });
-  }
-  h+=`</div>`;
-
-  h+=`</div>`; // close 3-col grid
-
   // ── QUICK ACTIONS ──
+  const issueCount=Object.values(allSignals).flat().filter(s=>s.severity==="high"||s.severity==="medium").length;
   h+=`<div style="display:flex;gap:6px;flex-wrap:wrap;padding:8px 0">`;
+  if(issueCount>0)h+=`<button onclick="setAnalyticsView('issues')" style="padding:5px 12px;border:1px solid rgba(220,38,38,.3);border-radius:6px;background:rgba(220,38,38,.06);color:#dc2626;font-family:inherit;font-size:11px;cursor:pointer;font-weight:600">⚠ ${issueCount} signal${issueCount!==1?'s':''} — Review</button>`;
   h+=`<button onclick="genWeeklyDigest()" style="padding:5px 12px;border:1px solid var(--accent);border-radius:6px;background:rgba(122,180,255,.08);color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer;font-weight:600">📋 Weekly Digest</button>`;
-  h+=`<button onclick="genEmail()" style="padding:5px 12px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px;cursor:pointer">✉ Copy Today's Roster</button>`;
-  h+=`<button onclick="showBulkExceptionForm()" style="padding:5px 12px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px;cursor:pointer">⚡ Bulk Exception</button>`;
-  h+=`<button onclick="setTab('analytics')" style="padding:5px 12px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px;cursor:pointer">📊 Analytics</button>`;
-  h+=`<button onclick="setTab('planner')" style="padding:5px 12px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px;cursor:pointer">🔮 Planner</button>`;
-  h+=`<button onclick="S._sumHealthOpen=true;setTab('summary')" style="padding:5px 12px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px;cursor:pointer">📋 Full Summary</button>`;
-  if(teamRisk&&teamRisk.riskDays.length){
-    h+=`<button onclick="setTab('calendar')" style="padding:5px 12px;border:1px solid rgba(220,38,38,.3);border-radius:6px;background:rgba(220,38,38,.06);color:#dc2626;font-family:inherit;font-size:11px;cursor:pointer;font-weight:600">⚠ View Coverage Gaps</button>`;
-  }
+  h+=`<button onclick="genEmail()" style="padding:5px 12px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px;cursor:pointer">✉ Share Roster</button>`;
+  h+=`<button onclick="showBulkExceptionForm()" style="padding:5px 12px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px;cursor:pointer">⚡ Log Exception</button>`;
   h+=`</div>`;
 
   // ── BULK EXCEPTION FORM (if open) ──
@@ -13604,9 +13487,8 @@ function openAnomalyForPerson(name,dateKey){
 function notifyLoadAnomalies(contextLabel){
   const summary=getAnomalySummary(S.entries||[]);
   if(!summary.total)return;
-  const first=summary.top[0];
-  toast(summary.total+" anomalies detected on load"+(contextLabel?" · "+contextLabel:""),"warn",0,{actionLabel:first&&first.dateKey?"Inspect first":"Review",actionFn:first?()=>openAnomalyForPerson(first.name,first.dateKey):()=>openAnomalySummary('cards')});
-  summary.top.slice(0,3).forEach(it=>toast(it.name.split(" ")[0]+": "+it.msg,"info",0,{actionLabel:it.dateKey?"Inspect":"Open",actionFn:()=>openAnomalyForPerson(it.name,it.dateKey)}));
+  // v48.2: Single consolidated toast instead of 1+3 separate ones
+  toast(summary.total+" anomalie"+(summary.total!==1?"s":"")+" detected"+(contextLabel?" · "+contextLabel:"")+" — check Issues view","warn",0,{actionLabel:"Review",actionFn:()=>{S.tab="analytics";S.anView="issues";ren();}});
 }
 
 // Toast with action buttons — centred, stays until dismissed
