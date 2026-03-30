@@ -1032,7 +1032,7 @@ body.density-spacious .cg{gap:16px}
         <span class="qs-ico">📅</span>
         <div><div class="qs-text">Today's roster</div><div class="qs-sub">Calendar → see who's on, share to Teams</div></div>
       </button>
-      <button class="ls-qs" onclick="closeSplash();setTab('analytics');setAnalyticsView('ops')">
+      <button class="ls-qs" onclick="closeSplash();setTab('analytics');setAnalyticsView('dashboard')">
         <span class="qs-ico">⚡</span>
         <div><div class="qs-text">Team intelligence</div><div class="qs-sub">Analytics → Ops → coaching queue, signals, risk</div></div>
       </button>
@@ -1085,8 +1085,8 @@ let S={wb:null,fn:"",shs:[],sh:"",raw:[],entries:[],team:"all",emp:"all",tz:true
     notes:{}// flagId → string
   }};
 
-const APP_VERSION="v48.0";
-const APP_BUILD_LABEL="clean merge · simplified shell · 5 tabs · unified settings";
+const APP_VERSION="v48.1";
+const APP_BUILD_LABEL="patched · 5 tabs · 4 analytics · unified settings · clean shell";
 const APP_BUILD=APP_VERSION+" · "+APP_BUILD_LABEL;
 const DEFAULT_COACH_START_BUFFER=90;   // min after shift start
 const DEFAULT_COACH_END_BUFFER=60;     // min before shift end
@@ -1496,7 +1496,7 @@ function setLeader(name){
 }
 function setTab(tab){
   // Intel is no longer a top-level tab — it lives as Analytics > Ops
-  if(tab==="intel"){S.tab="analytics";S.anView="ops";renderChrome();rerenderCurrentSurface();return;}
+  if(tab==="intel"){S.tab="analytics";S.anView="dashboard";renderChrome();rerenderCurrentSurface();return;}
 
   if(S.tab===tab)return;
   _navPush();
@@ -3538,8 +3538,7 @@ function restoreFromSaveFile(wb,filename){
     FIELDS.forEach(f=>{if(f in S)S.workspace[S.activeDept][f]=S[f];});
     $("us").style.display="none";$("mv").classList.remove("hid");$("mv").style.display="flex";
     $("ha").style.display="flex";$("fl").textContent=S.activeDept||S.fn;
-    $("tp").innerHTML=Object.entries(TH).map(([k,t])=>`<div class="td${k===S.th?" ac":""}" style="background:${t.d}" onclick="setTh('${k}')" title="${t.n}"></div>`).join("");
-    $("kbh").style.display="flex";updateDeptStrip();ren();
+    $("kbh").style.display="none";updateDeptStrip();ren();
     toast("Session restored · "+S.activeDept+" · "+monthLabel()+" · "+S.entries.length+" entries","ok",4000);
     notifyLoadAnomalies(S.activeDept||filename);
   }catch(e){
@@ -5332,7 +5331,8 @@ function renderSettings(){
   h+=`</div></div>`;
   
   // ── Data ──
-  h+=`<div style="border-top:1px solid var(--bdr);padding-top:12px">`;
+  h+=`<div style="border-top:1px solid var(--bdr);padding-top:12px;display:flex;gap:8px;flex-wrap:wrap">`;
+  h+=`<button onclick="closeSettings();if(S.activeDept)removeDept(S.activeDept)" style="padding:6px 12px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">Close workspace</button>`;
   h+=`<button onclick="if(confirm('Clear all stored data?')){closeSettings();clearAllData()}" style="padding:6px 12px;border:1px solid rgba(220,38,38,.3);border-radius:6px;background:none;color:#dc2626;font-family:inherit;font-size:11px;cursor:pointer;opacity:.7">Clear all data</button>`;
   h+=`<div style="font-size:10px;color:var(--tm);margin-top:8px">${APP_BUILD}</div>`;
   h+=`</div>`;
@@ -6312,6 +6312,15 @@ function rToday(el){
 
 /* ═══ CARDS ═══ */
 function rCards(el){
+  // v48: People tab with Cards/Table view toggle
+  if(!S._peopleView)S._peopleView="cards";
+  let viewToggle=`<div style="display:flex;align-items:center;gap:0;margin-bottom:8px;border:1px solid var(--bdr);border-radius:8px;overflow:hidden;width:fit-content">`;
+  viewToggle+=`<button onclick="S._peopleView='cards';ren()" style="padding:5px 14px;border:none;background:${S._peopleView==="cards"?"var(--accent)":"none"};color:${S._peopleView==="cards"?"#000":"var(--tm)"};font-family:inherit;font-size:12px;font-weight:${S._peopleView==="cards"?"600":"400"};cursor:pointer">Cards</button>`;
+  viewToggle+=`<button onclick="S._peopleView='table';ren()" style="padding:5px 14px;border:none;border-left:1px solid var(--bdr);background:${S._peopleView==="table"?"var(--accent)":"none"};color:${S._peopleView==="table"?"#000":"var(--tm)"};font-family:inherit;font-size:12px;font-weight:${S._peopleView==="table"?"600":"400"};cursor:pointer">Table</button>`;
+  viewToggle+=`</div>`;
+  
+  if(S._peopleView==="table"){el.innerHTML=viewToggle;const tblHost=document.createElement("div");el.appendChild(tblHost);rTbl(tblHost);return;}
+  
   // Card-specific controls — near the content they affect, not buried in toolbar
   const names=gN();
   const allExpanded=names.length>0&&names.every(n=>S.collapsed&&S.collapsed[n]);
@@ -6321,8 +6330,8 @@ function rCards(el){
   controls+=`<label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:11px;color:var(--tm);margin-left:6px"><input type="checkbox" ${S.hlToday?"checked":""} onchange="setTodayHighlight(this.checked)"> Today</label>`;
   controls+=`</div>`;
 
-  if(S.allMonths){rCardsAllMonths(el,controls);return;}
-  const em=gE();let h=controls+'<div class="cg">';
+  if(S.allMonths){rCardsAllMonths(el,viewToggle+controls);return;}
+  const em=gE();let h=viewToggle+controls+'<div class="cg">';
   for(const[n,ent]of Object.entries(em)){
     h+=renderCard(n,ent,monthLabel());
   }
@@ -9452,7 +9461,7 @@ function rPlanner(el){
 
     // ═══ SAVE / REMOVE BAR ═══
     h+=`<div class="pl-save-bar">`;
-    h+=`<span class="ps-info">💾 Save to merge this projection into Calendar, Cards, Table & Analytics</span>`;
+    h+=`<span class="ps-info">💾 Save to merge this projection into Calendar, People & Analytics</span>`;
     h+=`<div style="display:flex;gap:6px;align-items:center">`;
     const savedKey=`${targetYear}-${targetMonth}`;
     if(S.savedMonths&&S.savedMonths[dk]&&S.savedMonths[dk][savedKey]){
@@ -9500,37 +9509,18 @@ function rCoachingTab(dk){
   h+=`<button class="pl-nav-btn" onclick="S.plGenMonth++;if(S.plGenMonth>11){S.plGenMonth=0;S.plGenYear++;}ren()">▶</button></div>`;
   h+=`</div></div>`;
 
-  // ── Targets config bar ──
-  h+=`<div class="pl-section" style="display:flex;align-items:center;gap:12px;padding:8px 14px;flex-wrap:wrap">`;
-  h+=`<label style="font-size:11px;color:var(--tm);display:flex;align-items:center;gap:4px">Duration: <select onchange="S.coachDuration=+this.value;ren()" style="padding:2px 6px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);color:var(--text);font-size:11px">`;
-  [30,45,60].forEach(m=>{h+=`<option value="${m}"${m===duration?' selected':''}>${m}min</option>`;});
-  h+=`</select></label>`;
-  h+=`<label style="font-size:11px;color:var(--tm);display:flex;align-items:center;gap:4px">Daily target: <input type="number" min="0" max="10" value="${dailyTarget}" onchange="S.coachTargetDaily=+this.value;ren()" style="width:40px;padding:2px 4px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);color:var(--text);font-size:11px;text-align:center"> sessions</label>`;
-  h+=`<span style="font-size:10px;color:var(--tm)">= ${Math.round(dailyTarget*durationHrs*10)/10}h coaching/day needed</span>`;
-
-  // ── Hours budget input ──
+  // ── Compact config summary (settings live in ⚙ Settings drawer) ──
   const budgetKey=targetY+'-'+(targetM<10?'0':'')+targetM;
   const budget=S.coachBudgetHrs&&S.coachBudgetHrs[budgetKey]||{day:0,week:0,month:0};
-  h+=`<div style="display:flex;align-items:center;gap:8px;padding-left:8px;border-left:1px solid var(--bdr)">`;
-  h+=`<span style="font-size:10px;font-weight:600;color:var(--tm)">Budget hrs:</span>`;
-  h+=`<label style="font-size:10px;color:var(--tm);display:flex;align-items:center;gap:2px">Day <input type="number" min="0" step="0.5" value="${budget.day||''}" placeholder="—" onchange="setCoachBudget('${budgetKey}','day',this.value)" style="width:36px;padding:2px 3px;border:1px solid var(--bdr);border-radius:3px;background:var(--bg);color:var(--accent);font-size:11px;text-align:center;font-family:'JetBrains Mono',monospace"></label>`;
-  h+=`<label style="font-size:10px;color:var(--tm);display:flex;align-items:center;gap:2px">Wk <input type="number" min="0" step="0.5" value="${budget.week||''}" placeholder="—" onchange="setCoachBudget('${budgetKey}','week',this.value)" style="width:36px;padding:2px 3px;border:1px solid var(--bdr);border-radius:3px;background:var(--bg);color:var(--accent);font-size:11px;text-align:center;font-family:'JetBrains Mono',monospace"></label>`;
-  h+=`<label style="font-size:10px;color:var(--tm);display:flex;align-items:center;gap:2px">Mo <input type="number" min="0" step="0.5" value="${budget.month||''}" placeholder="—" onchange="setCoachBudget('${budgetKey}','month',this.value)" style="width:40px;padding:2px 3px;border:1px solid var(--bdr);border-radius:3px;background:var(--bg);color:var(--accent);font-size:11px;text-align:center;font-family:'JetBrains Mono',monospace"></label>`;
-  h+=`</div>`;
-  h+=`</div>`;
-
-  // ── Budget vs target summary (if budget set) ──
+  h+=`<div class="pl-section" style="display:flex;align-items:center;gap:12px;padding:6px 14px;flex-wrap:wrap;font-size:11px;color:var(--tm)">`;
+  h+=`<span>${duration}min sessions · ${dailyTarget}/day target</span>`;
   if(budget.month>0){
     const coachHrsNeeded=Math.round(names.length*durationHrs*10)/10;
-    const budgetPct=budget.month>0?Math.round(coachHrsNeeded/budget.month*100):0;
     const budgetOk=coachHrsNeeded<=budget.month;
-    h+=`<div class="pl-section" style="padding:6px 14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">`;
-    h+=`<span style="font-size:11px;color:var(--tm)">Monthly budget: <strong style="color:var(--accent)">${budget.month}h</strong></span>`;
-    h+=`<span style="font-size:11px;color:var(--tm)">Needed for ${names.length} leaders: <strong style="color:${budgetOk?'var(--early)':'#dc2626'}">${coachHrsNeeded}h</strong></span>`;
-    h+=`<span style="font-size:11px;font-weight:600;color:${budgetOk?'var(--early)':'#dc2626'}">${budgetPct}% of budget${budgetOk?' ✓':' — over budget ⚠'}</span>`;
-    if(budget.day>0){const slotsPerDay=Math.floor(budget.day/durationHrs);h+=`<span style="font-size:10px;color:var(--tm)">Daily: ${budget.day}h = ~${slotsPerDay} session${slotsPerDay!==1?'s':''}/day</span>`;}
-    h+=`</div>`;
+    h+=`<span>· Budget: <strong style="color:var(--accent)">${budget.month}h</strong> · Need: <strong style="color:${budgetOk?'var(--early)':'#dc2626'}">${coachHrsNeeded}h</strong> ${budgetOk?'✓':'⚠'}</span>`;
   }
+  h+=`<button onclick="toggleSettings()" style="padding:2px 8px;border:1px solid var(--bdr);border-radius:4px;background:none;color:var(--accent);font-family:inherit;font-size:10px;cursor:pointer;margin-left:auto">⚙ Settings</button>`;
+  h+=`</div>`;
 
   if(!isConfirmed||!hasPositions){
     h+=`<div class="pl-section" style="padding:20px;text-align:center;color:var(--tm);font-size:12px">Confirm blueprint and set positions in the Schedule tab first.</div>`;
@@ -10198,7 +10188,7 @@ function computeSignals(name, entries, blueprint, positions, dk){
           msg:`${worst[0]==="gap"?"Schedule gap":worst[0]==="dup"?"Duplicate entries":"Issue"} detected in ${worst[1]} consecutive months`,
           detail:"This pattern may repeat — review schedule source",
           action:"Check History tab",
-          actionFn:()=>{S.tab="analytics";S.anView="history";ren();}
+          actionFn:()=>{S.tab="analytics";S.anView="coverage";ren();}
         });
       }
     }
@@ -11871,7 +11861,7 @@ function rSum(el){
     h+=`<div style="background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:12px 14px;margin-bottom:14px">`;
     h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">`;
     h+=`<span style="font-size:13px;font-weight:700">Health Breakdown${ctxChip('summary_health')}</span>`;
-    h+=`<div style="display:flex;align-items:center;gap:8px"><span style="font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace;color:${ths.gradeCol}">${ths.grade} ${ths.avg}<span style="font-size:10px;color:var(--tm);font-weight:400">/100</span></span><button onclick="setTab('analytics');setAnalyticsView('ops')" style="padding:3px 8px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--accent);font-family:inherit;font-size:10px;cursor:pointer">Full detail →</button></div>`;
+    h+=`<div style="display:flex;align-items:center;gap:8px"><span style="font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace;color:${ths.gradeCol}">${ths.grade} ${ths.avg}<span style="font-size:10px;color:var(--tm);font-weight:400">/100</span></span><button onclick="setTab('analytics');setAnalyticsView('dashboard')" style="padding:3px 8px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--accent);font-family:inherit;font-size:10px;cursor:pointer">Full detail →</button></div>`;
     h+=`</div>`;
     h+=`<table class="ft" style="font-size:11px"><thead><tr><th>Leader</th><th title="Coverage">Cov</th><th title="Exceptions">Exc</th><th title="Coaching">Coach</th><th title="Hours">Hrs</th><th title="Anomalies">Anom</th><th>Score</th><th>Grade</th></tr></thead><tbody>`;
     ths.personScores.sort((a,b)=>b.total-a.total).forEach(ps=>{
@@ -11941,8 +11931,8 @@ function rSum(el){
   h+=`<div style="display:flex;gap:6px;flex-wrap:wrap;padding:12px 0 4px;border-top:1px solid var(--bdr);margin-top:12px">`;
   h+=`<span style="font-size:10px;color:var(--tm);align-self:center;margin-right:4px">Go deeper:</span>`;
   h+=`<button onclick="setTab('calendar')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:10px;cursor:pointer;transition:all .1s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--bdr)';this.style.color='var(--tm)'">📅 Calendar</button>`;
-  h+=`<button onclick="setTab('analytics');setAnalyticsView('ops')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--accent);font-family:inherit;font-size:10px;cursor:pointer;font-weight:500">⚡ Ops</button>`;
-  h+=`<button onclick="setTab('analytics');setAnalyticsView('signals')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:10px;cursor:pointer;transition:all .1s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--bdr)';this.style.color='var(--tm)'">📊 Signals</button>`;
+  h+=`<button onclick="setTab('analytics');setAnalyticsView('dashboard')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--accent);font-family:inherit;font-size:10px;cursor:pointer;font-weight:500">Dashboard</button>`;
+  h+=`<button onclick="setTab('analytics');setAnalyticsView('issues')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:10px;cursor:pointer;transition:all .1s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--bdr)';this.style.color='var(--tm)'">📊 Signals</button>`;
   h+=`<button onclick="setTab('analytics');setAnalyticsView('coverage')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:10px;cursor:pointer;transition:all .1s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--bdr)';this.style.color='var(--tm)'">📈 Coverage</button>`;
   h+=`<button onclick="setTab('planner')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:10px;cursor:pointer;transition:all .1s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--bdr)';this.style.color='var(--tm)'">🔮 Planner</button>`;
   h+=`</div>`;
@@ -12275,7 +12265,7 @@ document.addEventListener("keydown",e=>{
   if(e.key==="ArrowRight"){e.preventDefault();navM(1);}
   if(e.key==="ArrowUp"||e.key==="ArrowDown"){e.preventDefault();const ns=gN();if(!ns.length)return;let idx=ns.indexOf(S.emp);if(e.key==="ArrowUp")idx=idx<=0?ns.length-1:idx-1;else idx=idx>=ns.length-1?0:idx+1;S.emp=ns[idx];ren();}
   if(e.key.toLowerCase()==="t"){goToday();}
-  if(e.key.toLowerCase()==="i"){S.tab="analytics";S.anView="ops";ren();}
+  if(e.key.toLowerCase()==="i"){S.tab="analytics";S.anView="dashboard";ren();}
   if(e.key.toLowerCase()==="c"){S.tab="calendar";ren();}
   if(e.key.toLowerCase()==="w"){genWeeklyDigest();}
   if(e.key==="?"){openHelp();}
