@@ -5727,37 +5727,97 @@ function bwStep3(cfg){
 
 // ── Step 4: Blueprint ──
 function bwStep4(cfg){
+  // v48.3: One shared blueprint — the system auto-assigns rotation offsets per leader.
+  // User defines ONE rotation pattern, then sets: expected hours range, which calendar
+  // day the rotation begins, and whether to offset leaders (stagger their start week).
   const names=cfg.teams.filter(t=>t.leader).map(t=>t.leader);
   const BWDOW=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
   const shiftNames=cfg.shifts.map(s=>s.name).filter(Boolean);
+  if(!cfg.sharedBlueprint)cfg.sharedBlueprint={};
+  if(!cfg.rotaStartDay)cfg.rotaStartDay=1;// day-of-month rota begins
+  if(!cfg.minHours)cfg.minHours=36;
+  if(!cfg.maxHours)cfg.maxHours=40;
+  if(cfg.staggerLeaders===undefined)cfg.staggerLeaders=true;
+
   let h=`<div style="display:flex;flex-direction:column;gap:16px">`;
   h+=`<h3 style="font-size:14px;font-weight:700;margin:0">Blueprint</h3>`;
-  h+=`<div style="font-size:12px;color:var(--tm)">Click cells to cycle through shifts. Each person gets a rotation pattern.</div>`;
+  h+=`<div style="font-size:12px;color:var(--tm)">Build one shared rotation pattern. Leaders will be assigned starting weeks automatically.</div>`;
   if(!names.length){h+=`<div style="padding:30px;text-align:center;color:var(--tm)">Add leaders in Step 2 first.</div></div>`;return h;}
   if(!shiftNames.length){h+=`<div style="padding:30px;text-align:center;color:var(--tm)">Define shifts in Step 3 first.</div></div>`;return h;}
+
+  // ── Rotation settings ──
+  h+=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;padding:12px;border:1px solid var(--bdr);border-radius:10px;background:rgba(255,255,255,.02)">`;
+  // Rotation start day
+  const dim=new Date(cfg.startYear,cfg.startMonth+1,0).getDate();
+  h+=`<div><div style="font-size:11px;font-weight:600;color:var(--tm);margin-bottom:5px">Rotation starts on day</div>`;
+  h+=`<select onchange="S.buildConfig.rotaStartDay=+this.value;renderBuildWizard()" style="width:100%;padding:7px;border:1px solid var(--bdr);border-radius:7px;background:var(--card);color:var(--text);font-family:inherit;font-size:12px">`;
+  for(let d=1;d<=dim;d++){h+=`<option value="${d}"${d===cfg.rotaStartDay?" selected":""}>${d} ${MOFULL[cfg.startMonth]}</option>`;}
+  h+=`</select></div>`;
+  // Expected hours range
+  h+=`<div><div style="font-size:11px;font-weight:600;color:var(--tm);margin-bottom:5px">Expected hours / week</div>`;
+  h+=`<div style="display:flex;align-items:center;gap:6px">`;
+  h+=`<input type="number" value="${cfg.minHours}" min="1" max="60" onchange="S.buildConfig.minHours=+this.value" style="width:55px;padding:7px;border:1px solid var(--bdr);border-radius:7px;background:var(--card);color:var(--text);font-family:inherit;font-size:12px;text-align:center">`;
+  h+=`<span style="font-size:11px;color:var(--tm)">–</span>`;
+  h+=`<input type="number" value="${cfg.maxHours}" min="1" max="60" onchange="S.buildConfig.maxHours=+this.value" style="width:55px;padding:7px;border:1px solid var(--bdr);border-radius:7px;background:var(--card);color:var(--text);font-family:inherit;font-size:12px;text-align:center">`;
+  h+=`<span style="font-size:11px;color:var(--tm)">h</span>`;
+  h+=`</div></div>`;
+  // Stagger leaders
+  h+=`<div><div style="font-size:11px;font-weight:600;color:var(--tm);margin-bottom:5px">Leader assignment</div>`;
+  h+=`<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;padding-top:2px">`;
+  h+=`<input type="checkbox" ${cfg.staggerLeaders?"checked":""} onchange="S.buildConfig.staggerLeaders=this.checked;renderBuildWizard()" style="width:14px;height:14px;accent-color:var(--accent)">`;
+  h+=`<span>Stagger start weeks</span></label>`;
+  h+=`<div style="font-size:10px;color:var(--tm);margin-top:3px">${cfg.staggerLeaders?"Each leader starts on a different rotation week":"All leaders start on W1"}</div>`;
+  h+=`</div></div>`;
+
+  // ── Shared blueprint grid ──
   h+=`<div style="display:flex;gap:6px">`;
-  h+=`<button onclick="bwAutoFill()" style="padding:4px 10px;border:1px solid var(--accent);border-radius:5px;background:var(--al);color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer">⚡ Auto-fill</button>`;
-  h+=`<button onclick="S.buildConfig.blueprint={};renderBuildWizard()" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">Clear</button></div>`;
-  names.forEach(name=>{
-    if(!cfg.blueprint[name])cfg.blueprint[name]={};
-    h+=`<div style="border:1px solid var(--bdr);border-radius:8px;overflow:hidden;background:var(--card)">`;
-    h+=`<div style="padding:5px 10px;font-size:11px;font-weight:600;background:rgba(255,255,255,.03);border-bottom:1px solid rgba(255,255,255,.05)">${X(name)}</div>`;
-    h+=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px"><tr><td style="padding:3px 6px;color:var(--tm);font-weight:600;width:36px">Wk</td>`;
-    BWDOW.forEach((d,di)=>{const isOp=cfg.opDays.includes(di);h+=`<td style="padding:3px 4px;text-align:center;color:${isOp?'var(--text)':'var(--tm)'};font-weight:500;opacity:${isOp?1:.4}">${d}</td>`;});
+  h+=`<button onclick="bwAutoFillShared()" style="padding:4px 10px;border:1px solid var(--accent);border-radius:5px;background:var(--al);color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer">⚡ Auto-fill</button>`;
+  h+=`<button onclick="S.buildConfig.sharedBlueprint={};renderBuildWizard()" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">Clear</button>`;
+  h+=`</div>`;
+  h+=`<div style="border:1px solid var(--bdr);border-radius:8px;overflow:hidden;background:var(--card)">`;
+  h+=`<div style="padding:6px 10px;font-size:11px;font-weight:600;background:rgba(255,255,255,.03);border-bottom:1px solid rgba(255,255,255,.05)">Shared rotation pattern <span style="font-weight:400;color:var(--tm)">— applied to all leaders with staggered start weeks</span></div>`;
+  h+=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px">`;
+  h+=`<tr><td style="padding:3px 6px;color:var(--tm);font-weight:600;width:36px">Wk</td>`;
+  BWDOW.forEach((d,di)=>{const isOp=cfg.opDays.includes(di);h+=`<td style="padding:3px 4px;text-align:center;color:${isOp?'var(--text)':'var(--tm)'};font-weight:500;opacity:${isOp?1:.4}">${d}</td>`;});
+  // Hours preview column
+  h+=`<td style="padding:3px 6px;text-align:center;color:var(--tm);font-weight:600;font-size:10px">Hrs</td></tr>`;
+  const sb=cfg.sharedBlueprint;
+  for(let w=1;w<=cfg.cycleLen;w++){
+    if(!sb[w])sb[w]={};
+    // Compute hours for this week row
+    let rowHrs=0;
+    cfg.opDays.forEach(di=>{
+      const val=sb[w][di]||"";
+      const sh2=cfg.shifts.find(s=>s.name===val);
+      if(sh2&&sh2.s&&sh2.e&&val!=="OFF")rowHrs+=calcHrs(sh2.s,sh2.e);
+    });
+    const hrsCol=rowHrs>cfg.maxHours?"#dc2626":rowHrs<cfg.minHours&&rowHrs>0?"var(--wknd)":"var(--early)";
+    h+=`<tr><td style="padding:3px 6px;color:var(--accent);font-weight:600;font-family:'JetBrains Mono',monospace">W${w}</td>`;
+    BWDOW.forEach((d,di)=>{
+      const val=sb[w][di]||"";
+      const sh2=cfg.shifts.find(s=>s.name===val);const tc2=val.toLowerCase();
+      const col=sh2?(tc2.includes("early")?"var(--early)":tc2.includes("mid")?"var(--mid)":tc2.includes("late")||tc2.includes("night")?"var(--late)":tc2.includes("weekend")||tc2.includes("wknd")?"var(--wknd)":"var(--accent)"):(val==="OFF"?"var(--tm)":"transparent");
+      h+=`<td style="padding:2px;text-align:center"><div onclick="bwCycleSharedCell(${w},${di})" style="padding:4px 2px;border-radius:4px;background:${val?col+'18':'transparent'};color:${val?col:'var(--bdr)'};font-size:10px;cursor:pointer;font-weight:500;border:1px solid ${val?col+'33':'var(--bdr)'};min-width:32px;user-select:none">${val||"—"}</div></td>`;
+    });
+    h+=`<td style="padding:3px 6px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:${rowHrs>0?hrsCol:'var(--bdr)'}">${rowHrs>0?rowHrs+"h":"—"}</td>`;
     h+=`</tr>`;
-    for(let w=1;w<=cfg.cycleLen;w++){
-      if(!cfg.blueprint[name][w])cfg.blueprint[name][w]={};
-      h+=`<tr><td style="padding:3px 6px;color:var(--accent);font-weight:600;font-family:'JetBrains Mono',monospace">W${w}</td>`;
-      BWDOW.forEach((d,di)=>{
-        const val=cfg.blueprint[name][w][di]||"";
-        const sh2=cfg.shifts.find(s=>s.name===val);const tc2=val.toLowerCase();
-        const col=sh2?(tc2.includes("early")?"var(--early)":tc2.includes("mid")?"var(--mid)":tc2.includes("late")||tc2.includes("night")?"var(--late)":tc2.includes("weekend")||tc2.includes("wknd")?"var(--wknd)":"var(--accent)"):(val==="OFF"?"var(--tm)":"transparent");
-        h+=`<td style="padding:2px;text-align:center"><div onclick="bwCycleCell('${XJ(name)}',${w},${di})" style="padding:4px 2px;border-radius:4px;background:${val?col+'18':'transparent'};color:${val?col:'var(--bdr)'};font-size:10px;cursor:pointer;font-weight:500;border:1px solid ${val?col+'33':'var(--bdr)'};min-width:32px;user-select:none">${val||"—"}</div></td>`;
-      });
-      h+=`</tr>`;
-    }
-    h+=`</table></div></div>`;
-  });
+  }
+  h+=`</table></div></div>`;
+
+  // ── Leader assignment preview ──
+  if(names.length&&Object.keys(sb).some(w=>Object.keys(sb[w]).length)){
+    h+=`<div style="padding:10px 12px;border:1px solid var(--bdr);border-radius:8px;background:rgba(255,255,255,.02)">`;
+    h+=`<div style="font-size:11px;font-weight:600;margin-bottom:8px;color:var(--tm)">Leader start-week assignment</div>`;
+    h+=`<div style="display:flex;flex-wrap:wrap;gap:6px">`;
+    names.forEach((name,ni)=>{
+      const startWk=cfg.staggerLeaders?((ni%cfg.cycleLen)+1):1;
+      h+=`<div style="display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;border:1px solid var(--bdr);background:rgba(255,255,255,.02)">`;
+      h+=`<span style="font-size:11px;font-weight:500">${X(name.split(" ")[0])}</span>`;
+      h+=`<span style="font-size:10px;padding:1px 5px;border-radius:5px;background:var(--al);color:var(--accent);font-weight:600">W${startWk}</span>`;
+      h+=`</div>`;
+    });
+    h+=`</div></div>`;
+  }
   h+=`</div>`;return h;
 }
 
@@ -5812,6 +5872,43 @@ function bwStep5(cfg){
 }
 
 // ── Helpers ──
+function bwCycleSharedCell(week,dow){
+  const cfg=S.buildConfig;if(!cfg)return;
+  const opts=[...cfg.shifts.map(s=>s.name).filter(Boolean),"OFF",""];
+  if(!cfg.sharedBlueprint)cfg.sharedBlueprint={};
+  if(!cfg.sharedBlueprint[week])cfg.sharedBlueprint[week]={};
+  const cur=cfg.sharedBlueprint[week][dow]||"";
+  cfg.sharedBlueprint[week][dow]=opts[(opts.indexOf(cur)+1)%opts.length];
+  renderBuildWizard();
+}
+function bwAutoFillShared(){
+  const cfg=S.buildConfig;if(!cfg)return;
+  const sn=cfg.shifts.map(s=>s.name).filter(Boolean);
+  if(!sn.length)return;
+  if(!cfg.sharedBlueprint)cfg.sharedBlueprint={};
+  for(let w=1;w<=cfg.cycleLen;w++){
+    if(!cfg.sharedBlueprint[w])cfg.sharedBlueprint[w]={};
+    for(let d=0;d<7;d++){
+      cfg.sharedBlueprint[w][d]=cfg.opDays.includes(d)?sn[(w-1)%sn.length]:"OFF";
+    }
+  }
+  renderBuildWizard();toast("Auto-filled — adjust as needed","ok");
+}
+// Expand shared blueprint into per-person blueprints with staggered start weeks
+function bwExpandSharedBlueprint(cfg){
+  const names=cfg.teams.filter(t=>t.leader).map(t=>t.leader);
+  const sb=cfg.sharedBlueprint||{};
+  cfg.blueprint={};
+  names.forEach((name,ni)=>{
+    const offset=cfg.staggerLeaders?(ni%cfg.cycleLen):0;
+    cfg.blueprint[name]={};
+    for(let w=1;w<=cfg.cycleLen;w++){
+      // Rotate the week: person ni starts on week (offset+1), so their W1 = shared W(offset+1)
+      const srcW=((w-1+offset)%cfg.cycleLen)+1;
+      cfg.blueprint[name][w]={...sb[srcW]};
+    }
+  });
+}
 function bwCycleCell(name,week,dow){
   const cfg=S.buildConfig;if(!cfg)return;
   const opts=[...cfg.shifts.map(s=>s.name).filter(Boolean),"OFF",""];
@@ -5896,11 +5993,29 @@ function executeBuildGenerate(){
   const names=cfg.teams.filter(t=>t.leader).map(t=>t.leader);
   if(!names.length){toast("Add at least one leader","warn");return;}
 
-  // ── v48.3: Anchor-based week calculation (fixes month-boundary offset) ──
-  // Each person's rotation is anchored to their last confirmed entry in the
-  // base file, not to a global startDate. This eliminates the +2-week jump
-  // that occurred when planning across mid-week month boundaries.
+  // v48.3: Expand shared blueprint into per-person blueprints before generating
+  if(cfg.sharedBlueprint&&Object.keys(cfg.sharedBlueprint).length){
+    bwExpandSharedBlueprint(cfg);
+  }
+
+  // v48.3: Anchor-based week calculation (fixes month-boundary offset)
   const personAnchorStates=getPersonAnchorStates(cfg,S);
+
+  // v48.3: rotaStartDay — shift anchor date to the chosen start day within the month
+  if(cfg.rotaStartDay&&cfg.rotaStartDay>1){
+    names.forEach(name=>{
+      const anchor=personAnchorStates[name];
+      // Only adjust if anchor is at the default plan start (no base file data)
+      const planStart=new Date(cfg.startYear,cfg.startMonth,1);
+      if(anchor.date.getTime()===planStart.getTime()){
+        // Move anchor back by (rotaStartDay-1) days so week 1 begins on rotaStartDay
+        const adj=new Date(cfg.startYear,cfg.startMonth,cfg.rotaStartDay);
+        // If rotaStartDay > 1, the person effectively starts mid-rotation
+        // We set anchor to rotaStartDay of the month so day 1 falls into the correct week
+        anchor.date=adj;
+      }
+    });
+  }
 
   const entries=[];
   for(let mi=0;mi<cfg.horizonMonths;mi++){
@@ -5910,7 +6025,6 @@ function executeBuildGenerate(){
       const dt=new Date(y,m,d);const dow=(dt.getDay()+6)%7;const dayName=DOW[dt.getDay()];
       names.forEach(name=>{
         const bp=cfg.blueprint[name];if(!bp)return;
-        // Per-person anchor: days elapsed since this person's last confirmed date
         const anchor=personAnchorStates[name];
         const daysFromAnchor=Math.floor((dt-anchor.date)/864e5);
         const weeksFromAnchor=Math.floor(daysFromAnchor/7);
@@ -5939,7 +6053,7 @@ function executeBuildGenerate(){
   for(let w=1;w<=cfg.cycleLen;w++){S.plBlueprints[dk].weeks[w]={};
     for(let d=0;d<7;d++){const sn2=(cfg.blueprint[names[0]]||{})[w]||{};const sv=sn2[d]||"OFF";const sd2=cfg.shifts.find(s=>s.name===sv);
       S.plBlueprints[dk].weeks[w][d]=sd2&&sd2.s?sd2.s+" - "+sd2.e:"OFF";}}
-  // Store anchor states into plPositions for round-tripping
+  // Store anchor states into plPositions
   S.plPositions[dk]={};names.forEach(n=>{
     const anchor=personAnchorStates[n];
     const ad=anchor.date;
@@ -5956,7 +6070,7 @@ function executeBuildGenerate(){
   closeBuildWizard();
   $("us").style.display="none";$("mv").classList.remove("hid");$("mv").style.display="flex";
   $("ha").style.display="flex";$("fl").textContent=cfg.deptName||"New Schedule";$("kbh").style.display="flex";
-  ren();toast(`Generated ${entries.length} entries · ${names.length} leaders · ${cfg.horizonMonths} month${cfg.horizonMonths>1?"s":""}·  anchor-based v48.3`,"ok",4000);
+  ren();toast(`Generated ${entries.length} entries · ${names.length} leaders · ${cfg.horizonMonths} month${cfg.horizonMonths>1?"s":""}· anchor-based v48.3`,"ok",4000);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -6938,18 +7052,26 @@ function rAnalytics(el){
     // Coverage first (the primary surface for this view)
   }
   if(S.anView==="issues"){
-    // v48.3: Issues view has two sub-panels: Signals/Alerts (operational) vs Data Quality (parse issues)
-    // Data Quality is separated so it never pollutes the operational signal view.
-    if(!S._issuesSubTab)S._issuesSubTab="signals";
-    const dataFlagCount=computeFlags().filter(f=>f.category==="data").length;
-    const dqBadge=dataFlagCount>0?` <span style="font-size:10px;padding:1px 5px;border-radius:8px;background:rgba(220,38,38,.15);color:#dc2626;font-weight:700">${dataFlagCount}</span>`:"";
+    // v48.3: Issues view has three sub-panels aligned to flag categories
+    // Operational = hours/coverage/consecutive/coaching (threshold alerts)
+    // Blueprint = mismatch/drift flags (schedule vs confirmed blueprint)
+    // Data Quality = parse issues, gaps, duplicates, fingerprint anomalies
+    if(!S._issuesSubTab)S._issuesSubTab="operational";
+    const allFlags=computeFlags();
+    const bpCount=allFlags.filter(f=>f.category==="blueprint").length;
+    const dqCount=allFlags.filter(f=>f.category==="data").length;
+    const bpBadge=bpCount>0?` <span style="font-size:10px;padding:1px 5px;border-radius:8px;background:rgba(122,180,255,.15);color:var(--accent);font-weight:700">${bpCount}</span>`:"";
+    const dqBadge=dqCount>0?` <span style="font-size:10px;padding:1px 5px;border-radius:8px;background:rgba(220,38,38,.15);color:#dc2626;font-weight:700">${dqCount}</span>`:"";
     h+=`<div style="display:flex;align-items:center;gap:0;border-bottom:1px solid var(--bdr);padding:0 14px">`;
-    h+=`<button style="padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;background:none;border:none;border-bottom:2px solid ${S._issuesSubTab==="signals"?"var(--accent)":"transparent"};color:${S._issuesSubTab==="signals"?"var(--accent)":"var(--tm)"};font-family:inherit" onclick="S._issuesSubTab='signals';rerenderAnalyticsSurface('view')">Signals & Alerts</button>`;
+    h+=`<button style="padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;background:none;border:none;border-bottom:2px solid ${S._issuesSubTab==="operational"?"var(--accent)":"transparent"};color:${S._issuesSubTab==="operational"?"var(--accent)":"var(--tm)"};font-family:inherit" onclick="S._issuesSubTab='operational';rerenderAnalyticsSurface('view')">Operational</button>`;
+    h+=`<button style="padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;background:none;border:none;border-bottom:2px solid ${S._issuesSubTab==="blueprint"?"var(--accent)":"transparent"};color:${S._issuesSubTab==="blueprint"?"var(--accent)":"var(--tm)"};font-family:inherit" onclick="S._issuesSubTab='blueprint';rerenderAnalyticsSurface('view')">Blueprint${bpBadge}</button>`;
     h+=`<button style="padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;background:none;border:none;border-bottom:2px solid ${S._issuesSubTab==="dataquality"?"var(--accent)":"transparent"};color:${S._issuesSubTab==="dataquality"?"var(--accent)":"var(--tm)"};font-family:inherit" onclick="S._issuesSubTab='dataquality';rerenderAnalyticsSurface('view')">Data Quality${dqBadge}</button>`;
-    h+=`<button title="Refresh flags" onclick="invalidateDerivedCache();rerenderAnalyticsSurface('view')" style="margin-left:auto;padding:4px 8px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:12px;cursor:pointer">↺</button>`;
+    h+=`<button title="Refresh" onclick="invalidateDerivedCache();rerenderAnalyticsSurface('view')" style="margin-left:auto;padding:4px 8px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:12px;cursor:pointer">↺</button>`;
     h+=`</div>`;
     if(S._issuesSubTab==="dataquality"){
       h+=rDataQualityView();
+    } else if(S._issuesSubTab==="blueprint"){
+      h+=rBlueprintFlagsView();
     } else {
       h+=rSignalsView(monthEnt,y,m);
       h+=rOperationalFlagsView();
@@ -7652,34 +7774,64 @@ function rDataQualityView(){
   return h;
 }
 
-/* ── v48.3: Operational flags panel — alerts + signals, no data quality ── */
+/* ── v48.3: Blueprint flags panel — mismatch/drift only ── */
+function rBlueprintFlagsView(){
+  const flags=computeFlags();
+  const fs=S.flagSettings||{};
+  const notes=fs.notes||{};
+  const bpFlags=flags.filter(f=>f.category==="blueprint");
+  const sevOrder={high:0,medium:1,low:2};
+  const sorted=[...bpFlags].sort((a,b)=>(sevOrder[a.severity]||3)-(sevOrder[b.severity]||3));
+  let h=`<div class="an-wrap" style="padding:12px 16px">`;
+  h+=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">`;
+  h+=`<span style="font-size:14px;font-weight:600">Blueprint mismatches</span>`;
+  if(bpFlags.length){
+    const high=bpFlags.filter(f=>f.severity==="high").length;
+    const med=bpFlags.filter(f=>f.severity==="medium").length;
+    if(high)h+=`<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(220,38,38,.1);color:#dc2626;font-weight:600">${high} high</span>`;
+    if(med)h+=`<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(251,191,36,.1);color:var(--wknd);font-weight:600">${med} medium</span>`;
+  } else {
+    h+=`<span style="font-size:11px;color:var(--early);font-weight:500">Blueprint aligned ✓</span>`;
+  }
+  h+=`<div style="display:flex;gap:6px;margin-left:auto">`;
+  if(bpFlags.length)h+=`<button onclick="if(confirm('Dismiss all ${bpFlags.length} blueprint flags?')){${bpFlags.map(f=>`dismissFlag('${f.id.replace(/[|']/g,"_")}');`).join('')}rerenderAnalyticsSurface('view');}" style="padding:3px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">Dismiss all</button>`;
+  h+=`</div></div>`;
+  if(!bpFlags.length){
+    h+=`<div style="text-align:center;padding:40px 20px;color:var(--tm)"><div style="font-size:28px;margin-bottom:8px">✓</div><div style="font-size:13px;font-weight:500">All entries match the confirmed blueprint</div></div>`;
+  } else {
+    sorted.forEach(f=>h+=renderFlagRow(f,notes));
+  }
+  h+=`</div>`;
+  return h;
+}
+
+/* ── v48.3: Operational flags panel — hours/coverage/consecutive/coaching ── */
 function rOperationalFlagsView(){
   const flags=computeFlags();
   const fs=S.flagSettings||{};
   const alerts=fs.alerts||{};
   const notes=fs.notes||{};
-  const alertFlags=flags.filter(f=>f.category==="alert");
+  const opFlags=flags.filter(f=>f.category==="operational");
   const infoFlags=flags.filter(f=>f.category==="info");
   const sevOrder={high:0,medium:1,low:2};
 
   let h=`<div class="an-wrap" style="padding:12px 16px">`;
-  // Header with universal controls
   h+=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">`;
-  h+=`<span style="font-size:14px;font-weight:600">Alerts</span>`;
-  if(alertFlags.length){
-    h+=`<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(251,191,36,.1);color:var(--wknd);font-weight:600">${alertFlags.length}</span>`;
+  h+=`<span style="font-size:14px;font-weight:600">Operational alerts</span>`;
+  if(opFlags.length){
+    h+=`<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(251,191,36,.1);color:var(--wknd);font-weight:600">${opFlags.length}</span>`;
   } else {
     h+=`<span style="font-size:11px;color:var(--early);font-weight:500">All clear ✓</span>`;
   }
   h+=`<div style="display:flex;gap:6px;margin-left:auto">`;
-  if(alertFlags.length)h+=`<button onclick="if(confirm('Dismiss all ${alertFlags.length} alerts?')){${alertFlags.map(f=>`dismissFlag('${f.id.replace(/'/g,"\\'")}');`).join('')}rerenderAnalyticsSurface('view');}" style="padding:3px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">Dismiss all</button>`;
+  if(opFlags.length)h+=`<button onclick="invalidateDerivedCache();rerenderAnalyticsSurface('view')" style="padding:3px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">↺ Refresh</button>`;
+  if(opFlags.length){const _ids=opFlags.map(f=>f.id);h+=`<button onclick="if(confirm('Dismiss all ${opFlags.length} operational alerts?')){${_ids.map(id=>`dismissFlag('${id.replace(/[|']/g,'_')}')`).join(';')};rerenderAnalyticsSurface('view');}" style="padding:3px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">Dismiss all</button>`;}
   h+=`</div></div>`;
-
-  if(!alertFlags.length&&!infoFlags.length){
-    h+=`<div style="text-align:center;padding:30px 20px;color:var(--tm)"><div style="font-size:28px;margin-bottom:8px">✓</div><div style="font-size:13px;font-weight:500">No alerts</div></div>`;
+  if(!opFlags.length&&!infoFlags.length){
+    h+=`<div style="text-align:center;padding:30px 20px;color:var(--tm)"><div style="font-size:28px;margin-bottom:8px">✓</div><div style="font-size:13px;font-weight:500">No operational alerts</div></div>`;
   }
-  if(alertFlags.length){
-    [...alertFlags].sort((a,b)=>(sevOrder[a.severity]||3)-(sevOrder[b.severity]||3)).forEach(f=>h+=renderFlagRow(f,notes));
+  if(opFlags.length){
+    [...opFlags].sort((a,b)=>(sevOrder[a.severity]||3)-(sevOrder[b.severity]||3)).forEach(f=>h+=renderFlagRow(f,notes));
   }
   if(infoFlags.length){
     h+=`<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bdr)">`;
@@ -9863,9 +10015,8 @@ function rPlanner(el){
 
 // ═══ COACHING TAB — daily target-based view ═══
 function rCoachingTab(dk){
-  // v48.3: Coaching is fully manual-first.
-  // Log sessions per person per day, track duration, notes, detect overlaps.
-  // No auto-planning required — works with or without blueprint/positions.
+  // v48.3: 3-panel coaching workspace — fully manual-first.
+  // Left: person list + overview  |  Centre: day grid/calendar  |  Right: log form + session detail
   const names=[...new Set(S.entries.map(e=>e.name))].filter(Boolean).sort();
   const now=new Date();
   if(!S.plGenYear)S.plGenYear=now.getFullYear();
@@ -9873,6 +10024,7 @@ function rCoachingTab(dk){
   const targetY=S.plGenYear,targetM=S.plGenMonth;
   const numDays=new Date(targetY,targetM+1,0).getDate();
   const defaultDur=S.coachDuration||30;
+  const todayISO=now.getFullYear()+"-"+P(now.getMonth()+1)+"-"+P(now.getDate());
 
   // All sessions for this month
   const allSessions=(S.coachManualSessions||[]).filter(s=>{
@@ -9881,16 +10033,20 @@ function rCoachingTab(dk){
     return d.getFullYear()===targetY&&d.getMonth()===targetM;
   });
 
-  // Sessions grouped by date then by person
+  // Sessions by date
   const byDate={};
-  allSessions.forEach(s=>{
-    if(!byDate[s.date])byDate[s.date]=[];
-    byDate[s.date].push(s);
-  });
+  allSessions.forEach(s=>{if(!byDate[s.date])byDate[s.date]=[];byDate[s.date].push(s);});
+  // Sessions by person
+  const byPerson={};names.forEach(n=>{byPerson[n]=allSessions.filter(s=>s.name===n);});
 
-  // Per-person session counts
-  const personCount={};
-  names.forEach(n=>{personCount[n]=allSessions.filter(s=>s.name===n).length;});
+  // Selected day state
+  if(!S._coachDay)S._coachDay=todayISO;
+  const selDay=S._coachDay;
+  const selDaySessions=(byDate[selDay]||[]).sort((a,b)=>(a.time||"00:00").localeCompare(b.time||"00:00"));
+
+  // Selected person
+  if(!S._coachPerson&&names.length)S._coachPerson=names[0];
+  const selPerson=S._coachPerson;
 
   let h=`<div class="pl-wrap">`;
 
@@ -9898,151 +10054,155 @@ function rCoachingTab(dk){
   h+=`<div class="pl-section" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;padding:8px 14px">`;
   h+=`<div style="display:flex;align-items:center;gap:10px">`;
   h+=`<h3 style="margin:0;font-size:15px">🎯 Coaching Log</h3>`;
-  h+=`<span class="pl-hd-sub">${allSessions.length} session${allSessions.length!==1?"s":""} · ${targetM===now.getMonth()&&targetY===now.getFullYear()?"this month":MOFULL[targetM]+" "+targetY}</span>`;
+  h+=`<span class="pl-hd-sub">${allSessions.length} session${allSessions.length!==1?"s":""} · this month</span>`;
   h+=`</div>`;
   h+=`<div style="display:flex;align-items:center;gap:6px">`;
-  h+=`<button class="btn" style="font-size:11px;padding:4px 10px;background:var(--al);color:var(--accent)" onclick="expCoachingStandalone()" title="Export coaching log as XLSX">📥 Export</button>`;
-  h+=`<div class="pl-nav"><button class="pl-nav-btn" onclick="S.plGenMonth--;if(S.plGenMonth<0){S.plGenMonth=11;S.plGenYear--;}ren()">◀</button>`;
+  h+=`<button class="btn" style="font-size:11px;padding:4px 10px;background:var(--al);color:var(--accent)" onclick="expCoachingStandalone()">📥 Export</button>`;
+  h+=`<div class="pl-nav"><button class="pl-nav-btn" onclick="S.plGenMonth--;if(S.plGenMonth<0){S.plGenMonth=11;S.plGenYear--;}S._coachDay=null;ren()">◀</button>`;
   h+=`<span class="pl-nav-label">${MOFULL[targetM]} ${targetY}</span>`;
-  h+=`<button class="pl-nav-btn" onclick="S.plGenMonth++;if(S.plGenMonth>11){S.plGenMonth=0;S.plGenYear++;}ren()">▶</button></div>`;
+  h+=`<button class="pl-nav-btn" onclick="S.plGenMonth++;if(S.plGenMonth>11){S.plGenMonth=0;S.plGenYear++;}S._coachDay=null;ren()">▶</button></div>`;
   h+=`</div></div>`;
 
-  // ── Log a new session ──
-  h+=`<div class="pl-section" style="padding:12px 14px">`;
-  h+=`<div style="font-size:12px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Log session</div>`;
-  h+=`<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end">`;
-  // Leader select
-  h+=`<div style="display:flex;flex-direction:column;gap:3px"><label style="font-size:11px;color:var(--tm)">Leader</label>`;
-  h+=`<select id="msLeader" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:7px;background:var(--card);color:var(--text);font-family:inherit;font-size:12px;min-width:140px">`;
-  h+=`<option value="">— select —</option>`;
-  names.forEach(n=>{h+=`<option value="${X(n)}">${X(n.split(" ")[0])}</option>`;});
-  h+=`</select></div>`;
-  // Date
-  const todayISO=now.getFullYear()+"-"+P(now.getMonth()+1)+"-"+P(now.getDate());
-  h+=`<div style="display:flex;flex-direction:column;gap:3px"><label style="font-size:11px;color:var(--tm)">Date</label>`;
-  h+=`<input id="msDate" type="date" value="${todayISO}" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:7px;background:var(--card);color:var(--text);font-family:inherit;font-size:12px"></div>`;
-  // Time (optional)
-  h+=`<div style="display:flex;flex-direction:column;gap:3px"><label style="font-size:11px;color:var(--tm)">Start time <span style="font-weight:400;opacity:.6">(optional)</span></label>`;
-  h+=`<input id="msTime" type="time" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:7px;background:var(--card);color:var(--text);font-family:inherit;font-size:12px"></div>`;
-  // Duration
-  h+=`<div style="display:flex;flex-direction:column;gap:3px"><label style="font-size:11px;color:var(--tm)">Duration (min)</label>`;
-  h+=`<input id="msDuration" type="number" value="${defaultDur}" min="5" max="240" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:7px;background:var(--card);color:var(--text);font-family:inherit;font-size:12px;width:80px"></div>`;
-  // Note
-  h+=`<div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:160px"><label style="font-size:11px;color:var(--tm)">Notes <span style="font-weight:400;opacity:.6">(optional)</span></label>`;
-  h+=`<input id="msNote" type="text" placeholder="e.g. call quality, adherence…" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:7px;background:var(--card);color:var(--text);font-family:inherit;font-size:12px"></div>`;
-  // Log button
-  h+=`<button onclick="addManualCoachSession()" style="padding:7px 18px;border:none;border-radius:7px;background:var(--accent);color:#000;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;align-self:flex-end">+ Log</button>`;
+  // ── 3-panel body ──
+  h+=`<div style="display:grid;grid-template-columns:200px 1fr 280px;gap:0;min-height:500px;border-top:1px solid var(--bdr)">`;
+
+  // ════ LEFT PANEL — person list ════
+  h+=`<div style="border-right:1px solid var(--bdr);display:flex;flex-direction:column">`;
+  h+=`<div style="padding:10px 12px;font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--bdr)">Team</div>`;
+  names.forEach(n=>{
+    const cnt=byPerson[n]?.length||0;
+    const totalMins=(byPerson[n]||[]).reduce((s,x)=>s+(x.duration||defaultDur),0);
+    const lastSess=(byPerson[n]||[]).sort((a,b)=>b.date.localeCompare(a.date))[0];
+    const isSel=n===selPerson;
+    h+=`<div onclick="S._coachPerson='${XJ(n)}';rPlanner($('ca'))" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--bdr)22;background:${isSel?"var(--al)":"transparent"};border-left:3px solid ${isSel?"var(--accent)":"transparent"}">`;
+    h+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">`;
+    h+=`<span style="font-size:12px;font-weight:${isSel?"700":"500"};color:${isSel?"var(--accent)":"var(--text)"}">${X(n.split(" ")[0])}</span>`;
+    h+=`<span style="font-size:11px;padding:1px 6px;border-radius:8px;background:${cnt>0?"var(--early)":"rgba(255,255,255,.06)"};color:${cnt>0?"#000":"var(--tm)"};font-weight:600">${cnt}</span>`;
+    h+=`</div>`;
+    if(cnt>0){
+      h+=`<div style="font-size:10px;color:var(--tm);margin-top:2px">${Math.floor(totalMins/60)}h ${totalMins%60}m · last ${lastSess?.date.slice(5)||""}</div>`;
+    } else {
+      h+=`<div style="font-size:10px;color:var(--tm);margin-top:2px">no sessions yet</div>`;
+    }
+    h+=`</div>`;
+  });
+  // Month totals at bottom
+  h+=`<div style="margin-top:auto;padding:10px 12px;border-top:1px solid var(--bdr);font-size:11px;color:var(--tm)">`;
+  const totalSessions=allSessions.length;
+  const totalMinsAll=allSessions.reduce((s,x)=>s+(x.duration||defaultDur),0);
+  h+=`<div>${totalSessions} sessions</div>`;
+  h+=`<div>${Math.floor(totalMinsAll/60)}h ${totalMinsAll%60}m total</div>`;
+  h+=`</div>`;
+  h+=`</div>`;
+
+  // ════ CENTRE PANEL — calendar grid ════
+  h+=`<div style="display:flex;flex-direction:column;overflow:hidden">`;
+  h+=`<div style="padding:10px 12px;font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between">`;
+  h+=`<span>Calendar — ${MOFULL[targetM]} ${targetY}</span>`;
+  h+=`<span style="font-size:10px;color:var(--tm)">${Object.keys(byDate).length} days with sessions</span>`;
+  h+=`</div>`;
+  // Day headers
+  const DOW7=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  h+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--bdr)">`;
+  DOW7.forEach(d=>h+=`<div style="padding:6px;text-align:center;font-size:10px;font-weight:600;color:var(--tm)">${d}</div>`);
+  h+=`</div>`;
+  // Calendar cells
+  const firstDay=new Date(targetY,targetM,1);
+  const startPad=(firstDay.getDay()+6)%7;// Mon=0
+  h+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);flex:1;align-content:start">`;
+  for(let pad=0;pad<startPad;pad++)h+=`<div style="padding:6px;border-right:1px solid var(--bdr)22;border-bottom:1px solid var(--bdr)22;min-height:56px"></div>`;
+  for(let d=1;d<=numDays;d++){
+    const dateISO=targetY+"-"+P(targetM+1)+"-"+P(d);
+    const daySessions=byDate[dateISO]||[];
+    const cnt=daySessions.length;
+    const isToday=dateISO===todayISO;
+    const isSel=dateISO===selDay;
+    const dt=new Date(targetY,targetM,d);
+    const isWknd=dt.getDay()===0||dt.getDay()===6;
+    const bg=isSel?"var(--al)":isToday?"rgba(122,180,255,.06)":"transparent";
+    const border=isSel?"var(--accent)":"transparent";
+    h+=`<div onclick="S._coachDay='${dateISO}';rPlanner($('ca'))" style="padding:5px 6px;border-right:1px solid var(--bdr)22;border-bottom:1px solid var(--bdr)22;min-height:56px;cursor:pointer;background:${bg};border-left:2px solid ${border};position:relative">`;
+    h+=`<div style="font-size:11px;font-weight:${isToday?"700":"500"};color:${isToday?"var(--accent)":isWknd?"var(--wknd)":"var(--tm)"}">${d}</div>`;
+    if(cnt>0){
+      // Show session dots / names
+      const shown=daySessions.slice(0,3);
+      shown.forEach(s=>{
+        h+=`<div style="font-size:9px;padding:1px 3px;border-radius:3px;background:var(--early)22;color:var(--early);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(s.name.split(" ")[0])}${s.time?" "+s.time:""}</div>`;
+      });
+      if(daySessions.length>3)h+=`<div style="font-size:9px;color:var(--tm)">+${daySessions.length-3} more</div>`;
+    }
+    h+=`</div>`;
+  }
   h+=`</div></div>`;
 
-  // ── Person summary strip ──
-  if(names.length){
-    h+=`<div class="pl-section" style="padding:10px 14px">`;
-    h+=`<div style="font-size:12px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Team overview — ${MOFULL[targetM]}</div>`;
-    h+=`<div style="display:flex;flex-wrap:wrap;gap:6px">`;
-    names.forEach(n=>{
-      const cnt=personCount[n]||0;
-      const lastSess=allSessions.filter(s=>s.name===n).sort((a,b)=>b.date.localeCompare(a.date))[0];
-      const pill=cnt>0?"var(--early)":"var(--tm)";
-      h+=`<div style="display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;border:1px solid var(--bdr);background:${cnt>0?"rgba(0,210,110,.06)":"rgba(255,255,255,.03)"}">`;
-      h+=`<span style="font-size:12px;font-weight:500;color:${pill}">${X(n.split(" ")[0])}</span>`;
-      h+=`<span style="font-size:11px;padding:1px 5px;border-radius:8px;background:${cnt>0?"var(--early)":"rgba(255,255,255,.08)"};color:${cnt>0?"#000":"var(--tm)"};font-weight:600">${cnt}</span>`;
-      if(lastSess)h+=`<span style="font-size:10px;color:var(--tm)">${lastSess.date.slice(8)}</span>`;
+  // ════ RIGHT PANEL — log form + selected day detail ════
+  h+=`<div style="border-left:1px solid var(--bdr);display:flex;flex-direction:column;overflow-y:auto">`;
+  // Log form
+  h+=`<div style="padding:12px;border-bottom:1px solid var(--bdr)">`;
+  h+=`<div style="font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Log session</div>`;
+  h+=`<div style="display:flex;flex-direction:column;gap:6px">`;
+  h+=`<select id="msLeader" style="padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px">`;
+  h+=`<option value="">— leader —</option>`;
+  names.forEach(n=>{h+=`<option value="${X(n)}"${n===selPerson?` selected`:""}>${X(n.split(" ")[0])}</option>`;});
+  h+=`</select>`;
+  h+=`<input id="msDate" type="date" value="${selDay}" style="padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px">`;
+  h+=`<div style="display:flex;gap:4px">`;
+  h+=`<input id="msTime" type="time" placeholder="Time" style="flex:1;padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px">`;
+  h+=`<input id="msDuration" type="number" value="${defaultDur}" min="5" max="240" title="Duration (min)" style="width:56px;padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px;text-align:center">`;
+  h+=`</div>`;
+  h+=`<input id="msNote" type="text" placeholder="Notes (optional)" style="padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px">`;
+  h+=`<button onclick="addManualCoachSession()" style="padding:7px;border:none;border-radius:6px;background:var(--accent);color:#000;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">+ Log</button>`;
+  h+=`</div></div>`;
+
+  // Selected day sessions
+  const selDt=new Date(selDay+"T12:00:00");
+  const selDowLabel=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][selDt.getDay()];
+  h+=`<div style="padding:10px 12px;border-bottom:1px solid var(--bdr);font-size:11px;font-weight:700;color:var(--text)">${selDowLabel} ${selDay.slice(8)} ${MOFULL[parseInt(selDay.slice(5,7))-1]}</div>`;
+  if(!selDaySessions.length){
+    h+=`<div style="padding:16px 12px;text-align:center;color:var(--tm);font-size:11px">No sessions logged.<br>Use the form above.</div>`;
+  } else {
+    selDaySessions.forEach((s,si)=>{
+      const sIdx=(S.coachManualSessions||[]).findIndex(x=>x.name===s.name&&x.date===s.date&&x.loggedAt===s.loggedAt);
+      const dur=s.duration||defaultDur;
+      h+=`<div style="padding:8px 12px;border-bottom:1px solid var(--bdr)22;display:flex;flex-direction:column;gap:3px">`;
+      h+=`<div style="display:flex;align-items:center;justify-content:space-between">`;
+      h+=`<span style="font-size:12px;font-weight:600;color:var(--accent)">${X(s.name.split(" ")[0])}</span>`;
+      h+=`<button onclick="removeManualCoachSession(${sIdx})" style="padding:1px 6px;border:1px solid var(--bdr);border-radius:3px;background:none;color:var(--tm);font-size:10px;cursor:pointer">✕</button>`;
+      h+=`</div>`;
+      h+=`<div style="display:flex;align-items:center;gap:6px">`;
+      if(s.time)h+=`<span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text)">${s.time}</span>`;
+      h+=`<input type="number" value="${dur}" min="5" max="240" onchange="editCoachSessionDuration(${sIdx},+this.value)" style="width:48px;padding:1px 4px;border:1px solid var(--bdr);border-radius:3px;background:var(--bg);color:var(--text);font-size:10px;text-align:center;font-family:'JetBrains Mono',monospace"><span style="font-size:10px;color:var(--tm)">min</span>`;
+      h+=`</div>`;
+      if(s.note)h+=`<div style="font-size:10px;color:var(--tm);font-style:italic">${X(s.note)}</div>`;
       h+=`</div>`;
     });
-    h+=`</div></div>`;
   }
 
-  // ── Day-by-day timeline ──
-  h+=`<div class="pl-section" style="padding:10px 14px">`;
-  h+=`<div style="font-size:12px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Session log</div>`;
-
-  if(!allSessions.length){
-    h+=`<div style="padding:28px 20px;text-align:center;color:var(--tm);font-size:12px">No sessions logged for ${MOFULL[targetM]} ${targetY}. Use the form above to log your first session.</div>`;
-  } else {
-    // Sort dates descending (most recent first)
-    const sortedDates=Object.keys(byDate).sort((a,b)=>b.localeCompare(a));
-    sortedDates.forEach(dateKey=>{
-      const daySessions=byDate[dateKey].sort((a,b)=>(a.time||"00:00").localeCompare(b.time||"00:00"));
-      const dt=new Date(dateKey+"T12:00:00");
-      const dowLabel=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][dt.getDay()];
-      const isToday=dateKey===todayISO;
-
-      // Overlap detection: sessions on same day within the same time window
-      const timedSessions=daySessions.filter(s=>s.time);
-      const overlapSet=new Set();
-      for(let i=0;i<timedSessions.length;i++){
-        for(let j=i+1;j<timedSessions.length;j++){
-          const aStart=parseInt(timedSessions[i].time.replace(":",""));
-          const aDur=timedSessions[i].duration||defaultDur;
-          const aEnd=aStart+Math.floor(aDur/60)*100+(aDur%60);
-          const bStart=parseInt(timedSessions[j].time.replace(":",""));
-          if(bStart<aEnd){overlapSet.add(i);overlapSet.add(j);}
-        }
-      }
-
-      h+=`<div style="margin-bottom:10px">`;
-      h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">`;
-      h+=`<span style="font-size:12px;font-weight:700;color:${isToday?"var(--accent)":"var(--text)"}">${dowLabel} ${dateKey.slice(8)} ${isToday?"· today":""}</span>`;
-      h+=`<span style="font-size:11px;color:var(--tm)">${daySessions.length} session${daySessions.length!==1?"s":""}</span>`;
-      if(overlapSet.size)h+=`<span style="font-size:10px;padding:1px 6px;border-radius:4px;background:rgba(251,191,36,.12);color:var(--wknd);font-weight:600">⚠ overlap</span>`;
-      h+=`</div>`;
-
-      daySessions.forEach((s,si)=>{
-        const timedIdx=timedSessions.indexOf(s);
-        const hasOverlap=timedIdx>=0&&overlapSet.has(timedIdx);
+  // Person history (for selected person)
+  if(selPerson){
+    const pSess=(byPerson[selPerson]||[]).sort((a,b)=>b.date.localeCompare(a.date));
+    h+=`<div style="padding:10px 12px;border-top:1px solid var(--bdr);margin-top:auto">`;
+    h+=`<div style="font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">${selPerson.split(" ")[0]} — history</div>`;
+    if(!pSess.length){
+      h+=`<div style="font-size:11px;color:var(--tm)">No sessions yet.</div>`;
+    } else {
+      pSess.slice(0,6).forEach(s=>{
         const dur=s.duration||defaultDur;
-        h+=`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;border:1px solid ${hasOverlap?"rgba(251,191,36,.3)":"var(--bdr)"};background:${hasOverlap?"rgba(251,191,36,.04)":"rgba(255,255,255,.02)"};margin-bottom:3px">`;
-        // Person badge
-        h+=`<span style="font-size:12px;font-weight:600;color:var(--accent);min-width:70px">${X(s.name.split(" ")[0])}</span>`;
-        // Time + duration
-        if(s.time){
-          h+=`<span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text)">${s.time}</span>`;
-        } else {
-          h+=`<span style="font-size:11px;color:var(--tm)">no time</span>`;
-        }
-        h+=`<span style="font-size:11px;color:var(--tm)">${dur}min</span>`;
-        // Note
-        if(s.note)h+=`<span style="font-size:11px;color:var(--tm);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(s.note)}</span>`;
-        else h+=`<span style="flex:1"></span>`;
-        // Edit duration inline
-        const sIdx=(S.coachManualSessions||[]).findIndex(x=>x.name===s.name&&x.date===s.date&&x.loggedAt===s.loggedAt);
-        h+=`<input type="number" value="${dur}" min="5" max="240" title="Edit duration" onchange="editCoachSessionDuration(${sIdx},+this.value)" style="width:52px;padding:2px 5px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);color:var(--text);font-size:11px;text-align:center;font-family:'JetBrains Mono',monospace">`;
-        h+=`<span style="font-size:10px;color:var(--tm)">min</span>`;
-        h+=`<button onclick="removeManualCoachSession(${sIdx})" title="Remove" style="padding:2px 7px;border:1px solid var(--bdr);border-radius:4px;background:none;color:var(--tm);font-size:11px;cursor:pointer;font-family:inherit">✕</button>`;
+        h+=`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:10px;border-bottom:1px solid var(--bdr)11">`;
+        h+=`<span style="color:var(--tm);min-width:50px">${s.date.slice(5)}</span>`;
+        if(s.time)h+=`<span style="font-family:'JetBrains Mono',monospace;color:var(--text)">${s.time}</span>`;
+        h+=`<span style="color:var(--tm)">${dur}min</span>`;
+        if(s.note)h+=`<span style="color:var(--tm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${X(s.note)}</span>`;
         h+=`</div>`;
       });
-      h+=`</div>`;
-    });
+      if(pSess.length>6)h+=`<div style="font-size:10px;color:var(--tm);margin-top:3px">+ ${pSess.length-6} earlier sessions</div>`;
+    }
+    h+=`</div>`;
   }
-  h+=`</div>`;
+  h+=`</div>`;// end right panel
 
-  // ── Month summary table (person × totals) ──
-  if(allSessions.length){
-    h+=`<div class="pl-section" style="padding:10px 14px">`;
-    h+=`<div style="font-size:12px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Monthly summary</div>`;
-    h+=`<table style="width:100%;border-collapse:collapse;font-size:12px">`;
-    h+=`<thead><tr>`;
-    h+=`<th style="text-align:left;padding:5px 8px;color:var(--tm);font-weight:600;border-bottom:1px solid var(--bdr)">Leader</th>`;
-    h+=`<th style="text-align:center;padding:5px 8px;color:var(--tm);font-weight:600;border-bottom:1px solid var(--bdr)">Sessions</th>`;
-    h+=`<th style="text-align:center;padding:5px 8px;color:var(--tm);font-weight:600;border-bottom:1px solid var(--bdr)">Total time</th>`;
-    h+=`<th style="text-align:left;padding:5px 8px;color:var(--tm);font-weight:600;border-bottom:1px solid var(--bdr)">Last session</th>`;
-    h+=`</tr></thead><tbody>`;
-    names.forEach(n=>{
-      const pSess=allSessions.filter(s=>s.name===n).sort((a,b)=>b.date.localeCompare(a.date));
-      const cnt=pSess.length;
-      const totalMins=pSess.reduce((s,x)=>s+(x.duration||defaultDur),0);
-      const lastDate=pSess[0]?.date||"";
-      h+=`<tr style="border-bottom:1px solid var(--bdr)22">`;
-      h+=`<td style="padding:6px 8px;font-weight:500">${X(n)}</td>`;
-      h+=`<td style="padding:6px 8px;text-align:center;font-family:'JetBrains Mono',monospace;color:${cnt>0?"var(--early)":"var(--tm)"};font-weight:600">${cnt}</td>`;
-      h+=`<td style="padding:6px 8px;text-align:center;font-family:'JetBrains Mono',monospace;color:var(--tm)">${cnt>0?Math.floor(totalMins/60)+"h "+totalMins%60+"m":"—"}</td>`;
-      h+=`<td style="padding:6px 8px;color:var(--tm)">${lastDate||"—"}</td>`;
-      h+=`</tr>`;
-    });
-    h+=`</tbody></table></div>`;
-  }
-
-  h+=`</div>`;
+  h+=`</div>`;// end 3-panel grid
+  h+=`</div>`;// end pl-wrap
   return h;
 }
 
@@ -11069,7 +11229,7 @@ function computeFlags(){
       const wkAvg=span>0?Math.round(hrs/span*10)/10:0;
       if(wkAvg>limit){
         const id="overhours|"+name;
-        flags.push({id,category:"alert",severity:wkAvg>limit*1.1?"high":"medium",title:"Over hours",
+        flags.push({id,category:"operational",severity:wkAvg>limit*1.1?"high":"medium",title:"Over hours",
           detail:`${name.split(" ")[0]}: ${wkAvg}h/wk avg (limit ${limit}h)`,
           person:name,context:{wkAvg,limit,totalHrs:Math.round(hrs),weeks:span},
           actions:["adjust_limit","acknowledge","note"]});
@@ -11094,7 +11254,7 @@ function computeFlags(){
     }
     if(gapDays.length){
       const id="lowcov|"+S.month;
-      flags.push({id,category:"alert",severity:gapDays.some(d=>d.working===0)?"high":"medium",
+      flags.push({id,category:"operational",severity:gapDays.some(d=>d.working===0)?"high":"medium",
         title:"Coverage below minimum",
         detail:`${gapDays.length} day${gapDays.length!==1?"s":""} below ${min} TLs in ${MO[m]} ${y}`,
         person:null,context:{days:gapDays.map(d=>({date:fD(d.date),working:d.working,min:d.min,ph:d.ph}))},
@@ -11117,7 +11277,7 @@ function computeFlags(){
       });
       if(worstStreak>=maxDays){
         const id="consec|"+name;
-        flags.push({id,category:"alert",severity:worstStreak>=maxDays+3?"high":"medium",
+        flags.push({id,category:"operational",severity:worstStreak>=maxDays+3?"high":"medium",
           title:"Long work streak",
           detail:`${name.split(" ")[0]}: ${worstStreak} consecutive work days${worstStart?" starting "+fD(worstStart):""} (limit ${maxDays})`,
           person:name,context:{streak:worstStreak,start:worstStart?excKey(worstStart):null,limit:maxDays},
@@ -11135,7 +11295,7 @@ function computeFlags(){
         const hrs=calcHrs(e.ukS,e.ukE);
         if(hrs>=maxHrs){
           const id="longshift|"+name+"|"+excKey(e.date);
-          flags.push({id,category:"alert",severity:hrs>=maxHrs+2?"high":"medium",
+          flags.push({id,category:"operational",severity:hrs>=maxHrs+2?"high":"medium",
             title:"Long shift",
             detail:`${name.split(" ")[0]}: ${Math.round(hrs*10)/10}h shift on ${fD(e.date)} (${e.ukS}–${e.ukE}) — threshold ${maxHrs}h`,
             person:name,context:{date:excKey(e.date),shift:e.ukS+"–"+e.ukE,hours:Math.round(hrs*10)/10,limit:maxHrs},
@@ -11165,7 +11325,7 @@ function computeFlags(){
           const delta=pcts[n]-avg;
           if(Math.abs(delta)>=threshold){
             const id="wkndbal|"+n;
-            flags.push({id,category:"alert",severity:"low",title:"Weekend distribution",
+            flags.push({id,category:"operational",severity:"low",title:"Weekend distribution",
               detail:`${n.split(" ")[0]}: ${pcts[n]}% weekend vs ${avg}% team avg (${delta>0?"+":""}${delta}%)`,
               person:n,context:{pct:pcts[n],avg,delta},
               actions:["acknowledge","note"]});
@@ -11186,7 +11346,7 @@ function computeFlags(){
       if(!hasDone&&!hasHistory){
         const id="coaching|"+name+"|"+S.month;
         const detail=hasDate?`Session planned ${plan.date} but not confirmed`:`No coaching session scheduled for ${MO[cm]} ${cy}`;
-        flags.push({id,category:"alert",severity:hasDate?"low":"medium",title:"Coaching not scheduled",
+        flags.push({id,category:"operational",severity:hasDate?"low":"medium",title:"Coaching not scheduled",
           detail:`${name.split(" ")[0]}: ${detail}`,
           person:name,context:{month:S.month,hasDate:!!hasDate,planned:plan?.date||null},
           actions:["acknowledge","note"]});
@@ -11233,7 +11393,7 @@ function computeFlags(){
         const id="drift|"+d.name+"|"+excKey(d.date);
         const expLabel=d.expected==="OFF"?"OFF":d.expected;
         const actLabel=d.actual==="OFF"?"OFF":d.actual;
-        flags.push({id,category:"alert",severity:"medium",title:"Blueprint mismatch",
+        flags.push({id,category:"blueprint",severity:"medium",title:"Blueprint mismatch",
           detail:`${d.name.split(" ")[0]}: ${d.dayName} ${d.dateStr} — actual ${actLabel}, blueprint W${d.rotWeek} says ${expLabel}`,
           person:d.name,
           context:{expected:d.expected,actual:d.actual,rotWeek:d.rotWeek,date:excKey(d.date),dayName:d.dayName},
@@ -11244,7 +11404,7 @@ function computeFlags(){
         const byPerson2={};drifts.forEach(d=>{byPerson2[d.name]=(byPerson2[d.name]||0)+1;});
         const summaryParts=Object.entries(byPerson2).map(([n,c])=>n.split(" ")[0]+": "+c).join(", ");
         const id="drift-summary|"+S.month;
-        flags.push({id,category:"alert",severity:drifts.length>=10?"high":drifts.length>=3?"medium":"low",
+        flags.push({id,category:"blueprint",severity:drifts.length>=10?"high":drifts.length>=3?"medium":"low",
           title:"Blueprint drift summary",
           detail:`${drifts.length} mismatch${drifts.length!==1?"es":""} vs confirmed blueprint in ${MO[dm]} — ${summaryParts}`,
           person:null,context:{total:drifts.length,byPerson:byPerson2,month:S.month},
