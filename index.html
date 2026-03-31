@@ -995,7 +995,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
     <div class="uz-mark">
       <div class="uz-logo">📋</div>
       <div class="uz-title">MirrorFlow Sync</div>
-      <div class="uz-sub">Schedule intelligence for operations teams · v45.0</div>
+      <div class="uz-sub">Schedule intelligence for operations teams</div>
     </div>
 
     <!-- Two-lane layout -->
@@ -1035,20 +1035,6 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
           <span style="font-size:14px;font-weight:600">Create new schedule</span>
           <span style="font-size:11px;color:var(--tm);line-height:1.4">Define your operation, teams,<br>shifts, and build a roster</span>
         </button>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-          <button onclick="startBuildWizard('5day')" style="padding:8px;border:1px solid var(--bdr);border-radius:8px;background:rgba(255,255,255,.03);color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer;transition:all .12s;text-align:center" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--bdr)';this.style.color='var(--tm)'">
-            <div style="font-size:14px;margin-bottom:2px">🏢</div>5-day operation
-          </button>
-          <button onclick="startBuildWizard('6day')" style="padding:8px;border:1px solid var(--bdr);border-radius:8px;background:rgba(255,255,255,.03);color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer;transition:all .12s;text-align:center" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--bdr)';this.style.color='var(--tm)'">
-            <div style="font-size:14px;margin-bottom:2px">📞</div>6-day / BPO
-          </button>
-          <button onclick="startBuildWizard('7day')" style="padding:8px;border:1px solid var(--bdr);border-radius:8px;background:rgba(255,255,255,.03);color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer;transition:all .12s;text-align:center" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--bdr)';this.style.color='var(--tm)'">
-            <div style="font-size:14px;margin-bottom:2px">🔄</div>7-day / 24hr
-          </button>
-          <button onclick="startBuildWizard('custom')" style="padding:8px;border:1px solid var(--bdr);border-radius:8px;background:rgba(255,255,255,.03);color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer;transition:all .12s;text-align:center" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--bdr)';this.style.color='var(--tm)'">
-            <div style="font-size:14px;margin-bottom:2px">⚙</div>Custom
-          </button>
-        </div>
       </div>
     </div>
 
@@ -1132,13 +1118,13 @@ let S={wb:null,fn:"",shs:[],sh:"",raw:[],entries:[],team:"all",emp:"all",tz:true
       longShift:{on:false,label:"Long shift (single entry)",threshold:10},// hours
       weekendBalance:{on:false,label:"Weekend distribution imbalance",threshold:15},// % delta
       coachingDue:{on:false,label:"Coaching not scheduled",threshold:0},
-      shiftDrift:{on:false,label:"Shift differs from blueprint",threshold:20}// % deviation
+      // shiftDrift removed — v48.2 auto-detects when blueprint is confirmed
     },
     dismissed:{},// flagId → {at, note} for dismissed flags
     notes:{}// flagId → string
   }};
 
-const APP_VERSION="v48.2";
+const APP_VERSION="v48.3";
 const APP_BUILD_LABEL="patched · 5 tabs · 4 analytics · unified settings · clean shell";
 const APP_BUILD=APP_VERSION+" · "+APP_BUILD_LABEL;
 const DEFAULT_COACH_START_BUFFER=90;   // min after shift start
@@ -1297,10 +1283,44 @@ let _searchTimer=null;
 function handleSearchInput(val){
   S.srch=val;S.srchIdx=-1;
   if(_searchTimer)clearTimeout(_searchTimer);
+  // v48.3: Only rebuild the dropdown, never the input itself — rebuilding the
+  // toolbar destroys the input element which resets cursor to position 0.
   _searchTimer=setTimeout(()=>{
-    renderToolbar();
-    const inp=document.getElementById('srchInp');
-    if(inp)inp.focus();
+    const wrap=document.getElementById('srchWrap');
+    if(!wrap){renderToolbar();return;}
+    // Remove old dropdown if present
+    const old=document.getElementById('srchDd');
+    if(old)old.remove();
+    // Remove old clear button
+    const oldClr=wrap.querySelector('.srch-clr');
+    if(oldClr)oldClr.remove();
+    // Re-inject dropdown + clear using fresh match data
+    const searchMatches=getSearchMatches(S.srch);
+    const matchNames=searchMatches.names;const matchDays=searchMatches.days;
+    const matchShifts=searchMatches.shifts;const matchDate=searchMatches.date;
+    const matchWeeks=searchMatches.weeks||[];const matchViews=searchMatches.views||[];
+    const shiftCounts={};S.entries.forEach(e=>{if(e.ukS&&e.ukE&&!e.isOff){const k=e.ukS+' - '+e.ukE;shiftCounts[k]=(shiftCounts[k]||0)+1;}});
+    const hasResults=matchNames.length||matchDays.length||matchShifts.length||matchDate||matchWeeks.length||matchViews.length;
+    const activeLabel=S.emp!=='all'||S.dayFilter||S.shiftFilter||S.srch;
+    // Inject clear button
+    if(activeLabel){
+      const clr=document.createElement('span');clr.className='srch-clr';clr.title='Clear';clr.textContent='✕';
+      clr.onclick=()=>{S.emp='all';S.dayFilter='';S.shiftFilter='';S.srch='';S.srchIdx=-1;ren();};
+      wrap.appendChild(clr);
+    }
+    // Inject dropdown
+    if(hasResults&&S.srch){
+      let dd='<div class="srch-dd" id="srchDd">';
+      if(matchNames.length)dd+=`<div class="srch-section"><div class="srch-label">Leaders</div>${matchNames.map((n,i)=>`<div class="srch-item${i===S.srchIdx?' active':''}" onmousedown="applySearchSelection('name','${XJ(n)}')"><span>👤</span><span>${X(n)}</span></div>`).join('')}</div>`;
+      if(matchDays.length)dd+=`<div class="srch-section" style="border-top:1px solid var(--bdr)"><div class="srch-label">Days</div>${matchDays.map((d,i)=>`<div class="srch-item${(i+matchNames.length)===S.srchIdx?' active':''}" onmousedown="applySearchSelection('day','${X(d)}')"><span>📅</span><span>${X(d)}</span></div>`).join('')}</div>`;
+      if(matchShifts.length)dd+=`<div class="srch-section" style="border-top:1px solid var(--bdr)"><div class="srch-label">Shifts</div>${matchShifts.map((s,i)=>{const idx=i+matchNames.length+matchDays.length;return`<div class="srch-item${idx===S.srchIdx?' active':''}" onmousedown="applySearchSelection('shift','${X(s)}')"><span>⏰</span><span>${X(s)}</span><span class="si-tag">${shiftCounts[s]||0}</span></div>`;}).join('')}</div>`;
+      if(matchWeeks.length)dd+=`<div class="srch-section" style="border-top:1px solid var(--bdr)"><div class="srch-label">Weeks</div>${matchWeeks.map(w=>`<div class="srch-item" onmousedown="applySearchSelection('week',{label:'${XJ(w.label)}'})" ><span>🔄</span><span>${X(w.label)}</span><span class="si-tag">${w.count}</span></div>`).join('')}</div>`;
+      if(matchViews.length)dd+=`<div class="srch-section" style="border-top:1px solid var(--bdr)"><div class="srch-label">Go to</div>${matchViews.map(v=>`<div class="srch-item" onmousedown="applySearchSelection('view',{tab:'${v.tab}',view:${v.view?"'"+v.view+"'":"null"}})"><span>→</span><span>${X(v.label)}</span></div>`).join('')}</div>`;
+      if(matchDate)dd+=`<div class="srch-section" style="border-top:1px solid var(--bdr)"><div class="srch-label">Date</div><div class="srch-item" onmousedown="applySearchSelection('date','${matchDate.iso}')"><span>📆</span><span>${matchDate.day} ${MOFULL[matchDate.m]}</span></div></div>`;
+      dd+='</div>';
+      const tmp=document.createElement('div');tmp.innerHTML=dd;
+      wrap.appendChild(tmp.firstChild);
+    }
   },90);
 }
 function applySearchSelection(type,value){
@@ -1896,8 +1916,9 @@ function classifyOff(v){
   if(/\bmaternity\b|\bpaternity\b|\bbereavement\b/i.test(s))return"LEAVE";
   return null;// not an off-type
 }
-function isWk(v){return/^week\s*\d+$/i.test(String(v||"").trim());}
-function getWk(v){const m=String(v||"").trim().match(/^week\s*(\d+)$/i);return m?m[1]:null;}
+// v48.3: also recognise bare integers 1–15 as week labels (e.g. Claims file stores 4, not "Week 4")
+function isWk(v){const s=String(v||"").trim();if(/^week\s*\d+$/i.test(s))return true;if(/^\d+$/.test(s)){const n=+s;return n>=1&&n<=15;}return false;}
+function getWk(v){const s=String(v||"").trim();const m=s.match(/^week\s*(\d+)$/i);if(m)return m[1];if(/^\d+$/.test(s)&&+s>=1&&+s<=15)return s;return null;}
 function isNs(v){const s=String(v||"").trim();if(!s||s==="·")return true;if(/^\d+(\.\d+)?$/.test(s)&&!s.includes("-")&&!s.includes(":"))return true;return false;}
 
 // ═══ HEADER / NOISE ROW DETECTION ═══
@@ -2572,12 +2593,51 @@ function detectShiftPatterns(entries){
   const cycleLen=uniqueKeys.length;
   if(cycleLen<2||cycleLen>15)return null;// unreasonable
 
-  // 4. Order patterns by calendar sequence (first appearance order)
+  // 4. Order patterns — v48.3: prefer file-supplied week numbers (_fileWeek on entries)
+  // When the source file stores explicit week labels (e.g. col I = 4 or "Week 4"),
+  // the parser sets _fileWeek="W4" on entries. If those labels are consistent across
+  // all people, use them as the canonical ordering anchor.
+  // This prevents the ordering from depending on which person is chosen as bestPerson,
+  // which was causing W5 Sat/Sun to flip when Sharon (starting on W4) was selected.
+  const fileWeekVotes={};// fpKey → {wNum: count}
+  for(const[pname,weeks] of Object.entries(personWeeks)){
+    weeks.forEach(w=>{
+      if(!w.entries||!w.entries.length)return;
+      // Majority vote on _fileWeek for this week's entries
+      const votes={};
+      w.entries.forEach(e=>{
+        if(e._fileWeek){const n=parseInt(e._fileWeek.replace(/\D/g,""),10);if(n>=1&&n<=15)votes[n]=(votes[n]||0)+1;}
+      });
+      const top=Object.entries(votes).sort((a,b)=>b[1]-a[1])[0];
+      if(!top)return;
+      const wn=+top[0],key=fpKey(w.fp);
+      if(!fileWeekVotes[key])fileWeekVotes[key]={};
+      fileWeekVotes[key][wn]=(fileWeekVotes[key][wn]||0)+top[1];
+    });
+  }
+  // Check if file week labels cover all unique patterns and are distinct
+  const fileWeekMap={};// fpKey → canonical wNum from file
+  let fileWeeksUsable=true;
+  for(const key of uniqueKeys){
+    const votes=fileWeekVotes[key]||{};
+    const top=Object.entries(votes).sort((a,b)=>b[1]-a[1])[0];
+    if(!top){fileWeeksUsable=false;break;}
+    fileWeekMap[key]=+top[0];
+  }
+  // Ensure distinct mapping (no two patterns claiming same week number)
+  if(fileWeeksUsable){
+    const usedNums=Object.values(fileWeekMap);
+    if(new Set(usedNums).size!==usedNums.length)fileWeeksUsable=false;
+  }
   const ordered=uniqueKeys.map(key=>({
     key,
     firstIdx:Math.min(...clusters[key].map(c=>c.idx)),
+    fileWk:fileWeekMap[key]||null,
     members:clusters[key]
-  })).sort((a,b)=>a.firstIdx-b.firstIdx);
+  })).sort((a,b)=>{
+    if(fileWeeksUsable&&a.fileWk&&b.fileWk)return a.fileWk-b.fileWk;// use file labels
+    return a.firstIdx-b.firstIdx;// fallback: first appearance
+  });
 
   // 5. Verify cycle repeats
   let cycleConfirmed=false;
@@ -2724,6 +2784,24 @@ function assignPatternWeeks(entries,detected,boundary){
           const next=((prev-1+gap)%detected.cycleLen)+1;
           weekMap[wks[i]].label="W"+next;
           weekMap[wks[i]].entries.forEach(e=>e.week="W"+next);
+          break;
+        }
+      }
+    }
+    // v48.2: Backward fill — if the first week(s) are still unlabelled (partial start),
+    // derive from the first labelled week by walking backwards through the cycle.
+    // e.g. if first labelled week is W1 on Apr 6, the partial week before it is W5 (in a 5-week cycle)
+    for(let i=0;i<wks.length;i++){
+      if(weekMap[wks[i]].label)break;// stop at first labelled
+      // Find first labelled week AFTER this one
+      for(let j=i+1;j<wks.length;j++){
+        if(boundaryISO&&((wks[j]<boundaryISO)!==(wks[i]<boundaryISO)))break;
+        if(weekMap[wks[j]].label){
+          const fwd=parseInt(weekMap[wks[j]].label.replace(/\D/g,""));
+          const gap=j-i;// how many weeks back from the labelled one
+          let backWeek=((fwd-1-gap)%detected.cycleLen+detected.cycleLen)%detected.cycleLen+1;
+          weekMap[wks[i]].label="W"+backWeek;
+          weekMap[wks[i]].entries.forEach(e=>e.week="W"+backWeek);
           break;
         }
       }
@@ -5777,11 +5855,54 @@ function bwBulkPaste(){
 }
 
 // ── Generation engine ──
+// ── v48.3: Anchor-based state helper ──────────────────────────
+// Queries S.entries (base file) for each person's last confirmed
+// rotation week. Returns { name: { week: N, date: Date } }.
+// Falls back to W1 on plan start for new/missing people.
+function getPersonAnchorStates(cfg,S){
+  const anchors={};
+  const names=cfg.teams.filter(t=>t.leader).map(t=>t.leader);
+  const planStartDate=new Date(cfg.startYear,cfg.startMonth,1);
+  if(!S.entries||!S.entries.length){
+    names.forEach(name=>{anchors[name]={week:1,date:planStartDate};});
+    return anchors;
+  }
+  names.forEach(name=>{
+    const personEntries=S.entries.filter(e=>e.name===name&&e.date&&e.week);
+    if(!personEntries.length){
+      anchors[name]={week:1,date:planStartDate};
+      return;
+    }
+    // Most recent confirmed entry
+    const last=personEntries.reduce((a,b)=>new Date(b.date)>new Date(a.date)?b:a);
+    // Parse "W4" → 4
+    let wn=last.week;
+    if(typeof wn==="string")wn=parseInt(wn.replace(/[^\d]/g,""),10);
+    if(!wn||wn<1||wn>cfg.cycleLen){console.warn("MFS v48.3: bad week for "+name+" ("+last.week+"), defaulting W1");wn=1;}
+    const anchorDate=new Date(last.date);
+    // Safety: if anchor is after plan start, reset to plan start W1
+    if(anchorDate>planStartDate){
+      console.warn("MFS v48.3: anchor date for "+name+" is after plan start — resetting to plan start W1");
+      anchors[name]={week:1,date:planStartDate};
+    } else {
+      anchors[name]={week:wn,date:anchorDate};
+    }
+  });
+  return anchors;
+}
+
 function executeBuildGenerate(){
   const cfg=S.buildConfig;if(!cfg)return;
   const names=cfg.teams.filter(t=>t.leader).map(t=>t.leader);
   if(!names.length){toast("Add at least one leader","warn");return;}
-  const entries=[];const startDate=new Date(cfg.startYear,cfg.startMonth,1);
+
+  // ── v48.3: Anchor-based week calculation (fixes month-boundary offset) ──
+  // Each person's rotation is anchored to their last confirmed entry in the
+  // base file, not to a global startDate. This eliminates the +2-week jump
+  // that occurred when planning across mid-week month boundaries.
+  const personAnchorStates=getPersonAnchorStates(cfg,S);
+
+  const entries=[];
   for(let mi=0;mi<cfg.horizonMonths;mi++){
     const md=new Date(cfg.startYear,cfg.startMonth+mi,1);
     const y=md.getFullYear(),m=md.getMonth(),dim=new Date(y,m+1,0).getDate();
@@ -5789,7 +5910,11 @@ function executeBuildGenerate(){
       const dt=new Date(y,m,d);const dow=(dt.getDay()+6)%7;const dayName=DOW[dt.getDay()];
       names.forEach(name=>{
         const bp=cfg.blueprint[name];if(!bp)return;
-        const wk=((Math.floor(Math.round((dt-startDate)/864e5)/7))%cfg.cycleLen)+1;
+        // Per-person anchor: days elapsed since this person's last confirmed date
+        const anchor=personAnchorStates[name];
+        const daysFromAnchor=Math.floor((dt-anchor.date)/864e5);
+        const weeksFromAnchor=Math.floor(daysFromAnchor/7);
+        const wk=((anchor.week-1+weeksFromAnchor)%cfg.cycleLen)+1;
         const sn=(bp[wk]||{})[dow]||"";
         const sd=cfg.shifts.find(s=>s.name===sn);
         if(sd&&sd.s&&sd.e&&sn!=="OFF"){
@@ -5803,6 +5928,7 @@ function executeBuildGenerate(){
   // SA timezone
   entries.forEach(e=>{if(e.ukS){e.saS=u2s(e.ukS,e.date);e.saE=u2s(e.ukE,e.date);}});
   // Load into workspace
+  const planStartDate=new Date(cfg.startYear,cfg.startMonth,1);
   S.entries=entries;S.fn=cfg.deptName||"New Schedule";S.shs=["Generated"];S.sh="__all__";
   S.team="all";S.emp="all";S.month=null;S.months=[];S.mIdx=0;S.calDay=null;S.collapsed={};
   S.shiftFilter="";S.dayFilter="";S.parseInfo=[{sheet:"Generated",parser:"BuildWizard",confidence:"high",count:entries.length,warnings:[]}];
@@ -5813,7 +5939,13 @@ function executeBuildGenerate(){
   for(let w=1;w<=cfg.cycleLen;w++){S.plBlueprints[dk].weeks[w]={};
     for(let d=0;d<7;d++){const sn2=(cfg.blueprint[names[0]]||{})[w]||{};const sv=sn2[d]||"OFF";const sd2=cfg.shifts.find(s=>s.name===sv);
       S.plBlueprints[dk].weeks[w][d]=sd2&&sd2.s?sd2.s+" - "+sd2.e:"OFF";}}
-  S.plPositions[dk]={};names.forEach((n,ni)=>{S.plPositions[dk][n]={confirmedWeek:((ni)%cfg.cycleLen)+1,anchorMonday:startDate.toISOString().split("T")[0]};});
+  // Store anchor states into plPositions for round-tripping
+  S.plPositions[dk]={};names.forEach(n=>{
+    const anchor=personAnchorStates[n];
+    const ad=anchor.date;
+    const iso=ad.getFullYear()+"-"+String(ad.getMonth()+1).padStart(2,"0")+"-"+String(ad.getDate()).padStart(2,"0");
+    S.plPositions[dk][n]={confirmedWeek:anchor.week,anchorMonday:iso};
+  });
   syncPeopleFromEntries();
   cfg.teams.forEach(t=>{if(!t.leader)return;t.agents.forEach(a=>{ensurePerson(a,{role:"agent",teamLeader:t.leader,team:cfg.deptName||"Main",source:"build-wizard"});});});
   cfg.shifts.forEach(sh=>{if(!sh.name||!sh.s)return;
@@ -5824,7 +5956,7 @@ function executeBuildGenerate(){
   closeBuildWizard();
   $("us").style.display="none";$("mv").classList.remove("hid");$("mv").style.display="flex";
   $("ha").style.display="flex";$("fl").textContent=cfg.deptName||"New Schedule";$("kbh").style.display="flex";
-  ren();toast(`Generated ${entries.length} entries · ${names.length} leaders · ${cfg.horizonMonths} month${cfg.horizonMonths>1?"s":""}`,"ok",4000);
+  ren();toast(`Generated ${entries.length} entries · ${names.length} leaders · ${cfg.horizonMonths} month${cfg.horizonMonths>1?"s":""}·  anchor-based v48.3`,"ok",4000);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -6806,11 +6938,22 @@ function rAnalytics(el){
     // Coverage first (the primary surface for this view)
   }
   if(S.anView==="issues"){
-    // Combined: Signals + Flags in one view
-    h+=`<div style="padding:8px 14px;font-size:12px;font-weight:600;color:var(--text);border-bottom:1px solid var(--bdr)">Signals</div>`;
-    h+=rSignalsView(monthEnt,y,m);
-    h+=`<div style="padding:8px 14px;font-size:12px;font-weight:600;color:var(--text);border-top:1px solid var(--bdr);margin-top:8px">Data Quality</div>`;
-    h+=rFlagsView();
+    // v48.3: Issues view has two sub-panels: Signals/Alerts (operational) vs Data Quality (parse issues)
+    // Data Quality is separated so it never pollutes the operational signal view.
+    if(!S._issuesSubTab)S._issuesSubTab="signals";
+    const dataFlagCount=computeFlags().filter(f=>f.category==="data").length;
+    const dqBadge=dataFlagCount>0?` <span style="font-size:10px;padding:1px 5px;border-radius:8px;background:rgba(220,38,38,.15);color:#dc2626;font-weight:700">${dataFlagCount}</span>`:"";
+    h+=`<div style="display:flex;align-items:center;gap:0;border-bottom:1px solid var(--bdr);padding:0 14px">`;
+    h+=`<button style="padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;background:none;border:none;border-bottom:2px solid ${S._issuesSubTab==="signals"?"var(--accent)":"transparent"};color:${S._issuesSubTab==="signals"?"var(--accent)":"var(--tm)"};font-family:inherit" onclick="S._issuesSubTab='signals';rerenderAnalyticsSurface('view')">Signals & Alerts</button>`;
+    h+=`<button style="padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;background:none;border:none;border-bottom:2px solid ${S._issuesSubTab==="dataquality"?"var(--accent)":"transparent"};color:${S._issuesSubTab==="dataquality"?"var(--accent)":"var(--tm)"};font-family:inherit" onclick="S._issuesSubTab='dataquality';rerenderAnalyticsSurface('view')">Data Quality${dqBadge}</button>`;
+    h+=`<button title="Refresh flags" onclick="invalidateDerivedCache();rerenderAnalyticsSurface('view')" style="margin-left:auto;padding:4px 8px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:12px;cursor:pointer">↺</button>`;
+    h+=`</div>`;
+    if(S._issuesSubTab==="dataquality"){
+      h+=rDataQualityView();
+    } else {
+      h+=rSignalsView(monthEnt,y,m);
+      h+=rOperationalFlagsView();
+    }
     h+=`</div>`;
     el.innerHTML=h;return;
   }
@@ -7466,6 +7609,103 @@ function rFlagsView(){
   return h;
 }
 
+/* ── v48.3: Data Quality panel — parse issues only, separate from operational flags ── */
+function rDataQualityView(){
+  const flags=computeFlags();
+  const fs=S.flagSettings||{};
+  const notes=fs.notes||{};
+  const dataFlags=flags.filter(f=>f.category==="data");
+  const dismissedCount=Object.keys(fs.dismissed||{}).length;
+
+  let h=`<div class="an-wrap" style="padding:12px 16px">`;
+  h+=`<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">`;
+  h+=`<span style="font-size:14px;font-weight:600">Data Quality</span>`;
+  h+=`<span style="font-size:11px;color:var(--tm)">Parse and structure issues only — does not affect operational flags</span>`;
+  // Universal controls
+  h+=`<div style="display:flex;gap:6px;margin-left:auto">`;
+  if(dataFlags.length)h+=`<button onclick="if(confirm('Dismiss all ${dataFlags.length} data issues?')){${dataFlags.map(f=>`dismissFlag('${f.id.replace(/'/g,"\\'")}');`).join('')}rerenderAnalyticsSurface('view');}" style="padding:3px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">Dismiss all</button>`;
+  if(dismissedCount)h+=`<button onclick="resetDismissed()" style="padding:3px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">${dismissedCount} dismissed — reset</button>`;
+  h+=`</div></div>`;
+
+  if(!dataFlags.length){
+    h+=`<div style="text-align:center;padding:40px 20px;color:var(--tm)"><div style="font-size:28px;margin-bottom:8px">✓</div><div style="font-size:13px;font-weight:500">No data quality issues</div><div style="font-size:12px;margin-top:4px">File parsed cleanly.</div></div>`;
+  } else {
+    dataFlags.forEach(f=>h+=renderFlagRow(f,notes));
+  }
+
+  // Parse info summary
+  if(S.parseInfo&&S.parseInfo.length){
+    h+=`<div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--bdr)">`;
+    h+=`<div style="font-size:12px;font-weight:600;margin-bottom:8px;color:var(--tm)">Parse summary</div>`;
+    S.parseInfo.forEach(p=>{
+      h+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;background:rgba(255,255,255,.02);margin-bottom:3px;font-size:11px">`;
+      h+=`<span style="font-weight:500;color:var(--text)">${X(p.sheet||p.parser)}</span>`;
+      h+=`<span style="color:var(--tm)">${p.count||0} entries</span>`;
+      const confCol=p.confidence==="high"?"var(--early)":p.confidence==="medium"?"var(--wknd)":"#dc2626";
+      h+=`<span style="padding:1px 5px;border-radius:3px;background:${confCol}18;color:${confCol};font-weight:500">${p.confidence||"?"}</span>`;
+      if(p.warnings&&p.warnings.length)h+=`<span style="color:#dc2626">⚠ ${p.warnings.length} warning${p.warnings.length!==1?"s":""}</span>`;
+      h+=`</div>`;
+    });
+    h+=`</div>`;
+  }
+  h+=`</div>`;
+  return h;
+}
+
+/* ── v48.3: Operational flags panel — alerts + signals, no data quality ── */
+function rOperationalFlagsView(){
+  const flags=computeFlags();
+  const fs=S.flagSettings||{};
+  const alerts=fs.alerts||{};
+  const notes=fs.notes||{};
+  const alertFlags=flags.filter(f=>f.category==="alert");
+  const infoFlags=flags.filter(f=>f.category==="info");
+  const sevOrder={high:0,medium:1,low:2};
+
+  let h=`<div class="an-wrap" style="padding:12px 16px">`;
+  // Header with universal controls
+  h+=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">`;
+  h+=`<span style="font-size:14px;font-weight:600">Alerts</span>`;
+  if(alertFlags.length){
+    h+=`<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(251,191,36,.1);color:var(--wknd);font-weight:600">${alertFlags.length}</span>`;
+  } else {
+    h+=`<span style="font-size:11px;color:var(--early);font-weight:500">All clear ✓</span>`;
+  }
+  h+=`<div style="display:flex;gap:6px;margin-left:auto">`;
+  if(alertFlags.length)h+=`<button onclick="if(confirm('Dismiss all ${alertFlags.length} alerts?')){${alertFlags.map(f=>`dismissFlag('${f.id.replace(/'/g,"\\'")}');`).join('')}rerenderAnalyticsSurface('view');}" style="padding:3px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">Dismiss all</button>`;
+  h+=`</div></div>`;
+
+  if(!alertFlags.length&&!infoFlags.length){
+    h+=`<div style="text-align:center;padding:30px 20px;color:var(--tm)"><div style="font-size:28px;margin-bottom:8px">✓</div><div style="font-size:13px;font-weight:500">No alerts</div></div>`;
+  }
+  if(alertFlags.length){
+    [...alertFlags].sort((a,b)=>(sevOrder[a.severity]||3)-(sevOrder[b.severity]||3)).forEach(f=>h+=renderFlagRow(f,notes));
+  }
+  if(infoFlags.length){
+    h+=`<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bdr)">`;
+    h+=`<div style="font-size:11px;font-weight:600;color:#b98bff;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Info</div>`;
+    infoFlags.forEach(f=>h+=renderFlagRow(f,notes));
+    h+=`</div>`;
+  }
+
+  // Alert threshold settings
+  h+=`<div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--bdr)">`;
+  h+=`<div style="font-size:12px;font-weight:600;margin-bottom:8px">Alert thresholds</div>`;
+  h+=`<div style="display:flex;flex-direction:column;gap:5px">`;
+  Object.entries(alerts).forEach(([key,cfg])=>{
+    const isOn=cfg.on;
+    const thresholdLabel=key==="overHours"?"h/wk":key==="lowCoverage"?"TLs":key==="consecutiveDays"?"days":key==="longShift"?"hrs":key==="weekendBalance"?"%":key==="shiftDrift"?"%":"";
+    const currentThreshold=cfg.threshold||(key==="overHours"?S.hrsMax:key==="lowCoverage"?S.covMin:cfg.threshold||"");
+    h+=`<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;background:${isOn?"var(--al)":"rgba(255,255,255,.02)"};border:1px solid ${isOn?"var(--accent)22":"var(--bdr)"}">`;
+    h+=`<label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex:1"><input type="checkbox" ${isOn?"checked":""} onchange="toggleFlagAlert('${key}')" style="width:14px;height:14px;accent-color:var(--accent)"><span style="font-size:12px;font-weight:500;color:${isOn?"var(--text)":"var(--tm)"}">${X(cfg.label)}</span></label>`;
+    if(thresholdLabel)h+=`<div style="display:flex;align-items:center;gap:4px"><input type="number" value="${currentThreshold}" onchange="setFlagThreshold('${key}',this.value)" style="width:50px;padding:3px 6px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);color:var(--text);font-size:11px;text-align:center;font-family:'JetBrains Mono',monospace"><span style="font-size:11px;color:var(--tm)">${thresholdLabel}</span></div>`;
+    h+=`</div>`;
+  });
+  h+=`</div></div>`;
+  h+=`</div>`;
+  return h;
+}
+
 function renderFlagRow(f,notes){
   const sevCol=f.severity==="high"?"#dc2626":f.severity==="medium"?"var(--wknd)":"var(--tm)";
   const sevBg=f.severity==="high"?"rgba(220,38,38,.06)":f.severity==="medium"?"rgba(251,191,36,.05)":"transparent";
@@ -7479,7 +7719,11 @@ function renderFlagRow(f,notes){
   h+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;background:${isExpanded?sevBg:"transparent"}" onclick="S._expandedFlag=S._expandedFlag==='${XJ(f.id)}'?null:'${XJ(f.id)}';rerenderAnalyticsSurface('view')">`;
   h+=`<div style="flex:1;min-width:0">`;
   h+=`<span style="font-size:13px;font-weight:500">${X(f.title)}</span>`;
-  h+=`<span style="font-size:12px;color:var(--tm);margin-left:8px">${X(f.detail.length>80?f.detail.substring(0,77)+"…":f.detail)}</span>`;
+  // v48.2: Impact indicator
+  const imp=f.impact||{level:"low",icon:"ℹ",label:"Informational"};
+  const impCol=imp.level==="high"?"#dc2626":imp.level==="medium"?"var(--wknd)":"var(--tm)";
+  h+=`<span style="font-size:10px;margin-left:6px;padding:1px 5px;border-radius:3px;background:${impCol}12;color:${impCol};font-weight:500" title="${X(imp.label)}">${imp.level==="high"?"affects data":imp.level==="medium"?"review":"safe to ignore"}</span>`;
+  h+=`<span style="font-size:12px;color:var(--tm);margin-left:6px">${X(f.detail.length>60?f.detail.substring(0,57)+"…":f.detail)}</span>`;
   h+=`</div>`;
   if(f.person)h+=`<span style="font-size:11px;padding:1px 6px;border-radius:4px;border:1px solid var(--bdr);color:var(--tm)">${X(f.person.split(" ")[0])}</span>`;
   h+=`<span style="font-size:11px;padding:1px 6px;border-radius:4px;background:${f.category==="data"?"rgba(220,38,38,.08);color:#dc2626":"rgba(251,191,36,.08);color:var(--wknd)"}">${f.category}</span>`;
@@ -7490,6 +7734,14 @@ function renderFlagRow(f,notes){
   // ── Expanded detail ──
   if(isExpanded){
     h+=`<div style="padding:12px 16px;border-top:1px solid var(--bdr);background:${sevBg}">`;
+    // v48.2: Impact explanation
+    const imp2=f.impact||{level:"low",icon:"ℹ",label:"Informational",tip:""};
+    const impCol2=imp2.level==="high"?"#dc2626":imp2.level==="medium"?"var(--wknd)":"var(--early)";
+    h+=`<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border-radius:6px;background:${impCol2}08;border:1px solid ${impCol2}20;margin-bottom:10px">`;
+    h+=`<span style="font-size:14px;flex-shrink:0">${imp2.icon}</span>`;
+    h+=`<div><div style="font-size:11px;font-weight:600;color:${impCol2}">${imp2.level==="high"?"Affects how data is read":imp2.level==="medium"?"Worth reviewing":"Safe to ignore"}</div>`;
+    h+=`<div style="font-size:11px;color:var(--tm);margin-top:2px">${X(imp2.label)}${imp2.tip?" · "+X(imp2.tip):""}</div>`;
+    h+=`</div></div>`;
     h+=`<div style="font-size:12px;color:var(--tm);margin-bottom:10px">${X(f.detail)}</div>`;
 
     // Context data — show surrounding schedule if relevant
@@ -7527,10 +7779,22 @@ function renderFlagRow(f,notes){
         mark_leave:"Mark as leave",mark_sick:"Mark as sick",
         expected:"Expected pattern",ignore:"Dismiss",
         acknowledge:"Acknowledge",adjust_limit:"Adjust limit",
-        view_calendar:"View in calendar",note:"Add note"
+        view_calendar:"View in calendar",note:"Add note",
+        apply_blueprint:"Apply blueprint",apply_all_blueprint:"Apply blueprint to all"
       };
-      const isPrimary=act==="merge"||act==="mark_leave"||act==="adjust_limit"||act==="view_calendar";
+      const isPrimary=act==="merge"||act==="mark_leave"||act==="adjust_limit"||act==="view_calendar"||act==="apply_blueprint"||act==="apply_all_blueprint";
       if(act==="note")return;// note input below
+      // ── Apply blueprint fix (single entry) ──
+      if(act==="apply_blueprint"&&f.person&&f.context&&f.context.date){
+        h+=`<button onclick="applyBlueprintFix('${XJ(f.person)}','${XJ(f.context.date)}')" style="padding:4px 10px;border:1px solid var(--accent);border-radius:5px;background:rgba(122,180,255,.08);color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer;font-weight:500">✓ Apply blueprint</button>`;
+        return;
+      }
+      // ── Apply blueprint to ALL mismatches ──
+      if(act==="apply_all_blueprint"){
+        const count=f.context&&f.context.total?f.context.total:0;
+        h+=`<button onclick="if(confirm('Apply blueprint to ${count} entries? This will overwrite the current schedule data for mismatched days.')){applyAllBlueprintFixes()}" style="padding:4px 10px;border:1px solid var(--accent);border-radius:5px;background:rgba(122,180,255,.12);color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer;font-weight:600">✓ Apply blueprint to all ${count} entries</button>`;
+        return;
+      }
       // ── Merge names action ──
       if(act==="merge"&&f.context&&f.context.nameA&&f.context.nameB){
         h+=`<button onclick="mergeNames('${XJ(f.context.nameA)}','${XJ(f.context.nameB)}')" style="padding:4px 10px;border:1px solid var(--accent);border-radius:5px;background:rgba(122,180,255,.08);color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer;font-weight:500">Merge → ${X(f.context.nameA.split(" ")[0])}</button>`;
@@ -8980,30 +9244,46 @@ function addManualCoachSession(){
   const dateEl=document.getElementById("msDate");
   const timeEl=document.getElementById("msTime");
   const noteEl=document.getElementById("msNote");
+  const durEl=document.getElementById("msDuration");
   if(!nameEl||!dateEl){toast("Form not found","err");return;}
   const name=nameEl.value.trim();
   const date=dateEl.value.trim();
   if(!name||!date){toast("Leader and date are required","warn");return;}
   const time=(timeEl?.value||"").trim();
   const note=(noteEl?.value||"").trim();
+  const duration=durEl?Math.max(5,Math.min(240,parseInt(durEl.value)||S.coachDuration||30)):S.coachDuration||30;
   if(!Array.isArray(S.coachManualSessions))S.coachManualSessions=[];
+  const loggedAt=new Date().toISOString();
   S.coachManualSessions.push({
-    name,date,time:time||null,note:note||null,
+    name,date,time:time||null,note:note||null,duration,
     dept:S.activeDept||"",
-    loggedAt:new Date().toISOString()
+    loggedAt
   });
-  // Also push to coachHistory so it shows in history quality panels
+  // Also push to coachHistory so it shows in quality panels
   if(!Array.isArray(S.coachHistory))S.coachHistory=[];
   S.coachHistory.push({
     name,date,monthKey:date.slice(0,7),
     slotLabel:time||"manual",slotQuality:"manual",
-    qualityBucket:"neutral",duration:S.coachDuration||30,
-    dept:S.activeDept||"",completedAt:new Date().toISOString(),
+    qualityBucket:"neutral",duration,
+    dept:S.activeDept||"",completedAt:loggedAt,
     manual:true,note:note||""
   });
   schedulePersist(true);
-  toast(name.split(" ")[0]+" session logged — "+date+(time?" at "+time:""),"ok");
+  toast(name.split(" ")[0]+" session logged — "+date+(time?" at "+time:"")+" ("+duration+"min)","ok");
   if(S.tab==="planner")rPlanner($("ca")); else ren();
+}
+
+function editCoachSessionDuration(idx,newDur){
+  if(!Array.isArray(S.coachManualSessions)||idx<0||idx>=S.coachManualSessions.length)return;
+  const dur=Math.max(5,Math.min(240,newDur||30));
+  S.coachManualSessions[idx].duration=dur;
+  // Sync to coachHistory if present
+  const s=S.coachManualSessions[idx];
+  if(s&&Array.isArray(S.coachHistory)){
+    const hi=S.coachHistory.findIndex(h=>h.manual&&h.name===s.name&&h.date===s.date&&h.completedAt===s.loggedAt);
+    if(hi>=0)S.coachHistory[hi].duration=dur;
+  }
+  schedulePersist(true);
 }
 
 function removeManualCoachSession(idx){
@@ -9583,411 +9863,189 @@ function rPlanner(el){
 
 // ═══ COACHING TAB — daily target-based view ═══
 function rCoachingTab(dk){
-  const bp=S.plBlueprints[dk];const positions=S.plPositions[dk]||{};
-  const isConfirmed=bp&&bp.confirmed;
-  const hasPositions=Object.keys(positions).length>0;
-  const names=[...new Set(S.entries.map(e=>e.name))].sort();
+  // v48.3: Coaching is fully manual-first.
+  // Log sessions per person per day, track duration, notes, detect overlaps.
+  // No auto-planning required — works with or without blueprint/positions.
+  const names=[...new Set(S.entries.map(e=>e.name))].filter(Boolean).sort();
   const now=new Date();
   if(!S.plGenYear)S.plGenYear=now.getFullYear();
   if(S.plGenMonth===null||S.plGenMonth===undefined)S.plGenMonth=now.getMonth();
   const targetY=S.plGenYear,targetM=S.plGenMonth;
   const numDays=new Date(targetY,targetM+1,0).getDate();
-  const duration=S.coachDuration||30;
-  const durationHrs=duration/60;
-  const dailyTarget=S.coachTargetDaily||1;// coaching sessions needed per day
-  const monthlyTarget=S.coachTargetMonthly||0;// 0 = auto from daily × working days
+  const defaultDur=S.coachDuration||30;
+
+  // All sessions for this month
+  const allSessions=(S.coachManualSessions||[]).filter(s=>{
+    if(!s.date)return false;
+    const d=new Date(s.date);
+    return d.getFullYear()===targetY&&d.getMonth()===targetM;
+  });
+
+  // Sessions grouped by date then by person
+  const byDate={};
+  allSessions.forEach(s=>{
+    if(!byDate[s.date])byDate[s.date]=[];
+    byDate[s.date].push(s);
+  });
+
+  // Per-person session counts
+  const personCount={};
+  names.forEach(n=>{personCount[n]=allSessions.filter(s=>s.name===n).length;});
 
   let h=`<div class="pl-wrap">`;
 
-  // ── Header with month nav + targets ──
+  // ── Header ──
   h+=`<div class="pl-section" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;padding:8px 14px">`;
   h+=`<div style="display:flex;align-items:center;gap:10px">`;
-  h+=`<h3 style="margin:0;font-size:15px">🎯 Coaching</h3>`;
-  h+=`<span class="pl-hd-sub">${names.length} leaders · ${duration}min sessions</span>`;
+  h+=`<h3 style="margin:0;font-size:15px">🎯 Coaching Log</h3>`;
+  h+=`<span class="pl-hd-sub">${allSessions.length} session${allSessions.length!==1?"s":""} · ${targetM===now.getMonth()&&targetY===now.getFullYear()?"this month":MOFULL[targetM]+" "+targetY}</span>`;
   h+=`</div>`;
   h+=`<div style="display:flex;align-items:center;gap:6px">`;
-  h+=`<button class="btn" style="font-size:11px;padding:4px 10px;background:var(--al);color:var(--accent)" onclick="expCoachingStandalone()" title="Export coaching plan + manual sessions as XLSX">📥 Export</button>`;
+  h+=`<button class="btn" style="font-size:11px;padding:4px 10px;background:var(--al);color:var(--accent)" onclick="expCoachingStandalone()" title="Export coaching log as XLSX">📥 Export</button>`;
   h+=`<div class="pl-nav"><button class="pl-nav-btn" onclick="S.plGenMonth--;if(S.plGenMonth<0){S.plGenMonth=11;S.plGenYear--;}ren()">◀</button>`;
   h+=`<span class="pl-nav-label">${MOFULL[targetM]} ${targetY}</span>`;
   h+=`<button class="pl-nav-btn" onclick="S.plGenMonth++;if(S.plGenMonth>11){S.plGenMonth=0;S.plGenYear++;}ren()">▶</button></div>`;
   h+=`</div></div>`;
 
-  // ── Compact config summary (settings live in ⚙ Settings drawer) ──
-  const budgetKey=targetY+'-'+(targetM<10?'0':'')+targetM;
-  const budget=S.coachBudgetHrs&&S.coachBudgetHrs[budgetKey]||{day:0,week:0,month:0};
-  h+=`<div class="pl-section" style="display:flex;align-items:center;gap:12px;padding:6px 14px;flex-wrap:wrap;font-size:11px;color:var(--tm)">`;
-  h+=`<span>${duration}min sessions · ${dailyTarget}/day target</span>`;
-  if(budget.month>0){
-    const coachHrsNeeded=Math.round(names.length*durationHrs*10)/10;
-    const budgetOk=coachHrsNeeded<=budget.month;
-    h+=`<span>· Budget: <strong style="color:var(--accent)">${budget.month}h</strong> · Need: <strong style="color:${budgetOk?'var(--early)':'#dc2626'}">${coachHrsNeeded}h</strong> ${budgetOk?'✓':'⚠'}</span>`;
-  }
-  h+=`<button onclick="toggleSettings()" style="padding:2px 8px;border:1px solid var(--bdr);border-radius:4px;background:none;color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer;margin-left:auto">⚙ Settings</button>`;
-  h+=`</div>`;
-
-  if(!isConfirmed||!hasPositions){
-    h+=`<div class="pl-section" style="padding:20px;text-align:center;color:var(--tm);font-size:12px">Confirm blueprint and set positions in the Schedule tab first.</div>`;
-    h+=`</div>`;return h;
-  }
-
-  // ── Generate coaching data ──
-  const coachData=generateCoachingPlan(dk,targetY,targetM);
-  if(!coachData){h+=`<div class="pl-section" style="padding:20px;text-align:center;color:var(--tm)">No data for coaching plan.</div></div>`;return h;}
-
-  // ── v48.2: What's Next card ──
-  {
-    const ps=coachData.personStatus||{};
-    const allDone=names.every(n=>ps[n]&&ps[n].done);
-    const nextPerson=names.find(n=>ps[n]&&ps[n].date&&!ps[n].done&&ps[n].confirmed);
-    const nextUnconfirmed=!nextPerson?names.find(n=>ps[n]&&ps[n].date&&!ps[n].done&&!ps[n].confirmed):null;
-    const nextUp=nextPerson||nextUnconfirmed;
-    if(allDone){
-      const cq=typeof getTeamCoachQuality==='function'?getTeamCoachQuality():null;
-      const grade=cq&&cq.grade?cq.grade:'—';
-      h+=`<div class="wn-card"><div class="wn-done"><div class="wn-grade">${X(grade)}</div><div class="wn-msg">All ${names.length} coaching sessions complete for ${MOFULL[targetM]}</div></div></div>`;
-    } else if(nextUp){
-      const nps=ps[nextUp];
-      const dateLabel=nps.date||'Not scheduled';
-      const timeLabel=nps.time?(nps.time+(nps.timeEnd?' – '+nps.timeEnd:'')):'';
-      // Pull signals for this person if available
-      let topSignal='';
-      try{
-        const em={};S.entries.forEach(e=>{if(!em[e.name])em[e.name]=[];em[e.name].push(e);});
-        const bpData=S.plBlueprints[dk];const posData=S.plPositions[dk]||{};
-        const sigs=computeSignals(nextUp,em[nextUp]||[],bpData,posData,dk)||[];
-        const highSig=sigs.find(s=>s.severity==='high')||sigs[0];
-        if(highSig)topSignal=highSig.label||highSig.type||'';
-      }catch(e){}
-      // Outstanding actions from last session
-      let outstandingActions=0;
-      try{
-        const cq=S.coachQuality[nextUp];
-        if(cq&&cq.sessions){
-          const last=cq.sessions[cq.sessions.length-1];
-          if(last&&last.actions)outstandingActions=last.actions.filter(a=>!a.done).length;
-        }
-      }catch(e){}
-      h+=`<div class="wn-card">`;
-      h+=`<div class="wn-title">🎯 What's Next</div>`;
-      h+=`<div class="wn-person">${X(nextUp)}</div>`;
-      h+=`<div class="wn-detail">`;
-      h+=`📅 ${X(dateLabel)}${timeLabel?' · '+X(timeLabel):''}`;
-      if(topSignal)h+=`<br>💡 Talk about: ${X(topSignal)}`;
-      if(outstandingActions>0)h+=`<br>📋 ${outstandingActions} outstanding action${outstandingActions>1?'s':''} from last session`;
-      h+=`</div>`;
-      h+=`<div class="wn-actions">`;
-      h+=`<button class="btn bp" onclick="openCoachRecordForm('${XJ(nextUp)}')">Record Session</button>`;
-      if(!nps.confirmed)h+=`<button class="btn" onclick="confirmCoaching('${XJ(nextUp)}','${XJ(nps.date||'')}');ren()" style="background:var(--al);color:var(--accent)">Confirm</button>`;
-      h+=`</div>`;
-      h+=`</div>`;
-    } else {
-      // No sessions scheduled — prompt setup
-      const unscheduled=names.filter(n=>!ps[n]||(!ps[n].date&&!ps[n].done));
-      if(unscheduled.length>0){
-        h+=`<div class="wn-card"><div class="wn-empty">📋 ${unscheduled.length} leader${unscheduled.length>1?'s':''} still need coaching sessions scheduled this month</div></div>`;
-      }
-    }
-  }
-
-  // ── Month KPIs ──
-  const doneCount=Object.values(coachData.personStatus).filter(p=>p.done).length;
-  const schedCount=Object.values(coachData.personStatus).filter(p=>p.date&&!p.done).length;
-  const missedCount=Object.values(coachData.personStatus).filter(p=>p.missed).length;
-  const unsetCount=names.length-doneCount-schedCount;
-  const totalAvailDays=coachData.days.filter(d=>!d.isBlackout&&!d.isPast&&d.surplus>0).length;
-  const totalAvailSlots=coachData.days.filter(d=>!d.isBlackout&&d.surplus>0).reduce((s,d)=>s+Math.min(d.surplus,dailyTarget),0);
-  const requiredSlots=names.length;
-  const slotsPct=requiredSlots>0?Math.round(totalAvailSlots/requiredSlots*100):0;
-  // Fairness: std deviation of sessions per person (0=perfect equity)
-  const sessionCounts=names.map(n=>{const ps=coachData.personStatus[n]||{};return(ps.done?1:0)+(ps.confirmed?1:0)+(ps.date&&!ps.done&&!ps.confirmed?1:0);});
-  const avgSessions=sessionCounts.length?sessionCounts.reduce((a,b)=>a+b,0)/sessionCounts.length:0;
-  const fairnessSD=sessionCounts.length>1?Math.round(Math.sqrt(sessionCounts.reduce((s,v)=>s+Math.pow(v-avgSessions,2),0)/sessionCounts.length)*100)/100:0;
-
-  const historyThisDept=(S.coachHistory||[]).filter(h=>!S.activeDept||h.dept===S.activeDept);
-  const fairnessReport=getCoachFairnessReport();
-  const recoveryQueue=getCoachRecoveryQueue();
-
-  h+=`<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding:0 14px 8px">`;
-  h+=`<div class="pl-section" style="padding:10px;text-align:center"><div style="font-size:20px;font-weight:700;color:var(--early)">${doneCount}</div><div style="font-size:11px;color:var(--tm)">Done</div></div>`;
-  h+=`<div class="pl-section" style="padding:10px;text-align:center"><div style="font-size:20px;font-weight:700;color:var(--accent)">${schedCount}</div><div style="font-size:11px;color:var(--tm)">Scheduled</div></div>`;
-  h+=`<div class="pl-section" style="padding:10px;text-align:center"><div style="font-size:20px;font-weight:700;color:${missedCount?'var(--wknd)':'var(--tm)'}">${missedCount}</div><div style="font-size:11px;color:var(--tm)">Missed</div></div>`;
-  h+=`<div class="pl-section" style="padding:10px;text-align:center"><div style="font-size:20px;font-weight:700;color:${slotsPct>=100?'var(--early)':'var(--late)'}">${slotsPct}%</div><div style="font-size:11px;color:var(--tm)">Capacity</div></div>`;
-  h+=`<div class="pl-section" style="padding:10px;text-align:center"><div style="font-size:20px;font-weight:700;color:${fairnessSD<=0.3?'var(--early)':fairnessSD<=0.5?'var(--wknd)':'var(--late)'}">${fairnessSD}σ</div><div style="font-size:11px;color:var(--tm)">Fairness</div></div>`;
-  h+=`<div class="pl-section" style="padding:10px;text-align:center"><div style="font-size:20px;font-weight:700;color:var(--accent)">${historyThisDept.length}</div><div style="font-size:11px;color:var(--tm)">History</div></div>`;
-  h+=`</div>`;
-
-  // ── v45.2: Team coaching quality panel ──
-  const teamCQ=getTeamCoachQuality();
-  const sessionsRecorded=Object.values(S.coachQuality).reduce((s,q)=>s+(q.sessions||[]).length,0);
-  if(sessionsRecorded>0||teamCQ){
-    h+=`<div class="pl-section" style="padding:10px 14px">`;
-    h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">`;
-    h+=`<div style="font-size:12px;font-weight:700">📊 Coaching Quality</div>`;
-    if(teamCQ)h+=`<span style="font-size:13px;font-weight:700;padding:2px 8px;border-radius:8px;background:${teamCQ.avg>=80?'rgba(52,211,153,.12)':teamCQ.avg>=65?'var(--al)':teamCQ.avg>=50?'rgba(251,191,36,.12)':'rgba(220,38,38,.12)'};color:${teamCQ.avg>=80?'var(--early)':teamCQ.avg>=65?'var(--accent)':teamCQ.avg>=50?'var(--wknd)':'#dc2626'};font-family:'JetBrains Mono',monospace">${teamCQ.grade} ${teamCQ.avg}</span>`;
-    h+=`</div>`;
-    // Per-person quality strip
-    h+=`<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">`;
-    names.forEach(n=>{
-      const cq=getCoachQualityScore(n);
-      const ac=getAgentCount(n);
-      if(cq){
-        h+=`<div style="padding:5px 8px;border-radius:6px;background:${cq.gradeCol}10;border:1px solid ${cq.gradeCol}22;display:flex;flex-direction:column;gap:2px;min-width:70px">`;
-        h+=`<div style="font-size:11px;font-weight:600;display:flex;align-items:center;gap:3px">${X(n.split(" ")[0])} <span style="font-size:10px;font-weight:700;color:${cq.gradeCol}">${cq.grade}${cq.total}</span></div>`;
-        h+=`<div style="font-size:8px;color:var(--tm)">F:${cq.frequency} T:${cq.timing} O:${cq.outcome} A:${cq.actions}</div>`;
-        if(ac>0)h+=`<div style="font-size:8px;color:var(--accent)">👥 ${ac}</div>`;
-        h+=`</div>`;
-      } else {
-        h+=`<div style="padding:5px 8px;border-radius:6px;background:rgba(255,255,255,.03);border:1px solid var(--bdr);cursor:pointer" onclick="showCoachRecordModal('${XJ(n)}')" title="Record session for ${X(n)}">`;
-        h+=`<div style="font-size:11px;font-weight:500;color:var(--tm)">${X(n.split(" ")[0])}</div>`;
-        h+=`<div style="font-size:8px;color:var(--accent)">+ record</div></div>`;
-      }
-    });
-    h+=`</div>`;
-    // Session history table
-    const allSessions=[];
-    Object.entries(S.coachQuality).forEach(([name,q])=>{(q.sessions||[]).forEach(s=>{allSessions.push({...s,_name:name});});});
-    allSessions.sort((a,b)=>b.date.localeCompare(a.date));
-    if(allSessions.length){
-      h+=`<div style="font-size:11px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin:8px 0 4px">Recent Sessions (${allSessions.length})</div>`;
-      h+=`<div style="max-height:200px;overflow-y:auto;border:1px solid var(--bdr);border-radius:8px">`;
-      allSessions.slice(0,20).forEach(s=>{
-        const outDef=COACH_OUTCOMES.find(o=>o.id===s.outcome);
-        const winCol=s.windowQuality==="optimal"?"var(--early)":s.windowQuality==="acceptable"?"var(--accent)":s.windowQuality==="poor"?"#dc2626":"var(--tm)";
-        h+=`<div style="padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.04);display:flex;align-items:center;gap:8px;font-size:11px">`;
-        h+=`<span style="font-family:'JetBrains Mono',monospace;color:var(--tm);min-width:60px">${s.date}</span>`;
-        h+=`<span style="font-weight:600;min-width:70px">${X((s._name||"").split(" ")[0])}</span>`;
-        h+=`<span>${outDef?outDef.icon:""} ${outDef?outDef.label:s.outcome}</span>`;
-        h+=`<span style="color:${winCol};font-size:10px">${s.windowQuality||""}</span>`;
-        h+=`<span style="color:var(--tm);font-size:10px">${s.duration}min</span>`;
-        if(s.actions&&s.actions.length)h+=`<span style="color:var(--accent);font-size:10px">${s.actions.length} action${s.actions.length>1?"s":""}</span>`;
-        if(s.agentCount)h+=`<span style="font-size:8px;color:var(--tm)">👥${s.agentCount}</span>`;
-        h+=`</div>`;
-      });
-      h+=`</div>`;
-    }
-    h+=`</div>`;
-  }
-
-  // ── Per-person status strip ──
-  h+=`<div class="pl-section" style="padding:8px 14px"><div class="coach-status">`;
-  names.forEach(name=>{
-    const ps=coachData.personStatus[name]||{};
-    let icon='⏳',cls='';
-    if(ps.done){icon='✓';cls=' style="color:var(--early)"';}
-    else if(ps.missed){icon='⚠';cls=' style="color:var(--wknd)"';}
-    else if(ps.confirmed){icon='📅';cls=' style="color:var(--accent)"';}
-    else if(ps.date){icon='○';cls=' style="color:var(--tm)"';}
-    else{icon='✕';cls=' style="color:var(--late);opacity:.5"';}
-    const dateLabel=ps.date?ps.date.split('-').slice(2).join('')+' '+MO[+ps.date.split('-')[1]-1]:'—';
-    const timeLabel=ps.slotLabel||ps.time||'';
-    h+=`<div class="coach-person"${cls}><span class="cp-icon">${icon}</span><span>${X(name.split(' ')[0])}</span><span style="font-size:10px;opacity:.5">${ps.done?'done':ps.date?(dateLabel+(timeLabel?' · '+timeLabel:'')):'unset'}</span></div>`;
-  });
+  // ── Log a new session ──
+  h+=`<div class="pl-section" style="padding:12px 14px">`;
+  h+=`<div style="font-size:12px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Log session</div>`;
+  h+=`<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end">`;
+  // Leader select
+  h+=`<div style="display:flex;flex-direction:column;gap:3px"><label style="font-size:11px;color:var(--tm)">Leader</label>`;
+  h+=`<select id="msLeader" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:7px;background:var(--card);color:var(--text);font-family:inherit;font-size:12px;min-width:140px">`;
+  h+=`<option value="">— select —</option>`;
+  names.forEach(n=>{h+=`<option value="${X(n)}">${X(n.split(" ")[0])}</option>`;});
+  h+=`</select></div>`;
+  // Date
+  const todayISO=now.getFullYear()+"-"+P(now.getMonth()+1)+"-"+P(now.getDate());
+  h+=`<div style="display:flex;flex-direction:column;gap:3px"><label style="font-size:11px;color:var(--tm)">Date</label>`;
+  h+=`<input id="msDate" type="date" value="${todayISO}" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:7px;background:var(--card);color:var(--text);font-family:inherit;font-size:12px"></div>`;
+  // Time (optional)
+  h+=`<div style="display:flex;flex-direction:column;gap:3px"><label style="font-size:11px;color:var(--tm)">Start time <span style="font-weight:400;opacity:.6">(optional)</span></label>`;
+  h+=`<input id="msTime" type="time" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:7px;background:var(--card);color:var(--text);font-family:inherit;font-size:12px"></div>`;
+  // Duration
+  h+=`<div style="display:flex;flex-direction:column;gap:3px"><label style="font-size:11px;color:var(--tm)">Duration (min)</label>`;
+  h+=`<input id="msDuration" type="number" value="${defaultDur}" min="5" max="240" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:7px;background:var(--card);color:var(--text);font-family:inherit;font-size:12px;width:80px"></div>`;
+  // Note
+  h+=`<div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:160px"><label style="font-size:11px;color:var(--tm)">Notes <span style="font-weight:400;opacity:.6">(optional)</span></label>`;
+  h+=`<input id="msNote" type="text" placeholder="e.g. call quality, adherence…" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:7px;background:var(--card);color:var(--text);font-family:inherit;font-size:12px"></div>`;
+  // Log button
+  h+=`<button onclick="addManualCoachSession()" style="padding:7px 18px;border:none;border-radius:7px;background:var(--accent);color:#000;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;align-self:flex-end">+ Log</button>`;
   h+=`</div></div>`;
 
-  // ── Daily view — each day as a row with target vs actual ──
-  const weekBuckets={};
-  coachData.days.forEach(day=>{
-    const mon=new Date(day.date);mon.setDate(mon.getDate()-((mon.getDay()+6)%7));
-    const wk=mon.toISOString().split('T')[0];
-    if(!weekBuckets[wk])weekBuckets[wk]=[];
-    weekBuckets[wk].push(day);
-  });
+  // ── Person summary strip ──
+  if(names.length){
+    h+=`<div class="pl-section" style="padding:10px 14px">`;
+    h+=`<div style="font-size:12px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Team overview — ${MOFULL[targetM]}</div>`;
+    h+=`<div style="display:flex;flex-wrap:wrap;gap:6px">`;
+    names.forEach(n=>{
+      const cnt=personCount[n]||0;
+      const lastSess=allSessions.filter(s=>s.name===n).sort((a,b)=>b.date.localeCompare(a.date))[0];
+      const pill=cnt>0?"var(--early)":"var(--tm)";
+      h+=`<div style="display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;border:1px solid var(--bdr);background:${cnt>0?"rgba(0,210,110,.06)":"rgba(255,255,255,.03)"}">`;
+      h+=`<span style="font-size:12px;font-weight:500;color:${pill}">${X(n.split(" ")[0])}</span>`;
+      h+=`<span style="font-size:11px;padding:1px 5px;border-radius:8px;background:${cnt>0?"var(--early)":"rgba(255,255,255,.08)"};color:${cnt>0?"#000":"var(--tm)"};font-weight:600">${cnt}</span>`;
+      if(lastSess)h+=`<span style="font-size:10px;color:var(--tm)">${lastSess.date.slice(8)}</span>`;
+      h+=`</div>`;
+    });
+    h+=`</div></div>`;
+  }
 
-  Object.keys(weekBuckets).sort().forEach(wk=>{
-    const wDays=weekBuckets[wk];const wkMon=new Date(wk);
-    h+=`<div class="coach-week">`;
-    h+=`<div class="coach-week-hd"><span>${fD(wkMon)} – ${fD(new Date(wkMon.getTime()+6*864e5))}</span></div>`;
-    wDays.forEach(day=>{
-      const WSDN=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-      const surpCls=day.surplus>0?'pos':day.surplus===0?'zero':'neg';
-      const coachees=Object.entries(coachData.personStatus).filter(([n,ps])=>ps.date===day.dKey).map(([n,ps])=>({name:n,...ps}));
-      const scheduled=coachees.length;
-      const availSlots=day.isBlackout?0:Math.max(0,Math.min(day.surplus,dailyTarget));
-      const hrsAvail=Math.round(availSlots*durationHrs*10)/10;
-      const hrsNeeded=Math.round(dailyTarget*durationHrs*10)/10;
-      const met=scheduled>=dailyTarget;
-      const overTarget=scheduled>dailyTarget;
+  // ── Day-by-day timeline ──
+  h+=`<div class="pl-section" style="padding:10px 14px">`;
+  h+=`<div style="font-size:12px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Session log</div>`;
 
-      h+=`<div class="coach-day${day.isBlackout?' blackout':''}${day.isPast?' past':''}">`;
-      h+=`<span class="cd-dow">${WSDN[day.dow]}</span>`;
-      h+=`<span class="cd-date">${day.date.getDate()} ${MO[day.date.getMonth()]}</span>`;
-      h+=`<span class="cd-floor">Floor: ${day.actualFloor.length}</span>`;
-      h+=`<span class="cd-surplus ${surpCls}">+${Math.max(0,day.surplus)}</span>`;
-      // Daily target indicator
-      h+=`<span style="font-size:11px;font-family:'JetBrains Mono',monospace;min-width:70px;color:${day.isBlackout?'var(--tm)':met?'var(--early)':availSlots>=dailyTarget?'var(--accent)':'var(--late)'}">${scheduled}/${dailyTarget} · ${hrsAvail}h</span>`;
-      h+=`<span class="cd-suggest">`;
-      if(day.isBlackout){h+=`<span class="coach-chip blackout">Blackout</span>`;}
-      else if(day.surplus<=0&&!coachees.length){h+=`<span style="font-size:10px;color:var(--tm);opacity:.4">No capacity</span>`;}
-      else{
-        coachees.forEach(c=>{
-          const first=c.name.split(' ')[0];
-          const slotMeta=(c.slotLabel?` · ${c.slotLabel}`:'')+(c.slotQuality?` · ${c.slotQuality}`:'');
-          if(c.done)h+=`<span class="coach-chip done" title="${slotMeta.slice(3)}">${first} ✓${c.slotLabel?' '+c.slotLabel:''}</span>`;
-          else if(c.missed)h+=`<span class="coach-chip missed" onclick="rescheduleCoach('${XJ(c.name)}')" title="Reschedule${slotMeta}">${first} ⚠${c.slotLabel?' '+c.slotLabel:''}</span>`;
-          else if(c.confirmed)h+=`<span class="coach-chip confirmed" onclick="markCoachDone('${XJ(c.name)}')" title="Mark done${slotMeta}">${first} 📅${c.slotLabel?' '+c.slotLabel:''}</span>`;
-          else h+=`<span class="coach-chip pending" onclick="confirmCoaching('${XJ(c.name)}','${day.dKey}')" title="Confirm${slotMeta}">${first}${c.slotLabel?' '+c.slotLabel:''}</span>`;
-        });
-        if(!day.isPast&&availSlots>scheduled){
-          const available=day.actualFloor.filter(n=>{const ps=coachData.personStatus[n];return!ps||(!ps.date&&!ps.done);});
-          if(available.length){
-            // Smart slot suggestion: show recommended time window
-            const floorEnts=S.entries.filter(e=>e.date&&excKey(e.date)===day.dKey&&!e.isOff&&e.ukS&&e.ukE);
-            let suggestTime=null;
-            if(floorEnts.length){
-              // Find the shift with widest safe coaching window (90min start + duration + 60min end buffer)
-              const dur=S.coachDuration||30;
-              const best=floorEnts.slice().sort((a,b)=>{
-                const sa=parseInt(a.ukS)*60+parseInt(a.ukS.split(":")[1]||0);
-                const ea=parseInt(a.ukE)*60+parseInt(a.ukE.split(":")[1]||0);
-                const sb=parseInt(b.ukS)*60+parseInt(b.ukS.split(":")[1]||0);
-                const eb=parseInt(b.ukE)*60+parseInt(b.ukE.split(":")[1]||0);
-                return(eb-sb)-(ea-sa);
-              })[0];
-              if(best){
-                const sh=parseInt(best.ukS.split(":")[0])*60+parseInt(best.ukS.split(":")[1]||0);
-                const eh=parseInt(best.ukE.split(":")[0])*60+parseInt(best.ukE.split(":")[1]||0);
-                if(eh-sh>=90+dur+60){
-                  const sm=sh+90;
-                  suggestTime=`${String(Math.floor(sm/60)).padStart(2,"0")}:${String(sm%60).padStart(2,"0")}`;
-                }
-              }
-            }
-            const hint=suggestTime?`${Math.min(available.length,availSlots-scheduled)} avail · try ${suggestTime}`:`+${Math.min(available.length,availSlots-scheduled)} avail`;
-            h+=`<span style="font-size:10px;color:var(--accent);opacity:.7;background:rgba(122,180,255,.07);padding:1px 5px;border-radius:4px">💡 ${hint}</span>`;
-          }
+  if(!allSessions.length){
+    h+=`<div style="padding:28px 20px;text-align:center;color:var(--tm);font-size:12px">No sessions logged for ${MOFULL[targetM]} ${targetY}. Use the form above to log your first session.</div>`;
+  } else {
+    // Sort dates descending (most recent first)
+    const sortedDates=Object.keys(byDate).sort((a,b)=>b.localeCompare(a));
+    sortedDates.forEach(dateKey=>{
+      const daySessions=byDate[dateKey].sort((a,b)=>(a.time||"00:00").localeCompare(b.time||"00:00"));
+      const dt=new Date(dateKey+"T12:00:00");
+      const dowLabel=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][dt.getDay()];
+      const isToday=dateKey===todayISO;
+
+      // Overlap detection: sessions on same day within the same time window
+      const timedSessions=daySessions.filter(s=>s.time);
+      const overlapSet=new Set();
+      for(let i=0;i<timedSessions.length;i++){
+        for(let j=i+1;j<timedSessions.length;j++){
+          const aStart=parseInt(timedSessions[i].time.replace(":",""));
+          const aDur=timedSessions[i].duration||defaultDur;
+          const aEnd=aStart+Math.floor(aDur/60)*100+(aDur%60);
+          const bStart=parseInt(timedSessions[j].time.replace(":",""));
+          if(bStart<aEnd){overlapSet.add(i);overlapSet.add(j);}
         }
       }
-      h+=`</span>`;
-      h+=`<button class="coach-blackout-btn${day.isBlackout?' is-bo':''}" onclick="toggleBlackout('${day.dKey}')" title="${day.isBlackout?'Remove blackout':'Blackout'}">✕</button>`;
+
+      h+=`<div style="margin-bottom:10px">`;
+      h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">`;
+      h+=`<span style="font-size:12px;font-weight:700;color:${isToday?"var(--accent)":"var(--text)"}">${dowLabel} ${dateKey.slice(8)} ${isToday?"· today":""}</span>`;
+      h+=`<span style="font-size:11px;color:var(--tm)">${daySessions.length} session${daySessions.length!==1?"s":""}</span>`;
+      if(overlapSet.size)h+=`<span style="font-size:10px;padding:1px 6px;border-radius:4px;background:rgba(251,191,36,.12);color:var(--wknd);font-weight:600">⚠ overlap</span>`;
       h+=`</div>`;
-    });
-    h+=`</div>`;
-  });
 
-  // ── Monthly fairness summary ──
-  h+=`<div class="pl-section" style="padding:10px 14px;margin-top:8px">`;
-  h+=`<div style="font-size:12px;font-weight:700;margin-bottom:6px">Monthly Fairness</div>`;
-  h+=`<table class="wf-breakdown"><thead><tr><th>Leader</th><th>Status</th><th>Date</th><th>Time</th><th>Sessions</th></tr></thead><tbody>`;
-  const today2=new Date();const midMonth=new Date(targetY,targetM,15);
-  names.forEach(name=>{
-    const ps=coachData.personStatus[name]||{};
-    let status='',statusClr='var(--tm)';
-    if(ps.done){status='✓ Done';statusClr='var(--early)';}
-    else if(ps.missed){status='⚠ Missed';statusClr='var(--wknd)';}
-    else if(ps.confirmed){status='📅 Confirmed';statusClr='var(--accent)';}
-    else if(ps.date){status='○ Suggested';statusClr='var(--tm)';}
-    else{
-      status=today2>midMonth?'✕ Not scheduled':'⏳ Pending';
-      statusClr=today2>midMonth?'var(--late)':'var(--tm)';
-    }
-    const dateStr=ps.date?ps.date.split('-')[2]+' '+MO[+ps.date.split('-')[1]-1]:'—';
-    const timeStr=ps.slotLabel||ps.time||'—';
-    // Count total sessions this month (done + confirmed + scheduled)
-    const totalSessions=(ps.done?1:0)+(ps.confirmed?1:0);
-    h+=`<tr><td><strong>${X(name.split(' ')[0])}</strong></td><td style="color:${statusClr}">${status}</td><td style="font-family:'JetBrains Mono',monospace;font-size:11px">${dateStr}</td><td style="font-family:'JetBrains Mono',monospace;font-size:11px">${timeStr}</td><td style="text-align:center">${totalSessions||'—'}</td></tr>`;
-  });
-  h+=`</tbody></table></div>`;
-
-  // ── Manual Session Log ──
-  h+=`<div class="pl-section" style="padding:10px 14px">`;
-  h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">`;
-  h+=`<span style="font-size:12px;font-weight:700">Manual Session Log</span>`;
-  const manualCount=(S.coachManualSessions||[]).filter(s=>{const d=new Date(s.date);return d.getFullYear()===targetY&&d.getMonth()===targetM;}).length;
-  h+=`<span style="font-size:11px;color:var(--tm)">${manualCount} logged this month</span>`;
-  h+=`</div>`;
-  h+=`<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px;padding:8px;background:rgba(255,255,255,.03);border-radius:6px;border:1px solid var(--bdr)">`;
-  h+=`<span style="font-size:11px;font-weight:600;color:var(--tm)">+ Log:</span>`;
-  h+=`<select id="msLeader" style="padding:3px 6px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);color:var(--text);font-size:11px">`;
-  names.forEach(n=>{h+=`<option value="${XJ(n)}">${X(n.split(' ')[0])}</option>`;});
-  h+=`</select>`;
-  h+=`<input type="date" id="msDate" value="${new Date().toISOString().split('T')[0]}" style="padding:3px 6px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:11px">`;
-  h+=`<input type="text" id="msTime" placeholder="13:00" maxlength="5" style="width:58px;padding:3px 6px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:11px;text-align:center">`;
-  h+=`<input type="text" id="msNote" placeholder="Topic / note (optional)" style="flex:1;min-width:100px;padding:3px 6px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);color:var(--text);font-size:11px">`;
-  h+=`<button class="pl-btn" style="background:var(--accent);color:#fff;font-size:11px;padding:4px 10px;border-color:var(--accent)" onclick="addManualCoachSession()">+ Add</button>`;
-  h+=`</div>`;
-  const manualThisMonth=(S.coachManualSessions||[]).filter(s=>{const d=new Date(s.date);return d.getFullYear()===targetY&&d.getMonth()===targetM;}).sort((a,b)=>a.date.localeCompare(b.date));
-  if(manualThisMonth.length){
-    h+=`<div style="display:flex;flex-direction:column;gap:2px">`;
-    manualThisMonth.forEach((s,idx)=>{
-      const d=new Date(s.date);const dStr=fD(d)+' '+['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][(d.getDay()+6)%7];
-      // Overlap check: coaching in first 90min or last 60min of any leader's shift
-      const sHrs=s.time?parseInt(s.time.split(':')[0])*60+parseInt((s.time.split(':')[1])||0):null;
-      const dayEnts=S.entries.filter(e=>e.date&&e.date.toISOString().split('T')[0]===s.date&&!e.isOff&&e.name===s.name);
-      const overlapWarn=sHrs!==null&&dayEnts.some(e=>{
-        if(!e.ukS||!e.ukE)return false;
-        const es=parseInt(e.ukS.split(':')[0])*60+parseInt(e.ukS.split(':')[1]||0);
-        const ee=parseInt(e.ukE.split(':')[0])*60+parseInt(e.ukE.split(':')[1]||0);
-        return sHrs<es+90||sHrs>ee-60;
+      daySessions.forEach((s,si)=>{
+        const timedIdx=timedSessions.indexOf(s);
+        const hasOverlap=timedIdx>=0&&overlapSet.has(timedIdx);
+        const dur=s.duration||defaultDur;
+        h+=`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;border:1px solid ${hasOverlap?"rgba(251,191,36,.3)":"var(--bdr)"};background:${hasOverlap?"rgba(251,191,36,.04)":"rgba(255,255,255,.02)"};margin-bottom:3px">`;
+        // Person badge
+        h+=`<span style="font-size:12px;font-weight:600;color:var(--accent);min-width:70px">${X(s.name.split(" ")[0])}</span>`;
+        // Time + duration
+        if(s.time){
+          h+=`<span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text)">${s.time}</span>`;
+        } else {
+          h+=`<span style="font-size:11px;color:var(--tm)">no time</span>`;
+        }
+        h+=`<span style="font-size:11px;color:var(--tm)">${dur}min</span>`;
+        // Note
+        if(s.note)h+=`<span style="font-size:11px;color:var(--tm);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(s.note)}</span>`;
+        else h+=`<span style="flex:1"></span>`;
+        // Edit duration inline
+        const sIdx=(S.coachManualSessions||[]).findIndex(x=>x.name===s.name&&x.date===s.date&&x.loggedAt===s.loggedAt);
+        h+=`<input type="number" value="${dur}" min="5" max="240" title="Edit duration" onchange="editCoachSessionDuration(${sIdx},+this.value)" style="width:52px;padding:2px 5px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);color:var(--text);font-size:11px;text-align:center;font-family:'JetBrains Mono',monospace">`;
+        h+=`<span style="font-size:10px;color:var(--tm)">min</span>`;
+        h+=`<button onclick="removeManualCoachSession(${sIdx})" title="Remove" style="padding:2px 7px;border:1px solid var(--bdr);border-radius:4px;background:none;color:var(--tm);font-size:11px;cursor:pointer;font-family:inherit">✕</button>`;
+        h+=`</div>`;
       });
-      h+=`<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:5px;background:rgba(255,255,255,.03);border:1px solid ${overlapWarn?"rgba(251,191,36,.3)":"var(--bdr)"}">`;
-      h+=`<span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--tm);min-width:82px">${dStr}</span>`;
-      h+=`<span style="font-size:12px;font-weight:600;min-width:70px">${X(s.name.split(' ')[0])}</span>`;
-      if(s.time)h+=`<span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--accent)">${s.time}</span>`;
-      if(s.note)h+=`<span style="font-size:11px;color:var(--tm);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(s.note)}</span>`;
-      if(overlapWarn)h+=`<span style="font-size:10px;padding:1px 5px;border-radius:3px;background:rgba(251,191,36,.12);color:var(--wknd);font-weight:600" title="This time may fall within shift start/end buffer (90min start / 60min end)">⚠ timing</span>`;
-      h+=`<button style="margin-left:auto;background:none;border:none;color:var(--tm);cursor:pointer;font-size:11px;padding:1px 5px;border-radius:3px;transition:background .1s" onmouseenter="this.style.background='rgba(220,38,38,.15)'" onmouseleave="this.style.background='none'" onclick="removeManualCoachSession(${idx})" title="Remove this session">✕</button>`;
       h+=`</div>`;
     });
-    h+=`</div>`;
-  } else {
-    h+=`<div style="font-size:11px;color:var(--tm);font-style:italic">No manual sessions logged for ${MO[targetM]} ${targetY} — use the form above to add.</div>`;
   }
   h+=`</div>`;
 
-
-  const recentHistory=fairnessReport.history.slice(0,18);
-  h+=`<div style="display:grid;grid-template-columns:1.3fr 1fr;gap:10px;padding:8px 0 0">`;
-  h+=`<div class="pl-section" style="padding:10px 14px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><div style="font-size:12px;font-weight:700">History Quality Over Time</div><div style="font-size:11px;color:var(--tm)">${fairnessReport.overall.total} completed session${fairnessReport.overall.total!==1?'s':''}</div></div>`;
-  h+=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px">`;
-  h+=`<div class="st-cell"><div class="st-n" style="color:var(--early)">${fairnessReport.overall.good}</div><div class="st-l">Good slots</div></div>`;
-  h+=`<div class="st-cell"><div class="st-n" style="color:var(--wknd)">${fairnessReport.overall.poor}</div><div class="st-l">Poor slots</div></div>`;
-  h+=`<div class="st-cell"><div class="st-n">${fairnessReport.overall.goodPct}%</div><div class="st-l">Good rate</div></div>`;
-  h+=`<div class="st-cell"><div class="st-n">${fairnessReport.overall.poorPct}%</div><div class="st-l">Poor rate</div></div>`;
-  h+=`</div>`;
-  h+=`<table class="wf-breakdown"><thead><tr><th>Leader</th><th>Sessions</th><th>Good</th><th>Poor</th><th>Good %</th><th>Last Month</th></tr></thead><tbody>`;
-  if(fairnessReport.rows.length){
-    fairnessReport.rows.forEach(r=>{
-      h+=`<tr><td><strong>${X(r.name.split(' ')[0])}</strong></td><td>${r.total}</td><td style="color:var(--early)">${r.good}</td><td style="color:var(--wknd)">${r.poor}</td><td>${r.goodPct}%</td><td style="font-family:'JetBrains Mono',monospace;font-size:11px">${X(r.lastMonth||'—')}</td></tr>`;
+  // ── Month summary table (person × totals) ──
+  if(allSessions.length){
+    h+=`<div class="pl-section" style="padding:10px 14px">`;
+    h+=`<div style="font-size:12px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Monthly summary</div>`;
+    h+=`<table style="width:100%;border-collapse:collapse;font-size:12px">`;
+    h+=`<thead><tr>`;
+    h+=`<th style="text-align:left;padding:5px 8px;color:var(--tm);font-weight:600;border-bottom:1px solid var(--bdr)">Leader</th>`;
+    h+=`<th style="text-align:center;padding:5px 8px;color:var(--tm);font-weight:600;border-bottom:1px solid var(--bdr)">Sessions</th>`;
+    h+=`<th style="text-align:center;padding:5px 8px;color:var(--tm);font-weight:600;border-bottom:1px solid var(--bdr)">Total time</th>`;
+    h+=`<th style="text-align:left;padding:5px 8px;color:var(--tm);font-weight:600;border-bottom:1px solid var(--bdr)">Last session</th>`;
+    h+=`</tr></thead><tbody>`;
+    names.forEach(n=>{
+      const pSess=allSessions.filter(s=>s.name===n).sort((a,b)=>b.date.localeCompare(a.date));
+      const cnt=pSess.length;
+      const totalMins=pSess.reduce((s,x)=>s+(x.duration||defaultDur),0);
+      const lastDate=pSess[0]?.date||"";
+      h+=`<tr style="border-bottom:1px solid var(--bdr)22">`;
+      h+=`<td style="padding:6px 8px;font-weight:500">${X(n)}</td>`;
+      h+=`<td style="padding:6px 8px;text-align:center;font-family:'JetBrains Mono',monospace;color:${cnt>0?"var(--early)":"var(--tm)"};font-weight:600">${cnt}</td>`;
+      h+=`<td style="padding:6px 8px;text-align:center;font-family:'JetBrains Mono',monospace;color:var(--tm)">${cnt>0?Math.floor(totalMins/60)+"h "+totalMins%60+"m":"—"}</td>`;
+      h+=`<td style="padding:6px 8px;color:var(--tm)">${lastDate||"—"}</td>`;
+      h+=`</tr>`;
     });
-  } else {
-    h+=`<tr><td colspan="6" style="color:var(--tm)">No completed coaching history yet.</td></tr>`;
+    h+=`</tbody></table></div>`;
   }
-  h+=`</tbody></table></div>`;
-
-  h+=`<div class="pl-section" style="padding:10px 14px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><div style="font-size:12px;font-weight:700">Missed-Session Recovery Queue</div><div style="font-size:11px;color:var(--tm)">${recoveryQueue.length} open</div></div>`;
-  if(recoveryQueue.length){
-    recoveryQueue.forEach(item=>{
-      h+=`<div style="padding:8px 0;border-top:1px solid var(--bdr)"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px"><strong>${X(item.name)}</strong><span style="font-size:11px;color:var(--wknd)">${X(item.date||'unscheduled')} · ${X(item.slotLabel||item.time||'time tbc')}</span></div>`;
-      h+=`<div style="display:flex;flex-wrap:wrap;gap:6px">`;
-      if(item.alternatives.length){
-        item.alternatives.forEach(alt=>{
-          h+=`<button class="dd-mini-btn" onclick="applyCoachSuggestion('${XJ(item.name)}','${alt.dateKey}')" title="${X(alt.slotQuality)}">${X(alt.label)}</button>`;
-        });
-      } else {
-        h+=`<span style="font-size:11px;color:var(--tm)">No strong alternative found yet.</span>`;
-      }
-      h+=`</div></div>`;
-    });
-  } else {
-    h+=`<div style="font-size:11px;color:var(--tm)">No missed sessions waiting for recovery.</div>`;
-  }
-  h+=`</div>`;
-  h+=`</div>`;
-
-  h+=`<div class="pl-section" style="padding:10px 14px;margin-top:8px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><div style="font-size:12px;font-weight:700">Coaching History</div><div style="font-size:11px;color:var(--tm)">Latest completions across months</div></div>`;
-  h+=`<table class="wf-breakdown"><thead><tr><th>Leader</th><th>Month</th><th>Date</th><th>Time</th><th>Quality</th><th>Completed</th></tr></thead><tbody>`;
-  if(recentHistory.length){
-    recentHistory.forEach(hh=>{
-      h+=`<tr><td><strong>${X(hh.name.split(' ')[0])}</strong></td><td style="font-family:'JetBrains Mono',monospace;font-size:11px">${X(hh.monthKey||((hh.date||'').slice(0,7))||'—')}</td><td style="font-family:'JetBrains Mono',monospace;font-size:11px">${X(hh.date||'—')}</td><td style="font-family:'JetBrains Mono',monospace;font-size:11px">${X(hh.slotLabel||hh.time||'—')}</td><td>${X(hh.slotQuality||'—')}</td><td style="font-size:11px;color:var(--tm)">${X((hh.completedAt||'').replace('T',' ').slice(0,16) || '—')}</td></tr>`;
-    });
-  } else {
-    h+=`<tr><td colspan="6" style="color:var(--tm)">No coaching completions recorded yet.</td></tr>`;
-  }
-  h+=`</tbody></table></div>`;
 
   h+=`</div>`;
   return h;
 }
+
 function savePlannedToSchedule(){
   const dk=S.activeDept||"default";
   const genData=generateMonth(dk,S.plGenYear,S.plGenMonth);
@@ -11136,45 +11194,91 @@ function computeFlags(){
     });
   }
 
-  // Shift drift (off by default) — compares actual shifts to confirmed blueprint
-  if(alerts.shiftDrift&&alerts.shiftDrift.on&&S.month){
-    const threshold=alerts.shiftDrift.threshold||20;
+  // v48.2: Blueprint drift — auto-enabled when blueprint is confirmed
+  // Produces individual per-day mismatch flags, not a percentage summary
+  {
     const dk=S.activeDept||"default";
     const bp=S.plBlueprints[dk];
     const positions=S.plPositions[dk]||{};
-    if(bp&&bp.weeks&&bp.confirmed){
+    const DSHORT3=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+    if(bp&&bp.weeks&&bp.confirmed&&S.month){
       const[dy,dm]=S.month.split("-").map(Number);
+      const drifts=[];// collect all mismatches first for summary
       names.forEach(name=>{
         const pos=positions[name];
         if(!pos||!pos.anchorMonday)return;
-        const work=byName[name].filter(e=>!e.isOff&&e.date&&e.date.getFullYear()===dy&&e.date.getMonth()===dm&&e.ukS);
-        if(work.length<3)return;
-        let misaligned=0,total=0;
-        work.forEach(e=>{
-          const anchorMon=new Date(pos.anchorMonday);
+        const personEnts=byName[name].filter(e=>e.date&&e.date.getFullYear()===dy&&e.date.getMonth()===dm);
+        if(personEnts.length<3)return;
+        const anchorMon=new Date(pos.anchorMonday);
+        personEnts.forEach(e=>{
           const weekDist=Math.round((e.date-anchorMon)/(7*864e5));
           const rotWeek=((pos.confirmedWeek-1+weekDist)%bp.cycleLen+bp.cycleLen)%bp.cycleLen+1;
           const pat=bp.weeks[rotWeek]||{};
           const dow=(e.date.getDay()+6)%7;
           const expected=pat[dow]||"OFF";
-          if(expected==="OFF")return;
-          total++;
-          const expStart=expected.split("-")[0]?.trim();
-          if(expStart&&e.ukS&&expStart!==e.ukS)misaligned++;
+          const actual=e.isOff?"OFF":(e.ukS&&e.ukE?e.ukS+"-"+e.ukE:"OFF");
+          // Compare: normalize spaces
+          const expNorm=expected.replace(/\s+/g,"");
+          const actNorm=actual.replace(/\s+/g,"");
+          if(expNorm===actNorm)return;
+          // Skip if both are some form of OFF
+          if(expNorm==="OFF"&&e.isOff)return;
+          const dateStr=fD(e.date);
+          const dayName=DSHORT3[dow];
+          drifts.push({name,date:e.date,dateStr,dayName,rotWeek,expected,actual,dow});
         });
-        if(total>0){
-          const pct=Math.round(misaligned/total*100);
-          if(pct>=threshold){
-            const id="drift|"+name+"|"+S.month;
-            flags.push({id,category:"alert",severity:pct>=50?"high":"medium",title:"Shift drift",
-              detail:`${name.split(" ")[0]}: ${misaligned} of ${total} shifts (${pct}%) differ from blueprint in ${MO[dm]}`,
-              person:name,context:{misaligned,total,pct,threshold,month:S.month},
-              actions:["acknowledge","note"]});
-          }
-        }
       });
+      // Create individual flags for each mismatch
+      drifts.forEach(d=>{
+        const id="drift|"+d.name+"|"+excKey(d.date);
+        const expLabel=d.expected==="OFF"?"OFF":d.expected;
+        const actLabel=d.actual==="OFF"?"OFF":d.actual;
+        flags.push({id,category:"alert",severity:"medium",title:"Blueprint mismatch",
+          detail:`${d.name.split(" ")[0]}: ${d.dayName} ${d.dateStr} — actual ${actLabel}, blueprint W${d.rotWeek} says ${expLabel}`,
+          person:d.name,
+          context:{expected:d.expected,actual:d.actual,rotWeek:d.rotWeek,date:excKey(d.date),dayName:d.dayName},
+          actions:["apply_blueprint","acknowledge","ignore","note"]});
+      });
+      // Add a summary flag if there are multiple drifts
+      if(drifts.length>0){
+        const byPerson2={};drifts.forEach(d=>{byPerson2[d.name]=(byPerson2[d.name]||0)+1;});
+        const summaryParts=Object.entries(byPerson2).map(([n,c])=>n.split(" ")[0]+": "+c).join(", ");
+        const id="drift-summary|"+S.month;
+        flags.push({id,category:"alert",severity:drifts.length>=10?"high":drifts.length>=3?"medium":"low",
+          title:"Blueprint drift summary",
+          detail:`${drifts.length} mismatch${drifts.length!==1?"es":""} vs confirmed blueprint in ${MO[dm]} — ${summaryParts}`,
+          person:null,context:{total:drifts.length,byPerson:byPerson2,month:S.month},
+          actions:["apply_all_blueprint","acknowledge","note"]});
+      }
     }
   }
+
+  // v48.2: Assign impact metadata to each flag — tells users whether it matters
+  const IMPACT_MAP={
+    // Data issues
+    dup:{level:"medium",icon:"⚠",label:"May split one person's data across two names",tip:"Fix: merge names to combine their schedule into one card"},
+    gap:{level:"low",icon:"ℹ",label:"Missing days — does not affect other data",tip:"Likely leave or sick. Mark it or ignore."},
+    fingerprint:{level:"low",icon:"ℹ",label:"Cosmetic — data is read correctly",tip:"Normal in flexible rosters. Dismiss if expected."},
+    empty:{level:"high",icon:"🔴",label:"Person has no usable schedule data",tip:"May indicate a parse issue. Check the raw sheet."},
+    // Alert thresholds
+    overHours:{level:"medium",icon:"⚠",label:"Exceeds configured hours limit",tip:"Check if overtime was approved."},
+    lowCoverage:{level:"high",icon:"🔴",label:"Below minimum staffing — operational risk",tip:"Review calendar for the affected days."},
+    consecutive:{level:"medium",icon:"⚠",label:"Fatigue risk — many days without a break",tip:"May need schedule adjustment."},
+    longShift:{level:"low",icon:"ℹ",label:"Longer than typical — data is correct",tip:"Dismiss if this is a known shift pattern."},
+    weekendBalance:{level:"low",icon:"ℹ",label:"Uneven weekend distribution",tip:"Review over a longer period before acting."},
+    shiftDrift:{level:"low",icon:"ℹ",label:"Actual differs from blueprint",tip:"Expected during transitions. Ignore if temporary."},
+    drift:{level:"medium",icon:"⚠",label:"Roster doesn't match confirmed blueprint for this day",tip:"Update blueprint if plan changed, or log exception if roster is wrong."},
+    "drift-summary":{level:"medium",icon:"⚠",label:"Multiple days differ from confirmed blueprint",tip:"Review individual mismatches below."},
+  };
+  flags.forEach(f=>{
+    const prefix=f.id.split("|")[0];
+    const imp=IMPACT_MAP[prefix]||{level:f.severity==="high"?"high":f.severity==="medium"?"medium":"low",icon:"ℹ",label:"Informational",tip:""};
+    f.impact=imp;
+    // Ensure every flag has at minimum an ignore action
+    if(!f.actions)f.actions=["ignore","note"];
+    else if(!f.actions.includes("ignore")&&!f.actions.includes("acknowledge"))f.actions.push("ignore");
+    if(!f.actions.includes("note"))f.actions.push("note");
+  });
 
   // Filter out dismissed flags and whitelisted patterns
   const whitelist=fs.whitelist||[];
@@ -11274,6 +11378,95 @@ function markGapAsLeave(name,fromDate,toDate,leaveType){
     toast(`Added ${count} ${leaveType||"LEAVE"} entries for ${name.split(" ")[0]}`,"ok");
     ren();
   } else {toast("No gap days to fill — entries already exist","warn");}
+}
+
+// ── FLAG ACTIONS: Apply blueprint fix to a single entry ──
+function applyBlueprintFix(name,dateISO){
+  if(!name||!dateISO)return;
+  const dk=S.activeDept||"default";
+  const bp=S.plBlueprints[dk];
+  const positions=S.plPositions[dk]||{};
+  const pos=positions[name];
+  if(!bp||!bp.weeks||!bp.confirmed||!pos||!pos.anchorMonday){toast("Blueprint or position not confirmed","warn");return;}
+  const targetDate=new Date(dateISO+"T00:00:00");
+  if(isNaN(targetDate)){toast("Invalid date","warn");return;}
+  const anchorMon=new Date(pos.anchorMonday);
+  const weekDist=Math.round((targetDate-anchorMon)/(7*864e5));
+  const rotWeek=((pos.confirmedWeek-1+weekDist)%bp.cycleLen+bp.cycleLen)%bp.cycleLen+1;
+  const pat=bp.weeks[rotWeek]||{};
+  const dow=(targetDate.getDay()+6)%7;
+  const expected=pat[dow]||"OFF";
+  // Find the entry
+  const entry=S.entries.find(e=>e.name===name&&e.date&&excKey(e.date)===dateISO);
+  if(!entry){toast("Entry not found","warn");return;}
+  // Apply the blueprint value
+  if(expected==="OFF"){
+    entry.isOff=true;entry.ukS=null;entry.ukE=null;entry.offL="OFF";entry.raw="OFF";
+    entry.saS=null;entry.saE=null;
+  } else {
+    const parts=expected.split("-").map(p=>p.trim());
+    entry.isOff=false;entry.ukS=parts[0]||null;entry.ukE=parts[1]||null;entry.offL="";
+    entry.raw=expected;
+    // Recalculate SA time if timezone mode is on
+    if(S.tz&&entry.ukS)entry.saS=u2s(entry.ukS,entry.date);
+    if(S.tz&&entry.ukE)entry.saE=u2s(entry.ukE,entry.date);
+  }
+  entry._bpFixed=true;
+  S.entriesVer=(S.entriesVer||0)+1;
+  invalidateDerivedCache();
+  dismissFlag("drift|"+name+"|"+dateISO);
+  const dayName=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][targetDate.getDay()];
+  toast(`${name.split(" ")[0]} ${dayName} ${fD(targetDate)} → ${expected}`,"ok");
+  ren();
+}
+
+// ── FLAG ACTIONS: Apply blueprint to ALL drift mismatches in current month ──
+function applyAllBlueprintFixes(){
+  const dk=S.activeDept||"default";
+  const bp=S.plBlueprints[dk];
+  const positions=S.plPositions[dk]||{};
+  if(!bp||!bp.weeks||!bp.confirmed||!S.month){toast("Blueprint not confirmed","warn");return;}
+  const[dy,dm]=S.month.split("-").map(Number);
+  const names=[...new Set(S.entries.map(e=>e.name))].sort();
+  let fixCount=0;
+  names.forEach(name=>{
+    const pos=positions[name];
+    if(!pos||!pos.anchorMonday)return;
+    const anchorMon=new Date(pos.anchorMonday);
+    const personEnts=S.entries.filter(e=>e.name===name&&e.date&&e.date.getFullYear()===dy&&e.date.getMonth()===dm);
+    personEnts.forEach(e=>{
+      const weekDist=Math.round((e.date-anchorMon)/(7*864e5));
+      const rotWeek=((pos.confirmedWeek-1+weekDist)%bp.cycleLen+bp.cycleLen)%bp.cycleLen+1;
+      const pat=bp.weeks[rotWeek]||{};
+      const dow=(e.date.getDay()+6)%7;
+      const expected=pat[dow]||"OFF";
+      const actual=e.isOff?"OFF":(e.ukS&&e.ukE?e.ukS+"-"+e.ukE:"OFF");
+      if(expected.replace(/\s+/g,"")===actual.replace(/\s+/g,""))return;
+      if(expected==="OFF"&&e.isOff)return;
+      // Apply fix
+      if(expected==="OFF"){
+        e.isOff=true;e.ukS=null;e.ukE=null;e.offL="OFF";e.raw="OFF";e.saS=null;e.saE=null;
+      } else {
+        const parts=expected.split("-").map(p=>p.trim());
+        e.isOff=false;e.ukS=parts[0]||null;e.ukE=parts[1]||null;e.offL="";e.raw=expected;
+        if(S.tz&&e.ukS)e.saS=u2s(e.ukS,e.date);
+        if(S.tz&&e.ukE)e.saE=u2s(e.ukE,e.date);
+      }
+      e._bpFixed=true;
+      fixCount++;
+    });
+  });
+  if(fixCount){
+    S.entriesVer=(S.entriesVer||0)+1;
+    invalidateDerivedCache();
+    // Dismiss all drift flags for this month
+    const fs=S.flagSettings||{};if(!fs.dismissed)fs.dismissed={};
+    const flags=computeFlags();
+    flags.forEach(f=>{if(f.id.startsWith("drift|")||f.id.startsWith("drift-summary|"))fs.dismissed[f.id]=true;});
+    schedulePersist(true);
+    toast(`Applied blueprint to ${fixCount} entries in ${MOFULL[dm]}`,"ok");
+    ren();
+  } else {toast("No mismatches to fix","info");}
 }
 
 // ── WHITELIST PATTERNS ──
@@ -11713,6 +11906,8 @@ function rIntel(el){
     el.innerHTML='<div class="es-empty"><h3>No data loaded</h3><p>Load a schedule file to see intelligence.</p></div>';
     return;
   }
+  // v48.3: Auto-select first available month if none is set — dashboard should always show
+  if(!S.month&&S.months&&S.months.length){S.month=S.months[0];S.mIdx=0;}
   if(!S.month){
     el.innerHTML='<div class="es-empty"><h3>No month selected</h3><p>Use the month navigator to select a month.</p></div>';
     return;
