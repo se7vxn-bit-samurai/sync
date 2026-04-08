@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="referrer" content="no-referrer">
-<title>MirrorFlow Sync v55</title>
+<title>MirrorFlow Base v1</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
@@ -1390,16 +1390,16 @@ button:active,
       <!-- Eyebrow -->
       <div class="lc-eyebrow">
         <div class="lc-rule"></div>
-        <div class="lc-eyebrow-text">MirrorFlow · Operations Suite</div>
+        <div class="lc-eyebrow-text">MirrorFlow · Floor Operations</div>
         <div class="lc-rule lc-rule-r"></div>
       </div>
 
       <!-- Title -->
       <div class="lc-title-block">
-        <div class="lc-kicker">Schedule intelligence</div>
+        <div class="lc-kicker">Floor operations</div>
         <div class="lc-title">MirrorFlow</div>
-        <div class="lc-title-sub">Sync</div>
-        <div class="lc-desc">Every shift, every agent, every exception — mapped, tracked and understood before the day begins.</div>
+        <div class="lc-title-sub">Base</div>
+        <div class="lc-desc">Your daily roster, coaching log and team view — everything a floor manager needs, nothing they don’t.</div>
       </div>
 
       <!-- Features -->
@@ -1489,7 +1489,7 @@ button:active,
 </div>
 <!-- Build wizard overlay -->
 <div id="buildWizard" style="display:none;position:fixed;inset:0;z-index:900;background:var(--bg);overflow-y:auto"></div>
-<div id="mv" class="hid" style="flex:1;display:flex;flex-direction:column"><div class="mf-masthead" id="mfMasthead"><div class="mf-mh-left"><span class="mf-mh-brand">Sync</span><span class="mf-mh-sep" id="mhDeptSep" style="display:none"></span><span class="mf-mh-dept" id="fl" style="display:none"></span><span class="mf-mh-stat" id="mhLeaderCount"></span><span class="mf-mh-sep"></span><span class="mf-mh-stat" id="mhHealth"></span></div><div class="mf-mh-center" id="mfMastheadMonthNav" style="display:none"></div><div class="mf-mh-right" id="ha" style="display:none"><div class="mf-mh-ticker" id="mhTicker"></div></div></div><div class="mf-body"><div class="mf-rail" id="mfRail"><button class="mf-nav-toggle" id="mfNavToggle" title="Toggle sidebar" aria-label="Toggle sidebar"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="2" width="5" height="12" rx="1.5" fill="currentColor" opacity=".5"/><line x1="8.5" y1="5" x2="15" y2="5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="8.5" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="8.5" y1="11" x2="15" y2="11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button><div class="mf-rail-nav" id="mfRailNav"></div><div class="mf-rail-bottom" id="mfRailBottom"></div></div><div class="mf-content-col"><div class="mf-subbar" id="mfSubbar"></div><div id="contBar"></div><div class="ct" id="ca"></div></div></div></div>
+<div id="mv" class="hid" style="flex:1;display:flex;flex-direction:column"><div class="mf-masthead" id="mfMasthead"><div class="mf-mh-left"><span class="mf-mh-brand">Base</span><span class="mf-mh-sep" id="mhDeptSep" style="display:none"></span><span class="mf-mh-dept" id="fl" style="display:none"></span><span class="mf-mh-stat" id="mhLeaderCount"></span><span class="mf-mh-sep"></span><span class="mf-mh-stat" id="mhHealth"></span></div><div class="mf-mh-center" id="mfMastheadMonthNav" style="display:none"></div><div class="mf-mh-right" id="ha" style="display:none"><div class="mf-mh-ticker" id="mhTicker"></div></div></div><div class="mf-body"><div class="mf-rail" id="mfRail"><button class="mf-nav-toggle" id="mfNavToggle" title="Toggle sidebar" aria-label="Toggle sidebar"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="2" width="5" height="12" rx="1.5" fill="currentColor" opacity=".5"/><line x1="8.5" y1="5" x2="15" y2="5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="8.5" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="8.5" y1="11" x2="15" y2="11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button><div class="mf-rail-nav" id="mfRailNav"></div><div class="mf-rail-bottom" id="mfRailBottom"></div></div><div class="mf-content-col"><div class="mf-subbar" id="mfSubbar"></div><div id="contBar"></div><div class="ct" id="ca"></div></div></div></div>
 <!-- Export menu overlay — fixed, positioned by togExpRail() -->
 <div class="em" id="exm" style="display:none;position:fixed;z-index:900"><div class="em-section">Quick</div><button class="ei" onclick="expSavePlus('month')">💾 Save session</button><button class="ei" onclick="genEmail()">✉ Share today's roster</button><div class="em-section">Export</div><button class="ei" onclick="expCurrentMonth()">📋 Styled Report</button><button class="ei" onclick="expSavePlus('all')">📦 Full dataset</button><button class="ei" onclick="expPNG()">🖼 Save as image</button><div class="em-section">Advanced</div><button class="ei" onclick="expAIcsv()">🤖 AI-Ready Data</button><button class="ei" onclick="genWeeklyDigest()">📋 Weekly digest</button><button class="ei" onclick="expTLDayPack()">📋 TL Day Pack</button><button class="ei" onclick="copyEOD()">📋 Copy EOD report</button></div>
 <div class="kb-hint" id="kbh" style="display:none"><span><kbd>←</kbd><kbd>→</kbd> month <kbd>↑</kbd><kbd>↓</kbd> person <kbd>T</kbd> today <kbd>C</kbd> calendar <kbd>W</kbd> digest <kbd>?</kbd> help</span><span class="wm-inline">© theGuide.Club · Sel K. Naicker · 2026</span></div>
@@ -1523,13 +1523,13 @@ button:active,
         <span class="qs-ico">📅</span>
         <div><div class="qs-text">Today's roster</div><div class="qs-sub">Calendar → see who's on, share to Teams</div></div>
       </button>
-      <button class="ls-qs" onclick="closeSplash();setTab('analytics');setAnalyticsView('dashboard')">
-        <span class="qs-ico">⚡</span>
-        <div><div class="qs-text">Team intelligence</div><div class="qs-sub">Analytics → Dashboard → signals, coaching, risk</div></div>
+      <button class="ls-qs" onclick="closeSplash();setTab('calendar');S.calSubTab='coaching'">
+        <span class="qs-ico">🎯</span>
+        <div><div class="qs-text">Coaching log</div><div class="qs-sub">Calendar → Coaching → record sessions</div></div>
       </button>
-      <button class="ls-qs" onclick="closeSplash();setTab('planner')">
-        <span class="qs-ico">🔮</span>
-        <div><div class="qs-text">Project forward</div><div class="qs-sub">Planner → rotations, leave, scenarios</div></div>
+      <button class="ls-qs" onclick="closeSplash();setTab('people')">
+        <span class="qs-ico">👥</span>
+        <div><div class="qs-text">Team & schedules</div><div class="qs-sub">People → team view, schedule cards</div></div>
       </button>
     </div>
     <div class="ls-actions">
@@ -1546,6 +1546,7 @@ button:active,
    ═══════════════════════════════════════════════════════════════ */
 let S={wb:null,fn:"",shs:[],sh:"",raw:[],entries:[],team:"all",emp:"all",tz:true,tab:"calendar",th:"noir",
   month:null,months:[],mIdx:0,shiftFilter:"",compare:false,cmp2:"",calDay:null,rawSheet:"",collapsed:{},hlToday:true,srch:"",dayFilter:"",allMonths:false,covMin:3,hrsMax:45,cbMode:false,density:"comfortable",att:{},hc:{},notes:{},noteOpen:false,anDay:null,anMode:"roster",plMonths:2,plRemoved:{},plLeave:[],plOverrides:{},plHires:[],plEdit:null,tbOpen:false,rotationDef:null,rotPanelOpen:false,parseInfo:[],workspace:{},activeDept:null,plBlueprints:{},plPositions:{},plBpOpen:false,plPosOpen:true,plGenMonth:null,plGenYear:null,
+  calSubTab:"day",// "day" | "coaching" — Base v1 sub-tabs under Calendar
   tblDay:"all",tblWk:"all",tblType:"all",tblLeader:"all",tblHrsMin:"",tblHrsMax:"",tblDateFrom:"",tblDateTo:"",tblEra:"all",tblSortCol:"date",tblSortDir:"asc",
   plCellEdit:null,plCovOpen:true,plDriftOpen:true,plShowRotWk:true,plWkRemap:{},changeLog:null,changeLogOpen:true,showCardWk:true,
   // Card display toggles — what's visible on the summary card
@@ -1605,8 +1606,8 @@ let S={wb:null,fn:"",shs:[],sh:"",raw:[],entries:[],team:"all",emp:"all",tz:true
     notes:{}// flagId → string
   }};
 
-const APP_VERSION="v54";
-const APP_BUILD_LABEL="v54 · parseHoriz/parseVert week-label fix · ghost agent detection · data quality hardening";
+const APP_VERSION="Base v1";
+const APP_BUILD_LABEL="Base v1 · streamlined floor ops · coaching + calendar focus";
 const APP_BUILD=APP_VERSION+" · "+APP_BUILD_LABEL;
 const DEFAULT_COACH_START_BUFFER=90;   // min after shift start
 const DEFAULT_COACH_END_BUFFER=60;     // min before shift end
@@ -1728,18 +1729,13 @@ function getSearchMatches(query){
   const views=[];
   if(q&&q.length>=2){
     const navMap=[
-      {keys:["coverage","heatmap","cov"],label:"Coverage heatmap",tab:"analytics",view:"coverage"},
-      {keys:["capacity","waterfall","cap"],label:"Capacity waterfall",tab:"analytics",view:"capacity"},
-      {keys:["history","trend","month"],label:"History comparison",tab:"analytics",view:"history"},
-      {keys:["signal","sig"],label:"Signals",tab:"analytics",view:"signals"},
-      {keys:["flag","alert","data issue","whitelist"],label:"Flags",tab:"analytics",view:"flags"},
-      {keys:["ops","intel","command"],label:"⚡ Ops",tab:"analytics",view:"ops"},
-      {keys:["planner","blueprint","project"],label:"Planner",tab:"planner",view:null},
-      {keys:["coaching","coach","session"],label:"Coaching",tab:"planner",view:"coaching"},
-      {keys:["overtime","ot","ccs"],label:"Overtime",tab:"planner",view:"overtime"},
+      {keys:["coverage","heatmap","cov"],label:"Coverage heatmap",tab:"calendar",view:null},
+      {keys:["coaching","coach","session"],label:"Coaching",tab:"calendar",view:"coaching"},
       {keys:["calendar","cal"],label:"Calendar",tab:"calendar",view:null},
-      {keys:["summary","overview","hub"],label:"Summary",tab:"summary",view:null},
-      {keys:["raw","source","preview"],label:"Raw Data",tab:"raw",view:null}
+      {keys:["planner","blueprint","project"],label:"Blueprint",tab:"calendar",view:null},
+      {keys:["overtime","ot","ccs"],label:"Overtime",tab:"calendar",view:"coaching"},
+      {keys:["summary","overview","hub"],label:"Team",tab:"people",view:null},
+      {keys:["people","team","agent"],label:"People",tab:"people",view:null}
     ];
     navMap.forEach(n=>{
       if(n.keys.some(k=>k.startsWith(q))){
@@ -1787,9 +1783,8 @@ function applySearchSelection(type,value){
     const v=typeof value==="object"?value:null;
     if(v){
       S.tab=v.tab;
-      if(v.view==="coaching"){S.plSubTab="coaching";}
-      else if(v.view==="overtime"){S.plSubTab="overtime";}
-      else if(v.view){S.anView=v.view;}
+      if(v.view==="coaching"){S.calSubTab="coaching";}
+      else if(v.view){S.calSubTab="day";}
     }
   }
   S.srch="";S.srchIdx=-1;ren();
@@ -1965,15 +1960,12 @@ function rerenderCurrentSurface(){
   if(!host)return;
   if(S.tab==="calendar")rCal(host);
   else if(S.tab==="people")rPeople(host);
-  else if(S.tab==="table")rTbl(host);
-  else if(S.tab==="analytics")rAnalytics(host);
-  else if(S.tab==="cards")rCards(host);
-  else if(S.tab==="planner")rPlanner(host);
-  else if(S.tab==="summary")rSum(host);
-  else if(S.tab==="raw")rRaw(host);
+  else rCal(host);// Base v1: fallback to calendar
 }
 function rerenderPlannerSubTab(sub){
   S.plSubTab=sub||S.plSubTab;
+  // Base v1: coaching lives under calendar
+  if(S.tab==="calendar"&&S.calSubTab==="coaching"){rCal($("ca"));return;}
   if(S.tab!=="planner"){ren();return;}
   const host=$("ca");if(!host){ren();return;}
   rPlanner(host);
@@ -2015,10 +2007,11 @@ function setLeader(name){
   rerenderInfoBarOnly();
 }
 function setTab(tab){
-  // Intel is no longer a top-level tab — it lives as Analytics > Ops
-  if(tab==="intel"){S.tab="analytics";S.anView="dashboard";renderChrome();rerenderCurrentSurface();return;}
+  // Base v1: Redirect removed tabs to Calendar or People
+  if(tab==="intel"||tab==="analytics"||tab==="raw"){S.tab="calendar";renderChrome();rerenderCurrentSurface();return;}
+  if(tab==="planner"){S.tab="calendar";S.calSubTab="coaching";renderChrome();rerenderCurrentSurface();return;}
   // Folded tabs: summary and cards/schedule live inside People sub-tabs
-  if(tab==="summary"){S.tab="analytics";S.anView="schedules";renderChrome();rerenderCurrentSurface();return;}
+  if(tab==="summary"){S.tab="people";S.peopleSubTab="cards";renderChrome();rerenderCurrentSurface();return;}
   if(tab==="cards"||tab==="schedule"){S.tab="people";S.peopleSubTab="cards";renderChrome();rerenderCurrentSurface();return;}
 
   if(S.tab===tab)return;
@@ -2043,7 +2036,7 @@ function setTab(tab){
    navBack() restores the previous snapshot. Max 20 steps.
    State captured: tab, emp, month, mIdx, calDay, dayFilter,
    shiftFilter, team, allMonths, anView, plSubTab, dayIntelName */
-const NAV_KEYS=['tab','emp','month','mIdx','calDay','dayFilter','shiftFilter','team','allMonths','anView','plSubTab','dayIntelName','dayIntelDate'];
+const NAV_KEYS=['tab','emp','month','mIdx','calDay','calSubTab','dayFilter','shiftFilter','team','allMonths','anView','plSubTab','dayIntelName','dayIntelDate'];
 const _navStack=[];
 function _navPush(){
   const snap={};
@@ -2254,7 +2247,7 @@ function applyExportMetadata(workbook,kind,scope){
     workbook.title='Schedule Cleaner · '+kind;
     workbook.subject=(scope?scope+' · ':'')+monthLabel();
     workbook.company='theGuide.Club';
-    workbook.keywords='schedule cleaner, mirrorflow sync, operator intelligence';
+    workbook.keywords='schedule cleaner, MirrorFlow Base, operator intelligence';
     workbook.comments='Build '+APP_BUILD+' | Team '+S.team+' | Leader '+S.emp+' | Month '+monthLabel();
   }catch(e){}
 }
@@ -4008,6 +4001,7 @@ function showParsePreview(wb,filename){
   const scan=scanFileQuick(wb,filename);
   _pendingLoad={wb,filename,scan};
   _cacheMode=null;
+  S._previewLeaderFocus=null; // null = all leaders
 
   // Date range
   let dateRange="";
@@ -4040,67 +4034,56 @@ function showParsePreview(wb,filename){
   h+=`<div style="font-size:10px;color:var(--tm)">confidence</div>`;
   h+=`</div></div>`;
 
-  // Summary grid
-  h+=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">`;
-  [{label:"People",val:scan.names.length,icon:"👤"},{label:"Shifts",val:scan.work,icon:"📅"},{label:"Off days",val:scan.off,icon:"🌙"},
-   {label:"Months",val:scan.months.length,icon:"📆"},{label:"Sheets",val:scan.sheets,icon:"📄"},{label:"Total",val:scan.total,icon:"Σ"}
-  ].forEach(({label,val,icon})=>{
-    h+=`<div style="padding:8px;border-radius:8px;background:var(--al);text-align:center">`;
-    h+=`<div style="font-size:18px;font-weight:800;color:var(--accent);font-family:'JetBrains Mono',monospace">${val}</div>`;
-    h+=`<div style="font-size:11px;color:var(--tm)">${icon} ${label}</div>`;
-    h+=`</div>`;
-  });
+  // Compact summary strip (simplified from 6-cell grid)
+  h+=`<div style="display:flex;gap:8px;margin-bottom:14px;font-size:12px;flex-wrap:wrap;align-items:center">`;
+  h+=`<span style="padding:4px 10px;border-radius:6px;background:var(--al);font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--accent)">${scan.names.length} people</span>`;
+  h+=`<span style="padding:4px 10px;border-radius:6px;background:var(--al);color:var(--tm)">${scan.total} entries</span>`;
+  if(dateRange)h+=`<span style="padding:4px 10px;border-radius:6px;background:var(--al);color:var(--tm)">${dateRange}</span>`;
+  h+=`<span style="padding:4px 10px;border-radius:6px;background:var(--al);color:var(--tm)">${X(scan.deptName)}</span>`;
   h+=`</div>`;
 
-  // Date range + dept
-  h+=`<div style="display:flex;gap:8px;margin-bottom:12px;font-size:12px;flex-wrap:wrap">`;
-  if(dateRange)h+=`<span style="padding:4px 10px;border-radius:6px;background:var(--al);color:var(--accent);font-weight:600">${dateRange}</span>`;
-  h+=`<span style="padding:4px 10px;border-radius:6px;background:var(--al);color:var(--tm)">Dept: ${X(scan.deptName)}</span>`;
-  h+=`<span style="padding:4px 10px;border-radius:6px;background:var(--al);color:var(--tm)">${scan.parsers.join(", ")}</span>`;
-  h+=`</div>`;
-
-  // Names list (compact)
-  if(scan.names.length<=20){
-    h+=`<div style="margin-bottom:12px;padding:8px;border-radius:8px;background:rgba(255,255,255,.03);border:1px solid var(--bdr)">`;
-    h+=`<div style="font-size:11px;font-weight:600;color:var(--tm);margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px">Leaders found</div>`;
+  // ── Leader Focus selector ──
+  if(scan.names.length>1){
+    h+=`<div style="margin-bottom:14px;padding:10px 12px;border-radius:10px;border:1px solid var(--bdr);background:rgba(255,255,255,.02)">`;
+    h+=`<div style="font-size:11px;font-weight:700;color:var(--tm);margin-bottom:6px;text-transform:uppercase;letter-spacing:.3px">Load scope</div>`;
     h+=`<div style="display:flex;flex-wrap:wrap;gap:4px">`;
+    h+=`<button id="lfAll" onclick="_setLeaderFocus(null)" style="padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--accent);background:var(--al);color:var(--accent);font-family:inherit;transition:all .12s">All (${scan.names.length})</button>`;
     scan.names.forEach(n=>{
-      const isDupe=scan.dupes.some(d=>d.a===n||d.b===n);
-      h+=`<span style="padding:2px 8px;border-radius:4px;font-size:11px;background:${isDupe?"rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);color:var(--wknd)":"var(--al);color:var(--text)"}">${X(n)}${isDupe?" ⚠":""}</span>`;
+      h+=`<button class="_lfBtn" data-leader="${X(n)}" onclick="_setLeaderFocus('${XJ(n)}')" style="padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;border:1px solid var(--bdr);background:transparent;color:var(--tm);font-family:inherit;transition:all .12s">${X(n.split(" ")[0])}</button>`;
+    });
+    h+=`</div>`;
+    h+=`</div>`;
+  }
+
+  // Ghost agents block
+  if(scan.ghostAgents&&scan.ghostAgents.length){
+    h+=`<div style="margin-bottom:12px;padding:10px;border-radius:8px;background:rgba(148,103,189,.07);border:1px solid rgba(148,103,189,.25)">`;
+    h+=`<div style="font-size:11px;font-weight:700;color:#9467bd;margin-bottom:5px;display:flex;align-items:center;gap:6px">`;
+    h+=`<span>👻</span><span>${scan.ghostAgents.length} agent${scan.ghostAgents.length!==1?'s':''} with no shift data</span></div>`;
+    h+=`<div style="display:flex;flex-wrap:wrap;gap:4px">`;
+    scan.ghostAgents.forEach(g=>{
+      h+=`<span style="padding:2px 8px;border-radius:4px;font-size:11px;background:rgba(148,103,189,.12);border:1px solid rgba(148,103,189,.2);color:#9467bd" title="Sheet: ${X(g.sheet)}">${X(g.name)}</span>`;
     });
     h+=`</div></div>`;
   }
 
-  // Ghost agents block (agents found in file but not parsed)
-  if(scan.ghostAgents&&scan.ghostAgents.length){
-    h+=`<div style="margin-bottom:12px;padding:10px;border-radius:8px;background:rgba(148,103,189,.07);border:1px solid rgba(148,103,189,.25)">`;
-    h+=`<div style="font-size:11px;font-weight:700;color:#9467bd;margin-bottom:5px;display:flex;align-items:center;gap:6px">`;
-    h+=`<span>👻</span><span>${scan.ghostAgents.length} agent${scan.ghostAgents.length!==1?'s':''} found with no shift data</span></div>`;
-    h+=`<div style="font-size:10px;color:var(--tm);margin-bottom:7px;line-height:1.5">These names appear in the file but have no parseable schedule. They may be on leave, recently joined, or listed in a summary-only sheet.</div>`;
-    h+=`<div style="display:flex;flex-wrap:wrap;gap:4px">`;
-    scan.ghostAgents.forEach(g=>{
-      h+=`<span style="padding:2px 8px;border-radius:4px;font-size:11px;background:rgba(148,103,189,.12);border:1px solid rgba(148,103,189,.2);color:#9467bd" title="Found in: ${X(g.sheet)}">${X(g.name)}</span>`;
-    });
-    h+=`</div>`;
-    h+=`<div style="font-size:10px;color:var(--tm);margin-top:6px;opacity:.7">Hover chips to see which sheet. These agents will not appear in the calendar or analytics.</div>`;
-    h+=`</div>`;
-  }
-
-  // Warnings section
+  // Warnings (collapsed if many)
   if(hasWarnings){
-    h+=`<div style="margin-bottom:12px;padding:10px;border-radius:8px;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.2)">`;
-    h+=`<div style="font-size:11px;font-weight:700;color:var(--wknd);margin-bottom:6px">⚠ Data quality flags</div>`;
+    const warnCount=scan.warnings.length+scan.dupes.length+scan.fingerprints.length;
+    h+=`<details style="margin-bottom:12px" ${warnCount<=3?"open":""}>`;
+    h+=`<summary style="font-size:11px;font-weight:700;color:var(--wknd);cursor:pointer;padding:4px 0">⚠ ${warnCount} data quality flag${warnCount!==1?"s":""}</summary>`;
+    h+=`<div style="padding:6px 10px;border-radius:8px;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.2);margin-top:4px">`;
     scan.warnings.forEach(w=>{h+=`<div style="font-size:11px;color:var(--tm);padding:2px 0">• ${X(w)}</div>`;});
-    scan.dupes.forEach(d=>{h+=`<div style="font-size:11px;color:var(--wknd);padding:2px 0">• Possible duplicate: <strong>${X(d.a)}</strong> ↔ <strong>${X(d.b)}</strong> — ${X(d.reason)}</div>`;});
+    scan.dupes.forEach(d=>{h+=`<div style="font-size:11px;color:var(--wknd);padding:2px 0">• Possible duplicate: <strong>${X(d.a)}</strong> ↔ <strong>${X(d.b)}</strong></div>`;});
     scan.fingerprints.slice(0,5).forEach(fp=>{h+=`<div style="font-size:11px;color:var(--wknd);padding:2px 0">• ${X(fp.msg)}</div>`;});
-    if(scan.fingerprints.length>5)h+=`<div style="font-size:11px;color:var(--tm);padding:2px 0">+ ${scan.fingerprints.length-5} more shift warnings</div>`;
-    h+=`</div>`;
+    if(scan.fingerprints.length>5)h+=`<div style="font-size:11px;color:var(--tm);padding:2px 0">+ ${scan.fingerprints.length-5} more</div>`;
+    h+=`</div></details>`;
   }
 
-  // Session warning (only show if no cache banner — cache banner covers this)
+  // Session warning (only if no cache banner)
   if(hasSession&&!hasCache){
     h+=`<div style="padding:8px 10px;border-radius:8px;background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.15);margin-bottom:14px;font-size:11px;color:#dc2626">`;
-    h+=`⚠ Loading this file will replace your current session (${S.entries.length} entries, ${S.activeDept||"active dept"}). Use Save+ first if you need to keep it.`;
+    h+=`⚠ Loading will replace your current session (${S.entries.length} entries). Use Save+ first if needed.`;
     h+=`</div>`;
   }
 
@@ -4112,7 +4095,7 @@ function showParsePreview(wb,filename){
     h+=`<span style="font-size:14px">🗄️</span>`;
     h+=`<div style="font-size:13px;font-weight:600;color:var(--text)">Stored session data found</div>`;
     h+=`</div>`;
-    h+=`<div style="font-size:11px;color:var(--tm);margin-bottom:10px;padding-left:8px">Choose how to handle existing browser data before loading this file.</div>`;
+    h+=`<div style="font-size:11px;color:var(--tm);margin-bottom:10px;padding-left:8px">Choose how to handle existing data before loading.</div>`;
     // Cache item chips
     h+=`<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;padding-left:8px">`;
     cacheItems.forEach(({label})=>{
@@ -4127,7 +4110,7 @@ function showParsePreview(wb,filename){
     h+=`</button>`;
     h+=`<button id="cacheBtnFresh" onclick="_setCacheMode('fresh')" style="border-radius:8px;padding:10px 12px;cursor:pointer;border:1px solid rgba(255,255,255,.08);background:transparent;font-family:inherit;text-align:left;transition:all .15s">`;
     h+=`<div style="font-size:11px;font-weight:700;color:#dc2626;margin-bottom:3px;text-transform:uppercase;letter-spacing:.06em">Fresh start</div>`;
-    h+=`<div style="font-size:10px;color:var(--tm);line-height:1.4">Clear all stored data and load the file clean</div>`;
+    h+=`<div style="font-size:10px;color:var(--tm);line-height:1.4">Clear all stored data and load clean</div>`;
     h+=`</button>`;
     h+=`</div></div>`;
   }
@@ -4138,7 +4121,7 @@ function showParsePreview(wb,filename){
   h+=`<div style="display:flex;gap:8px;justify-content:flex-end;align-items:center">`;
   if(hasCache)h+=loadHint;
   h+=`<button onclick="cancelParsePreview()" style="padding:8px 20px;border:1px solid var(--bdr);border-radius:8px;background:none;color:var(--tm);font-family:inherit;font-size:13px;cursor:pointer">Cancel</button>`;
-  h+=`<button id="parseLoadBtn" onclick="confirmParsePreview()" ${loadDisabled}>Load ${scan.total} entries</button>`;
+  h+=`<button id="parseLoadBtn" onclick="confirmParsePreview()" ${loadDisabled}><span id="parseLoadLabel">Load ${scan.total} entries</span></button>`;
   h+=`</div>`;
 
   h+=`</div></div>`;
@@ -4150,11 +4133,45 @@ function showParsePreview(wb,filename){
   document.body.appendChild(div.firstElementChild);
 }
 
+// Leader focus selector handler
+function _setLeaderFocus(leaderName){
+  S._previewLeaderFocus=leaderName;
+  if(!_pendingLoad)return;
+  const scan=_pendingLoad.scan;
+  // Update button styles
+  const allBtn=document.getElementById("lfAll");
+  if(allBtn){
+    allBtn.style.borderColor=leaderName===null?"var(--accent)":"var(--bdr)";
+    allBtn.style.background=leaderName===null?"var(--al)":"transparent";
+    allBtn.style.color=leaderName===null?"var(--accent)":"var(--tm)";
+  }
+  document.querySelectorAll("._lfBtn").forEach(btn=>{
+    const nm=btn.getAttribute("data-leader");
+    const isSel=nm===leaderName;
+    btn.style.borderColor=isSel?"var(--accent)":"var(--bdr)";
+    btn.style.background=isSel?"var(--al)":"transparent";
+    btn.style.color=isSel?"var(--accent)":"var(--tm)";
+    btn.style.fontWeight=isSel?"600":"400";
+  });
+  // Update load button label with filtered count
+  const label=document.getElementById("parseLoadLabel");
+  if(label){
+    if(leaderName===null){
+      label.textContent=`Load ${scan.total} entries`;
+    } else {
+      // Count entries for this leader from the scan
+      const leaderTotal=scan._nameEntries?scan._nameEntries[leaderName]||0:Math.round(scan.total/scan.names.length);
+      label.textContent=`Load ${leaderName.split(" ")[0]}'s data`;
+    }
+  }
+}
+
 function confirmParsePreview(){
   const overlay=document.getElementById("parsePreviewOverlay");
   if(overlay)overlay.remove();
   if(!_pendingLoad)return;
   const{wb,filename}=_pendingLoad;
+  const leaderFocus=S._previewLeaderFocus||null;
   _pendingLoad=null;
   // If user chose fresh start, wipe operational cache keys before loading
   if(_cacheMode==="fresh"){
@@ -4167,7 +4184,8 @@ function confirmParsePreview(){
   }
   const cacheKept=_cacheMode==="keep";
   _cacheMode=null;
-  loadIntoWorkspace(wb,filename,{cacheKept});
+  S._previewLeaderFocus=null;
+  loadIntoWorkspace(wb,filename,{cacheKept,leaderFocus});
 }
 
 function cancelParsePreview(){
@@ -4224,7 +4242,7 @@ function restoreFromSaveFile(wb,filename){
       "exceptions","dayClosed",
       "coachPlan","coachHistory","coachBlackouts","coachDuration","coachTargetDaily","plSubTab","exportSelection",
       "tab","th","tz","hlToday","covMin","hrsMax","cbMode","density","targetHours","ratePerHour","collapsed","team","emp","dayFilter",
-      "allMonths","parseInfo","anDay","anMode","shiftFilter",
+      "allMonths","parseInfo","anDay","anMode","shiftFilter","calSubTab",
       "agentStatuses","agentNotes","peopleSubTab","anScope","otPlan"];
     restoreKeys.forEach(k=>{if(snap[k]!==undefined)S[k]=snap[k];});
 
@@ -4476,6 +4494,13 @@ function loadIntoWorkspace(wb,sourceName,opts={}){
   S.plLeave=[];S.plOverrides={};S.plHires=[];S.plRemoved={};S.plEdit=null;
   S.parseInfo=[];S._anomDismissed=false;
   load(S.sh);
+  // Leader focus filter: if user selected a single leader, keep only their entries
+  if(opts.leaderFocus&&S.entries&&S.entries.length){
+    const focus=opts.leaderFocus;
+    const before=S.entries.length;
+    S.entries=S.entries.filter(e=>e.name===focus);
+    if(S.entries.length<before)toast(`Focused on ${focus.split(" ")[0]} (${S.entries.length}/${before} entries)`,"info",2500);
+  }
   // v48.2: Single consolidated rotation toast
   if(S.rotationDef&&S.rotationDef._detected){
     const det=S.rotationDef._detected;
@@ -4742,19 +4767,18 @@ function renderSearchDropdown(){
   dd.innerHTML=h;
 }
 function renderTabs(){
-  // v50D: Render tabs as rail nav items
+  // Base v1: Only Calendar and People tabs — redirect everything else
   if(S.tab==="table"||S.tab==="cards"||S.tab==="schedule")S.tab="people";
-  if(S.tab==="raw")S.tab="analytics";
+  if(S.tab==="raw"||S.tab==="analytics")S.tab="calendar";
   if(S.tab==="summary")S.tab="people";
+  if(S.tab==="planner"){S.tab="calendar";S.calSubTab="coaching";}
   const _todayISO=excKey(new Date());
   const _todayExcs=(S.exceptions||[]).filter(ex=>ex.date===_todayISO&&ex.agentName&&['sick','no_show','family_responsibility','annual_leave'].includes(ex.type));
   const _flaggedCount=new Set(_todayExcs.map(ex=>ex.agentName).filter(Boolean)).size;
   const peopleBadge=_flaggedCount>0?`<span style="min-width:14px;height:14px;padding:0 3px;border-radius:7px;background:#dc2626;color:#fff;font-size:8px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;line-height:1;margin-left:2px">${_flaggedCount}</span>`:'';
   const tabs=[
     {id:"calendar",label:"Calendar",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.2"/><line x1="1" y1="5" x2="13" y2="5" stroke="currentColor" stroke-width="1"/><line x1="4" y1="1" x2="4" y2="3" stroke="currentColor" stroke-width="1.2"/><line x1="10" y1="1" x2="10" y2="3" stroke="currentColor" stroke-width="1.2"/></svg>`},
-    {id:"people",label:"People"+peopleBadge,icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 13c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="currentColor" stroke-width="1.2"/></svg>`,raw:true},
-    {id:"analytics",label:"Analytics",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="8" width="3" height="5" rx="0.5" stroke="currentColor" stroke-width="1"/><rect x="5.5" y="4" width="3" height="9" rx="0.5" stroke="currentColor" stroke-width="1"/><rect x="10" y="1" width="3" height="12" rx="0.5" stroke="currentColor" stroke-width="1"/></svg>`},
-    {id:"planner",label:"Planner",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.2"/><path d="M7 3v4l3 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>`}
+    {id:"people",label:"People"+peopleBadge,icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 13c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="currentColor" stroke-width="1.2"/></svg>`,raw:true}
   ];
   const navEl=$("mfRailNav");
   const bottomEl=$("mfRailBottom");
@@ -4781,7 +4805,7 @@ function buildInfoBarHTML(){
   const agentBit=_agentTotal>0?` · <span style="color:var(--accent);cursor:pointer" onclick="setTab('people');S.peopleSubTab='team'" title="${_agentTotal} agents">👥 ${_agentTotal}</span>`:"";
   // Health
   let healthBit="";
-  if(S.month){const ths=computeTeamHealthScore(S.month);if(ths)healthBit=` · <span style="font-weight:700;padding:1px 6px;border-radius:8px;background:${ths.gradeCol}18;color:${ths.gradeCol};font-family:'JetBrains Mono',monospace;cursor:pointer" onclick="setTab('analytics');setAnalyticsView('dashboard')" title="Team Health Score ${ths.grade} ${ths.avg}/100&#10;&#10;A = 85–100 · Strong schedule health&#10;B = 70–84 · Minor issues present&#10;C = 55–69 · Review recommended&#10;D/F = below 55 · Significant problems&#10;&#10;Factors: shift consistency, coverage, hours spread, weekend balance&#10;Click to open full breakdown">${ths.grade} ${ths.avg}</span><span style="font-size:10px;color:var(--tm);cursor:help;margin-left:1px" title="Team Health Score — A/B/C/D/F grade based on shift consistency, coverage gaps, hours distribution, and weekend balance. Click the grade to see full breakdown.">?</span>`;}
+  if(S.month){const ths=computeTeamHealthScore(S.month);if(ths)healthBit=` · <span style="font-weight:700;padding:1px 6px;border-radius:8px;background:${ths.gradeCol}18;color:${ths.gradeCol};font-family:'JetBrains Mono',monospace;cursor:pointer" onclick="setTab('calendar')" title="Team Health Score ${ths.grade} ${ths.avg}/100">${ths.grade} ${ths.avg}</span>`;}
   // Active filters
   const filterBit=S.calDay&&S.tab==="calendar"?` · <span class="l" style="cursor:pointer;font-size:12px" onclick="clearCalendarDaySelection()">✕ ${fDF(S.calDay)}</span>`:S.dayFilter?` · <span class="l" style="cursor:pointer;font-size:12px" onclick="clearDayFilter()">✕ ${S.dayFilter}s</span>`:"";
   // Person filter active indicator
@@ -4796,7 +4820,7 @@ function renderInfoBar(){
   const hEl=$("mhHealth");
   if(hEl&&S.month){
     const ths=computeTeamHealthScore(S.month);
-    if(ths){hEl.innerHTML=`<span style="font-weight:700;color:${ths.gradeCol};background:${ths.gradeCol}18;padding:1px 5px;border-radius:3px;cursor:pointer" onclick="setTab('analytics');setAnalyticsView('dashboard')">${ths.grade} ${ths.avg}</span>`;
+    if(ths){hEl.innerHTML=`<span style="font-weight:700;color:${ths.gradeCol};background:${ths.gradeCol}18;padding:1px 5px;border-radius:3px;cursor:pointer" onclick="setTab('calendar')">${ths.grade} ${ths.avg}</span>`;
     }else hEl.textContent='';
   }else if(hEl)hEl.textContent='';
   // Ticker — floor window + exception count for today
@@ -4833,14 +4857,14 @@ function renderQuickActions(){
   try{
     const rq=typeof getCoachRecoveryQueue==='function'?getCoachRecoveryQueue():[];
     if(rq.length>0&&!S._qaDismissed.coach){
-      items.push({id:'coach',icon:'🎯',text:rq.length+' coaching session'+(rq.length>1?'s':'')+' overdue',btn:'Open Coaching',action:"S.tab='planner';S.plSubTab='coaching';ren()"});
+      items.push({id:'coach',icon:'🎯',text:rq.length+' coaching session'+(rq.length>1?'s':'')+' overdue',btn:'Open Coaching',action:"S.tab='calendar';S.calSubTab='coaching';ren()"});
     }
   }catch(e){}
   // Flags
   try{
     const fc=computeFlags().filter(f=>f.category!=="info").length;
     if(fc>0&&!S._qaDismissed.flags){
-      items.push({id:'flags',icon:'⚠',text:fc+' issue'+(fc>1?'s':'')+' found',btn:'Review',action:"S.tab='analytics';S.anView='issues';ren()"});
+      items.push({id:'flags',icon:'⚠',text:fc+' issue'+(fc>1?'s':'')+' found',btn:'Review',action:"S.tab='calendar';ren()"});
     }
   }catch(e){}
   // Today in data
@@ -4863,7 +4887,7 @@ function renderQuickActions(){
         if(dayEntries.length<2)gapDays++;
       }
       if(gapDays>0){
-        items.push({id:'coverage',icon:'📉',text:gapDays+' day'+(gapDays>1?'s':'')+' with low coverage this week',btn:'View',action:"S.tab='analytics';S.anView='coverage';ren()"});
+        items.push({id:'coverage',icon:'📉',text:gapDays+' day'+(gapDays>1?'s':'')+' with low coverage this week',btn:'View',action:"S.tab='calendar';ren()"});
       }
     }
   }catch(e){}
@@ -4901,7 +4925,8 @@ function renderActiveTab(){
   const a=$("ca");
   if(!S.entries.length){a.innerHTML='<div class="es-empty"><h3>No data</h3><p>Try a different sheet.</p></div>';if($("contBar"))$("contBar").innerHTML="";return;}
   // v48: Legacy tab routing — table routes to cards, raw still works as diagnostic
-  const tabMap={calendar:rCal,cards:rCards,table:rCards,people:rPeople,analytics:rAnalytics,planner:rPlanner,summary:rSum,raw:rRaw};
+  // Base v1: analytics/planner removed — fallback to calendar
+  const tabMap={calendar:rCal,cards:rCards,table:rCards,people:rPeople,analytics:rCal,planner:rCal,summary:rSum,raw:rRaw};
   (tabMap[S.tab]||rCal)(a);
 }
 function renderMonthNav(){
@@ -4937,6 +4962,22 @@ function ren(){renderChrome();renderActiveTab();}
 
 /* ═══ CALENDAR ═══ */
 function rCal(el){
+  if(!S.calSubTab)S.calSubTab="day";
+  // ── Base v1: Calendar has two sub-tabs — Day (roster) and Coaching ──
+  if(S.calSubTab==="coaching"){
+    let h=`<div style="display:flex;flex-direction:column;height:100%">`;
+    h+=`<div class="people-subtab-nav">`;
+    h+=`<button class="pst-btn" onclick="S.calSubTab='day';rCal($('ca'))">Day</button>`;
+    h+=`<button class="pst-btn a" onclick="S.calSubTab='coaching';rCal($('ca'))">Coaching</button>`;
+    h+=`</div>`;
+    h+=`<div style="flex:1;overflow-y:auto">`;
+    const dk=S.activeDept||"default";
+    h+=rCoachingTab(dk);
+    h+=`</div></div>`;
+    el.innerHTML=h;
+    return;
+  }
+  // ── Day sub-tab (default calendar view) ──
   if(!S.month){el.innerHTML='<div class="es-empty"><p>No month selected</p></div>';return;}
   const[y,m]=S.month.split("-").map(Number);
   const first=new Date(y,m,1),last=new Date(y,m+1,0);
@@ -5301,7 +5342,9 @@ function rCal(el){
     right+=`</div>`;
   }
   right+=`</div>`;
-  el.innerHTML=`${weekStrip}<div id="calendarShell" class="cal-dash">${left}${mid}${right}</div>`;
+  // ── Base v1: Sub-tab nav injected before calendar shell ──
+  const calSubNav=`<div class="people-subtab-nav"><button class="pst-btn a" onclick="S.calSubTab='day';rCal($('ca'))">Day</button><button class="pst-btn" onclick="S.calSubTab='coaching';rCal($('ca'))">Coaching</button></div>`;
+  el.innerHTML=`${calSubNav}${weekStrip}<div id="calendarShell" class="cal-dash">${left}${mid}${right}</div>`;
 }
 function replaceCalendarBlock(from,to){if(from&&to)from.replaceWith(to);}
 function rerenderCalendarBlocks(){
@@ -6161,7 +6204,7 @@ function finaliseOTPlan(){
 function otCopyClipboard(){
   const plan=finaliseOTPlan();
   if(!plan||!plan.agents.length){toast("No agents selected","warn");return;}
-  let txt=plan.title+"\nOvertime Plan · MirrorFlow Sync\n\n";
+  let txt=plan.title+"\nOvertime Plan · MirrorFlow Base\n\n";
   txt+=plan.agents.length+" agents · "+plan.totalHrs.toFixed(1)+" total hours\n\n";
   plan.agents.forEach(a=>{
     txt+=a.name.padEnd(30)+" "+a.shiftStart+"-"+a.shiftEnd+"  "+a.hours.toFixed(1)+"h  "+a.lunchMins+"min lunch\n";
@@ -6636,40 +6679,98 @@ function renderSettings(){
   h+=`<label style="font-size:12px;display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0"><input type="checkbox" ${S.tz?"checked":""} onchange="setTimezoneEnabled(this.checked);renderSettings()"> UK → SA timezone</label>`;
   h+=`</div>`;
   
-  // ── Schedule Rules ──
-  h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Schedule Rules</div>`;
-  const ruleRows=[
-    {label:"Max hours / week",key:"maxHoursWeek",val:r.maxHoursWeek||45,type:"number",min:20,max:80,sync:"S.hrsMax=+this.value;invalidateDerivedCache();if(S.tab==='analytics')rerenderAnalyticsSurface('view');"},
-    {label:"Max consecutive days",key:"maxConsecutiveDays",val:r.maxConsecutiveDays||6,type:"number",min:3,max:14,sync:"invalidateDerivedCache();if(S.tab==='analytics')rerenderAnalyticsSurface('view');"},
-    {label:"Min TLs per day",key:"minCoveragePerDay",val:r.minCoveragePerDay||3,type:"number",min:1,max:20,sync:"S.covMin=+this.value;invalidateDerivedCache();if(S.tab==='analytics')rerenderAnalyticsSurface('view');else if(S.tab==='calendar')rerenderCalendarSurface('coverage');"},
-  ];
-  ruleRows.forEach(rr=>{
-    h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0">`;
-    h+=`<span style="font-size:12px">${rr.label}</span>`;
-    h+=`<input type="number" min="${rr.min}" max="${rr.max}" value="${rr.val}" onchange="S.rules.${rr.key}=+this.value;${rr.sync||''}" style="width:56px;padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;text-align:center">`;
-    h+=`</div>`;
-  });
-  h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0">`;
-  h+=`<span style="font-size:12px">Weekend policy</span>`;
-  h+=`<select onchange="S.rules.weekendPolicy=this.value" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-size:12px">`;
-  [{v:"rotate",l:"Rotate"},{v:"fixed",l:"Fixed"},{v:"none",l:"None"}].forEach(o=>{h+=`<option value="${o.v}"${(r.weekendPolicy||"rotate")===o.v?" selected":""}>${o.l}</option>`;});
-  h+=`</select></div>`;
-  h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0">`;
-  h+=`<span style="font-size:12px">Lunch</span>`;
-  h+=`<select onchange="S.rules.breaks.lunch=+this.value" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-size:12px">`;
-  [0,15,30,45,60].forEach(m=>{h+=`<option value="${m}"${(br.lunch||30)===m?" selected":""}>${m}min</option>`;});
-  h+=`</select></div>`;
-  h+=`</div>`;
+  // ── Schedule Rules (hidden in Base — values retained in S.rules) ──
   
-  // ── Coaching ──
-  h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Coaching</div>`;
-  h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0"><span style="font-size:12px">Session duration</span>`;
-  h+=`<select onchange="S.coachDuration=+this.value" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-size:12px">`;
-  [15,30,45,60].forEach(m=>{h+=`<option value="${m}"${(S.coachDuration||30)===m?" selected":""}>${m}min</option>`;});
-  h+=`</select></div>`;
-  h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0"><span style="font-size:12px">Daily target</span>`;
-  h+=`<input type="number" min="0" max="10" value="${S.coachTargetDaily||1}" onchange="S.coachTargetDaily=+this.value" style="width:56px;padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;text-align:center">`;
+  // ── Coaching settings (moved to Calendar → Coaching sub-tab in Base) ──
+  
+  // ── Blueprint / Planner (Base: full editable blueprint in Settings) ──
+  h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Blueprint / Planner</div>`;
+  const _dk=S.activeDept||"default";
+  const _bp=S.plBlueprints[_dk];
+  const _bpConfirmed=_bp&&_bp.confirmed;
+  const _bpCycleLen=_bp?_bp.cycleLen:(S.rotationDef&&S.rotationDef._detected?S.rotationDef._detected.cycleLen:5);
+  const _hasBp=_bp&&_bp.weeks&&Object.keys(_bp.weeks).length>0;
+  const _det=S.rotationDef?S.rotationDef._detected:null;
+
+  // Build slot options from blueprint + entries
+  const _slotSet=new Set();
+  if(_bp&&_bp.weeks)Object.values(_bp.weeks).forEach(w=>Object.values(w).forEach(v=>{if(v&&v!=="OFF")_slotSet.add(v);}));
+  S.entries.forEach(e=>{if(!e.isOff&&e.ukS&&e.ukE)_slotSet.add(e.ukS+"-"+e.ukE);});
+  const _slots=[..._slotSet].sort();
+  const _DSHORT=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+
+  // Controls bar
+  h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:4px">`;
+  h+=`<div style="display:flex;align-items:center;gap:6px">`;
+  if(S._bpEditMode){
+    h+=`<span style="font-size:11px;padding:3px 8px;border-radius:6px;background:rgba(251,191,36,.12);color:var(--wknd);font-weight:600">✎ editing</span>`;
+    h+=`<span id="bpChangedBadge" style="font-size:11px;padding:1px 6px;border-radius:10px;background:rgba(251,191,36,.15);color:var(--wknd);display:none"></span>`;
+  } else {
+    h+=`<span style="font-size:11px;padding:3px 8px;border-radius:6px;background:${_bpConfirmed?"rgba(52,211,153,.12)":"rgba(251,191,36,.1)"};color:${_bpConfirmed?"var(--early)":"var(--wknd)"};font-weight:600">${_bpConfirmed?"✓ confirmed":"⚠ review"} · ${_bpCycleLen}w</span>`;
+  }
+  h+=`</div>`;
+  h+=`<div style="display:flex;gap:4px;align-items:center">`;
+  // Cycle length selector
+  h+=`<select onchange="const dk=S.activeDept||'default';if(!S.plBlueprints[dk])S.plBlueprints[dk]={cycleLen:5,weeks:{},confirmed:false};S.plBlueprints[dk].cycleLen=+this.value;S.plBlueprints[dk].confirmed=false;renderSettings()" style="padding:3px 6px;border:1px solid var(--bdr);border-radius:5px;background:var(--bg);color:var(--text);font-size:11px">`;
+  [3,4,5,6,7,8,9,10,12].forEach(n=>{h+=`<option value="${n}"${n===_bpCycleLen?" selected":""}>${n}w</option>`;});
+  h+=`</select>`;
+  if(S._bpEditMode){
+    if(_det){h+=`<button onclick="const dk=S.activeDept||'default';const d=S.rotationDef._detected;S._bpDraft=JSON.parse(JSON.stringify(d.patterns));toast('Re-detected into draft','ok');renderSettings()" style="padding:3px 8px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--text);font-family:inherit;font-size:11px;cursor:pointer">↻</button>`;}
+    h+=`<button onclick="discardBpEdits();renderSettings()" style="padding:3px 8px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">✕</button>`;
+    h+=`<button onclick="saveBpEdits();renderSettings()" style="padding:3px 10px;border:none;border-radius:5px;background:var(--accent);color:#000;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer">✓ Save</button>`;
+  } else {
+    if(_det){h+=`<button onclick="const dk=S.activeDept||'default';const d=S.rotationDef._detected;S.plBlueprints[dk]={cycleLen:d.cycleLen,weeks:JSON.parse(JSON.stringify(d.patterns)),confirmed:false};toast('Re-detected','ok');renderSettings()" style="padding:3px 8px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--text);font-family:inherit;font-size:11px;cursor:pointer">↻</button>`;}
+    h+=`<button onclick="enterBpEditMode();renderSettings()" style="padding:3px 8px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--text);font-family:inherit;font-size:11px;cursor:pointer">✎ Edit</button>`;
+    if(_bpConfirmed){h+=`<button onclick="const dk=S.activeDept||'default';if(S.plBlueprints[dk])S.plBlueprints[dk].confirmed=false;renderSettings()" style="padding:3px 8px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">Unlock</button>`;}
+    else if(_hasBp){h+=`<button onclick="const dk=S.activeDept||'default';if(S.plBlueprints[dk])S.plBlueprints[dk].confirmed=true;toast('Blueprint confirmed ✓','ok');renderSettings()" style="padding:3px 10px;border:none;border-radius:5px;background:var(--accent);color:#000;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer">✓ Confirm</button>`;}
+  }
   h+=`</div></div>`;
+
+  if(_hasBp||S._bpEditMode){
+    // Blueprint grid source
+    const _bpSrc=S._bpEditMode&&S._bpDraft?S._bpDraft:(_bp&&_bp.weeks||{});
+    const _editLocked=_bpConfirmed&&!S._bpEditMode;
+    h+=`<div class="bp-grid" id="bpGrid" style="grid-template-columns:30px repeat(7,1fr);gap:2px;opacity:${_editLocked?".65":"1"};pointer-events:${_editLocked?"none":"auto"};font-size:10px">`;
+    // Day headers
+    h+=`<div class="bp-hd" style="display:flex;align-items:center"><span style="font-size:10px;opacity:.3;user-select:none">⠿</span></div>`;
+    _DSHORT.forEach(d=>h+=`<div class="bp-hd" style="font-size:10px;padding:3px 2px">${d}</div>`);
+    // Week rows
+    for(let w=1;w<=_bpCycleLen;w++){
+      const wpat=_bpSrc[w]||{};
+      h+=`<div class="bp-wk" draggable="true" data-wk="${w}"
+        ondragstart="event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/plain','${w}');this.classList.add('bp-dragging')"
+        ondragend="this.classList.remove('bp-dragging');document.querySelectorAll('.bp-wk').forEach(el=>{el.classList.remove('bp-drop-above','bp-drop-below')});S._bpDragWeek=null"
+        ondragover="event.preventDefault();event.dataTransfer.dropEffect='move';const r=this.getBoundingClientRect();const dir=event.clientY<r.top+r.height/2?'above':'below';document.querySelectorAll('.bp-wk').forEach(el=>{el.classList.remove('bp-drop-above','bp-drop-below')});this.classList.add('bp-drop-'+dir);S._bpDropDir=dir"
+        ondragleave="this.classList.remove('bp-drop-above','bp-drop-below')"
+        ondrop="event.preventDefault();const from=parseInt(event.dataTransfer.getData('text/plain'));document.querySelectorAll('.bp-wk').forEach(el=>{el.classList.remove('bp-drop-above','bp-drop-below')});if(from&&from!=${w}){reorderBpWeek(from,${w},S._bpDropDir||'above');renderSettings()}"
+        style="font-size:11px;padding:4px 3px;display:flex;align-items:center;gap:2px;cursor:grab" title="Drag to reorder">
+        <span style="font-size:10px;opacity:.35;pointer-events:none;user-select:none">⠿</span><span style="font-weight:700">W${w}</span>
+      </div>`;
+      for(let d=0;d<7;d++){
+        const val=wpat[d]||"OFF";
+        const isOff=val==="OFF";
+        h+=`<select onchange="saveBpCellDraft(${w},${d},this.value);renderSettings()"
+          style="width:100%;padding:3px 1px;border:1px solid ${isOff?"rgba(255,255,255,.06)":"rgba(122,180,255,.2)"};border-radius:3px;
+          background:${isOff?"transparent":"rgba(122,180,255,.04)"};
+          color:${isOff?"var(--tm)":"var(--text)"};font-family:'JetBrains Mono',monospace;font-size:10px;text-align:center;opacity:${isOff?".5":"1"}">`;
+        h+=`<option value="OFF"${isOff?" selected":""}>OFF</option>`;
+        _slots.forEach(s=>{h+=`<option value="${s}"${s===val?" selected":""}>${s}</option>`;});
+        if(!isOff&&!_slots.includes(val))h+=`<option value="${val}" selected>${val}</option>`;
+        h+=`</select>`;
+      }
+    }
+    h+=`</div>`;
+    if(_editLocked){
+      h+=`<div style="font-size:10px;color:var(--tm);margin-top:4px;padding:4px 6px;background:rgba(255,255,255,.03);border-radius:4px">🔒 Confirmed — click Edit to modify, or Unlock.</div>`;
+    } else if(S._bpEditMode){
+      h+=`<div style="font-size:10px;color:var(--wknd);margin-top:4px;font-style:italic">⠿ drag to reorder · editing staged — Save to apply</div>`;
+    } else {
+      h+=`<div style="font-size:10px;color:var(--tm);opacity:.5;margin-top:3px;font-style:italic">⠿ drag to reorder · ✎ Edit to modify</div>`;
+    }
+  } else {
+    h+=`<div style="font-size:12px;color:var(--tm);padding:6px 0">No blueprint detected yet. Load a schedule to auto-detect rotation patterns.</div>`;
+  }
+  h+=`</div>`;
   
   // ── Exports ──
   const xSel=S.exportSelection||{};
@@ -12285,6 +12386,16 @@ function rCoachingTab(dk){
   h+=`</div>`;
   h+=`<div style="display:flex;align-items:center;gap:6px">`;
   h+=`<button class="btn" style="font-size:11px;padding:4px 10px;background:var(--al);color:var(--accent)" onclick="expCoachingStandalone()">📥 Export</button>`;
+  // Coaching settings inline
+  h+=`<div style="display:flex;align-items:center;gap:4px;padding:2px 8px;border:1px solid var(--bdr);border-radius:6px;background:rgba(255,255,255,.02)">`;
+  h+=`<span style="font-size:10px;color:var(--tm)">Duration</span>`;
+  h+=`<select onchange="S.coachDuration=+this.value;ren()" style="padding:2px 4px;border:1px solid var(--bdr);border-radius:4px;background:var(--card);color:var(--text);font-size:11px;font-family:inherit">`;
+  [15,30,45,60].forEach(m=>{h+=`<option value="${m}"${(S.coachDuration||30)===m?" selected":""}>${m}m</option>`;});
+  h+=`</select>`;
+  h+=`<span style="font-size:10px;color:var(--tm);margin-left:4px">Target</span>`;
+  h+=`<input type="number" min="0" max="10" value="${S.coachTargetDaily||1}" onchange="S.coachTargetDaily=+this.value;ren()" style="width:36px;padding:2px 4px;border:1px solid var(--bdr);border-radius:4px;background:var(--card);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:11px;text-align:center">`;
+  h+=`<span style="font-size:10px;color:var(--tm)">/day</span>`;
+  h+=`</div>`;
   h+=`<div class="pl-nav"><button class="pl-nav-btn" onclick="S.plGenMonth--;if(S.plGenMonth<0){S.plGenMonth=11;S.plGenYear--;}S._coachDay=null;ren()">◀</button>`;
   h+=`<span class="pl-nav-label">${MOFULL[targetM]} ${targetY}</span>`;
   h+=`<button class="pl-nav-btn" onclick="S.plGenMonth++;if(S.plGenMonth>11){S.plGenMonth=0;S.plGenYear++;}S._coachDay=null;ren()">▶</button></div>`;
@@ -12694,7 +12805,7 @@ function renderSwapFormInline(dateISO,prefillAbsent){
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   v42 SIGNAL ENGINE — MirrorFlow Sync Intelligence Layer
+   v42 SIGNAL ENGINE — MirrorFlow Base Intelligence Layer
    Answers three questions per person per month:
    1. Right shift? (alignment vs blueprint)
    2. Upcoming anomalies? (pattern projection)
@@ -12736,7 +12847,7 @@ function computeSignals(name, entries, blueprint, positions, dk){
         msg:`${misaligned} of ${total} shifts differ from blueprint`,
         detail:`${pct}% deviation from expected rotation pattern`,
         action:"Check Planner → Blueprint Drift for details",
-        actionFn:()=>{S.tab="planner";ren();}
+        actionFn:()=>{S.tab="calendar";ren();}
       });
     } else if(total>0&&misaligned===0){
       signals.push({type:"shift_alignment",severity:"ok",icon:"✓",title:"On pattern",msg:"All shifts match blueprint rotation",detail:"",action:""});
@@ -12839,7 +12950,7 @@ function computeSignals(name, entries, blueprint, positions, dk){
         msg:"Last scheduled session was not completed",
         detail:nextSlotMsg||( ps.date?`Was scheduled: ${ps.date}`:""),
         action:"Reschedule",
-        actionFn:()=>{S.tab="planner";S.plSubTab="coaching";ren();}
+        actionFn:()=>{S.tab="calendar";S.calSubTab="coaching";ren();}
       });
     } else if(!ps.date&&!ps.done){
       // Auto-propose the best coaching slot
@@ -12869,7 +12980,7 @@ function computeSignals(name, entries, blueprint, positions, dk){
         msg:proposal||"No session planned this month",
         detail:proposal?"Auto-suggested based on shift times and day scoring":"",
         action:"Open planner",
-        actionFn:()=>{S.tab="planner";S.plSubTab="coaching";ren();}
+        actionFn:()=>{S.tab="calendar";S.calSubTab="coaching";ren();}
       });
     } else if(ps.done){
       signals.push({type:"coaching",severity:"ok",icon:"🎯",title:"Coached",msg:`Session completed${ps.slotLabel?" · "+ps.slotLabel:""}`,detail:"",action:""});
@@ -12905,7 +13016,7 @@ function computeSignals(name, entries, blueprint, positions, dk){
       msg:proposal?`Best slot: ${proposal}`:"No coaching planned",
       detail:proposal?"Based on shift timing and day-of-week scoring":"",
       action:"Plan in Coaching",
-      actionFn:()=>{S.tab="planner";S.plSubTab="coaching";ren();}
+      actionFn:()=>{S.tab="calendar";S.calSubTab="coaching";ren();}
     });
   }
 
@@ -12984,7 +13095,7 @@ function computeSignals(name, entries, blueprint, positions, dk){
           msg:`${bpProjectedWeekly}h/week by month end — ${overBy}h over limit`,
           detail:`${bpMethod==="blueprint"?"Blueprint projection":"Linear trajectory"}: ${projMonthHrs}h total vs ${monthLimitHrs}h limit`,
           action:"View Planner",
-          actionFn:()=>{S.tab="planner";ren();}
+          actionFn:()=>{S.tab="calendar";ren();}
         });
       } else if(bpProjectedWeekly>hrsMax2){
         // Moderate risk
@@ -13048,7 +13159,7 @@ function computeSignals(name, entries, blueprint, positions, dk){
             msg:`${personWkndPctAll}% weekend vs ${teamAvg}% team avg (+${delta}%) ${windowLabel}`,
             detail:swapRec?swapRec.detail:`Persistent imbalance ${windowLabel} — review rotation assignment`,
             action:swapRec?"View swap suggestion":"Check Planner",
-            actionFn:()=>{S.tab="planner";ren();}
+            actionFn:()=>{S.tab="calendar";ren();}
           });
         } else if(delta<=-12){
           signals.push({
@@ -13087,7 +13198,7 @@ function computeSignals(name, entries, blueprint, positions, dk){
           msg:`${dateStr} at ${suggestTime} (${S.coachDuration||30}min)`,
           detail:`${name.split(" ")[0]}'s shift starts ${bestSlot.ukS} — safe window after 90min buffer`,
           action:"Open Coaching",
-          actionFn:()=>{S.tab="planner";S.plSubTab="coaching";ren();}
+          actionFn:()=>{S.tab="calendar";S.calSubTab="coaching";ren();}
         });
       }
     }
@@ -13156,7 +13267,7 @@ function computeSignals(name, entries, blueprint, positions, dk){
         msg:`${name.split(" ")[0]} manages ${_soc.agents} agents — coaching has amplified impact`,
         detail:"Prioritise coaching for leaders with larger teams for maximum uplift",
         action:"Plan coaching",
-        actionFn:()=>{S.tab="planner";S.plSubTab="coaching";ren();}
+        actionFn:()=>{S.tab="calendar";S.calSubTab="coaching";ren();}
       });
     }
   }
@@ -15279,7 +15390,7 @@ function genWeeklyDigest(targetDate){
   }
 
   txt+=`\n${"─".repeat(55)}`;
-  txt+=`\n${dept?dept+" · ":""}MirrorFlow Sync · ${APP_VERSION}`;
+  txt+=`\n${dept?dept+" · ":""}MirrorFlow Base · ${APP_VERSION}`;
 
   navigator.clipboard.writeText(txt).then(()=>toast("Weekly digest copied — paste into Teams, email, or meeting notes","ok",4000));
 }
@@ -15838,7 +15949,7 @@ function buildSheetPositions(wb){
   ws.addRow([]);ws.addRow([]);
   ws.addRow(['Note: confirmed_rotation_week = the rotation week this person was on at their anchor_monday date.']);
   sC(ws.getCell(ws.lastRow.number,1),{fontSize:9,color:EXC.MUTED,italic:true});
-  ws.addRow(['Use Planner → Positions in MirrorFlow Sync to verify and adjust.']);
+  ws.addRow(['Use Planner → Positions in MirrorFlow Base to verify and adjust.']);
   sC(ws.getCell(ws.lastRow.number,1),{fontSize:9,color:EXC.MUTED,italic:true});
 }
 
@@ -16270,8 +16381,7 @@ document.addEventListener("mousedown",function(e){
 });
 
 function openAnomalySummary(surface){
-  if(surface==='analytics'){S.tab='analytics';ren();return;}
-  S.tab='people';S.peopleSubTab='cards';ren();
+  S.tab='calendar';ren();
 }
 function openAnomalyForPerson(name,dateKey){
   if(dateKey){openDayInvestigation(name,dateKey,'anomaly');return;}
@@ -16578,8 +16688,8 @@ function openHelp(section){
     h+=`</div>`;
   });
   // Footer
-  h+=`<div class="help-section" style="border-bottom:none"><p style="font-size:11px;color:var(--tm)">MirrorFlow Sync ${APP_VERSION} · <a href="https://theGuide.club" target="_blank" style="color:var(--accent)">theGuide.Club</a> · Sel K. Naicker · 2026</p></div>`;
-  dc.innerHTML=`<div class="help-drawer-hd"><h2>📖 Help — MirrorFlow Sync</h2><button class="help-close" onclick="closeHelp()">✕</button></div>${h}`;
+  h+=`<div class="help-section" style="border-bottom:none"><p style="font-size:11px;color:var(--tm)">MirrorFlow Base ${APP_VERSION} · <a href="https://theGuide.club" target="_blank" style="color:var(--accent)">theGuide.Club</a> · Sel K. Naicker · 2026</p></div>`;
+  dc.innerHTML=`<div class="help-drawer-hd"><h2>📖 Help — MirrorFlow Base</h2><button class="help-close" onclick="closeHelp()">✕</button></div>${h}`;
   ov.classList.add("open");
   document.body.style.overflow="hidden";
   if(section){setTimeout(()=>{const el=dc.querySelector('[data-section="'+section+'"]');if(el)el.scrollIntoView({behavior:'smooth'});},100);}
@@ -16969,7 +17079,7 @@ function renderAgentDrawerContent(agentName){
   h+=`Allow on OT plans`;
   h+=`</label>`;
   if(otAppearances.length>0){
-    h+=`<button onclick="_navPush();setTab('planner');S.plSubTab='overtime';ren()" style="font-size:10px;padding:2px 8px;border:1px solid var(--bdr);border-radius:4px;background:none;color:var(--accent);cursor:pointer;font-family:inherit;margin-left:auto">View plans →</button>`;
+    h+=`<button onclick="_navPush();setTab('calendar');S.calSubTab='coaching';ren()" style="font-size:10px;padding:2px 8px;border:1px solid var(--bdr);border-radius:4px;background:none;color:var(--accent);cursor:pointer;font-family:inherit;margin-left:auto">View plans →</button>`;
   }
   h+=`</div>`;
   // Recent OT plan appearances (last 3)
@@ -17093,6 +17203,267 @@ async function expSingleCardPNG(name,monthKey){
   });
 }
 
+// ═══ AGENTS SUB-TAB — deep agent inspection view ═══
+function rPeopleAgentsView(){
+  const allAgents=Object.values(S.people).filter(p=>p.role==="agent").sort((a,b)=>a.name.localeCompare(b.name));
+  const now=new Date();
+  if(!S._agentsViewYear)S._agentsViewYear=now.getFullYear();
+  if(S._agentsViewMonth===null||S._agentsViewMonth===undefined)S._agentsViewMonth=now.getMonth();
+  const viewY=S._agentsViewYear,viewM=S._agentsViewMonth;
+  const numDays=new Date(viewY,viewM+1,0).getDate();
+  const todayISO=excKey(now);
+
+  // Selected agent
+  if(!S._agentsViewSel&&allAgents.length)S._agentsViewSel=allAgents[0].name;
+  const sel=S._agentsViewSel;
+  const selPerson=S.people[sel]||{name:sel||"",role:"agent",teamLeader:""};
+
+  // All exceptions for selected agent in this month
+  const agentExcs=sel?(S.exceptions||[]).filter(ex=>{
+    if(ex.agentName!==sel)return false;
+    if(!ex.date)return false;
+    const parts=ex.date.split("-").map(Number);
+    return parts[0]===viewY&&parts[1]-1===viewM;
+  }):[];
+
+  // Exceptions by day
+  const excByDay={};
+  agentExcs.forEach(ex=>{if(!excByDay[ex.date])excByDay[ex.date]=[];excByDay[ex.date].push(ex);});
+
+  let h=`<div style="display:flex;height:100%;overflow:hidden">`;
+
+  // ════ LEFT PANEL — agent list ════
+  h+=`<div style="width:200px;border-right:1px solid var(--bdr);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto">`;
+  h+=`<div style="padding:8px 12px;font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center">`;
+  h+=`<span>Agents (${allAgents.length})</span>`;
+  // Filter by TL
+  const leaders=[...new Set(allAgents.map(a=>a.teamLeader).filter(Boolean))].sort();
+  if(leaders.length>1){
+    h+=`<select onchange="S._agentsViewTLFilter=this.value||null;rPeople($('ca'))" style="padding:2px 4px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);color:var(--text);font-size:10px;max-width:80px">`;
+    h+=`<option value="">All TLs</option>`;
+    leaders.forEach(l=>{h+=`<option value="${XJ(l)}"${S._agentsViewTLFilter===l?" selected":""}>${X(l.split(" ")[0])}</option>`;});
+    h+=`</select>`;
+  }
+  h+=`</div>`;
+  const filteredAgents=S._agentsViewTLFilter?allAgents.filter(a=>a.teamLeader===S._agentsViewTLFilter):allAgents;
+  filteredAgents.forEach(ag=>{
+    const isSel=ag.name===sel;
+    const status=getAgentStatus(ag.name,now);
+    const statusDef=AGENT_STATUS_DEFS[status]||AGENT_STATUS_DEFS.unknown;
+    const excCount=(S.exceptions||[]).filter(ex=>ex.agentName===ag.name).length;
+    h+=`<div onclick="S._agentsViewSel='${XJ(ag.name)}';rPeople($('ca'))" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);background:${isSel?"var(--al)":"transparent"};border-left:3px solid ${isSel?"var(--accent)":"transparent"};transition:background .1s">`;
+    h+=`<div style="display:flex;align-items:center;gap:6px">`;
+    h+=`<div style="width:24px;height:24px;border-radius:50%;background:${isSel?"var(--accent)":"var(--card)"};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:${isSel?"#000":"var(--tm)"};flex-shrink:0">${X(ag.name.charAt(0))}</div>`;
+    h+=`<div style="flex:1;min-width:0">`;
+    h+=`<div style="font-size:12px;font-weight:${isSel?"700":"500"};color:${isSel?"var(--accent)":"var(--text)"};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(ag.name)}</div>`;
+    h+=`<div style="font-size:10px;color:var(--tm)">${ag.teamLeader?X(ag.teamLeader.split(" ")[0]):"unassigned"}</div>`;
+    h+=`</div>`;
+    h+=`<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">`;
+    h+=`<span style="font-size:9px;padding:1px 5px;border-radius:6px;background:${statusDef.col}18;color:${statusDef.col}">${statusDef.icon}</span>`;
+    if(excCount>0)h+=`<span style="font-size:9px;color:var(--tm)">${excCount} evt</span>`;
+    h+=`</div>`;
+    h+=`</div></div>`;
+  });
+  if(!filteredAgents.length){
+    h+=`<div style="padding:20px;text-align:center;color:var(--tm);font-size:12px">No agents found.<br>Add agents via Team tab.</div>`;
+  }
+  h+=`</div>`;
+
+  // ════ RIGHT PANEL — agent detail ════
+  h+=`<div style="flex:1;display:flex;flex-direction:column;overflow-y:auto">`;
+  if(!sel||!allAgents.length){
+    h+=`<div class="es-empty"><div class="es-icon">🔍</div><h3>Select an agent</h3><p>Click a name on the left to inspect.</p></div>`;
+  } else {
+    const leaderName=selPerson.teamLeader||"";
+    const status=getAgentStatus(sel,now);
+    const statusDef=AGENT_STATUS_DEFS[status]||AGENT_STATUS_DEFS.unknown;
+    const agentNote=S.agentNotes[sel]||"";
+
+    // ── Agent header ──
+    h+=`<div style="padding:14px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.01)">`;
+    h+=`<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#b98bff);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0">${X(sel.charAt(0))}</div>`;
+    h+=`<div style="flex:1;min-width:0">`;
+    h+=`<div style="font-size:16px;font-weight:700">${X(sel)}</div>`;
+    h+=`<div style="font-size:12px;color:var(--tm)">${leaderName?"TL: "+X(leaderName):""}</div>`;
+    h+=`</div>`;
+    h+=`<span style="padding:4px 12px;border-radius:8px;background:${statusDef.col}18;color:${statusDef.col};font-size:12px;font-weight:600">${statusDef.icon} ${statusDef.label}</span>`;
+    // Quick status buttons
+    h+=`<div style="display:flex;gap:3px">`;
+    [{k:"present",i:"✓"},{k:"sick",i:"🤒"},{k:"leave",i:"📅"},{k:"halfday",i:"½"},{k:"awol",i:"✕"}].forEach(s=>{
+      const isCur=status===s.k;
+      h+=`<button onclick="setAgentStatusQuick('${XJ(sel)}','${isCur?"unknown":s.k}');rPeople($('ca'))" style="width:28px;height:28px;border-radius:6px;border:1px solid ${isCur?statusDef.col+"60":"var(--bdr)"};background:${isCur?statusDef.col+"15":"none"};color:${isCur?statusDef.col:"var(--tm)"};font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center" title="${s.k}">${s.i}</button>`;
+    });
+    h+=`</div>`;
+    h+=`</div>`;
+
+    // ── Month nav ──
+    h+=`<div style="padding:8px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between">`;
+    h+=`<button onclick="S._agentsViewMonth--;if(S._agentsViewMonth<0){S._agentsViewMonth=11;S._agentsViewYear--;}S._agentsViewDay=null;rPeople($('ca'))" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--tm);cursor:pointer;font-family:inherit;font-size:13px">◀</button>`;
+    h+=`<span style="font-size:14px;font-weight:700">${MOFULL[viewM]} ${viewY}</span>`;
+    h+=`<button onclick="S._agentsViewMonth++;if(S._agentsViewMonth>11){S._agentsViewMonth=0;S._agentsViewYear++;}S._agentsViewDay=null;rPeople($('ca'))" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--tm);cursor:pointer;font-family:inherit;font-size:13px">▶</button>`;
+    h+=`</div>`;
+
+    // ── Mini calendar grid ──
+    h+=`<div style="padding:12px 18px">`;
+    const DOW_HD=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+    const firstD=new Date(viewY,viewM,1);
+    const startOff=(firstD.getDay()+6)%7; // Monday-based offset
+    h+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px">`;
+    DOW_HD.forEach(d=>h+=`<div style="text-align:center;font-size:10px;font-weight:600;color:var(--tm);padding:2px 0">${d}</div>`);
+    // Empty leading cells
+    for(let i=0;i<startOff;i++)h+=`<div></div>`;
+    // Day cells
+    for(let d=1;d<=numDays;d++){
+      const dateStr=viewY+"-"+P(viewM+1)+"-"+P(d);
+      const isToday=dateStr===todayISO;
+      const dayExcs=excByDay[dateStr]||[];
+      const dayStatus=getAgentStatus(sel,new Date(viewY,viewM,d));
+      const dayDef=AGENT_STATUS_DEFS[dayStatus]||AGENT_STATUS_DEFS.unknown;
+      const isSelected=S._agentsViewDay===dateStr;
+      // Find schedule entry for this agent's TL on this day
+      const leaderEnt=leaderName?S.entries.find(e=>e.name===leaderName&&e.date&&excKey(e.date)===dateStr):null;
+      const isOff=!leaderEnt||leaderEnt.isOff;
+      const hasEvents=dayExcs.length>0;
+      const dt=new Date(viewY,viewM,d);
+      const isWknd=dt.getDay()===0||dt.getDay()===6;
+
+      let bgCol="transparent";
+      if(isSelected)bgCol="var(--accent)";
+      else if(hasEvents)bgCol=dayDef.col+"20";
+      else if(isOff)bgCol="rgba(255,255,255,.02)";
+
+      let borderCol="var(--bdr)";
+      if(isToday)borderCol="var(--accent)";
+      else if(hasEvents)borderCol=dayDef.col+"50";
+
+      h+=`<div onclick="S._agentsViewDay='${dateStr}';rPeople($('ca'))" style="padding:4px 2px;border-radius:6px;text-align:center;cursor:pointer;border:1px solid ${borderCol};background:${bgCol};transition:all .1s;position:relative">`;
+      h+=`<div style="font-size:12px;font-weight:${isToday||isSelected?"700":"500"};color:${isSelected?"#000":isWknd?"var(--wknd)":isOff?"var(--tm)":"var(--text)"}">${d}</div>`;
+      // Status dot
+      if(dayStatus!=="unknown"){
+        h+=`<div style="font-size:8px;color:${isSelected?"#000":dayDef.col};margin-top:1px">${dayDef.icon}</div>`;
+      }
+      // Event dot
+      if(hasEvents&&!isSelected){
+        h+=`<div style="position:absolute;top:2px;right:3px;width:5px;height:5px;border-radius:50%;background:${dayDef.col}"></div>`;
+      }
+      h+=`</div>`;
+    }
+    h+=`</div>`;
+    // Month stats strip
+    const totalExcsMonth=agentExcs.length;
+    const sickDays=agentExcs.filter(ex=>ex.type==="sick"||ex.type==="no_show").length;
+    const lateDays=agentExcs.filter(ex=>ex.type==="late_arrival").length;
+    const leaveDays=agentExcs.filter(ex=>ex.type==="annual_leave").length;
+    h+=`<div style="display:flex;gap:6px;margin-top:8px;font-size:11px;flex-wrap:wrap">`;
+    h+=`<span style="padding:3px 8px;border-radius:6px;background:var(--al);color:var(--tm)">${totalExcsMonth} event${totalExcsMonth!==1?"s":""} this month</span>`;
+    if(sickDays)h+=`<span style="padding:3px 8px;border-radius:6px;background:rgba(220,38,38,.08);color:#dc2626">🤒 ${sickDays} sick</span>`;
+    if(lateDays)h+=`<span style="padding:3px 8px;border-radius:6px;background:rgba(251,191,36,.08);color:var(--wknd)">⏰ ${lateDays} late</span>`;
+    if(leaveDays)h+=`<span style="padding:3px 8px;border-radius:6px;background:rgba(122,180,255,.08);color:var(--accent)">📅 ${leaveDays} leave</span>`;
+    h+=`</div>`;
+    h+=`</div>`;
+
+    // ── Day detail panel (shows when a day is selected) ──
+    if(S._agentsViewDay){
+      const dayDate=S._agentsViewDay;
+      const dayParts=dayDate.split("-").map(Number);
+      const dayLabel=P(dayParts[2])+" "+MO[dayParts[1]-1]+" "+dayParts[0];
+      const dayExcs=excByDay[dayDate]||[];
+      const dayStatus=getAgentStatus(sel,new Date(dayParts[0],dayParts[1]-1,dayParts[2]));
+      const dayStatusDef=AGENT_STATUS_DEFS[dayStatus]||AGENT_STATUS_DEFS.unknown;
+      // Leader entry for this day
+      const dayLeaderEnt=leaderName?S.entries.find(e=>e.name===leaderName&&e.date&&excKey(e.date)===dayDate):null;
+      const dayShift=dayLeaderEnt&&!dayLeaderEnt.isOff?(S.tz&&dayLeaderEnt.saS?dayLeaderEnt.saS+"-"+dayLeaderEnt.saE:dayLeaderEnt.ukS+"-"+dayLeaderEnt.ukE):(dayLeaderEnt&&dayLeaderEnt.isOff?"OFF":"—");
+
+      h+=`<div style="padding:0 18px 14px;border-top:1px solid var(--bdr)">`;
+      h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0 8px">`;
+      h+=`<div style="display:flex;align-items:center;gap:8px">`;
+      h+=`<span style="font-size:14px;font-weight:700">${dayLabel}</span>`;
+      h+=`<span style="font-size:11px;padding:2px 8px;border-radius:6px;background:${dayStatusDef.col}15;color:${dayStatusDef.col};font-weight:600">${dayStatusDef.icon} ${dayStatusDef.label}</span>`;
+      h+=`<span style="font-size:11px;color:var(--tm);font-family:'JetBrains Mono',monospace">${dayShift}</span>`;
+      h+=`</div>`;
+      // Day nav arrows
+      h+=`<div style="display:flex;gap:4px">`;
+      h+=`<button onclick="(function(){const d=new Date('${dayDate}');d.setDate(d.getDate()-1);if(d.getMonth()===${viewM}){S._agentsViewDay=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);rPeople($('ca'));}})()" style="padding:2px 8px;border:1px solid var(--bdr);border-radius:4px;background:none;color:var(--tm);cursor:pointer;font-size:12px;font-family:inherit">◀</button>`;
+      h+=`<button onclick="(function(){const d=new Date('${dayDate}');d.setDate(d.getDate()+1);if(d.getMonth()===${viewM}){S._agentsViewDay=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);rPeople($('ca'));}})()" style="padding:2px 8px;border:1px solid var(--bdr);border-radius:4px;background:none;color:var(--tm);cursor:pointer;font-size:12px;font-family:inherit">▶</button>`;
+      h+=`</div>`;
+      h+=`</div>`;
+
+      // Events for this day
+      if(dayExcs.length){
+        h+=`<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px">`;
+        dayExcs.forEach((ex,idx)=>{
+          const t=EXC_TYPES.find(t=>t.id===ex.type)||{icon:"⚡",label:ex.type};
+          h+=`<div style="padding:8px 10px;border-radius:8px;border:1px solid var(--bdr);background:var(--card);display:flex;align-items:flex-start;gap:8px">`;
+          h+=`<span style="font-size:14px">${t.icon}</span>`;
+          h+=`<div style="flex:1;min-width:0">`;
+          h+=`<div style="font-size:12px;font-weight:600">${t.label||ex.type}</div>`;
+          h+=`<div style="font-size:11px;color:var(--tm)">${ex.severity} · ${ex.hoursLost}h lost · ${ex.source||"manual"}</div>`;
+          if(ex.notes)h+=`<div style="font-size:11px;color:var(--text);margin-top:3px;padding:4px 6px;background:rgba(255,255,255,.03);border-radius:4px">${X(ex.notes)}</div>`;
+          h+=`</div>`;
+          h+=`<button onclick="removeException('${ex.id}');rPeople($('ca'))" style="background:none;border:none;color:var(--tm);cursor:pointer;font-size:12px;padding:2px;opacity:.4;flex-shrink:0" onmouseover="this.style.opacity=1;this.style.color='#dc2626'" onmouseout="this.style.opacity=.4;this.style.color='var(--tm)'" title="Remove">✕</button>`;
+          h+=`</div>`;
+        });
+        h+=`</div>`;
+      } else {
+        h+=`<div style="font-size:12px;color:var(--tm);font-style:italic;padding:4px 0;margin-bottom:8px">No events logged for this day.</div>`;
+      }
+
+      // Quick log for this day
+      h+=`<div style="padding:8px 10px;border:1px dashed var(--bdr);border-radius:8px;background:rgba(255,255,255,.02)">`;
+      h+=`<div style="font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Quick log</div>`;
+      h+=`<div style="display:flex;flex-wrap:wrap;gap:3px">`;
+      QUICK_EVENT_TYPES.forEach(t=>{
+        h+=`<button onclick="S._quickEventForm={type:'${t.id}',agentName:'${XJ(sel)}',date:'${dayDate}',time:'',note:'',duration:30};submitAgentQuickEvent();rPeople($('ca'))" style="padding:3px 8px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:10px;cursor:pointer;transition:all .1s" onmouseover="this.style.background='var(--al)';this.style.color='var(--accent)'" onmouseout="this.style.background='none';this.style.color='var(--tm)'">${t.icon} ${t.label}</button>`;
+      });
+      h+=`</div></div>`;
+
+      // Status change for this day
+      h+=`<div style="margin-top:8px;display:flex;align-items:center;gap:6px;font-size:11px">`;
+      h+=`<span style="color:var(--tm)">Set status:</span>`;
+      [{k:"present",l:"Present",i:"✓"},{k:"sick",l:"Sick",i:"🤒"},{k:"halfday",l:"Half",i:"½"},{k:"leave",l:"Leave",i:"📅"},{k:"training",l:"Train",i:"📚"},{k:"awol",l:"AWOL",i:"✕"}].forEach(s=>{
+        const isCur=dayStatus===s.k;
+        h+=`<button onclick="setAgentStatusQuick('${XJ(sel)}','${isCur?"unknown":s.k}',new Date('${dayDate}'));rPeople($('ca'))" style="padding:2px 7px;border:1px solid ${isCur?dayStatusDef.col+"50":"var(--bdr)"};border-radius:4px;background:${isCur?dayStatusDef.col+"15":"none"};color:${isCur?dayStatusDef.col:"var(--tm)"};font-size:10px;font-family:inherit;cursor:pointer">${s.i} ${s.l}</button>`;
+      });
+      h+=`</div>`;
+      h+=`</div>`;
+    }
+
+    // ── Notes section ──
+    h+=`<div style="padding:12px 18px;border-top:1px solid var(--bdr)">`;
+    h+=`<div style="font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Agent Notes</div>`;
+    h+=`<textarea onchange="S.agentNotes['${XJ(sel)}']=this.value;saveAgentNotes()" placeholder="Notes about ${X(sel.split(' ')[0])}…" style="width:100%;min-height:48px;padding:8px 10px;border:1px solid var(--bdr);border-radius:8px;background:var(--card);color:var(--text);font-family:inherit;font-size:12px;resize:vertical;box-sizing:border-box">${X(agentNote)}</textarea>`;
+    h+=`</div>`;
+
+    // ── All events history (scrollable) ──
+    const allAgentExcs=(S.exceptions||[]).filter(ex=>ex.agentName===sel).sort((a,b)=>b.date.localeCompare(a.date));
+    h+=`<div style="padding:12px 18px;border-top:1px solid var(--bdr)">`;
+    h+=`<div style="font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Event History (${allAgentExcs.length})</div>`;
+    if(!allAgentExcs.length){
+      h+=`<div style="font-size:12px;color:var(--tm);font-style:italic">No events logged.</div>`;
+    } else {
+      h+=`<div style="max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:3px">`;
+      allAgentExcs.slice(0,30).forEach(ex=>{
+        const t=EXC_TYPES.find(t=>t.id===ex.type)||{icon:"⚡",label:ex.type};
+        const dp=ex.date.split("-").map(Number);
+        const dLabel=P(dp[2])+"-"+MO[dp[1]-1]+"-"+dp[0];
+        h+=`<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px">`;
+        h+=`<span style="font-size:12px">${t.icon}</span>`;
+        h+=`<span style="font-weight:600;min-width:70px;color:var(--text)">${dLabel}</span>`;
+        h+=`<span style="color:var(--tm)">${t.label} · ${ex.hoursLost}h</span>`;
+        if(ex.notes)h+=`<span style="color:var(--tm);font-style:italic;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"> — ${X(ex.notes.substring(0,40))}</span>`;
+        h+=`<button onclick="S._agentsViewDay='${ex.date}';rPeople($('ca'))" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:10px;padding:1px 4px;flex-shrink:0" title="Jump to day">→</button>`;
+        h+=`</div>`;
+      });
+      if(allAgentExcs.length>30)h+=`<div style="font-size:10px;color:var(--tm);padding:4px 0;text-align:center">+ ${allAgentExcs.length-30} more events</div>`;
+      h+=`</div>`;
+    }
+    h+=`</div>`;
+  }
+  h+=`</div>`;// close right panel
+  h+=`</div>`;// close layout
+  return h;
+}
+
 // ── Main People tab renderer ──
 function rPeople(el){
   if(!S.peopleSubTab)S.peopleSubTab="team";
@@ -17101,7 +17472,8 @@ function rPeople(el){
   h+=`<div class="people-subtab-nav">`;
   const subtabs=[
     {id:"team",l:"Team"},
-    {id:"cards",l:"Schedule"}
+    {id:"cards",l:"Schedule"},
+    {id:"agents",l:"Agents"}
   ];
   subtabs.forEach(t=>{
     h+=`<button class="pst-btn${t.id===S.peopleSubTab?" a":""}" onclick="S.peopleSubTab='${t.id}';rPeople($('ca'))">${t.l}</button>`;
@@ -17128,6 +17500,8 @@ function rPeople(el){
 
   if(S.peopleSubTab==="team"){
     h+=rPeopleTeamView();
+  } else if(S.peopleSubTab==="agents"){
+    h+=rPeopleAgentsView();
   } else {
     // Schedule sub-tab — TL-scoped cards view
     h+=`<div id="peopleSubContent" style="flex:1;overflow-y:auto;padding:0"></div>`;
