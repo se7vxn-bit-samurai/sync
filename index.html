@@ -21,7 +21,7 @@
   --text:#ecdeff;--tm:#5a3d80;--bdr:rgba(236,222,255,.12);--hbg:#17102a;--ht:#ecdeff;
   --card:rgba(30,21,53,.86);--card-border:rgba(147,129,255,.15);--card-top:rgba(147,129,255,.06);
   --r:8px;--sh:0 4px 20px rgba(8,4,20,.5);--sl:0 12px 40px rgba(8,4,20,.6);
-  --early:#8ca7f4;--mid:#9b8df2;--late:#ebf6c9;--wknd:#8d72dc;
+  --early:#5aba7a;--mid:#5a8ab0;--late:#e07090;--wknd:#c0a040;
   --glow1:rgba(147,129,255,.14);--glow2:rgba(140,167,244,.10);--dot:rgba(147,129,255,.08);
   --am-col:#8ca7f4;--am-bg:rgba(140,167,244,.12);--am-border:#4060b0;
   --pm-col:#9b8df2;--pm-bg:rgba(147,129,255,.12);--pm-border:#6a56b6;
@@ -38,7 +38,7 @@ body.th-tide{
   --text:#b2c9cf;--tm:#50757b;--bdr:rgba(178,201,207,.12);--hbg:#222828;--ht:#b2c9cf;
   --card:rgba(34,40,40,.85);--card-border:rgba(77,184,200,.15);--card-top:rgba(77,184,200,.07);
   --sh:0 4px 20px rgba(10,16,16,.5);--sl:0 12px 40px rgba(10,16,16,.6);
-  --early:#4db8c8;--mid:#8ab8c0;--late:#b2c9cf;--wknd:#7a9da5;
+  --early:#5ac878;--mid:#4db8c8;--late:#e07878;--wknd:#c0a840;
   --glow1:rgba(77,184,200,.15);--glow2:rgba(80,117,123,.10);--dot:rgba(176,210,218,.08);
   --am-col:#4db8c8;--am-bg:rgba(77,184,200,.12);--am-border:#287888;
   --pm-col:#8ab8c0;--pm-bg:rgba(138,184,192,.12);--pm-border:#486878;
@@ -5344,7 +5344,16 @@ function parseHoriz(data){
 
 function parseVert(data){
   const entries=[];if(!data||data.length<2)return entries;
-  const hdr=data[0]||[];const teams=[];let cur={name:"Main",cols:[]};let gap=0;
+  // Find the best header row (scan first 5 rows for most person names)
+  let hdrIdx=0,hdrScore=0;
+  for(let ri=0;ri<Math.min(5,data.length);ri++){
+    const r=data[ri]||[];let score=0;
+    for(let j=0;j<r.length;j++){const v=cleanPersonName(String(r[j]||"").trim());if(v&&!isWk(v)&&!isHeaderRow(v)&&!nD(v)&&!isMonthLabel(v)&&!isPersonNoiseLabel(v)&&v.includes(" "))score++;}
+    if(score>hdrScore){hdrScore=score;hdrIdx=ri;}
+  }
+  const hdr=data[hdrIdx]||[];const teams=[];let cur={name:"Main",cols:[]};let gap=0;
+  // Data rows start after hdrIdx (skip any rows up to and including the header)
+  const dataStart=hdrIdx+1;
   for(let j=2;j<hdr.length;j++){
     const raw=String(hdr[j]||"").trim();
     const v=cleanPersonName(raw);
@@ -5356,7 +5365,7 @@ function parseVert(data){
   for(const team of teams){
     // Track last-seen week label per person column (carry-forward across days within a week)
     const lastWkByCol={};
-    for(let i=1;i<data.length;i++){
+    for(let i=dataStart;i<data.length;i++){
       const row=data[i]||[];const day=nD(row[0]);if(!day)continue;
       let dateCol=1;if(team.cols.length>0){const fc=team.cols[0].col;if(fc>2){const dv=pDt(row[fc-1]);if(dv)dateCol=fc-1;}}
       const date=pDt(row[dateCol]);if(!date)continue;
@@ -6766,235 +6775,536 @@ function _wvFlattenRows(){
   return rows;
 }
 async function wvExportXLSX(){
-  // Upgrade: export as styled XLSX using ExcelJS
   const d=_wvCurrentData();
   if(!d||!d.teams.length){toast('No WFM data to export','warn');return;}
   if(typeof ExcelJS==='undefined'){toast('ExcelJS not ready — try again','warn');return;}
   toast('Building XLSX…','ok',3000);
   try{
     const wb=new ExcelJS.Workbook();
-    wb.creator='MirrorFlow WFM';wb.created=new Date();
-    const DN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    const allTeams=d.teams;
-    const allAgents=allTeams.flatMap(t=>t.agents);
-    const totalShifts=allAgents.flatMap(a=>a.days).filter(dy=>!dy.isOff&&dy.display).length;
-    const totalExcs=allAgents.flatMap(a=>a.days).filter(dy=>dy.isOff&&dy.offL).length;
-    const totalHrs=allAgents.reduce((s,a)=>s+a.totalHours,0);
-    const exTypes=[...new Set(allAgents.flatMap(a=>a.days).filter(dy=>dy.isOff&&dy.offL).map(dy=>dy.offL))];
+    wb.creator='MirrorFlow WFM';
+    wb.company='MirrorFlow';
+    wb.created=new Date();
+    wb.modified=new Date();
+    wb.subject='WFM calendar report';
+    wb.title='MirrorFlow Sync Chronos export';
 
-    // ── COLOURS ──
-    const COL={
-      dark:'FF0D1014',hdr:'FF141820',accent:'FF5A8AB0',
-      ok:'FF60A878',okBg:'FF0A241A',flag:'FFC07070',flagBg:'FF2A0E0E',
-      warn:'FFC0A050',text:'FFC8D4E0',tm:'FF485F70',rule:'FF243040',
-      holiday:'FF60A878',sick:'FFC0A050',awol:'FFC07070',leave:'FF9467BD',
-      white:'FFFFFFFF',gold:'FFC8A048',
+    const DN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const MO3=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const dateKey=dt=>dt?dt.getFullYear()+'-'+dt.getMonth()+'-'+dt.getDate():'';
+    const colLetter=idx=>{
+      let out='';
+      let cur=idx;
+      while(cur>0){
+        const rem=(cur-1)%26;
+        out=String.fromCharCode(65+rem)+out;
+        cur=Math.floor((cur-1)/26);
+      }
+      return out||'A';
     };
-    function hdrFill(color){return{type:'pattern',pattern:'solid',fgColor:{argb:color}};}
-    function font(color,bold,size){return{color:{argb:color},bold:!!bold,size:size||10,name:'Calibri'};}
-    function border(){return{top:{style:'thin',color:{argb:COL.rule}},bottom:{style:'thin',color:{argb:COL.rule}},left:{style:'thin',color:{argb:COL.rule}},right:{style:'thin',color:{argb:COL.rule}}};}
-    function thinBorder(){return{bottom:{style:'thin',color:{argb:COL.rule}}};}
-    function exColor(offL){
-      if(!offL)return COL.text;
-      const l=offL.toLowerCase();
-      if(l==='holiday'||l==='public holiday')return COL.holiday;
-      if(l==='sick'||l==='awol')return l==='awol'?COL.awol:COL.sick;
-      if(l.includes('leave'))return COL.leave;
-      return COL.flag;
+    const fill=argb=>({type:'pattern',pattern:'solid',fgColor:{argb}});
+    const fullBorder=(color,topStyle)=>{
+      const top=topStyle||'thin';
+      return{
+        top:{style:top,color:{argb:color}},
+        bottom:{style:'thin',color:{argb:color}},
+        left:{style:'thin',color:{argb:color}},
+        right:{style:'thin',color:{argb:color}}
+      };
+    };
+    const baseFont=(color,bold,size,name)=>({
+      name:name||'Aptos',
+      size:size||10,
+      bold:!!bold,
+      color:{argb:color}
+    });
+
+    const COL={
+      page:'FFF9F6EF',
+      surface:'FFFFFFFF',
+      surfaceAlt:'FFF7F2EA',
+      panel:'FFF1E7D9',
+      panelAlt:'FFEADBC7',
+      accent:'FF2F6B8E',
+      accentSoft:'FFE6F0F6',
+      ok:'FF3D7C61',
+      okSoft:'FFE6F3EC',
+      warn:'FFAF7A2F',
+      warnSoft:'FFF8EFE2',
+      flag:'FFB95C63',
+      flagSoft:'FFFBEAEC',
+      leave:'FF8C74B8',
+      leaveSoft:'FFF1ECF9',
+      text:'FF2E2A24',
+      muted:'FF726556',
+      border:'FFD8CDBC',
+      borderStrong:'FFC2B29D',
+      white:'FFFFFFFF',
+      gold:'FF8A6730'
+    };
+
+    function exceptionTone(offL){
+      const key=String(offL||'').toLowerCase();
+      if(key==='holiday'||key==='public holiday')return{font:COL.ok,cellFill:COL.okSoft};
+      if(key==='sick')return{font:COL.warn,cellFill:COL.warnSoft};
+      if(key==='awol')return{font:COL.flag,cellFill:COL.flagSoft};
+      if(key.includes('leave'))return{font:COL.leave,cellFill:COL.leaveSoft};
+      return{font:COL.flag,cellFill:COL.flagSoft};
     }
+
+    const allTeams=[...d.teams]
+      .map(team=>{
+        const agents=[...team.agents].sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));
+        const shiftCount=agents.reduce((sum,ag)=>sum+ag.days.filter(dy=>!dy.isOff&&dy.display).length,0);
+        const exceptionCount=agents.reduce((sum,ag)=>sum+ag.days.filter(dy=>dy.isOff&&dy.offL).length,0);
+        const hours=Math.round(agents.reduce((sum,ag)=>sum+(ag.totalHours||0),0)*10)/10;
+        return{...team,agents,shiftCount,exceptionCount,totalHours:hours};
+      })
+      .sort((a,b)=>String(a.leader||'').localeCompare(String(b.leader||'')));
+    const allAgents=allTeams.flatMap(team=>team.agents);
+    const totalShifts=allTeams.reduce((sum,team)=>sum+team.shiftCount,0);
+    const totalExcs=allTeams.reduce((sum,team)=>sum+team.exceptionCount,0);
+    const totalHrs=Math.round(allTeams.reduce((sum,team)=>sum+(team.totalHours||0),0)*10)/10;
+    const exceptionCounts={};
+    allAgents.forEach(ag=>ag.days.forEach(dy=>{
+      if(dy.isOff&&dy.offL)exceptionCounts[dy.offL]=(exceptionCounts[dy.offL]||0)+1;
+    }));
+    const exTypes=Object.entries(exceptionCounts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+    const validDates=[...new Map(allTeams.flatMap(team=>(team.dates||[]).filter(Boolean).map(dt=>[dateKey(dt),dt]))).values()].sort((a,b)=>a-b);
+    const scopeParts=[];
+    if(_wvTeam!=='all')scopeParts.push('Team filter: '+_wvTeam);
+    if(_wvSrch)scopeParts.push('Search: '+_wvSrch);
+    const scopeLabel=scopeParts.length?scopeParts.join(' · '):'All teams included';
+    const exportBase=(d.filename.replace(/\.[^.]+$/,'')||'wfm');
+
+    const rawRows=[];
+    allTeams.forEach(team=>{
+      team.agents.forEach(ag=>{
+        ag.days.forEach(dy=>{
+          if(!dy.date)return;
+          rawRows.push({
+            teamLeader:team.leader,
+            agentName:ag.name,
+            wfmId:ag.id,
+            date:dy.date,
+            day:DN[dy.date.getDay()],
+            shiftDisplay:dy.display||'',
+            hours:dy.hours||null,
+            isException:dy.isOff?'Yes':'No',
+            exceptionType:dy.offL||''
+          });
+        });
+      });
+    });
+    rawRows.sort((a,b)=>
+      String(a.teamLeader||'').localeCompare(String(b.teamLeader||''))||
+      String(a.agentName||'').localeCompare(String(b.agentName||''))||
+      ((a.date&&b.date)?a.date-b.date:0)
+    );
 
     // ══ SHEET 1: Overview ══
-    const ov=wb.addWorksheet('Overview',{tabColor:{argb:COL.accent.slice(2)}});
+    const ov=wb.addWorksheet('Overview',{properties:{tabColor:{argb:COL.accent.slice(2)}}});
     ov.views=[{showGridLines:false}];
-    ov.getColumn('A').width=28;ov.getColumn('B').width=20;ov.getColumn('C').width=20;ov.getColumn('D').width=20;ov.getColumn('E').width=24;
+    ov.properties.defaultRowHeight=20;
+    [26,16,16,18,22].forEach((width,idx)=>{ov.getColumn(idx+1).width=width;});
 
-    // Title block
     ov.mergeCells('A1:E1');
-    const titleCell=ov.getCell('A1');
-    titleCell.value='MirrorFlow · WFM Calendar Report';
-    titleCell.font={name:'Calibri',size:16,bold:true,color:{argb:COL.gold}};
-    titleCell.fill=hdrFill(COL.dark);titleCell.alignment={horizontal:'left',vertical:'middle'};
-    ov.getRow(1).height=32;
+    ov.getCell('A1').value='MirrorFlow Sync Chronos';
+    ov.getCell('A1').font=baseFont(COL.text,true,20,'Aptos Display');
+    ov.getCell('A1').fill=fill(COL.panel);
+    ov.getCell('A1').border=fullBorder(COL.borderStrong,'medium');
+    ov.getCell('A1').alignment={horizontal:'left',vertical:'middle'};
+    ov.getRow(1).height=30;
 
     ov.mergeCells('A2:E2');
-    const subCell=ov.getCell('A2');
-    subCell.value=d.filename.replace(/\.[^.]+$/,'')+(d.dateRange?' · '+d.dateRange:'');
-    subCell.font=font(COL.tm,false,10);subCell.fill=hdrFill(COL.dark);
-    ov.getRow(2).height=18;
+    ov.getCell('A2').value=(d.dateRange?d.dateRange+' · ':'')+exportBase+' · '+scopeLabel;
+    ov.getCell('A2').font=baseFont(COL.muted,false,10);
+    ov.getCell('A2').fill=fill(COL.surface);
+    ov.getCell('A2').border=fullBorder(COL.border);
+    ov.getCell('A2').alignment={horizontal:'left',vertical:'middle'};
+    ov.getRow(2).height=20;
+    ov.getRow(3).height=8;
 
-    ov.getRow(3).height=10;// spacer
+    const stats=[
+      {label:'Teams',value:allTeams.length,tone:COL.accent},
+      {label:'Agents',value:allAgents.length,tone:COL.ok},
+      {label:'Shifts',value:totalShifts,tone:COL.accent},
+      {label:'Exceptions',value:totalExcs,tone:COL.flag},
+      {label:'Total Hours',value:totalHrs+'h',tone:COL.gold}
+    ];
+    stats.forEach((stat,idx)=>{
+      const col=colLetter(idx+1);
+      const labelCell=ov.getCell(col+'4');
+      labelCell.value=stat.label;
+      labelCell.font=baseFont(COL.muted,true,9);
+      labelCell.fill=fill(COL.panel);
+      labelCell.border=fullBorder(COL.borderStrong);
+      labelCell.alignment={horizontal:'center',vertical:'middle'};
 
-    // Summary stats
-    const statHdrs=[['Teams',allTeams.length],[`Agents`,allAgents.length],['Shifts',totalShifts],['Exceptions',totalExcs],[`Total Hours`,Math.round(totalHrs)+'h']];
-    statHdrs.forEach(([label,val],i)=>{
-      const col=String.fromCharCode(65+i);
-      const lc=ov.getCell(col+'4');
-      lc.value=label;lc.font=font(COL.tm,false,9);lc.fill=hdrFill(COL.hdr);lc.alignment={horizontal:'center'};
-      const vc=ov.getCell(col+'5');
-      vc.value=typeof val==='number'?val:val;
-      vc.font={name:'Calibri',size:14,bold:true,color:{argb:COL.accent}};
-      vc.fill=hdrFill(COL.hdr);vc.alignment={horizontal:'center'};
-      ov.getRow(4).height=16;ov.getRow(5).height=24;
+      const valueCell=ov.getCell(col+'5');
+      valueCell.value=stat.value;
+      valueCell.font=baseFont(stat.tone,true,16,'Aptos Display');
+      valueCell.fill=fill(COL.surface);
+      valueCell.border=fullBorder(COL.borderStrong);
+      valueCell.alignment={horizontal:'center',vertical:'middle'};
     });
-
+    ov.getRow(4).height=18;
+    ov.getRow(5).height=28;
     ov.getRow(6).height=10;
 
-    // Exception breakdown
+    ov.mergeCells('A8:C8');
+    ov.getCell('A8').value='Exception Overview';
+    ov.getCell('A8').font=baseFont(COL.gold,true,11);
+    ov.getCell('A8').fill=fill(COL.panel);
+    ov.getCell('A8').border=fullBorder(COL.borderStrong,'medium');
+    ov.getCell('A8').alignment={horizontal:'left',vertical:'middle'};
+
+    ov.mergeCells('D8:E8');
+    ov.getCell('D8').value='Report Scope';
+    ov.getCell('D8').font=baseFont(COL.gold,true,11);
+    ov.getCell('D8').fill=fill(COL.panel);
+    ov.getCell('D8').border=fullBorder(COL.borderStrong,'medium');
+    ov.getCell('D8').alignment={horizontal:'left',vertical:'middle'};
+
+    ['File','Week','Scope'].forEach((label,idx)=>{
+      const row=9+idx;
+      ov.mergeCells(`D${row}:E${row}`);
+      const cell=ov.getCell(`D${row}`);
+      const value=idx===0?exportBase:idx===1?(d.dateRange||'Current selection'):scopeLabel;
+      cell.value=label+' · '+value;
+      cell.font=baseFont(idx===0?COL.text:COL.muted,idx===0,10);
+      cell.fill=fill(COL.surface);
+      cell.border=fullBorder(COL.border);
+      cell.alignment={horizontal:'left',vertical:'middle',wrapText:true};
+      ov.getRow(row).height=idx===2?28:20;
+    });
+
+    const exHeaderRow=9;
+    ['Exception','Count','% of agents'].forEach((label,idx)=>{
+      const cell=ov.getCell(exHeaderRow,idx+1);
+      cell.value=label;
+      cell.font=baseFont(COL.text,true,10);
+      cell.fill=fill(COL.panelAlt);
+      cell.border=fullBorder(COL.borderStrong);
+      cell.alignment={horizontal:idx===0?'left':'center',vertical:'middle'};
+    });
+    ov.getRow(exHeaderRow).height=20;
+
+    let exRow=10;
     if(exTypes.length){
-      const exHdrRow=ov.addRow(['Exception','Count','% of agents']);
-      exHdrRow.eachCell(cell=>{cell.font=font(COL.gold,true,10);cell.fill=hdrFill(COL.hdr);cell.border=thinBorder();});
-      ov.getRow(exHdrRow.number).height=18;
-      exTypes.forEach(ex=>{
-        const ct=allAgents.flatMap(a=>a.days).filter(dy=>dy.offL===ex).length;
-        const pct=allAgents.length>0?(ct/allAgents.length*100).toFixed(1)+'%':'—';
-        const r=ov.addRow([ex,ct,pct]);
-        r.getCell(1).font=font(exColor(ex),false,10);
-        r.getCell(2).font=font(COL.text,true,10);
-        r.getCell(3).font=font(COL.tm,false,10);
-        r.eachCell(cell=>{cell.fill=hdrFill(COL.dark);cell.border=thinBorder();});
-        ov.getRow(r.number).height=16;
+      exTypes.forEach(([label,count],idx)=>{
+        const tone=exceptionTone(label);
+        const bg=idx%2===0?COL.surface:COL.surfaceAlt;
+        const row=ov.getRow(exRow);
+        row.height=20;
+        row.getCell(1).value=label;
+        row.getCell(1).font=baseFont(tone.font,false,10);
+        row.getCell(1).fill=fill(bg);
+        row.getCell(1).border=fullBorder(COL.border);
+        row.getCell(1).alignment={horizontal:'left',vertical:'middle'};
+
+        row.getCell(2).value=count;
+        row.getCell(2).font=baseFont(COL.text,true,10);
+        row.getCell(2).fill=fill(bg);
+        row.getCell(2).border=fullBorder(COL.border);
+        row.getCell(2).alignment={horizontal:'center',vertical:'middle'};
+
+        row.getCell(3).value=allAgents.length?count/allAgents.length:0;
+        row.getCell(3).numFmt='0.0%';
+        row.getCell(3).font=baseFont(COL.muted,false,10);
+        row.getCell(3).fill=fill(bg);
+        row.getCell(3).border=fullBorder(COL.border);
+        row.getCell(3).alignment={horizontal:'center',vertical:'middle'};
+        exRow++;
       });
-      ov.addRow([]);
+    }else{
+      const row=ov.getRow(exRow);
+      row.height=20;
+      row.getCell(1).value='No exceptions recorded';
+      row.getCell(1).font=baseFont(COL.muted,false,10);
+      row.getCell(1).fill=fill(COL.surface);
+      row.getCell(1).border=fullBorder(COL.border);
+      row.getCell(1).alignment={horizontal:'left',vertical:'middle'};
+      row.getCell(2).value=0;
+      row.getCell(2).font=baseFont(COL.text,true,10);
+      row.getCell(2).fill=fill(COL.surface);
+      row.getCell(2).border=fullBorder(COL.border);
+      row.getCell(2).alignment={horizontal:'center',vertical:'middle'};
+      row.getCell(3).value=0;
+      row.getCell(3).numFmt='0.0%';
+      row.getCell(3).font=baseFont(COL.muted,false,10);
+      row.getCell(3).fill=fill(COL.surface);
+      row.getCell(3).border=fullBorder(COL.border);
+      row.getCell(3).alignment={horizontal:'center',vertical:'middle'};
+      exRow++;
     }
 
-    // Team breakdown table
-    const teamHdrRow=ov.addRow(['Team Leader','Agents','Shifts','Exceptions','Total Hours']);
-    teamHdrRow.eachCell(cell=>{cell.font=font(COL.gold,true,10);cell.fill=hdrFill(COL.hdr);cell.border=thinBorder();});
-    ov.getRow(teamHdrRow.number).height=18;
+    const teamSectionRow=Math.max(exRow,12)+2;
+    ov.getRow(teamSectionRow-1).height=8;
+    ov.mergeCells(`A${teamSectionRow}:E${teamSectionRow}`);
+    ov.getCell(`A${teamSectionRow}`).value='Team Rollup';
+    ov.getCell(`A${teamSectionRow}`).font=baseFont(COL.gold,true,11);
+    ov.getCell(`A${teamSectionRow}`).fill=fill(COL.panel);
+    ov.getCell(`A${teamSectionRow}`).border=fullBorder(COL.borderStrong,'medium');
+    ov.getCell(`A${teamSectionRow}`).alignment={horizontal:'left',vertical:'middle'};
+
+    const teamHeaderRow=teamSectionRow+1;
+    ['Team Leader','Agents','Shifts','Exceptions','Total Hours'].forEach((label,idx)=>{
+      const cell=ov.getCell(teamHeaderRow,idx+1);
+      cell.value=label;
+      cell.font=baseFont(COL.text,true,10);
+      cell.fill=fill(COL.panelAlt);
+      cell.border=fullBorder(COL.borderStrong);
+      cell.alignment={horizontal:idx===0?'left':'center',vertical:'middle'};
+    });
+    ov.getRow(teamHeaderRow).height=20;
+
+    let teamRow=teamHeaderRow+1;
+    allTeams.forEach((team,idx)=>{
+      const bg=idx%2===0?COL.surface:COL.surfaceAlt;
+      const row=ov.getRow(teamRow);
+      row.height=22;
+      row.getCell(1).value=team.leader;
+      row.getCell(1).font=baseFont(COL.text,true,10);
+      row.getCell(1).fill=fill(bg);
+      row.getCell(1).border=fullBorder(COL.border);
+      row.getCell(1).alignment={horizontal:'left',vertical:'middle'};
+
+      row.getCell(2).value=team.agents.length;
+      row.getCell(2).font=baseFont(COL.ok,true,10);
+      row.getCell(2).fill=fill(bg);
+      row.getCell(2).border=fullBorder(COL.border);
+      row.getCell(2).alignment={horizontal:'center',vertical:'middle'};
+
+      row.getCell(3).value=team.shiftCount;
+      row.getCell(3).font=baseFont(COL.accent,true,10);
+      row.getCell(3).fill=fill(bg);
+      row.getCell(3).border=fullBorder(COL.border);
+      row.getCell(3).alignment={horizontal:'center',vertical:'middle'};
+
+      row.getCell(4).value=team.exceptionCount;
+      row.getCell(4).font=baseFont(team.exceptionCount?COL.flag:COL.muted,team.exceptionCount>0,10);
+      row.getCell(4).fill=fill(bg);
+      row.getCell(4).border=fullBorder(COL.border);
+      row.getCell(4).alignment={horizontal:'center',vertical:'middle'};
+
+      row.getCell(5).value=team.totalHours;
+      row.getCell(5).numFmt='0.0';
+      row.getCell(5).font=baseFont(COL.gold,true,10);
+      row.getCell(5).fill=fill(bg);
+      row.getCell(5).border=fullBorder(COL.border);
+      row.getCell(5).alignment={horizontal:'center',vertical:'middle'};
+      teamRow++;
+    });
+    ov.autoFilter=`A${teamHeaderRow}:E${teamRow-1}`;
+
+    // ══ SHEET 2: Schedule ══
+    const sg=wb.addWorksheet('Schedule',{properties:{tabColor:{argb:COL.ok.slice(2)}}});
+    sg.views=[{showGridLines:false,state:'frozen',xSplit:4,ySplit:4}];
+    sg.properties.defaultRowHeight=21;
+    sg.getColumn(1).width=24;
+    sg.getColumn(2).width=24;
+    sg.getColumn(3).width=14;
+    sg.getColumn(4).width=10;
+    validDates.forEach((_,idx)=>{sg.getColumn(5+idx).width=18;});
+    const scheduleLastCol=4+validDates.length;
+    const scheduleLastColLetter=colLetter(scheduleLastCol);
+
+    sg.mergeCells(`A1:${scheduleLastColLetter}1`);
+    sg.getCell('A1').value='MirrorFlow Schedule';
+    sg.getCell('A1').font=baseFont(COL.text,true,20,'Aptos Display');
+    sg.getCell('A1').fill=fill(COL.panel);
+    sg.getCell('A1').border=fullBorder(COL.borderStrong,'medium');
+    sg.getCell('A1').alignment={horizontal:'left',vertical:'middle'};
+    sg.getRow(1).height=30;
+
+    sg.mergeCells(`A2:${scheduleLastColLetter}2`);
+    sg.getCell('A2').value=(d.dateRange||'Current week')+' · '+scopeLabel;
+    sg.getCell('A2').font=baseFont(COL.muted,false,10);
+    sg.getCell('A2').fill=fill(COL.surface);
+    sg.getCell('A2').border=fullBorder(COL.border);
+    sg.getCell('A2').alignment={horizontal:'left',vertical:'middle'};
+    sg.getRow(2).height=20;
+
+    sg.mergeCells(`A3:${scheduleLastColLetter}3`);
+    sg.getCell('A3').value='Header dropdowns are enabled for sorting and filtering directly in Excel.';
+    sg.getCell('A3').font=baseFont(COL.muted,false,9);
+    sg.getCell('A3').fill=fill(COL.surfaceAlt);
+    sg.getCell('A3').border=fullBorder(COL.border);
+    sg.getCell('A3').alignment={horizontal:'left',vertical:'middle'};
+    sg.getRow(3).height=18;
+
+    const scheduleHeaders=['Team Leader','Agent Name','WFM ID','Hours',...validDates.map(dt=>DN[dt.getDay()]+'\n'+P(dt.getDate())+' '+MO3[dt.getMonth()])];
+    scheduleHeaders.forEach((label,idx)=>{
+      const cell=sg.getCell(4,idx+1);
+      cell.value=label;
+      cell.font=baseFont(COL.text,true,10);
+      cell.fill=fill(COL.panelAlt);
+      cell.border=fullBorder(COL.borderStrong);
+      cell.alignment={horizontal:idx<3?'left':'center',vertical:'middle',wrapText:true};
+    });
+    sg.getRow(4).height=32;
+
+    let scheduleRow=5;
     allTeams.forEach(team=>{
-      const ags=team.agents;
-      const sh=ags.flatMap(a=>a.days).filter(dy=>!dy.isOff&&dy.display).length;
-      const ex=ags.flatMap(a=>a.days).filter(dy=>dy.isOff&&dy.offL).length;
-      const hrs=ags.reduce((s,a)=>s+a.totalHours,0);
-      const r=ov.addRow([team.leader,ags.length,sh,ex,Math.round(hrs*10)/10]);
-      r.getCell(1).font=font(COL.text,true,10);
-      r.getCell(4).font=font(ex>0?COL.flag:COL.tm,false,10);
-      r.getCell(5).font=font(COL.accent,false,10);
-      r.eachCell(cell=>{cell.fill=hdrFill(COL.dark);cell.border=thinBorder();cell.alignment={horizontal:'left'};});
-      ov.getRow(r.number).height=16;
-    });
+      team.agents.forEach((ag,idx)=>{
+        const isTeamStart=idx===0;
+        const row=sg.getRow(scheduleRow);
+        const rowFill=scheduleRow%2===0?COL.surfaceAlt:COL.surface;
+        const rowBorder=fullBorder(isTeamStart?COL.borderStrong:COL.border,isTeamStart?'medium':'thin');
+        row.height=22;
 
-    // ══ SHEET 2: Schedule Grid ══
-    const sg=wb.addWorksheet('Schedule',{tabColor:{argb:COL.ok.slice(2)}});
-    sg.views=[{showGridLines:false,state:'frozen',xSplit:3,ySplit:2}];
+        row.getCell(1).value=team.leader;
+        row.getCell(1).font=baseFont(isTeamStart?COL.accent:COL.text,isTeamStart,10);
+        row.getCell(1).fill=fill(COL.panel);
+        row.getCell(1).border=rowBorder;
+        row.getCell(1).alignment={horizontal:'left',vertical:'middle'};
 
-    // Date columns
-    const dates=allTeams[0]?allTeams[0].dates:[];
-    const validDates=dates.filter(Boolean);
-    // Col widths
-    sg.getColumn(1).width=22;// TL
-    sg.getColumn(2).width=20;// Agent
-    sg.getColumn(3).width=12;// WFM ID
-    validDates.forEach((_,i)=>{ sg.getColumn(4+i).width=16; });
+        row.getCell(2).value=ag.name;
+        row.getCell(2).font=baseFont(COL.text,true,10);
+        row.getCell(2).fill=fill(rowFill);
+        row.getCell(2).border=rowBorder;
+        row.getCell(2).alignment={horizontal:'left',vertical:'middle'};
 
-    // Header row 1: day names
-    const r1=sg.getRow(1);
-    r1.height=16;
-    sg.getCell(1,1).value='Team Leader';sg.getCell(1,2).value='Agent';sg.getCell(1,3).value='WFM ID';
-    [sg.getCell(1,1),sg.getCell(1,2),sg.getCell(1,3)].forEach(cell=>{cell.font=font(COL.gold,true,10);cell.fill=hdrFill(COL.hdr);cell.border=thinBorder();});
-    validDates.forEach((dt,i)=>{
-      const cell=sg.getCell(1,4+i);
-      cell.value=DN[dt.getDay()];
-      cell.font=font(COL.gold,true,10);cell.fill=hdrFill(COL.hdr);
-      cell.alignment={horizontal:'center'};cell.border=thinBorder();
-    });
-    // Header row 2: dates
-    const r2=sg.getRow(2);r2.height=14;
-    sg.getCell(2,1).value='';sg.getCell(2,2).value='';sg.getCell(2,3).value='Hrs';
-    sg.getCell(2,3).font=font(COL.tm,false,9);sg.getCell(2,3).fill=hdrFill(COL.hdr);sg.getCell(2,3).alignment={horizontal:'center'};
-    validDates.forEach((dt,i)=>{
-      const cell=sg.getCell(2,4+i);
-      cell.value=dt.getDate()+'/'+(dt.getMonth()+1)+'/'+dt.getFullYear();
-      cell.font=font(COL.tm,false,9);cell.fill=hdrFill(COL.hdr);
-      cell.alignment={horizontal:'center'};
-    });
+        row.getCell(3).value=ag.id;
+        row.getCell(3).font=baseFont(COL.muted,false,9);
+        row.getCell(3).fill=fill(rowFill);
+        row.getCell(3).border=rowBorder;
+        row.getCell(3).alignment={horizontal:'center',vertical:'middle'};
 
-    let row=3;
-    allTeams.forEach(team=>{
-      team.agents.forEach((ag,ai)=>{
-        const r=sg.getRow(row);r.height=17;
-        const tlCell=r.getCell(1);
-        tlCell.value=ai===0?team.leader:'';// Only show TL on first agent row
-        tlCell.font=font(ai===0?COL.accent:COL.tm,ai===0,10);
-        tlCell.fill=hdrFill(ai%2===0?COL.dark:COL.hdr);
-        const agCell=r.getCell(2);
-        agCell.value=ag.name;agCell.font=font(COL.text,true,10);
-        agCell.fill=hdrFill(ai%2===0?COL.dark:COL.hdr);
-        const hrsCell=r.getCell(3);
-        const hrsVal=ag.totalHours||0;
-        hrsCell.value=hrsVal;
-        const hrsColor=hrsVal>=36?COL.ok:hrsVal>=28?COL.accent:hrsVal>0?COL.flag:COL.tm;
-        hrsCell.font=font(hrsColor,true,10);
-        hrsCell.fill=hdrFill(ai%2===0?COL.dark:COL.hdr);
-        hrsCell.alignment={horizontal:'center'};
-        ag.days.forEach((dy,di)=>{
-          const cell=r.getCell(4+di);
-          const rowBg=ai%2===0?COL.dark:COL.hdr;
-          if(!dy.display){cell.value='—';cell.font=font(COL.rule,false,9);cell.fill=hdrFill(rowBg);}
-          else if(dy.isOff){
-            cell.value=dy.offL||dy.display;
-            cell.font=font(exColor(dy.offL),false,9);
-            cell.fill=hdrFill(rowBg);
-          } else {
-            cell.value=dy.display;
-            cell.font=font(COL.accent,false,10);
-            cell.fill=hdrFill(rowBg);
+        row.getCell(4).value=ag.totalHours||0;
+        row.getCell(4).numFmt='0.0';
+        row.getCell(4).font=baseFont((ag.totalHours||0)>=40?COL.ok:(ag.totalHours||0)>=30?COL.accent:COL.warn,true,10);
+        row.getCell(4).fill=fill(rowFill);
+        row.getCell(4).border=rowBorder;
+        row.getCell(4).alignment={horizontal:'center',vertical:'middle'};
+
+        const dayMap=new Map((ag.days||[]).filter(dy=>dy.date).map(dy=>[dateKey(dy.date),dy]));
+        validDates.forEach((dt,di)=>{
+          const cell=row.getCell(5+di);
+          const dy=dayMap.get(dateKey(dt));
+          cell.border=rowBorder;
+          cell.alignment={horizontal:'center',vertical:'middle',wrapText:true};
+          if(!dy||!dy.display){
+            cell.value='—';
+            cell.font=baseFont(COL.muted,false,9);
+            cell.fill=fill(rowFill);
+            return;
           }
-          cell.alignment={horizontal:'center'};
-          cell.border=thinBorder();
+          if(dy.isOff){
+            const tone=exceptionTone(dy.offL||dy.display);
+            cell.value=dy.offL||dy.display;
+            cell.font=baseFont(tone.font,true,9);
+            cell.fill=fill(tone.cellFill);
+            return;
+          }
+          cell.value=dy.display;
+          cell.font=baseFont(COL.accent,true,9);
+          cell.fill=fill(COL.accentSoft);
         });
-        [tlCell,agCell,hrsCell].forEach(cell=>cell.border=thinBorder());
-        row++;
+        scheduleRow++;
       });
-      // Team spacer row
-      const spacer=sg.getRow(row);spacer.height=6;
-      for(let ci=1;ci<=3+validDates.length;ci++){
-        spacer.getCell(ci).fill=hdrFill(COL.rule);
-      }
-      row++;
     });
+    sg.autoFilter=`A4:${scheduleLastColLetter}${scheduleRow-1}`;
 
     // ══ SHEET 3: Raw Data ══
-    const rd=wb.addWorksheet('Raw Data',{tabColor:{argb:COL.warn.slice(2)}});
-    rd.views=[{showGridLines:false,state:'frozen',xSplit:0,ySplit:1}];
-    const rawHdrs=['Team Leader','Agent Name','WFM ID','Date','Day','Shift','Hours','Exception','Exception Type'];
-    const hdrRow=rd.addRow(rawHdrs);
-    hdrRow.height=18;
-    hdrRow.eachCell(cell=>{
-      cell.font=font(COL.gold,true,10);
-      cell.fill=hdrFill(COL.hdr);
-      cell.border=thinBorder();
-      cell.alignment={horizontal:'left'};
-    });
-    [28,22,14,12,8,14,8,10,18].forEach((w,i)=>rd.getColumn(i+1).width=w);
+    const rd=wb.addWorksheet('Raw Data',{properties:{tabColor:{argb:COL.warn.slice(2)}}});
+    rd.views=[{showGridLines:false,state:'frozen',ySplit:4}];
+    rd.properties.defaultRowHeight=20;
+    [24,24,14,14,10,18,10,12,18].forEach((width,idx)=>{rd.getColumn(idx+1).width=width;});
 
-    const rows=_wvFlattenRows();
-    rows.forEach((row,ri)=>{
-      const r=rd.addRow([row.team_leader,row.agent_name,row.wfm_id,row.date,row.day,
-        row.shift_display,row.hours?parseFloat(row.hours):null,row.is_exception,row.exception_type]);
-      r.height=15;
-      const bg=ri%2===0?COL.dark:COL.hdr;
-      r.eachCell(cell=>{cell.fill=hdrFill(bg);cell.font=font(COL.text,false,10);cell.border=thinBorder();});
-      // Colour-code shift cell
-      const shiftCell=r.getCell(6);
-      if(row.is_exception==='TRUE'){shiftCell.font=font(exColor(row.exception_type),false,10);}
-      else if(row.shift_display){shiftCell.font=font(COL.accent,false,10);}
-      // Colour hours
-      const hrsCell=r.getCell(7);
-      if(row.hours){
-        const hv=parseFloat(row.hours);
-        hrsCell.font=font(hv>=8?COL.ok:hv>=6?COL.warn:COL.flag,false,10);
-        hrsCell.alignment={horizontal:'center'};
+    rd.mergeCells('A1:I1');
+    rd.getCell('A1').value='MirrorFlow Raw Schedule Data';
+    rd.getCell('A1').font=baseFont(COL.text,true,20,'Aptos Display');
+    rd.getCell('A1').fill=fill(COL.panel);
+    rd.getCell('A1').border=fullBorder(COL.borderStrong,'medium');
+    rd.getCell('A1').alignment={horizontal:'left',vertical:'middle'};
+    rd.getRow(1).height=30;
+
+    rd.mergeCells('A2:I2');
+    rd.getCell('A2').value=rawRows.length+' rows · '+scopeLabel;
+    rd.getCell('A2').font=baseFont(COL.muted,false,10);
+    rd.getCell('A2').fill=fill(COL.surface);
+    rd.getCell('A2').border=fullBorder(COL.border);
+    rd.getCell('A2').alignment={horizontal:'left',vertical:'middle'};
+    rd.getRow(2).height=20;
+
+    rd.mergeCells('A3:I3');
+    rd.getCell('A3').value='Use Excel filter arrows on the header row to sort by leader, agent, date, shift, or exception type.';
+    rd.getCell('A3').font=baseFont(COL.muted,false,9);
+    rd.getCell('A3').fill=fill(COL.surfaceAlt);
+    rd.getCell('A3').border=fullBorder(COL.border);
+    rd.getCell('A3').alignment={horizontal:'left',vertical:'middle'};
+    rd.getRow(3).height=18;
+
+    ['Team Leader','Agent Name','WFM ID','Date','Day','Shift','Hours','Exception','Exception Type'].forEach((label,idx)=>{
+      const cell=rd.getCell(4,idx+1);
+      cell.value=label;
+      cell.font=baseFont(COL.text,true,10);
+      cell.fill=fill(COL.panelAlt);
+      cell.border=fullBorder(COL.borderStrong);
+      cell.alignment={horizontal:idx===6?'center':'left',vertical:'middle'};
+    });
+    rd.getRow(4).height=22;
+
+    let rawRow=5;
+    rawRows.forEach((item,idx)=>{
+      const row=rd.getRow(rawRow);
+      const rowFill=idx%2===0?COL.surface:COL.surfaceAlt;
+      row.height=20;
+      [
+        item.teamLeader,
+        item.agentName,
+        item.wfmId,
+        safeExcelDate(item.date),
+        item.day,
+        item.shiftDisplay||'',
+        item.hours,
+        item.isException,
+        item.exceptionType||''
+      ].forEach((value,colIdx)=>{
+        const cell=row.getCell(colIdx+1);
+        cell.value=value;
+        cell.font=baseFont(COL.text,colIdx<2,10);
+        cell.fill=fill(rowFill);
+        cell.border=fullBorder(COL.border);
+        cell.alignment={horizontal:colIdx===6?'center':'left',vertical:'middle'};
+      });
+      row.getCell(3).font=baseFont(COL.muted,false,9);
+      row.getCell(4).numFmt='dd mmm yyyy';
+      row.getCell(4).alignment={horizontal:'left',vertical:'middle'};
+      row.getCell(5).font=baseFont(COL.muted,false,9);
+      row.getCell(7).numFmt='0.0';
+      if(item.hours){
+        row.getCell(7).font=baseFont(item.hours>=8?COL.ok:item.hours>=6?COL.accent:COL.warn,true,10);
+      }else{
+        row.getCell(7).value='';
       }
+      if(item.isException==='Yes'){
+        const tone=exceptionTone(item.exceptionType||item.shiftDisplay);
+        row.getCell(6).font=baseFont(tone.font,true,10);
+        row.getCell(6).fill=fill(tone.cellFill);
+        row.getCell(8).font=baseFont(COL.flag,true,9);
+        row.getCell(8).fill=fill(COL.flagSoft);
+        row.getCell(9).font=baseFont(tone.font,true,9);
+        row.getCell(9).fill=fill(tone.cellFill);
+      }else if(item.shiftDisplay){
+        row.getCell(6).font=baseFont(COL.accent,true,10);
+        row.getCell(6).fill=fill(COL.accentSoft);
+        row.getCell(8).font=baseFont(COL.muted,false,9);
+      }
+      rawRow++;
     });
+    rd.autoFilter=`A4:I${rawRow-1}`;
 
-    // Generate and download
     const buffer=await wb.xlsx.writeBuffer();
     const blob=new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-    const fname=(d.filename.replace(/\.[^.]+$/,'')||'wfm')+'-report.xlsx';
-    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;a.click();
+    const fname=exportBase+'-report.xlsx';
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=fname;
+    a.click();
     URL.revokeObjectURL(a.href);
-    toast('XLSX exported — 3 sheets','ok',3500);
+    toast('XLSX exported — lighter layout with filterable headers','ok',3500);
   }catch(err){console.error(err);toast('XLSX export failed: '+err.message,'err');}
 }
 async function wvExportCSV(){return wvExportXLSX();}
@@ -12487,7 +12797,7 @@ function renderCardHeaderBlock(ctx){
 }
 
 function renderCard(n,ent,mlabel,monthKey){
-  const teamBadge=ent[0]?.team&&ent[0].team!=="Main"?`<span class="team-badge">${X(ent[0].team)}</span>`:"";
+  const teamBadge="";
   const st=cardStats(ent);const anom=findAnomalies(ent);
   const expanded=S.collapsed&&S.collapsed[n];  // inverted: collapsed[n]=true now means EXPANDED (show table)
   const workCount=ent.filter(e=>!e.isOff).length;
@@ -22501,7 +22811,7 @@ async function expSingleCardPNG(name,monthKey){
     try{
       const bgColor=getComputedStyle(document.body).getPropertyValue('--bg').trim()||'#070A12';
       const rect=wrap.getBoundingClientRect();
-      const capW=Math.max(1,Math.round(rect.width||wrap.offsetWidth||wrap.clientWidth||wrap.scrollWidth||420));
+      const capW=Math.max(560,Math.round(rect.width||wrap.offsetWidth||wrap.clientWidth||wrap.scrollWidth||560));
       const snapClass=document.body.className||"";
       const snapTheme=document.body.getAttribute("data-theme");
       const snapVariant=document.body.getAttribute("data-variant");
@@ -22511,16 +22821,20 @@ async function expSingleCardPNG(name,monthKey){
         _captureCssVarMap(document.body),
         _captureCssVarMap(wrap)
       );
+      const PAD=12;
       host=document.createElement('div');
       host.style.cssText='position:fixed;left:-99999px;top:0;z-index:-1;pointer-events:none;';
       const clone=wrap.cloneNode(true);
-      clone.style.cssText='display:block;width:'+capW+'px;max-width:'+capW+'px;min-width:'+capW+'px;height:auto;min-height:0;margin:0;align-self:start;background:'+bgColor+';padding:0;box-sizing:border-box;';
+      clone.style.cssText='display:block;width:'+capW+'px;max-width:'+capW+'px;min-width:'+capW+'px;height:auto;min-height:0;margin:0;align-self:start;padding:0;box-sizing:border-box;';
       _applyCssVarMap(clone,snapVars);
       clone.querySelectorAll('button[title="Save PNG"],.collapse-icon,.mc-scroll-hint').forEach(el=>el.remove());
-      host.appendChild(clone);
+      const padder=document.createElement('div');
+      padder.style.cssText='display:inline-block;padding:'+PAD+'px;background:'+bgColor+';box-sizing:border-box;';
+      padder.appendChild(clone);
+      host.appendChild(padder);
       document.body.appendChild(host);
       await _awaitFontRenderReady(1800);
-      const canvas=await html2canvas(clone,{scale:2,backgroundColor:bgColor,useCORS:true,logging:false,
+      const canvas=await html2canvas(padder,{scale:2,backgroundColor:bgColor,useCORS:true,logging:false,
         onclone:(doc,el)=>{
           doc.body.className=snapClass;
           if(snapTheme===null)doc.body.removeAttribute("data-theme");else doc.body.setAttribute("data-theme",snapTheme);
@@ -22529,17 +22843,24 @@ async function expSingleCardPNG(name,monthKey){
           _applyCssVarMap(doc.documentElement,snapVars);
           _applyCssVarMap(doc.body,snapVars);
           _applyCssVarMap(el,snapVars);
+          // Resolve card CSS vars explicitly — html2canvas cannot resolve vars inside linear-gradient()
+          const _xBg=snapVars['--card']||'rgba(30,21,53,.86)';
+          const _xTop=snapVars['--card-top']||'rgba(147,129,255,.06)';
+          const _xBdr=snapVars['--card-border']||'rgba(147,129,255,.15)';
+          const _xAcc=snapVars['--accent']||'';
+          const _xSh=snapVars['--sl']||'0 12px 40px rgba(0,0,0,.5)';
           const s=doc.createElement('style');
-          s.textContent='*{transition:none!important;animation:none!important}body::before,body::after{display:none!important;content:none!important}.et{table-layout:fixed;width:100%}.et th:nth-child(n),.et td:nth-child(n){width:auto!important}.mc-table{table-layout:fixed;width:100%}.mc-table th:nth-child(n),.mc-table td:nth-child(n){width:auto!important}.ec{width:'+capW+'px!important;max-width:'+capW+'px!important;min-width:'+capW+'px!important;overflow:hidden!important}.ec,.mc{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}';
+          s.textContent='*{transition:none!important;animation:none!important}body::before,body::after{display:none!important;content:none!important}.et{table-layout:auto;width:100%}.et td,.et th{white-space:nowrap;text-align:center!important;padding-left:12px!important;padding-right:12px!important}.et td:first-child,.et th:first-child{text-align:left!important;padding-left:16px!important}.mc-table{table-layout:auto;width:100%}.mc-table td,.mc-table th{white-space:nowrap}.ec{width:'+capW+'px!important;max-width:'+capW+'px!important;min-width:'+capW+'px!important;overflow:hidden!important;border-radius:20px!important;background:linear-gradient(180deg,'+_xTop+' 0%,rgba(0,0,0,0) 42%),'+_xBg+'!important;border:1px solid '+_xAcc+'80!important;border-top:2px solid '+_xAcc+'!important;box-shadow:'+_xSh+'!important}.ec,.mc{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}';
           doc.head.appendChild(s);
-          // Hide PNG button and collapse toggle in exported image
+          // Hide PNG button in exported image
           doc.querySelectorAll('button[title="Save PNG"]').forEach(b=>b.style.display='none');
-          el.style.width=capW+'px';
-          el.style.maxWidth=capW+'px';
-          el.style.minWidth=capW+'px';
+          const cardEl=el.querySelector('.ec')||el;
+          cardEl.style.width=capW+'px';
+          cardEl.style.maxWidth=capW+'px';
+          cardEl.style.minWidth=capW+'px';
         }
       });
-      const snug=_trimCanvasToContent(canvas,bgColor);
+      const snug=canvas; // padder already has controlled padding — no trim needed
       const link=document.createElement('a');
       const mn=monthKey||S.month||'all';
       link.download=buildFilename(safeFilenamePart(name)+'_'+mn,'png');
@@ -23263,26 +23584,30 @@ async function _captureBatchCardBlob(sourceEl,bgColor,isMonthCard,themeSpec,expo
   );
   const useBg=getComputedStyle(document.body).getPropertyValue('--bg').trim()||bgColor||'#0d1014';
   const srcRect=sourceEl&&sourceEl.getBoundingClientRect?sourceEl.getBoundingClientRect():null;
-  const capW=Math.max(1,Math.round((srcRect&&srcRect.width)||sourceEl.offsetWidth||sourceEl.clientWidth||sourceEl.scrollWidth||420));
+  const capW=Math.max(560,Math.round((srcRect&&srcRect.width)||sourceEl.offsetWidth||sourceEl.clientWidth||sourceEl.scrollWidth||560));
 
   // Render a clone on-screen (opacity:0) so browser fully computes layout and fonts
   const host=document.createElement('div');
   host.style.cssText='position:fixed;left:-99999px;top:0;z-index:-1;pointer-events:none;';
   document.body.appendChild(host);
 
+  const PAD=12;
   let blob=null;
   try{
     const clone=sourceEl.cloneNode(true);
-    clone.style.cssText='display:block;width:'+capW+'px;max-width:'+capW+'px;min-width:'+capW+'px;height:auto;min-height:0;margin:0;padding:0;box-sizing:border-box;background:'+useBg+';overflow:hidden;position:static;';
+    clone.style.cssText='display:block;width:'+capW+'px;max-width:'+capW+'px;min-width:'+capW+'px;height:auto;min-height:0;margin:0;padding:0;box-sizing:border-box;overflow:hidden;position:static;';
     _applyCssVarMap(clone,snapVars);
     clone.querySelectorAll('button[title="Save PNG"],.collapse-icon,.mc-scroll-hint').forEach(el=>el.remove());
-    host.appendChild(clone);
+    const padder=document.createElement('div');
+    padder.style.cssText='display:inline-block;padding:'+PAD+'px;background:'+useBg+';box-sizing:border-box;';
+    padder.appendChild(clone);
+    host.appendChild(padder);
 
     // Three animation frames — let browser fully lay out fonts + CSS variables
     await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>requestAnimationFrame(r))));
     await _awaitFontRenderReady(2000);
 
-    const canvas=await html2canvas(clone,{
+    const canvas=await html2canvas(padder,{
       scale:2,
       backgroundColor:useBg,
       useCORS:true,
@@ -23295,26 +23620,23 @@ async function _captureBatchCardBlob(sourceEl,bgColor,isMonthCard,themeSpec,expo
         _applyCssVarMap(doc.documentElement,snapVars);
         _applyCssVarMap(doc.body,snapVars);
         _applyCssVarMap(el,snapVars);
+        // Resolve card CSS vars explicitly — html2canvas cannot resolve vars inside linear-gradient()
+        const _xBg=snapVars['--card']||'rgba(30,21,53,.86)';
+        const _xTop=snapVars['--card-top']||'rgba(147,129,255,.06)';
+        const _xBdr=snapVars['--card-border']||'rgba(147,129,255,.15)';
+        const _xAcc=snapVars['--accent']||'';
+        const _xSh=snapVars['--sl']||'0 12px 40px rgba(0,0,0,.5)';
         const s=doc.createElement('style');
-        s.textContent=`
-          *{transition:none!important;animation:none!important}
-          body::before,body::after{display:none!important}
-          .et{table-layout:fixed;width:100%}
-          .et th:nth-child(n),.et td:nth-child(n){width:auto!important}
-          .mc-table{table-layout:fixed;width:100%}
-          .mc-table th:nth-child(n),.mc-table td:nth-child(n){width:auto!important}
-          .ec,.mc{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
-          .ec{border-radius:12px}.ech{padding:16px 18px 0}
-        `;
+        s.textContent=`*{transition:none!important;animation:none!important}body::before,body::after{display:none!important}.et{table-layout:auto;width:100%}.et td,.et th{white-space:nowrap;text-align:center!important;padding-left:12px!important;padding-right:12px!important}.et td:first-child,.et th:first-child{text-align:left!important;padding-left:16px!important}.mc-table{table-layout:auto;width:100%}.mc-table td,.mc-table th{white-space:nowrap}.ec,.mc{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}.ec{border-radius:20px!important;background:linear-gradient(180deg,${_xTop} 0%,rgba(0,0,0,0) 42%),${_xBg}!important;border:1px solid ${_xAcc}80!important;border-top:2px solid ${_xAcc}!important;box-shadow:${_xSh}!important}.ech{padding:16px 18px 0}`;
         doc.head.appendChild(s);
-        el.style.width=capW+'px';
-        el.style.maxWidth=capW+'px';
-        el.style.minWidth=capW+'px';
-        el.style.overflow='hidden';
+        const cardEl=el.querySelector('.ec')||el;
+        cardEl.style.width=capW+'px';
+        cardEl.style.maxWidth=capW+'px';
+        cardEl.style.minWidth=capW+'px';
         doc.querySelectorAll('button[title="Save PNG"]').forEach(b=>b.style.display='none');
       }
     });
-    const snug=_trimCanvasToContent(canvas,useBg);
+    const snug=canvas; // padder already has controlled padding — no trim needed
     const formatted=_applyBatchExportFormatCanvas(snug,useBg,exportFormat||"native");
     blob=await new Promise((resolve,reject)=>{
       formatted.toBlob(b=>b?resolve(b):reject(new Error('toBlob failed')),'image/png');
