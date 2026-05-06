@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="referrer" content="no-referrer">
-<title>MirrorFlow Sync v59 — WFM</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<title>MirrorFlow Sync v62 — WFM</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js" integrity="sha384-Pqp51FUN2/qzfxZxBCtF0stpc9ONI6MYZpVqmo8m20SoaQCzf+arZvACkLkirlPz" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" integrity="sha384-+mbV2IY1Zk/X1p/nWllGySJSUN8uMs+gUAN10Or95UBH0fpj6GfKgPmgC5EXieXG" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@400;700;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&family=DM+Mono:wght@400;500&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
@@ -907,6 +907,27 @@ body.th-newsprint{
 .et tr.or td{color:var(--tm)}.et tr.wr .dc{color:var(--wknd)}
 .et tr.today-row{background:var(--al);outline:2px solid var(--accent);outline-offset:-2px;border-radius:4px}
 .et tr.legacy-row{opacity:.4}.et tr.legacy-row td:first-child::after{content:" pre-cycle";font-size:8px;color:var(--tm);opacity:.7;margin-left:4px}
+body[data-theme="tide"]:is([data-variant="seafoam-day"],[data-variant="ice-sheet"],[data-variant="stone-wash"],[data-variant="pewter-sage"],[data-variant="patina"],[data-variant="nordic-frost"]) :is(.ec,.mc){
+  --card:rgba(18,30,32,.94);
+  --card-border:rgba(151,217,225,.34);
+  --card-top:rgba(151,217,225,.14);
+  --text:#f2fcff;
+  --tm:#9fb9bf;
+  --ink:#f7feff;
+  --ink2:#cbe4e8;
+  --ink3:#9fbfc6;
+  --early:#74d9a8;
+  --mid:#74cfe1;
+  --late:#f08f8f;
+  --wknd:#d6c46b;
+  --bdr:rgba(209,240,245,.17);
+  color:#cbe4e8;
+}
+body[data-theme="tide"]:is([data-variant="seafoam-day"],[data-variant="ice-sheet"],[data-variant="stone-wash"],[data-variant="pewter-sage"],[data-variant="patina"],[data-variant="nordic-frost"]) .ec .et td{color:#cbe4e8}
+body[data-theme="tide"]:is([data-variant="seafoam-day"],[data-variant="ice-sheet"],[data-variant="stone-wash"],[data-variant="pewter-sage"],[data-variant="patina"],[data-variant="nordic-frost"]) .ec :is(.et th,.card-stats-row,.meta-pill),
+body[data-theme="tide"]:is([data-variant="seafoam-day"],[data-variant="ice-sheet"],[data-variant="stone-wash"],[data-variant="pewter-sage"],[data-variant="patina"],[data-variant="nordic-frost"]) .ec .et tr.or td{color:#9fb9bf}
+body[data-theme="tide"]:is([data-variant="seafoam-day"],[data-variant="ice-sheet"],[data-variant="stone-wash"],[data-variant="pewter-sage"],[data-variant="patina"],[data-variant="nordic-frost"]) .ec :is(.ech h3,.meta-pill strong){color:#f7feff}
+body[data-theme="tide"]:is([data-variant="seafoam-day"],[data-variant="ice-sheet"],[data-variant="stone-wash"],[data-variant="pewter-sage"],[data-variant="patina"],[data-variant="nordic-frost"]) .ec .ech .month-label{color:#bad8de}
 .ft tr.legacy-row{opacity:.35}
 .cal-day.legacy-day{background:rgba(251,191,36,.04)!important}
 .legacy-badge{font-size:10px;color:var(--tm);opacity:.6;cursor:help}
@@ -1852,7 +1873,7 @@ button:active,
 <div class="uz" id="us"
   ondragover="event.preventDefault();document.getElementById('dz').classList.add('dov')"
   ondragleave="document.getElementById('dz').classList.remove('dov')"
-  ondrop="document.getElementById('dz').classList.remove('dov');event.preventDefault();const f=event.dataTransfer.files[0];if(f)proc(f)">
+  ondrop="handleRosterDrop(event,document.getElementById('dz'))">
 
   <input type="file" id="fi" accept=".xlsx,.xls,.csv" style="display:none" onchange="hFile(this)">
 
@@ -1925,7 +1946,7 @@ button:active,
         onclick="document.getElementById('fi').click()"
         ondragover="event.preventDefault();event.stopPropagation();this.classList.add('dov')"
         ondragleave="event.stopPropagation();this.classList.remove('dov')"
-        ondrop="this.classList.remove('dov');event.preventDefault();event.stopPropagation();const f=event.dataTransfer.files[0];if(f)routeFile(f)">
+        ondrop="handleRosterDrop(event,this)">
         <div class="lc-dz-arrow">↓</div>
         <div id="lcDzHead" class="lc-dz-head">Drop your roster here</div>
         <div id="lcDzSub" class="lc-dz-sub">or click to browse</div>
@@ -2028,13 +2049,13 @@ button:active,
 <!-- Agent Drawer — Phase A -->
 <div class="agent-drawer-overlay" id="agentDrawerOverlay">
   <div class="agent-drawer-bg" onclick="closeAgentDrawer()"></div>
-  <div class="agent-drawer" id="agentDrawer">
+  <div class="agent-drawer" id="agentDrawer" role="dialog" aria-modal="true" aria-label="Agent details" aria-hidden="true">
     <div id="agentDrawerContent"></div>
   </div>
 </div>
 <!-- Help overlay drawer -->
 
-<div class="help-overlay" id="helpOverlay">
+<div class="help-overlay" id="helpOverlay" role="dialog" aria-modal="true" aria-label="Help" aria-hidden="true">
   <div class="help-overlay-bg" onclick="closeHelp()"></div>
   <div class="help-drawer" id="helpDrawer"><div id="helpContent"></div></div>
 </div>
@@ -2143,13 +2164,14 @@ let S={wb:null,fn:"",shs:[],sh:"",raw:[],entries:[],team:"all",emp:"all",tz:true
   peopleHomeNotes:{},// "dept|leader|home" → note text
   peopleLogbook:[],// [{id,dept,createdAt,date,kind,leader,agent,title,body,tags,status,dueDate}]
   _peopleLogFilter:"all",// "all" | "note" | "followup" | "summary" | "event"
+  _peopleView:"cards",// Cards tab sub-view: "cards" | "table"
   _eventsDateFilter:null,_eventsLeaderFilter:"all",_eventsTypeFilter:"all",
   _cardsZipRetryQueue:[],_cardsZipLastFormat:"native",_monthRehydrateCheckedVer:-1,_monthRehydratedVer:-1,
 };
 
 const APP_NAME="MirrorFlow Sync";
-const APP_VERSION="v57";
-const APP_BUILD_LABEL="parse week-label stabilization · ghost agent detection · data quality hardening";
+const APP_VERSION="v62";
+const APP_BUILD_LABEL="state hardening · chunked Save+ · WFM persistence · worker forecast deps";
 const APP_BUILD=APP_VERSION+" · "+APP_BUILD_LABEL;
 const SETTINGS_SCHEMA_VERSION=1;
 const CRITICAL_STATE_SCHEMA_VERSION=1;
@@ -3241,7 +3263,7 @@ function openCommandPalette(){
   closeCommandPalette();
   S._cmdPaletteIndex=0;
   const wrap=document.createElement("div");
-  wrap.innerHTML=`<div id="cmdPaletteOverlay" style="position:fixed;inset:0;z-index:980;display:flex;align-items:flex-start;justify-content:center;padding-top:min(12vh,96px)">
+  wrap.innerHTML=`<div id="cmdPaletteOverlay" role="dialog" aria-modal="true" aria-label="Command palette" style="position:fixed;inset:0;z-index:980;display:flex;align-items:flex-start;justify-content:center;padding-top:min(12vh,96px)">
     <div style="position:absolute;inset:0;background:rgba(0,0,0,.55)" onclick="closeCommandPalette()"></div>
     <div style="position:relative;z-index:1;width:min(760px,94vw);max-height:74vh;display:flex;flex-direction:column;border:1px solid var(--bdr);border-radius:12px;background:var(--hbg);box-shadow:var(--sl);overflow:hidden">
       <div style="padding:10px 12px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:8px">
@@ -3581,6 +3603,7 @@ function _persistCritical(fn){
 function getPersistSignature(){
   return JSON.stringify({
     th:S.th,thVariant:S.thVariant||0,tz:S.tz,hlToday:S.hlToday,covMin:S.covMin,hrsMax:S.hrsMax,cbMode:S.cbMode,density:S.density,tab:S.tab,
+    peopleSubTab:S.peopleSubTab||"dashboard",peopleDashView:S.peopleDashView||"today_ops",peopleView:S._peopleView||"cards",peopleLogFilter:S._peopleLogFilter||"all",
     targetHours:S.targetHours||0,ratePerHour:S.ratePerHour||0,
     plOverrides:S.plOverrides,plLeave:S.plLeave,plHires:S.plHires,plRemoved:S.plRemoved,plMonths:S.plMonths,
     plBlueprints:S.plBlueprints,plPositions:S.plPositions,exceptions:S.exceptions,dayClosed:S.dayClosed,
@@ -3775,7 +3798,8 @@ function _deriveParseYearHint(filename,sheetNames){
   return null;
 }
 const TRE=/(\d{1,2})[:\.](\d{2})\s*(am|pm)?\s*[-–—]\s*(\d{1,2})[:\.](\d{2})\s*(am|pm)?/i,TMIL=/(\d{4})\s*[-–—]\s*(\d{4})/;
-function X(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function X(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+function XA(s){return X(s);}
 function XJ(s){return String(s).replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/"/g,'\\"');}
 function P(n){return String(n).padStart(2,"0");}
 function fD(d){return P(d.getDate())+"-"+MO[d.getMonth()];}
@@ -3969,6 +3993,64 @@ function classifyCell(raw){
   if(s.length<=5&&/^[A-Z\/]+$/.test(s))return{type:"off",value:"OFF",label:s,cat:"OFF"};
   // Otherwise: probably a name or unknown text
   return{type:"unknown",value:s,label:s,cat:""};
+}
+
+const XLSX_STANDARD_READ_OPTS={type:"array",cellDates:true,cellStyles:true,sheetStubs:true};
+function _styleColorHex(c){
+  if(!c)return"";
+  if(c.rgb){
+    let h=String(c.rgb).replace(/^#/,"").toUpperCase();
+    if(h.length===8)h=h.slice(2);
+    return/^[0-9A-F]{6}$/.test(h)?h:"";
+  }
+  if(c.theme!==undefined){
+    const t=Number(c.theme);
+    if(t===1)return"000000";
+    if(t===0)return"FFFFFF";
+  }
+  if(c.indexed!==undefined){
+    const idx=Number(c.indexed);
+    if(idx===0||idx===8)return"000000";
+  }
+  return"";
+}
+function _isOffFillColor(c){
+  const h=_styleColorHex(c);
+  if(!h)return false;
+  const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);
+  const avg=(r+g+b)/3,max=Math.max(r,g,b),min=Math.min(r,g,b);
+  if(avg<=96)return true;
+  return(max-min<=18&&avg<=220);
+}
+function _isVisualOffStyle(style){
+  if(!style)return false;
+  const fill=style.fill||style;
+  if(!fill)return false;
+  if(fill.patternType&&fill.patternType!=="solid")return false;
+  const fg=fill.fgColor||fill.fg||fill.color;
+  if(fg&&_styleColorHex(fg))return _isOffFillColor(fg);
+  return _isOffFillColor(fill.bgColor||fill.bg);
+}
+function _isVisualOffCandidateValue(v){
+  const s=String(v===null||v===undefined?"":v).trim();
+  if(!s||s==="·")return true;
+  if(pDt(v)||nD(s)||isWk(s)||isHeaderRow(s)||isMonthLabel(s))return false;
+  if(pTm(s)||classifyOff(s))return true;
+  return s.length<=5&&/^[A-Z\/]+$/.test(s);
+}
+function sheetToRosterAOA(ws,opts){
+  const data=XLSX.utils.sheet_to_json(ws,Object.assign({header:1,defval:""},opts||{}));
+  if(!ws||!data||typeof XLSX==="undefined"||!XLSX.utils)return data;
+  Object.keys(ws).forEach(addr=>{
+    if(addr[0]==="!")return;
+    const cell=ws[addr];
+    if(!cell||!_isVisualOffStyle(cell.s))return;
+    const pos=XLSX.utils.decode_cell(addr);
+    const row=data[pos.r]||(data[pos.r]=[]);
+    const raw=row[pos.c]!==undefined?row[pos.c]:(cell.w!==undefined?cell.w:cell.v);
+    if(_isVisualOffCandidateValue(raw))row[pos.c]="OFF";
+  });
+  return data;
 }
 
 function mkE(name,date,day,raw,team,weekLabel){
@@ -4220,7 +4302,7 @@ function scanRotationDef(wb){
 function scanOverviewGrid(wb){
   for(const sn of wb.SheetNames){
     const ws=wb.Sheets[sn];if(!ws)continue;
-    const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:""});
+    const data=sheetToRosterAOA(ws);
     if(!data||data.length<4)continue;
     // Detect: a row with many "WC" values, followed by a row with dates, then rows with names + "Week N"
     let wcRow=-1,dateRow=-1;
@@ -5140,7 +5222,10 @@ function parseWideHoriz(data){
 
         // Empty/noise within active range = OFF
         if(isNs(cs)){
-          if(dc.col>=firstCol&&dc.col<=lastCol&&firstCol>=0){
+          // Blank cells (genuinely empty) = OFF always — file uses blank to signal day off.
+          // Numeric noise (e.g. hour totals at edge) keeps the firstCol/lastCol guard.
+          const isBlank=!cs||cs==="·";
+          if(isBlank||(dc.col>=firstCol&&dc.col<=lastCol&&firstCol>=0)){
             entries.push(mkE(nm,dc.date,dc.day,"OFF","Main",""));
           }
           continue;
@@ -5290,7 +5375,10 @@ function parseHoriz(data){
           const weekLbl=colWkMap[dc.col]||"";
           if(isWk(cs))continue;
           if(isNs(cs)){
-            if(dc.col>=firstCol&&dc.col<=lastCol&&firstCol>=0)names.forEach(nm=>entries.push(mkE(nm,dc.date,dc.day,"OFF",sec.team,weekLbl)));
+            // Blank cells (genuinely empty) = OFF regardless of position in row.
+            // Numeric-noise cells (e.g. hour totals) keep the firstCol/lastCol guard.
+            const isBlank=!cs||cs==="·";
+            if(isBlank||(dc.col>=firstCol&&dc.col<=lastCol&&firstCol>=0))names.forEach(nm=>entries.push(mkE(nm,dc.date,dc.day,"OFF",sec.team,weekLbl)));
             continue;
           }
           names.forEach(nm=>entries.push(mkE(nm,dc.date,dc.day,cv,sec.team,weekLbl)));
@@ -5326,7 +5414,10 @@ function parseHoriz(data){
           const weekLbl=colWkMap[dc.col]||"";
           if(isWk(cs))continue;
           if(isNs(cs)){
-            if(dc.col>=firstCol&&dc.col<=lastCol&&firstCol>=0)names.forEach(nm=>entries.push(mkE(nm,dc.date,dc.day,"OFF",sec.team,weekLbl)));
+            // Blank cells (genuinely empty) = OFF regardless of position in row.
+            // Numeric-noise cells (e.g. hour totals) keep the firstCol/lastCol guard.
+            const isBlank=!cs||cs==="·";
+            if(isBlank||(dc.col>=firstCol&&dc.col<=lastCol&&firstCol>=0))names.forEach(nm=>entries.push(mkE(nm,dc.date,dc.day,"OFF",sec.team,weekLbl)));
             continue;
           }
           names.forEach(nm=>entries.push(mkE(nm,dc.date,dc.day,cv,sec.team,weekLbl)));
@@ -5707,6 +5798,17 @@ function autoParse(data,sn){
    FILE HANDLING
    ═══════════════════════════════════════════════════════════════ */
 function hFile(inp){const f=inp.files?.[0];if(f){inp.value="";routeFile(f);}}
+function handleRosterDrop(e,dropEl){
+  if(e){
+    e.preventDefault();
+    e.stopPropagation();
+    if(e.stopImmediatePropagation)e.stopImmediatePropagation();
+  }
+  const el=dropEl||e&&e.currentTarget;
+  if(el&&el.classList)el.classList.remove("dov");
+  const f=e&&e.dataTransfer&&e.dataTransfer.files?e.dataTransfer.files[0]:null;
+  if(f)routeFile(f);
+}
 function isSaveFile(wb){return wb.SheetNames.some(s=>s==="_app_state");}
 let _pendingLoad=null;// holds {wb, filename, preview} while awaiting confirm
 /* ═══════════════════════════════════════════════════════════════
@@ -5752,6 +5854,7 @@ function setLCMode(mode){
 }
 
 function routeFile(f){
+  if(!f){toast('No file selected','warn');return;}
   if(_lcMode==='wfm') procWFM(f);
   else proc(f);
 }
@@ -5795,6 +5898,7 @@ const _WV_TC=['#5a8ab0','#a07090','#60a070','#c09050','#7060b0','#b06060'];
 
 /* ── Parser ── */
 function procWFM(f){
+  if(!window.XLSX){toast('Excel parser is still loading. Try again in a moment.','warn',3500);return;}
   const r=new FileReader();
   r.onload=function(e){
     try{
@@ -5809,6 +5913,8 @@ function procWFM(f){
       _wvShowPreview(result);
     }catch(err){console.error('WFM parse error:',err);toast('WFM parse failed: '+err.message,'err',5000);}
   };
+  r.onerror=function(){toast('Could not read '+(f&&f.name?f.name:'file'),'err',5000);};
+  r.onabort=function(){toast('File read cancelled','info',2200);};
   r.readAsArrayBuffer(f);
 }
 
@@ -5968,11 +6074,36 @@ function _wvSyncMergedEntriesToWorkspace(entries){
   S.entries=enrichWeekLabels(S.entries,S.rotationDef);
   return added;
 }
+function _wvSyncPeopleRegistryFromWeeks(){
+  const weeks=(_wvWeeks&&_wvWeeks.length?_wvWeeks:(S._wfmMeta?[S._wfmMeta]:[]));
+  weeks.forEach(w=>{
+    (w.teams||[]).forEach(t=>{
+      ensurePerson(t.leader,{role:"leader",team:t.leader||"Main",teamLeader:null,source:"wfm-calendar"});
+      (t.agents||[]).forEach(ag=>{
+        ensurePerson(ag.name,{role:"agent",team:ag.team||t.leader||"Main",teamLeader:t.leader,source:"wfm-calendar"});
+      });
+    });
+  });
+}
+function _wvPersistWorkspaceSnapshot(){
+  try{
+    if(typeof syncPeopleFromEntries==="function")syncPeopleFromEntries();
+    _wvSyncPeopleRegistryFromWeeks();
+    if(typeof seedShiftLibrary==="function")seedShiftLibrary();
+    if(S.activeDept)saveDeptSnap(S.activeDept);
+    if(S.activeDept&&S.entries&&S.entries.length)saveSnapshot(S.activeDept,S.entries);
+    if(typeof savePeople==="function")savePeople();
+    if(typeof saveShiftLib==="function")saveShiftLib();
+    if(typeof schedulePersist==="function")schedulePersist(true);
+  }catch(err){
+    console.warn("WFM persist failed:",err);
+  }
+}
 
 /* ── Preview overlay ── */
 function _wvShowPreview(result){
   const exTypes=result.exTypes;
-  let h=`<div id="wfmPreviewOverlay" style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px">`;
+  let h=`<div id="wfmPreviewOverlay" role="dialog" aria-modal="true" aria-label="WFM calendar preview" style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px">`;
   h+=`<div style="background:var(--bg);border:1px solid var(--bdr);border-radius:16px;padding:22px;max-width:480px;width:100%;box-shadow:var(--sl);max-height:90vh;overflow-y:auto">`;
   h+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">`;
   h+=`<span style="font-size:20px">📆</span>`;
@@ -6023,12 +6154,13 @@ function confirmWFMLoad(){
   if(!_pendingWFM)return;
   const{result,filename}=_pendingWFM;
   _pendingWFM=null;
+  const entries=S._wfmEntries||[];
+  if(!entries.length){toast('WFM parser produced no dated entries. File was not loaded.','err',5200);return;}
 
   // Commit to WFM view state
   _wvWeeks=[result];_wvIdx=0;_wvTab='calendar';_wvSrch='';_wvTeam='all';_wvExcFilter='all';_wvSelDay=null;_wvAutoSelectDay(result);
 
   // Commit S.entries (for Sync view compatibility)
-  const entries=S._wfmEntries||[];
   _setExceptions([]);S.att={};S.hc={};S.notes={};S.agentStatuses={};S.agentNotes={};
   S.coachPlan={};S.coachHistory=[];S.dayClosed={};S.people={};S.rosterFile=null;
   S.raw=[];S.wb=null;S.shs=[];S.sh='__all__';
@@ -6044,6 +6176,7 @@ function confirmWFMLoad(){
   entries.forEach(e=>{ensurePerson(e.name,{team:e.team,source:'wfm-calendar'});});
   S.entries=enrichWeekLabels(S.entries,S.rotationDef);
   S.activeDept=filename.replace(/\.[^.]+$/,'');
+  _wvPersistWorkspaceSnapshot();
 
   // Show WFM view panel
   $('us').style.display='none';
@@ -6089,6 +6222,7 @@ function wvMergeFile(f){
       _wvAutoSelectDay(result);
       _wvUpdateMeta();
       _wvUpdateWeekNav();
+      if(added)_wvPersistWorkspaceSnapshot();
       _wvRender();
       toast('Week '+result.dateRange+' merged'+(added?(' · '+added+' entries added'):''),'ok',3000);
     }catch(err){console.error(err);toast('Merge error: '+err.message,'err');}
@@ -6729,7 +6863,7 @@ function wvShowAgentModal(name,teamLeader){
   const excDays=ag.days.filter(dy=>dy.isOff&&dy.offL);
   const exTypes=[...new Set(excDays.map(e=>e.offL))];
   const hc=ag.totalHours>=36?'var(--ok)':ag.totalHours>=28?'var(--accent)':ag.totalHours>0?'var(--flag)':'var(--tm)';
-  let h=`<div class="wv-modal-bg" id="wvModal" onclick="if(event.target===this)wvCloseModal()">`;
+  let h=`<div class="wv-modal-bg" id="wvModal" role="dialog" aria-modal="true" aria-label="WFM agent details" onclick="if(event.target===this)wvCloseModal()">`;
   h+=`<div class="wv-modal">`;
   h+=`<button class="wv-modal-x" onclick="wvCloseModal()">✕ Close</button>`;
   h+=`<div class="wv-modal-name">${X(ag.name)}</div>`;
@@ -7334,9 +7468,10 @@ function _describeParseFailure(err,fileName){
   return `Could not parse ${label}. Validate the file format and try again.`;
 }
 function proc(f){
+  if(!window.XLSX){toast('Excel parser is still loading. Try again in a moment.','warn',3500);return;}
   const r=new FileReader();
   r.onload=function(e){
-    try{const wb=XLSX.read(new Uint8Array(e.target.result),{type:"array",cellDates:true});
+    try{const wb=XLSX.read(new Uint8Array(e.target.result),XLSX_STANDARD_READ_OPTS);
     if(isSaveFile(wb)){
       // Save+ files restore immediately — they ARE the user's saved state
       restoreFromSaveFile(wb,f.name);
@@ -7345,7 +7480,10 @@ function proc(f){
       showParsePreview(wb,f.name);
     }
     }catch(e){console.error(e);toast(_describeParseFailure(e,f&&f.name?f.name:"file"),"err",6200);}
-  };r.readAsArrayBuffer(f);
+  };
+  r.onerror=function(){toast('Could not read '+(f&&f.name?f.name:'file'),"err",5000);};
+  r.onabort=function(){toast('File read cancelled',"info",2200);};
+  r.readAsArrayBuffer(f);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -7365,7 +7503,7 @@ function scanFileQuick(wb,filename){
     const seen={};const entries=[];const nameSheetMap={};
     shs.forEach(shName=>{
       const ws=wb.Sheets[shName];if(!ws)return;
-      const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:""});
+      const data=sheetToRosterAOA(ws);
       autoParse(data,shName).forEach(e=>{
         const k=e.name+"|"+(e.date?e.date.getFullYear()+"-"+P(e.date.getMonth())+"-"+P(e.date.getDate()):"");
         if(!seen[k]){seen[k]=true;entries.push(e);}
@@ -7487,7 +7625,7 @@ function detectGhostAgents(wb, parsedNames){
     const sLow=shName.toLowerCase();
     if(PARSE_SHEETS.has(sLow)||SKIP_SHEETS.has(sLow))return;
     const ws=wb.Sheets[shName];if(!ws)return;
-    const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:""});
+    const data=sheetToRosterAOA(ws);
     // Scan every cell — look for plausible person names (2+ words, title-case-ish, not headers)
     data.forEach(row=>{
       (row||[]).forEach(cell=>{
@@ -7615,7 +7753,7 @@ function _applyColMap(){
   if(!S.wb||!S._rdSheet||!S._colMap||!S._colMap[S._rdSheet]){toast('Tag columns first','warn');return;}
   const mapping=S._colMap[S._rdSheet];
   const ws=S.wb.Sheets[S._rdSheet];if(!ws)return;
-  const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+  const data=sheetToRosterAOA(ws);
   const result=parseWithMapping(data,S._rdSheet,mapping);
   if(!result.length){toast('Column mapping produced no entries — check Name + Date columns','warn');return;}
   const seen={};
@@ -7835,6 +7973,11 @@ function _setCacheMode(mode){
 
 function showParsePreview(wb,filename){
   const scan=scanFileQuick(wb,filename);
+  if(!scan.total){
+    _pendingLoad=null;
+    toast('No schedule entries detected in '+(filename||'file')+'. File was not loaded.','err',6200);
+    return;
+  }
   const rangeGuard=_detectMonthRangeGuard(scan,filename,wb&&wb.SheetNames?wb.SheetNames:[]);
   _pendingLoad={wb,filename,scan,rangeGuard,hasCache:false};
   _cacheMode=null;
@@ -7859,7 +8002,7 @@ function showParsePreview(wb,filename){
   _pendingLoad.hasCache=hasCache;
 
   // ── Wider horizontal parse preview ──
-  let h=`<div id="parsePreviewOverlay" style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px">`;
+  let h=`<div id="parsePreviewOverlay" role="dialog" aria-modal="true" aria-label="Parse preview" style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px">`;
   h+=`<div style="background:var(--bg);border:1px solid var(--bdr);border-radius:16px;width:min(920px,96vw);max-height:90vh;overflow-y:auto;box-shadow:var(--sl);display:flex;flex-direction:column">`;
 
   // ── Top bar: filename + confidence + close ──
@@ -8059,6 +8202,11 @@ function confirmParsePreview(){
   if(!_pendingLoad)return;
   const pending=_pendingLoad;
   const{wb,filename,rangeGuard}=pending;
+  if(!pending.scan||!pending.scan.total){
+    _pendingLoad=null;
+    toast('No parsed schedule entries to load.','err',4200);
+    return;
+  }
   if(rangeGuard&&!rangeGuard.accepted){
     toast('Use detected range before loading','warn');
     _refreshParsePreviewLoadState();
@@ -8094,13 +8242,80 @@ function cancelParsePreview(){
   toast("File load cancelled","info",2000);
 }
 
+const APP_STATE_CHUNK_SHEET="_app_state_json";
+const APP_STATE_CHUNK_SIZE=30000;
+function _buildAppStateSnapshot(){
+  const ot=S.otPlan||{};
+  return{
+    version:APP_VERSION,build:APP_BUILD,savedAt:new Date().toISOString(),dept:S.activeDept||'',
+    months:S.months,month:S.month,mIdx:S.mIdx,
+    rotationDef:S.rotationDef,plBlueprints:S.plBlueprints,plPositions:S.plPositions,
+    plCellOverrides:S.plCellOverrides||{},savedMonths:S.savedMonths||{},
+    plLeave:S.plLeave,plHires:S.plHires,plRemoved:S.plRemoved,
+    notes:S.notes,hc:S.hc,att:S.att,
+    exceptions:S.exceptions||[],dayClosed:S.dayClosed||{},
+    coachPlan:S.coachPlan||{},coachHistory:S.coachHistory||[],coachBlackouts:S.coachBlackouts||{},coachDuration:S.coachDuration||30,
+    coachTargetDaily:S.coachTargetDaily||1,plSubTab:S.plSubTab||'schedule',
+    tab:S.tab,th:S.th,thVariant:S.thVariant||0,tz:S.tz,hlToday:S.hlToday,covMin:S.covMin,hrsMax:S.hrsMax,cbMode:S.cbMode,density:S.density,
+    targetHours:S.targetHours||0,ratePerHour:S.ratePerHour||0,showCardWk:S.showCardWk!==false,
+    collapsed:S.collapsed,team:S.team,emp:S.emp,dayFilter:S.dayFilter,
+    allMonths:S.allMonths,parseInfo:S.parseInfo,anDay:S.anDay,anMode:S.anMode,anScope:S.anScope||'month',
+    anView:S.anView,shiftFilter:S.shiftFilter,sumMode:S.sumMode||'month',cardShow:S.cardShow||{},flagSettings:S.flagSettings||{},exportSelection:S.exportSelection||{},
+    people:S.people||{},rosterFile:S.rosterFile||null,shiftLib:S.shiftLib||{},coverageReq:S.coverageReq||null,forecast:S.forecast||null,
+    agentStatuses:S.agentStatuses||{},agentNotes:S.agentNotes||{},peopleSubTab:S.peopleSubTab||'dashboard',
+    peopleDashView:S.peopleDashView||'today_ops',peopleView:S._peopleView||'cards',peopleLogFilter:S._peopleLogFilter||'all',
+    eventsDateFilter:S._eventsDateFilter||null,eventsLeaderFilter:S._eventsLeaderFilter||'all',eventsTypeFilter:S._eventsTypeFilter||'all',
+    peopleHomeNotes:S.peopleHomeNotes||{},peopleLogbook:S.peopleLogbook||[],
+    otPlan:{
+      exclusionRules:ot.exclusionRules||{},
+      defaultShift:ot.defaultShift||{start:"09:00",end:"17:30",lunchMins:30},
+      lookbackDays:ot.lookbackDays||30,
+      history:Array.isArray(ot.history)?ot.history:[],
+      selections:ot.selections||{}
+    }
+  };
+}
+function _readAppStateSnapshotFromWorkbook(wb){
+  const chunkWs=wb.Sheets[APP_STATE_CHUNK_SHEET];
+  if(chunkWs&&typeof XLSX!=="undefined"&&XLSX.utils){
+    const rows=XLSX.utils.sheet_to_json(chunkWs,{header:1,defval:"",raw:false});
+    const chunks=rows.slice(1).map(r=>({idx:Number(r[0]),json:String(r[1]||"")})).filter(c=>Number.isFinite(c.idx));
+    chunks.sort((a,b)=>a.idx-b.idx);
+    const raw=chunks.map(c=>c.json).join("");
+    if(raw)return JSON.parse(raw);
+  }
+  const ws=wb.Sheets["_app_state"];
+  if(!ws)throw new Error("No _app_state sheet");
+  const raw=ws["A1"]?ws["A1"].v:null;
+  if(!raw)throw new Error("Empty _app_state");
+  const snap=JSON.parse(raw);
+  if(snap&&snap.format==="chunked-json")throw new Error("Missing _app_state_json sheet");
+  return snap;
+}
+function _writeAppStateSnapshotSheets(wb,snap){
+  const raw=JSON.stringify(snap);
+  const manifest=wb.addWorksheet('_app_state',{properties:{tabColor:{argb:EXC.OFF}}});
+  manifest.state='veryHidden';
+  manifest.getCell('A1').value=JSON.stringify({
+    format:"chunked-json",
+    sheet:APP_STATE_CHUNK_SHEET,
+    chunkSize:APP_STATE_CHUNK_SIZE,
+    chunks:Math.ceil(raw.length/APP_STATE_CHUNK_SIZE),
+    version:APP_VERSION,
+    build:APP_BUILD,
+    savedAt:snap.savedAt
+  });
+  const ws=wb.addWorksheet(APP_STATE_CHUNK_SHEET,{properties:{tabColor:{argb:EXC.OFF}}});
+  ws.state='veryHidden';
+  ws.addRow(["idx","json"]);
+  for(let i=0,idx=0;i<raw.length;i+=APP_STATE_CHUNK_SIZE,idx++){
+    ws.addRow([idx,raw.slice(i,i+APP_STATE_CHUNK_SIZE)]);
+  }
+}
+
 function restoreFromSaveFile(wb,filename){
   try{
-    const ws=wb.Sheets["_app_state"];
-    if(!ws)throw new Error("No _app_state sheet");
-    const raw=ws["A1"]?ws["A1"].v:null;
-    if(!raw)throw new Error("Empty _app_state");
-    const snap=JSON.parse(raw);
+    const snap=_readAppStateSnapshotFromWorkbook(wb);
 
     // Reconstruct entries from Schedule_Data (not from JSON — exceeds cell char limit)
     const sdWs=wb.Sheets["Schedule_Data"];
@@ -8138,16 +8353,26 @@ function restoreFromSaveFile(wb,filename){
     // Restore all non-entries state
     const restoreKeys=["months","month","mIdx","rotationDef","plBlueprints","plPositions",
       "plCellOverrides","savedMonths","plLeave","plHires","plRemoved","notes","hc","att",
-      "exceptions","dayClosed",
+      "exceptions","dayClosed","people","rosterFile","shiftLib","coverageReq","forecast",
       "coachPlan","coachHistory","coachBlackouts","coachDuration","coachTargetDaily","plSubTab","exportSelection",
-      "tab","th","tz","hlToday","covMin","hrsMax","cbMode","density","targetHours","ratePerHour","collapsed","team","emp","dayFilter",
-      "allMonths","parseInfo","anDay","anMode","shiftFilter",
-      "agentStatuses","agentNotes","peopleSubTab","anScope","otPlan"];
+      "tab","th","thVariant","tz","hlToday","covMin","hrsMax","cbMode","density","targetHours","ratePerHour","showCardWk","collapsed","team","emp","dayFilter",
+      "allMonths","parseInfo","anDay","anMode","shiftFilter","sumMode","anView","cardShow","flagSettings",
+      "agentStatuses","agentNotes","peopleSubTab","peopleDashView","peopleHomeNotes","peopleLogbook","anScope","otPlan"];
     restoreKeys.forEach(k=>{if(snap[k]!==undefined)S[k]=snap[k];});
+    if(snap.peopleView&&["cards","table"].includes(snap.peopleView))S._peopleView=snap.peopleView;
+    if(snap.peopleLogFilter&&["all","note","followup","summary","event"].includes(snap.peopleLogFilter))S._peopleLogFilter=snap.peopleLogFilter;
+    if(snap.eventsDateFilter!==undefined)S._eventsDateFilter=snap.eventsDateFilter;
+    if(snap.eventsLeaderFilter)S._eventsLeaderFilter=snap.eventsLeaderFilter;
+    if(snap.eventsTypeFilter)S._eventsTypeFilter=snap.eventsTypeFilter;
 
     // Defensive: ensure exceptions is an array and coaching plan dates are strings
     if(!Array.isArray(S.exceptions))S.exceptions=[];
     _touchExceptions();
+    if(!S.people||typeof S.people!=='object')S.people={};
+    if(!S.shiftLib||typeof S.shiftLib!=='object')S.shiftLib={};
+    if(S.rosterFile&&typeof S.rosterFile!=='object')S.rosterFile=null;
+    if(S.coverageReq&&typeof S.coverageReq!=='object')S.coverageReq=null;
+    if(S.forecast&&(!S.forecast.slots||!Array.isArray(S.forecast.slots)))S.forecast=null;
     if(!S.dayClosed||typeof S.dayClosed!=='object')S.dayClosed={};
     if(!S.coachPlan||typeof S.coachPlan!=='object')S.coachPlan={};
     if(!S.coachBlackouts||typeof S.coachBlackouts!=='object')S.coachBlackouts={};
@@ -8155,6 +8380,7 @@ function restoreFromSaveFile(wb,filename){
     if(!S.agentStatuses||typeof S.agentStatuses!=='object')S.agentStatuses={};
     if(!S.agentNotes||typeof S.agentNotes!=='object')S.agentNotes={};
     if(!S.peopleSubTab)S.peopleSubTab='dashboard';
+    if(typeof _ensurePeopleOpsState==="function")_ensurePeopleOpsState();
     // OT Planner defensive restore
     if(S.otPlan&&typeof S.otPlan==='object'){
       if(!S.otPlan.exclusionRules)S.otPlan.exclusionRules={sick:{enabled:true,lookback:7},awol:{enabled:true,lookback:14},leave:{enabled:true,lookback:0},consecutiveDays:{enabled:true,threshold:6},overHours:{enabled:true,threshold:45},otIneligible:{enabled:true,lookback:0},training:{enabled:false,lookback:0}};
@@ -8221,12 +8447,21 @@ function restoreFromSaveFile(wb,filename){
       "calDay","rawSheet","shiftFilter","srch","srchIdx","dayFilter","allMonths","collapsed","tab",
       "rotationDef","rotPanelOpen","plMonths","plLeave","plOverrides","plHires","plRemoved","plEdit",
       "anDay","anMode","parseInfo","_anomDismissed","_generatedMonth","exceptions","dayClosed",
-      "coachPlan","coachHistory","coachBlackouts","coachDuration","plCoachOpen","anView","plSubTab","coachTargetDaily","targetHours","ratePerHour"];
+      "coachPlan","coachHistory","coachBlackouts","coachDuration","plCoachOpen","anView","plSubTab","coachTargetDaily","targetHours","ratePerHour",
+      "people","rosterFile","shiftLib","coverageReq","forecast","agentStatuses","agentNotes","peopleSubTab","peopleDashView","_peopleView","_peopleLogFilter","peopleHomeNotes","peopleLogbook","otPlan"];
     FIELDS.forEach(f=>{if(f in S)S.workspace[S.activeDept][f]=S[f];});
     S._monthRehydrateCheckedVer=-1;
     $("us").style.display="none";$("mv").classList.remove("hid");$("mv").style.display="flex";
     $("ha").style.display="flex";setDeptName(S.activeDept||S.fn);
-    $("kbh").style.display="none";updateDeptStrip();ren();
+    $("kbh").style.display="none";updateDeptStrip();
+    try{
+      saveDeptSnap(S.activeDept);
+      if(S.entries&&S.entries.length)saveSnapshot(S.activeDept,S.entries);
+      savePeople();saveShiftLib();saveCoverageReq();saveForecast();
+      saveAgentStatuses();saveAgentNotes();savePeopleOps();saveOTPlan();
+      schedulePersist(true);
+    }catch(persistErr){console.warn("Save+ restore persist failed:",persistErr);}
+    ren();
     toast("Session restored · "+S.activeDept+" · "+monthLabel()+" · "+S.entries.length+" entries","ok",4000);
     notifyLoadAnomalies(S.activeDept||filename);
   }catch(e){
@@ -8261,7 +8496,8 @@ function _applyDateRangeFixToEntries(entries,fix){
   });
   return shifted;
 }
-function load(sn){
+function load(sn,opts){
+  const renderAfter=!(opts&&opts.deferRender);
   const _prevHint=_parseYearHint;
   _parseYearHint=_deriveParseYearHint(S.fn,S.shs);
   try{
@@ -8269,9 +8505,9 @@ function load(sn){
     S.parseInfo=[];
     if(sn==="__all__"){
       S.raw=[];S.entries=[];const seen={};
-      S.shs.forEach(shName=>{const ws=S.wb.Sheets[shName];const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:""});if(!S.raw.length)S.raw=data;
+      S.shs.forEach(shName=>{const ws=S.wb.Sheets[shName];const data=sheetToRosterAOA(ws);if(!S.raw.length)S.raw=data;
       autoParse(data,shName).forEach(e=>{const k=e.name+"|"+(e.date?e.date.getFullYear()+"-"+P(e.date.getMonth())+"-"+P(e.date.getDate()):"");if(!seen[k]){seen[k]=true;S.entries.push(e);}});});
-    } else {const ws=S.wb.Sheets[sn];S.raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:""});S.entries=autoParse(S.raw,sn);}
+    } else {const ws=S.wb.Sheets[sn];S.raw=sheetToRosterAOA(ws);S.entries=autoParse(S.raw,sn);}
     if(_loadRangeFix){
       const shifted=_applyDateRangeFixToEntries(S.entries,_loadRangeFix);
       if(shifted)_lastRangeFixResult={shifted,fix:_loadRangeFix};
@@ -8333,7 +8569,7 @@ function load(sn){
     const now=new Date();const curKey=now.getFullYear()+"-"+P(now.getMonth());
     const ci=S.months.indexOf(curKey);if(ci>=0){S.mIdx=ci;S.month=curKey;}
     S._monthRehydrateCheckedVer=-1;
-    ren();
+    if(renderAfter)ren();
   }finally{
     _parseYearHint=_prevHint;
   }
@@ -8347,7 +8583,8 @@ const DEPT_FIELDS=['wb','fn','shs','sh','raw','entries','team','emp','month','mo
   'calDay','rawSheet','shiftFilter','srch','srchIdx','dayFilter','allMonths','collapsed','tab',
   'rotationDef','rotPanelOpen','plMonths','plLeave','plOverrides','plHires','plRemoved','plEdit',
   'anDay','anMode','parseInfo','_anomDismissed','_generatedMonth','exceptions','dayClosed','anView',
-  'coachPlan','coachHistory','coachBlackouts','coachDuration','plCoachOpen','plSubTab','coachTargetDaily','targetHours','ratePerHour'];
+  'coachPlan','coachHistory','coachBlackouts','coachDuration','plCoachOpen','plSubTab','coachTargetDaily','targetHours','ratePerHour',
+  'people','rosterFile','shiftLib','coverageReq','forecast','agentStatuses','agentNotes','peopleSubTab','peopleDashView','_peopleView','_peopleLogFilter','peopleHomeNotes','peopleLogbook','otPlan'];
 
 function saveDeptSnap(name){
   if(!name)return;
@@ -8360,6 +8597,7 @@ function restoreDeptSnap(name){
   DEPT_FIELDS.forEach(f=>{if(f in snap)S[f]=snap[f];});
   if(!Array.isArray(S.exceptions))S.exceptions=[];
   _touchExceptions();
+  if(typeof _ensurePeopleOpsState==="function")_ensurePeopleOpsState();
 }
 
 function activateDept(name){
@@ -8426,6 +8664,15 @@ function detectDeptName(filename,sheetNames){
 
 function loadIntoWorkspace(wb,sourceName,opts={}){
   // ── Read prior snapshot for this dept BEFORE overwriting entries ──
+  const _prevActiveDept=S.activeDept;
+  const _prevCore={loadedAt:S.loadedAt};
+  DEPT_FIELDS.forEach(f=>{_prevCore[f]=S[f];});
+  const rollbackLoad=()=>{
+    DEPT_FIELDS.forEach(f=>{S[f]=_prevCore[f];});
+    S.loadedAt=_prevCore.loadedAt;
+    S.activeDept=_prevActiveDept;
+    invalidateDerivedCache();
+  };
   const _pendingDeptName=detectDeptName(sourceName,wb.SheetNames);
   const _priorSnap=loadSnapshot(_pendingDeptName);
 
@@ -8444,7 +8691,11 @@ function loadIntoWorkspace(wb,sourceName,opts={}){
   S.parseInfo=[];S._anomDismissed=false;
   const prevRangeFix=_loadRangeFix;
   _loadRangeFix=opts&&opts.rangeFix?opts.rangeFix:null;
-  try{load(S.sh);}finally{_loadRangeFix=prevRangeFix;}
+  try{load(S.sh,{deferRender:true});}catch(err){rollbackLoad();throw err;}finally{_loadRangeFix=prevRangeFix;}
+  if(!S.entries||!S.entries.length){
+    rollbackLoad();
+    throw new Error("No schedule entries parsed from "+(sourceName||"file"));
+  }
   if(_lastRangeFixResult&&_lastRangeFixResult.shifted){
     const fix=_lastRangeFixResult.fix||{};
     toast(`Date range corrected: ${_monthKeyLabel(fix.sourceStart)} → ${_monthKeyLabel(fix.detectedStart)}`,"ok",3200);
@@ -8686,6 +8937,7 @@ function cardStats(entries){
    ═══════════════════════════════════════════════════════════════ */
 function showMV(opts){
   opts=opts||{};
+  const wfmv=$("wfmv");if(wfmv)wfmv.style.display="none";
   $("us").style.display="none";$("mv").classList.remove("hid");$("mv").style.display="flex";
   $("ha").style.display="flex";setDeptName(S.activeDept||S.fn);
   const mnSlot=$("mfMastheadMonthNav");if(mnSlot)mnSlot.style.display="flex";
@@ -10013,7 +10265,7 @@ function showRosterPreview(parsed){
   const unmatched=matchResult.unmatched;
   const hasSchedule=S.entries.length>0;
   
-  let h=`<div id="rosterPreviewOverlay" style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px">`;
+  let h=`<div id="rosterPreviewOverlay" role="dialog" aria-modal="true" aria-label="Roster preview" style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px">`;
   h+=`<div style="background:var(--bg);border:1px solid var(--bdr);border-radius:16px;padding:24px;max-width:520px;width:100%;box-shadow:var(--sl);max-height:80vh;overflow-y:auto">`;
   
   h+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">`;
@@ -13200,7 +13452,7 @@ function _rdRaw(q){
   let h=`<div style="display:flex;gap:2px;padding:6px 12px;overflow-x:auto;flex-shrink:0;border-bottom:1px solid var(--bdr)">`;
   sheets.forEach(sn=>{
     const active=sn===S._rdSheet;
-    h+=`<button onclick="S._rdSheet='${X(sn)}';rerenderAnalyticsSurface('view')" style="padding:4px 10px;border:1px solid ${active?'var(--accent)':'var(--bdr)'};border-radius:5px;background:${active?'var(--accent)':'none'};color:${active?'#000':'var(--tm)'};font-family:inherit;font-size:11px;font-weight:${active?'700':'400'};cursor:pointer;white-space:nowrap">${X(sn)}</button>`;
+    h+=`<button onclick="S._rdSheet='${XJ(sn)}';rerenderAnalyticsSurface('view')" style="padding:4px 10px;border:1px solid ${active?'var(--accent)':'var(--bdr)'};border-radius:5px;background:${active?'var(--accent)':'none'};color:${active?'#000':'var(--tm)'};font-family:inherit;font-size:11px;font-weight:${active?'700':'400'};cursor:pointer;white-space:nowrap">${X(sn)}</button>`;
   });
   h+=`</div>`;
   // Render sheet data
@@ -19315,6 +19567,8 @@ function _buildAnalyticsWorkerSource(){
     _analyticsWorkerFnAssign("getBlueprintGroupIdForName",getBlueprintGroupIdForName),
     _analyticsWorkerFnAssign("getBlueprintForName",getBlueprintForName),
     _analyticsWorkerFnAssign("computeFairnessSwap",computeFairnessSwap),
+    _analyticsWorkerFnAssign("getForecastRequired",getForecastRequired),
+    _analyticsWorkerFnAssign("slotTimeLabel",slotTimeLabel),
     _analyticsWorkerFnAssign("buildForecastGaps",buildForecastGaps),
     _analyticsWorkerFnAssign("computeHealthScore",computeHealthScore),
     _analyticsWorkerFnAssign("_signalSeverityScore",_signalSeverityScore),
@@ -19958,7 +20212,7 @@ function rRaw(el){
   // Sheet tabs for raw data
   let h=`<div class="raw-tabs">`;
   (S.sh==="__all__"?S.shs:[S.sh,...S.shs.filter(s=>s!==S.sh)]).forEach(sn=>{
-    h+=`<div class="raw-tab${sn===S.rawSheet?" active":""}" onclick="S.rawSheet='${X(sn)}';ren()">${X(sn)}</div>`;
+    h+=`<div class="raw-tab${sn===S.rawSheet?" active":""}" onclick="S.rawSheet='${XJ(sn)}';ren()">${X(sn)}</div>`;
   });
   h+=`</div>`;
   const ws=S.wb.Sheets[S.rawSheet];
@@ -19985,8 +20239,7 @@ function rRaw(el){
 }
 
 /* ═══ EXPORTS ═══ */
-function togExp(){const m=$("exm");m.style.display=m.style.display==="none"?"block":"none";}
-function hExp(){$("exm").style.display="none";}
+function hExp(){const m=$("exm");if(m)m.style.display="none";}
 function expXL(){const all=gD().map(e=>({Name:e.name,Team:e.team,Date:e.date?fDF(e.date):"",Day:e.day||"","UK Time":uD(e),"SA Time":sAD(e),Hours:e.isOff?0:calcHrs(S.tz&&e.saS?e.saS:e.ukS,S.tz&&e.saE?e.saE:e.ukE),Week:e.week}));const ws=XLSX.utils.json_to_sheet(all);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Schedule");XLSX.writeFile(wb,`schedule_${monthLabel().replace(/ /g,"_")}.xlsx`);hExp();}
 function expPP(){const em=gE();const wb=XLSX.utils.book_new();for(const[n,ent]of Object.entries(em)){const rows=ent.map(e=>({Date:e.date?fDF(e.date):"",Day:e.day||"","UK Time":uD(e),"SA Time":sAD(e),Hours:e.isOff?0:calcHrs(S.tz&&e.saS?e.saS:e.ukS,S.tz&&e.saE?e.saE:e.ukE)}));XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),n.replace(/[\\\/\?\*\[\]:]/g,"_").substring(0,31));}XLSX.writeFile(wb,`per_person_${monthLabel().replace(/ /g,"_")}.xlsx`);hExp();}
 function cpTbl(){const all=gD();const rows=[["Name","Date","Day","UK Time","SA Time","Hours"]];all.forEach(e=>rows.push([e.name,e.date?fDF(e.date):"",e.day||"",uD(e),sAD(e),e.isOff?0:calcHrs(S.tz&&e.saS?e.saS:e.ukS,S.tz&&e.saE?e.saE:e.ukE)]));navigator.clipboard.writeText(rows.map(r=>r.join("\t")).join("\n")).then(()=>toast("Table copied to clipboard","ok"));hExp();}
@@ -20407,7 +20660,7 @@ function goToday(){
 const dz=$("dz");
 dz.addEventListener("dragover",e=>{e.preventDefault();dz.classList.add("dov");});
 dz.addEventListener("dragleave",()=>dz.classList.remove("dov"));
-dz.addEventListener("drop",e=>{e.preventDefault();dz.classList.remove("dov");const f=e.dataTransfer?.files?.[0];if(f)proc(f);});
+dz.addEventListener("drop",e=>handleRosterDrop(e,dz));
 
 /* ═══ PASTE FROM EXCEL ═══ */
 async function pasteFromClip(){
@@ -20661,7 +20914,7 @@ function renderBulkExcForm(){
   const f=S._bulkExcForm;
   if(!f)return"";
   const names=[...new Set(S.entries.map(e=>e.name))].sort();
-  const EXC_TYPES=["sick","no_show","late_start","early_release","half_day_granted","family_responsibility","training","annual_leave","admin","other"];
+  const bulkExcTypes=EXC_TYPES.map(t=>t.id);
 
   let h=`<div style="padding:12px 14px;background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.2);border-radius:10px;margin-top:8px">`;
   h+=`<div style="font-size:13px;font-weight:700;margin-bottom:8px">📋 Bulk Exception — date range</div>`;
@@ -20685,7 +20938,7 @@ function renderBulkExcForm(){
   // Type
   h+=`<label style="font-size:11px;color:var(--tm);display:flex;flex-direction:column;gap:3px">Type`;
   h+=`<select id="bulkExcType" onchange="S._bulkExcForm.type=this.value" style="padding:4px 8px;border:1px solid var(--bdr);border-radius:5px;background:var(--bg);color:var(--text);font-size:11px">`;
-  EXC_TYPES.forEach(t=>{h+=`<option value="${t}"${t===f.type?" selected":""}>${t.replace(/_/g," ")}</option>`;});
+  bulkExcTypes.forEach(t=>{h+=`<option value="${XA(t)}"${t===f.type?" selected":""}>${X((EXC_TYPES.find(x=>x.id===t)||{}).label||t.replace(/_/g," "))}</option>`;});
   h+=`</select></label>`;
 
   // Severity
@@ -21258,29 +21511,8 @@ function buildSheetCoaching(wb){
 }
 
 function buildSheetAppState(wb){
-  const ws=wb.addWorksheet('_app_state',{properties:{tabColor:{argb:EXC.OFF}}});
-  ws.state='veryHidden';
-  // CRITICAL: Do NOT include entries[] — it exceeds Excel's 32,767 char cell limit.
-  // Entries are reconstructed from Schedule_Data sheet on restore.
-  const snap={
-    version:APP_VERSION,build:APP_BUILD,savedAt:new Date().toISOString(),dept:S.activeDept||'',
-    months:S.months,month:S.month,mIdx:S.mIdx,
-    rotationDef:S.rotationDef,plBlueprints:S.plBlueprints,plPositions:S.plPositions,
-    plCellOverrides:S.plCellOverrides||{},savedMonths:S.savedMonths||{},
-    plLeave:S.plLeave,plHires:S.plHires,plRemoved:S.plRemoved,
-    notes:S.notes,hc:S.hc,att:S.att,
-    exceptions:S.exceptions||[],dayClosed:S.dayClosed||{},
-    coachPlan:S.coachPlan||{},coachHistory:S.coachHistory||[],coachBlackouts:S.coachBlackouts||{},coachDuration:S.coachDuration||30,
-    coachTargetDaily:S.coachTargetDaily||1,plSubTab:S.plSubTab||'schedule',
-    tab:S.tab,th:S.th,tz:S.tz,hlToday:S.hlToday,covMin:S.covMin,hrsMax:S.hrsMax,cbMode:S.cbMode,density:S.density,targetHours:S.targetHours||0,ratePerHour:S.ratePerHour||0,
-    collapsed:S.collapsed,team:S.team,emp:S.emp,dayFilter:S.dayFilter,
-    allMonths:S.allMonths,parseInfo:S.parseInfo,
-    // Phase A — People ops surface
-    agentStatuses:S.agentStatuses||{},agentNotes:S.agentNotes||{},peopleSubTab:S.peopleSubTab||'dashboard',
-    anScope:S.anScope||'month',
-    otPlan:{exclusionRules:S.otPlan.exclusionRules,defaultShift:S.otPlan.defaultShift,lookbackDays:S.otPlan.lookbackDays,history:S.otPlan.history,selections:S.otPlan.selections}
-  };
-  ws.getCell('A1').value=JSON.stringify(snap);
+  // Entries are reconstructed from Schedule_Data; all other state is chunked to avoid Excel's cell limit.
+  _writeAppStateSnapshotSheets(wb,_buildAppStateSnapshot());
 }
 
 // v44.3: People / Agent Roster sheet
@@ -21518,6 +21750,7 @@ function saveSettings(){
   try{_persistSet("sc_settings",JSON.stringify({
     _schemaVersion:S._schemaVersion,
     th:S.th,thVariant:S.thVariant||0,thVar:S.thVariant||0,tz:S.tz,hlToday:S.hlToday,covMin:S.covMin,hrsMax:S.hrsMax,cbMode:S.cbMode,density:S.density,tab:S.tab,
+    peopleSubTab:S.peopleSubTab||"dashboard",peopleDashView:S.peopleDashView||"today_ops",peopleView:S._peopleView||"cards",peopleLogFilter:S._peopleLogFilter||"all",
     targetHours:S.targetHours||0,ratePerHour:S.ratePerHour||0,showCardWk:S.showCardWk!==false,
     sumMode:S.sumMode||"month",anView:S.anView||"coverage",
     flagSettings:S.flagSettings||{},
@@ -21583,6 +21816,10 @@ function loadSettings(){
       if(typeof s.cbMode==="boolean"){S.cbMode=s.cbMode;document.body.classList.toggle("cb-mode",S.cbMode);}
       if(s.density&&["compact","comfortable","spacious"].includes(s.density)){S.density=s.density;document.body.classList.remove("density-compact","density-spacious");if(s.density==="compact")document.body.classList.add("density-compact");else if(s.density==="spacious")document.body.classList.add("density-spacious");}
       if(s.tab)S.tab=s.tab;
+      if(s.peopleSubTab&&["dashboard","team","agents","logbook"].includes(s.peopleSubTab))S.peopleSubTab=s.peopleSubTab;
+      if(s.peopleDashView&&["today_ops","week_risk","monthly_review"].includes(s.peopleDashView))S.peopleDashView=s.peopleDashView;
+      if(s.peopleView&&["cards","table"].includes(s.peopleView))S._peopleView=s.peopleView;
+      if(s.peopleLogFilter&&["all","note","followup","summary","event"].includes(s.peopleLogFilter))S._peopleLogFilter=s.peopleLogFilter;
       S.focusMode='month';
       if(s.sumMode)S.sumMode=s.sumMode;
       if(s.anView&&s.anView!=="intel")S.anView=s.anView;
@@ -21955,7 +22192,7 @@ function renderChangeLogPanel(){
 
 /* ═══ CLEAR ALL STORED DATA ═══ */
 function _clearAllDataStorageKeys(){
-  const base=["sc_att","sc_settings","sc_state_schema","sc_planner","sc_hc","sc_notes","sc_blueprints","sc_positions","sc_exceptions","sc_dayclosed","sc_coaching","sc_people","sc_rosterfile","sc_shiftlib","sc_coachquality","sc_coveragereq","sc_otplan","sc_agentstatuses","sc_agentnotes","sc_forecast","sc_cards_zip_presets"];
+  const base=["sc_att","sc_settings","sc_state_schema","sc_planner","sc_hc","sc_notes","sc_blueprints","sc_positions","sc_exceptions","sc_dayclosed","sc_coaching","sc_people","sc_rosterfile","sc_shiftlib","sc_coachquality","sc_coveragereq","sc_otplan","sc_agentstatuses","sc_agentnotes","sc_forecast","sc_people_view","sc_people_home","sc_people_logbook","sc_cards_zip_presets"];
   const aliases=Object.values(STORAGE_REBRAND_COMPAT).flat();
   let dynamic=[];
   try{dynamic=Object.keys(localStorage).filter(k=>k.startsWith("sc_snap_")||k.startsWith("sc_swaps_")||k.startsWith("mfs_snap_")||k.startsWith("mfs_swaps_"));}catch(e){dynamic=[];}
@@ -21966,13 +22203,14 @@ function clearAllData(){
   const keysToClear=_clearAllDataStorageKeys();
   _registerUndoState("clear all data",{localStorageKeys:keysToClear});
   _persistCritical(()=>{try{keysToClear.forEach(k=>_persistRemove(k,{critical:true}));}catch(e){}});
-  S.att={};S.hc={};S.notes={};S.people={};S.shiftLib={};S.rosterFile=null;S.coachQuality={};S.coverageReq=null;
+  S.att={};S.hc={};S.notes={};S.people={};S.shiftLib={};S.rosterFile=null;S.coachQuality={};S.coverageReq=null;S.forecast=null;
   S.plOverrides={};S.plLeave=[];S.plHires=[];S.plRemoved={};S.plMonths=2;S.plBlueprints={};S.plPositions={};
   _setExceptions([]);S.dayClosed={};
   S.plCellOverrides={};S.savedMonths={};S.plCellEdit=null;
   S.targetHours=0;S.ratePerHour=0;
   S.coachBlackouts={};S.coachPlan={};S.coachHistory=[];S.coachDuration=30;S.coachTargetDaily=1;S.coachTargetMonthly=0;
   S.coachManualSessions=[];S.coachBudgetHrs={};S.swaps=[];S._swapFormDay=null;
+  S.peopleHomeNotes={};S.peopleLogbook=[];S.peopleSubTab="dashboard";S.peopleDashView="today_ops";S._peopleView="cards";S._peopleLogFilter="all";
   S.otPlan={targetDate:null,lookbackDays:14,autoExclude:true,exclusionRules:S.otPlan.exclusionRules,selections:{},defaultShift:{start:"09:00",end:"17:30",lunchMins:30},history:[]};
   invalidateDerivedCache();
   _persistSig="";
@@ -22048,11 +22286,13 @@ function openHelp(section){
   h+=`<div class="help-section" style="border-bottom:none"><p style="font-size:11px;color:var(--tm)">${APP_NAME} ${APP_VERSION} · <a href="https://theGuide.club" target="_blank" style="color:var(--accent)">theGuide.Club</a> · Sel K. Naicker · 2026</p></div>`;
   dc.innerHTML=`<div class="help-drawer-hd"><h2>📖 Help — ${APP_NAME}</h2><button class="help-close" onclick="closeHelp()">✕</button></div>${h}`;
   ov.classList.add("open");
+  ov.setAttribute("aria-hidden","false");
   document.body.style.overflow="hidden";
   if(section){setTimeout(()=>{const el=dc.querySelector('[data-section="'+section+'"]');if(el)el.scrollIntoView({behavior:'smooth'});},100);}
 }
 function closeHelp(){
   const ov=$("helpOverlay");if(ov)ov.classList.remove("open");
+  if(ov)ov.setAttribute("aria-hidden","true");
   document.body.style.overflow="";
 }
 
@@ -22273,6 +22513,8 @@ function openAgentDrawer(agentName){
   S._agentDrawerName=agentName;
   const overlay=document.getElementById("agentDrawerOverlay");
   if(overlay)overlay.classList.add("open");
+  const drawer=document.getElementById("agentDrawer");
+  if(drawer)drawer.setAttribute("aria-hidden","false");
   renderAgentDrawerContent(agentName);
 }
 
@@ -22281,6 +22523,8 @@ function closeAgentDrawer(){
   S._agentDrawerName=null;
   const overlay=document.getElementById("agentDrawerOverlay");
   if(overlay)overlay.classList.remove("open");
+  const drawer=document.getElementById("agentDrawer");
+  if(drawer)drawer.setAttribute("aria-hidden","true");
 }
 
 function renderAgentDrawerContent(agentName){
@@ -22487,10 +22731,22 @@ function _ensurePeopleOpsState(){
   if(!Array.isArray(S.peopleLogbook))S.peopleLogbook=[];
   if(!S.peopleDashView||!["today_ops","week_risk","monthly_review"].includes(S.peopleDashView))S.peopleDashView="today_ops";
   if(!S.peopleSubTab||!["dashboard","team","agents","logbook"].includes(S.peopleSubTab))S.peopleSubTab="dashboard";
+  if(!S._peopleView||!["cards","table"].includes(S._peopleView))S._peopleView="cards";
   if(!S._peopleLogFilter)S._peopleLogFilter="all";
 }
 function savePeopleOps(){
   _ensurePeopleOpsState();
+  try{
+    _persistSet("sc_people_view",JSON.stringify({
+      peopleSubTab:S.peopleSubTab||"dashboard",
+      peopleDashView:S.peopleDashView||"today_ops",
+      peopleView:S._peopleView||"cards",
+      peopleLogFilter:S._peopleLogFilter||"all",
+      eventsDateFilter:S._eventsDateFilter||null,
+      eventsLeaderFilter:S._eventsLeaderFilter||"all",
+      eventsTypeFilter:S._eventsTypeFilter||"all"
+    }));
+  }catch(e){}
   try{
     if(S.peopleHomeNotes&&Object.keys(S.peopleHomeNotes).length)_persistSet("sc_people_home",JSON.stringify(S.peopleHomeNotes));
     else _persistRemove("sc_people_home");
@@ -22508,6 +22764,19 @@ function loadPeopleOps(){
   try{
     const lg=localStorage.getItem("sc_people_logbook");
     if(lg)S.peopleLogbook=JSON.parse(lg);
+  }catch(e){}
+  try{
+    const view=localStorage.getItem("sc_people_view");
+    if(view){
+      const v=JSON.parse(view);
+      if(v.peopleSubTab&&["dashboard","team","agents","logbook"].includes(v.peopleSubTab))S.peopleSubTab=v.peopleSubTab;
+      if(v.peopleDashView&&["today_ops","week_risk","monthly_review"].includes(v.peopleDashView))S.peopleDashView=v.peopleDashView;
+      if(v.peopleView&&["cards","table"].includes(v.peopleView))S._peopleView=v.peopleView;
+      if(v.peopleLogFilter&&["all","note","followup","summary","event"].includes(v.peopleLogFilter))S._peopleLogFilter=v.peopleLogFilter;
+      if(v.eventsDateFilter!==undefined)S._eventsDateFilter=v.eventsDateFilter;
+      if(v.eventsLeaderFilter)S._eventsLeaderFilter=v.eventsLeaderFilter;
+      if(v.eventsTypeFilter)S._eventsTypeFilter=v.eventsTypeFilter;
+    }
   }catch(e){}
   _ensurePeopleOpsState();
 }
@@ -22707,6 +22976,7 @@ function peopleCopySummaryFromField(fieldId,leaderName){
 function peopleSetDashView(viewId){
   if(!["today_ops","week_risk","monthly_review"].includes(viewId))return;
   S.peopleDashView=viewId;
+  savePeopleOps();
   if(S.tab==="people")rPeople($("ca"));
 }
 
@@ -23455,7 +23725,7 @@ function closeBatchExportProgress(){
 function _openBatchExportProgress(total,title){
   closeBatchExportProgress();
   const wrap=document.createElement("div");
-  wrap.innerHTML=`<div id="batchExportProgressOverlay" style="position:fixed;inset:0;z-index:930;display:flex;align-items:center;justify-content:center;pointer-events:all">
+  wrap.innerHTML=`<div id="batchExportProgressOverlay" role="dialog" aria-modal="true" aria-label="Batch export progress" style="position:fixed;inset:0;z-index:930;display:flex;align-items:center;justify-content:center;pointer-events:all">
     <div style="position:absolute;inset:0;background:rgba(0,0,0,.45)"></div>
     <div style="position:relative;z-index:1;width:min(680px,94vw);max-height:80vh;overflow:auto;background:var(--hbg);border:1px solid var(--bdr);border-radius:12px;box-shadow:var(--sl);padding:14px 16px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
@@ -24307,6 +24577,7 @@ function rPeople(el){
   if(!["dashboard","team","agents","logbook"].includes(S.peopleSubTab))S.peopleSubTab="dashboard";
   const scopeLeaders=_peopleScopeLeaders();
   if(scopeLeaders.length&&(!S.selectedTL||!scopeLeaders.includes(S.selectedTL)))S.selectedTL=scopeLeaders[0];
+  savePeopleOps();
   let h=`<div class="people-hq">`;
   // Sub-tab nav
   h+=`<div class="people-subtab-nav">`;
@@ -24748,6 +25019,7 @@ saveSettings=function(){
 // ── Load agent data on init ──
 loadAgentStatuses();
 loadAgentNotes();
+loadPeopleOps();
 loadOTPlan();
 
 // ── Keyboard: P key → People tab ──
