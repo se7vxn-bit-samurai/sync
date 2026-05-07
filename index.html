@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="referrer" content="no-referrer">
-<title>MirrorFlow Sync v62 — WFM</title>
+<title>MirrorFlow Sync v64 — WFM</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js" integrity="sha384-Pqp51FUN2/qzfxZxBCtF0stpc9ONI6MYZpVqmo8m20SoaQCzf+arZvACkLkirlPz" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -2170,8 +2170,8 @@ let S={wb:null,fn:"",shs:[],sh:"",raw:[],entries:[],team:"all",emp:"all",tz:true
 };
 
 const APP_NAME="MirrorFlow Sync";
-const APP_VERSION="v62";
-const APP_BUILD_LABEL="state hardening · chunked Save+ · WFM persistence · worker forecast deps";
+const APP_VERSION="v64";
+const APP_BUILD_LABEL="fresh-load cache guard · relevant people reuse · planner purge";
 const APP_BUILD=APP_VERSION+" · "+APP_BUILD_LABEL;
 const SETTINGS_SCHEMA_VERSION=1;
 const CRITICAL_STATE_SCHEMA_VERSION=1;
@@ -6156,6 +6156,7 @@ function confirmWFMLoad(){
   _pendingWFM=null;
   const entries=S._wfmEntries||[];
   if(!entries.length){toast('WFM parser produced no dated entries. File was not loaded.','err',5200);return;}
+  _clearOperationalSessionData({clearStorage:true,resetWorkspace:true});
 
   // Commit to WFM view state
   _wvWeeks=[result];_wvIdx=0;_wvTab='calendar';_wvSrch='';_wvTeam='all';_wvExcFilter='all';_wvSelDay=null;_wvAutoSelectDay(result);
@@ -7813,18 +7814,161 @@ const _CACHE_DATA_KEYS=[
   {key:"sc_coaching",label:"Coaching"},
   {key:"sc_dayclosed",label:"Day closures"},
 ];
+const _CACHE_EXTRA_DATA_KEYS=[
+  {key:"sc_planner",label:"Planner"},
+  {key:"sc_blueprints",label:"Blueprints"},
+  {key:"sc_positions",label:"Positions"},
+  {key:"sc_rosterfile",label:"Roster file"},
+  {key:"sc_shiftlib",label:"Shift library"},
+  {key:"sc_coachquality",label:"Coach quality"},
+  {key:"sc_coveragereq",label:"Coverage rules"},
+  {key:"sc_forecast",label:"Forecast"},
+  {key:"sc_people_view",label:"People view"},
+  {key:"sc_people_home",label:"People notes"},
+  {key:"sc_people_logbook",label:"People logbook"},
+  {key:"sc_cards_zip_presets",label:"Card export presets"}
+];
 // _cacheMode: "keep" | "fresh" | null (null = no cache found)
 let _cacheMode=null;
 
-function _detectCacheItems(){
-  return _CACHE_DATA_KEYS.filter(({key})=>{
-    try{const v=localStorage.getItem(key);if(!v)return false;
+function _operationalCacheKeyDefs(){
+  return [..._CACHE_DATA_KEYS,..._CACHE_EXTRA_DATA_KEYS];
+}
+function _operationalDynamicCacheKeys(){
+  try{return Object.keys(localStorage).filter(k=>k.startsWith("sc_snap_")||k.startsWith("sc_swaps_")||k.startsWith("mfs_snap_")||k.startsWith("mfs_swaps_"));}
+  catch(e){return[];}
+}
+function _detectCacheItems(defs){
+  return (defs||_operationalCacheKeyDefs()).filter(({key})=>{
+    try{const v=typeof _storageGetCompat==="function"?_storageGetCompat(key):localStorage.getItem(key);if(!v)return false;
       const p=JSON.parse(v);
       if(Array.isArray(p))return p.length>0;
       if(typeof p==="object"&&p!==null)return Object.keys(p).length>0;
       return false;
     }catch(e){return false;}
   });
+}
+function _cacheNameNorm(v){
+  return String(v||"").toLowerCase().replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim();
+}
+function _cacheNamesSimilar(a,b){
+  const an=_cacheNameNorm(a),bn=_cacheNameNorm(b);
+  if(!an||!bn)return false;
+  if(an===bn)return true;
+  const ap=an.split(" "),bp=bn.split(" ");
+  if(ap[0]&&bp[0]&&ap[0]===bp[0]){
+    const al=ap[ap.length-1]||"",bl=bp[bp.length-1]||"";
+    if(al&&bl&&(al===bl||al[0]===bl[0]))return true;
+  }
+  return false;
+}
+function _cacheExtractNamesFromPayload(key,payload){
+  const names=new Set();
+  const add=v=>{const s=String(v||"").trim();if(s&&s.length>=2&&!/\d{4}-\d{2}-\d{2}/.test(s))names.add(s);};
+  if(!payload)return[];
+  if(key==="sc_people"&&payload&&typeof payload==="object"){
+    Object.entries(payload).forEach(([k,v])=>{add(k);if(v&&typeof v==="object"){add(v.name);add(v.teamLeader);add(v.leader);}});
+  }else if(key==="sc_agentnotes"&&payload&&typeof payload==="object"){
+    Object.keys(payload).forEach(add);
+  }else if(key==="sc_agentstatuses"&&payload&&typeof payload==="object"){
+    Object.keys(payload).forEach(k=>add(String(k).split("|")[0]));
+  }else if(key==="sc_people_home"&&payload&&typeof payload==="object"){
+    Object.keys(payload).forEach(k=>String(k).split("|").forEach(add));
+  }else if(key==="sc_people_logbook"&&Array.isArray(payload)){
+    payload.forEach(x=>{add(x&&x.leader);add(x&&x.agent);add(x&&x.person);});
+  }else if(key==="sc_coachquality"&&payload&&typeof payload==="object"){
+    Object.keys(payload).forEach(add);
+  }else if(Array.isArray(payload)){
+    payload.forEach(x=>{if(x&&typeof x==="object"){add(x.name);add(x.person);add(x.agentName);add(x.agent);add(x.leader);add(x.teamLeader);}});
+  }else if(payload&&typeof payload==="object"){
+    Object.values(payload).forEach(x=>{if(x&&typeof x==="object"){add(x.name);add(x.person);add(x.agentName);add(x.agent);add(x.leader);add(x.teamLeader);}});
+  }
+  return[...names];
+}
+function _detectRelevantCacheForScan(scan){
+  const parsedNames=(scan&&Array.isArray(scan.names)?scan.names:[]).filter(Boolean);
+  const cacheItems=_detectCacheItems(_operationalCacheKeyDefs());
+  const cacheNames=new Set();
+  cacheItems.forEach(({key})=>{
+    try{
+      const raw=typeof _storageGetCompat==="function"?_storageGetCompat(key):localStorage.getItem(key);
+      _cacheExtractNamesFromPayload(key,JSON.parse(raw||"null")).forEach(n=>cacheNames.add(n));
+    }catch(e){}
+  });
+  const matches=[];
+  [...cacheNames].forEach(cn=>{
+    const hit=parsedNames.find(pn=>_cacheNamesSimilar(cn,pn));
+    if(hit)matches.push({cache:cn,parsed:hit});
+  });
+  const uniqueMatches=[...new Map(matches.map(m=>[_cacheNameNorm(m.cache)+"|"+_cacheNameNorm(m.parsed),m])).values()];
+  return{items:cacheItems,matches:uniqueMatches,hasRelevant:uniqueMatches.length>0,cacheNames:[...cacheNames]};
+}
+function _filterCachedRuntimeForScan(scan){
+  const parsedNames=(scan&&Array.isArray(scan.names)?scan.names:[]).filter(Boolean);
+  const allowed=n=>parsedNames.some(p=>_cacheNamesSimilar(n,p));
+  const filterNamedObj=obj=>{
+    const out={};
+    Object.entries(obj||{}).forEach(([k,v])=>{const name=String(k).split("|")[0];if(allowed(name)||(v&&allowed(v.name)))out[k]=v;});
+    return out;
+  };
+  S.people=filterNamedObj(S.people);
+  S.agentNotes=filterNamedObj(S.agentNotes);
+  S.coachQuality=filterNamedObj(S.coachQuality);
+  S.agentStatuses=filterNamedObj(S.agentStatuses);
+  S.coachPlan=filterNamedObj(S.coachPlan);
+  S.coachBudgetHrs=filterNamedObj(S.coachBudgetHrs);
+  if(Array.isArray(S.exceptions))_setExceptions(S.exceptions.filter(ex=>allowed(ex.person)||allowed(ex.name)||allowed(ex.agentName)||allowed(ex.agent)||allowed(ex.leader)));
+  if(Array.isArray(S.coachHistory))S.coachHistory=S.coachHistory.filter(x=>allowed(x.name)||allowed(x.person)||allowed(x.leader)||allowed(x.agent));
+  if(Array.isArray(S.coachManualSessions))S.coachManualSessions=S.coachManualSessions.filter(x=>allowed(x.name)||allowed(x.person)||allowed(x.leader)||allowed(x.agent));
+  if(S.peopleHomeNotes&&typeof S.peopleHomeNotes==="object"){
+    const out={};
+    Object.entries(S.peopleHomeNotes).forEach(([k,v])=>{if(String(k).split("|").some(allowed))out[k]=v;});
+    S.peopleHomeNotes=out;
+  }
+  if(Array.isArray(S.peopleLogbook))S.peopleLogbook=S.peopleLogbook.filter(x=>allowed(x.leader)||allowed(x.agent)||allowed(x.person));
+  const persistObj=(key,obj)=>{
+    try{if(obj&&Object.keys(obj).length)_persistSet(key,JSON.stringify(obj));else _persistRemove(key,{critical:true});}catch(e){}
+  };
+  const persistArr=(key,arr)=>{
+    try{if(Array.isArray(arr)&&arr.length)_persistSet(key,JSON.stringify(arr));else _persistRemove(key,{critical:true});}catch(e){}
+  };
+  persistObj("sc_people",S.people);
+  persistObj("sc_agentnotes",S.agentNotes);
+  persistObj("sc_agentstatuses",S.agentStatuses);
+  persistObj("sc_coachquality",S.coachQuality);
+  persistObj("sc_people_home",S.peopleHomeNotes);
+  persistArr("sc_people_logbook",S.peopleLogbook);
+  persistArr("sc_exceptions",S.exceptions||[]);
+  try{
+    const hasCoach=(S.coachPlan&&Object.keys(S.coachPlan).length)||(S.coachHistory&&S.coachHistory.length)||
+      (S.coachManualSessions&&S.coachManualSessions.length)||(S.coachBudgetHrs&&Object.keys(S.coachBudgetHrs).length);
+    if(hasCoach)_persistSet("sc_coaching",JSON.stringify({plan:S.coachPlan||{},history:S.coachHistory||[],blackouts:S.coachBlackouts||{},duration:S.coachDuration,targetDaily:S.coachTargetDaily,manualSessions:S.coachManualSessions||[],budgetHrs:S.coachBudgetHrs||{}}));
+    else _persistRemove("sc_coaching",{critical:true});
+  }catch(e){}
+}
+function _clearOperationalSessionData(opts={}){
+  const clearStorage=opts.clearStorage!==false;
+  const resetWorkspace=opts.resetWorkspace!==false;
+  if(clearStorage){
+    const aliases=Object.entries(STORAGE_REBRAND_COMPAT||{}).filter(([k])=>k!=="sc_settings"&&k!=="sc_state_schema").flatMap(([,v])=>v);
+    const keys=[...new Set([..._operationalCacheKeyDefs().map(x=>x.key),...aliases,..._operationalDynamicCacheKeys()])];
+    _persistCritical(()=>{keys.forEach(k=>{try{_persistRemove(k,{critical:true});}catch(e){}});});
+  }
+  _setExceptions([]);S.att={};S.hc={};S.notes={};S.agentStatuses={};S.agentNotes={};
+  S.coachQuality={};S.coachPlan={};S.coachHistory=[];S.coachBlackouts={};S.coachManualSessions=[];S.coachBudgetHrs={};
+  S.dayClosed={};S.people={};S.rosterFile=null;S.shiftLib={};S.coverageReq=null;S.forecast=null;
+  S.peopleHomeNotes={};S.peopleLogbook=[];S.peopleSubTab="dashboard";S.peopleDashView="today_ops";S._peopleView="cards";S._peopleLogFilter="all";
+  S.plLeave=[];S.plOverrides={};S.plHires=[];S.plRemoved={};S.plEdit=null;S.plBlueprints={};S.plPositions={};S.plCellOverrides={};S.savedMonths={};
+  S.swaps=[];S._swapFormDay=null;
+  S._wfmEntries=[];S._wfmMeta=null;
+  _wvWeeks=[];_wvIdx=0;_wvTab="schedule";_wvSrch="";_wvTeam="all";_wvExcFilter="all";_wvSelDay=null;
+  S.otPlan={targetDate:null,lookbackDays:14,autoExclude:true,exclusionRules:S.otPlan&&S.otPlan.exclusionRules?S.otPlan.exclusionRules:{},selections:{},defaultShift:{start:"09:00",end:"17:30",lunchMins:30},history:[]};
+  if(resetWorkspace){
+    S.wb=null;S.fn="";S.shs=[];S.sh="";S.raw=[];S.entries=[];S.team="all";S.emp="all";S.month=null;S.months=[];S.mIdx=0;S.calDay=null;
+    S.workspace={};S.activeDept=null;S.rotationDef=null;S.parseInfo=[];S.changeLog=null;S.allMonths=false;S.collapsed={};
+  }
+  S.entriesVer=(S.entriesVer||0)+1;
+  invalidateDerivedCache();
 }
 
 function _monthKeyToIndex(monthKey){
@@ -7996,10 +8140,13 @@ function showParsePreview(wb,filename){
   const confCol=scan.confidence==="high"?"var(--early)":scan.confidence==="medium"?"var(--wknd)":"#dc2626";
   const hasWarnings=scan.warnings.length>0||scan.dupes.length>0||scan.fingerprints.length>0;
 
-  // Detect cached operational data
-  const cacheItems=_detectCacheItems();
-  const hasCache=cacheItems.length>0;
+  // Detect relevant cached operational data. Fresh start is the default.
+  const cacheInfo=_detectRelevantCacheForScan(scan);
+  const cacheItems=cacheInfo.items;
+  const hasCache=cacheInfo.hasRelevant;
+  _cacheMode="fresh";
   _pendingLoad.hasCache=hasCache;
+  _pendingLoad.cacheInfo=cacheInfo;
 
   // ── Wider horizontal parse preview ──
   let h=`<div id="parsePreviewOverlay" role="dialog" aria-modal="true" aria-label="Parse preview" style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px">`;
@@ -8147,15 +8294,21 @@ function showParsePreview(wb,filename){
     h+=`</div>`;
   }
 
+  const rangeBlocked=!!(rangeGuard&&!rangeGuard.accepted);
+
   // ── CACHE BANNER ──
   if(hasCache){
     h+=`<div style="border-radius:10px;border:1px solid rgba(var(--accent-rgb,90,138,176),.3);background:var(--al);padding:14px 16px;margin-bottom:16px;position:relative;overflow:hidden">`;
     h+=`<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);border-radius:3px 0 0 3px"></div>`;
     h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding-left:8px">`;
     h+=`<span style="font-size:14px">🗄️</span>`;
-    h+=`<div style="font-size:13px;font-weight:600;color:var(--text)">Stored session data found</div>`;
+    h+=`<div style="font-size:13px;font-weight:600;color:var(--text)">Relevant stored data found</div>`;
     h+=`</div>`;
-    h+=`<div style="font-size:11px;color:var(--tm);margin-bottom:10px;padding-left:8px">Choose how to handle existing browser data before loading this file.</div>`;
+    h+=`<div style="font-size:11px;color:var(--tm);margin-bottom:8px;padding-left:8px">Fresh start is selected by default. Keep data only if these matched people belong to this file.</div>`;
+    h+=`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px;padding-left:8px">`;
+    (cacheInfo.matches||[]).slice(0,8).forEach(m=>{h+=`<span style="font-size:10px;padding:2px 7px;border-radius:4px;background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.18);color:var(--early)">${X(m.cache)} ↔ ${X(m.parsed)}</span>`;});
+    if((cacheInfo.matches||[]).length>8)h+=`<span style="font-size:10px;color:var(--tm);padding:2px 6px">+${cacheInfo.matches.length-8} more matches</span>`;
+    h+=`</div>`;
     // Cache item chips
     h+=`<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;padding-left:8px">`;
     cacheItems.forEach(({label})=>{
@@ -8172,22 +8325,28 @@ function showParsePreview(wb,filename){
     h+=`<div style="font-size:11px;font-weight:700;color:#dc2626;margin-bottom:3px;text-transform:uppercase;letter-spacing:.06em">Fresh start</div>`;
     h+=`<div style="font-size:10px;color:var(--tm);line-height:1.4">Clear all stored data and load the file clean</div>`;
     h+=`</button>`;
+    h+=`</div>`;
+    h+=`<div id="parseLoadHint" style="padding:10px 8px 0;margin-top:10px;border-top:1px solid var(--bdr);font-size:11px;color:#dc2626;text-align:right">Ready to load with a fresh start</div>`;
+    h+=`<div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;padding:10px 0 0 8px">`;
+    h+=`<button onclick="cancelParsePreview()" style="padding:7px 18px;border:1px solid var(--bdr);border-radius:7px;background:none;color:var(--tm);font-family:inherit;font-size:12px;cursor:pointer">Cancel</button>`;
+    h+=`<button id="parseLoadBtn" onclick="confirmParsePreview()" ${rangeBlocked?"disabled":""} style="padding:7px 24px;border:none;border-radius:7px;background:var(--accent);color:#000;font-family:inherit;font-size:13px;font-weight:700;cursor:${rangeBlocked?"not-allowed":"pointer"};${rangeBlocked?"opacity:.45;filter:saturate(.7)":""}">Load ${scan.total} entries</button>`;
     h+=`</div></div>`;
   }
 
   h+=`</div>`; // end right col
   h+=`</div>`; // end two-col grid
   // Action buttons row — full width at bottom
-  const rangeBlocked=!!(rangeGuard&&!rangeGuard.accepted);
-  const loadGated=hasCache||rangeBlocked;
+  const loadGated=rangeBlocked;
   const loadDisabled=loadGated?"disabled":"";
   const loadOp=loadGated?"opacity:.45;cursor:not-allowed;filter:saturate(.7)":"";
   const actionTopBorder=loadGated?"":"border-top:1px solid var(--bdr);";
-  if(loadGated)h+=`<div id="parseLoadHint" style="padding:10px 16px 0;border-top:1px solid var(--bdr);font-size:11px;color:var(--tm);text-align:right">${rangeBlocked?'Invalid anchor month detected — click <strong>Use detected range</strong>':'Select <strong>Keep cached data</strong> or <strong>Fresh start</strong> to enable loading'}</div>`;
-  h+=`<div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;padding:12px 16px;${actionTopBorder}">`;
-  h+=`<button onclick="cancelParsePreview()" style="padding:7px 18px;border:1px solid var(--bdr);border-radius:7px;background:none;color:var(--tm);font-family:inherit;font-size:12px;cursor:pointer">Cancel</button>`;
-  h+=`<button id="parseLoadBtn" onclick="confirmParsePreview()" ${loadDisabled} style="padding:7px 24px;border:none;border-radius:7px;background:var(--accent);color:#000;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;${loadOp}">Load ${scan.total} entries</button>`;
-  h+=`</div>`;
+  if(!hasCache){
+    if(loadGated)h+=`<div id="parseLoadHint" style="padding:10px 16px 0;border-top:1px solid var(--bdr);font-size:11px;color:var(--tm);text-align:right">Invalid anchor month detected — click <strong>Use detected range</strong></div>`;
+    h+=`<div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;padding:12px 16px;${actionTopBorder}">`;
+    h+=`<button onclick="cancelParsePreview()" style="padding:7px 18px;border:1px solid var(--bdr);border-radius:7px;background:none;color:var(--tm);font-family:inherit;font-size:12px;cursor:pointer">Cancel</button>`;
+    h+=`<button id="parseLoadBtn" onclick="confirmParsePreview()" ${loadDisabled} style="padding:7px 24px;border:none;border-radius:7px;background:var(--accent);color:#000;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;${loadOp}">Load ${scan.total} entries</button>`;
+    h+=`</div>`;
+  }
   h+=`</div>`; // end modal
 
   // Inject overlay
@@ -8215,16 +8374,31 @@ function confirmParsePreview(){
   const overlay=document.getElementById("parsePreviewOverlay");
   if(overlay)overlay.remove();
   _pendingLoad=null;
-  // If user chose fresh start, wipe operational cache keys before loading
-  if(_cacheMode==="fresh"){
-    _persistCritical(()=>{_CACHE_DATA_KEYS.forEach(({key})=>{try{_persistRemove(key,{critical:true});}catch(e){}});});
-    // Reset relevant in-memory state so stale data doesn't persist
-    _setExceptions([]);S.att={};S.hc={};S.notes={};S.agentStatuses={};S.agentNotes={};
-    S.coachPlan={};S.coachHistory=[];S.dayClosed={};S.otPlan={targetDate:null,lookbackDays:14,defaultStart:"17:00",defaultEnd:"19:00",defaultLunch:30,selections:{},pool:null,history:[]};
-    S.people={};S.rosterFile=null;
+  const cacheKept=_cacheMode==="keep";
+  if(cacheKept){
+    _filterCachedRuntimeForScan(pending.scan);
+    const kept={
+      exceptions:Array.isArray(S.exceptions)?S.exceptions.slice():[],
+      people:{...(S.people||{})},
+      agentNotes:{...(S.agentNotes||{})},
+      agentStatuses:{...(S.agentStatuses||{})},
+      coachQuality:{...(S.coachQuality||{})},
+      coachPlan:{...(S.coachPlan||{})},
+      coachHistory:Array.isArray(S.coachHistory)?S.coachHistory.slice():[],
+      coachManualSessions:Array.isArray(S.coachManualSessions)?S.coachManualSessions.slice():[],
+      coachBudgetHrs:{...(S.coachBudgetHrs||{})},
+      peopleHomeNotes:{...(S.peopleHomeNotes||{})},
+      peopleLogbook:Array.isArray(S.peopleLogbook)?S.peopleLogbook.slice():[]
+    };
+    _clearOperationalSessionData({clearStorage:false,resetWorkspace:true});
+    _setExceptions(kept.exceptions);
+    S.people=kept.people;S.agentNotes=kept.agentNotes;S.agentStatuses=kept.agentStatuses;S.coachQuality=kept.coachQuality;
+    S.coachPlan=kept.coachPlan;S.coachHistory=kept.coachHistory;S.coachManualSessions=kept.coachManualSessions;S.coachBudgetHrs=kept.coachBudgetHrs;
+    S.peopleHomeNotes=kept.peopleHomeNotes;S.peopleLogbook=kept.peopleLogbook;
+  } else {
+    _clearOperationalSessionData({clearStorage:true,resetWorkspace:true});
     toast("Cache cleared — loading fresh","info",2000);
   }
-  const cacheKept=_cacheMode==="keep";
   _cacheMode=null;
   const rangeFix=rangeGuard&&rangeGuard.accepted&&rangeGuard.fix?rangeGuard.fix:null;
   try{
@@ -11262,8 +11436,57 @@ const BUILD_PRESETS={
     shifts:[{name:"Early",s:"06:00",e:"14:00"},{name:"Mid",s:"08:00",e:"16:00"},{name:"Late",s:"10:00",e:"18:00"},{name:"Weekend",s:"07:00",e:"15:00"}]},
   "7day":{label:"7-Day / 24hr",opDays:[0,1,2,3,4,5,6],cycleLen:5,
     shifts:[{name:"Early",s:"06:00",e:"14:00"},{name:"Mid",s:"10:00",e:"18:00"},{name:"Late",s:"14:00",e:"22:00"},{name:"Night",s:"22:00",e:"06:00"}]},
-  "custom":{label:"Custom",opDays:[0,1,2,3,4],cycleLen:4,shifts:[]}
+  "custom":{label:"Custom",opDays:[0,1,2,3,4],cycleLen:1,shifts:[]}
 };
+
+function bwDefaultLocalRules(){
+  const pickNum=(v,fallback)=>Number.isFinite(+v)?+v:fallback;
+  return{maxHoursWeek:pickNum(S.rules.maxHoursWeek,45),maxConsecutiveDays:pickNum(S.rules.maxConsecutiveDays,6),minCoveragePerDay:pickNum(S.rules.minCoveragePerDay,2),lunchMins:pickNum(S.rules.breaks?.lunch,30)};
+}
+function bwRules(cfg){
+  const local=cfg&&cfg.localRules?cfg.localRules:{};
+  const base=S.rules||{};
+  const pickNum=(v,fallback)=>Number.isFinite(+v)?+v:fallback;
+  return{
+    maxHoursWeek:pickNum(local.maxHoursWeek,pickNum(base.maxHoursWeek,45)),
+    maxConsecutiveDays:pickNum(local.maxConsecutiveDays,pickNum(base.maxConsecutiveDays,6)),
+    minCoveragePerDay:pickNum(local.minCoveragePerDay,pickNum(base.minCoveragePerDay,3)),
+    weekendPolicy:base.weekendPolicy||"rotate",
+    breaks:{...(base.breaks||{}),lunch:pickNum(local.lunchMins,pickNum(base.breaks?.lunch,30))},
+    _opDays:cfg&&Array.isArray(cfg.opDays)?cfg.opDays.slice():null
+  };
+}
+function bwSetCycleLen(n){
+  const cfg=S.buildConfig;if(!cfg)return;
+  cfg.cycleLen=Math.max(1,Math.min(12,+n||1));
+  if(cfg.cycleLen===1)cfg.staggerLeaders=false;
+  renderBuildWizard();
+}
+function bwEnsureStandardShift(cfg){
+  const standard={name:"Standard",s:"09:00",e:"17:00",breakLunch:30,breakCount:2,breakLen:15,paidHrs:calcHrs("09:00","17:00")};
+  const existing=cfg.shifts.find(s=>s.name==="Standard");
+  if(existing){Object.assign(existing,standard);}
+  else cfg.shifts.unshift(standard);
+  return standard.name;
+}
+function bwApplyStandardWeek(){
+  const cfg=S.buildConfig;if(!cfg)return;
+  cfg.opDays=[0,1,2,3,4];
+  cfg.cycleLen=1;
+  cfg.staggerLeaders=false;
+  cfg.rotaStartDay=cfg.rotaStartDay||1;
+  cfg.minHours=35;
+  cfg.maxHours=40;
+  if(!cfg.localRules)cfg.localRules=bwDefaultLocalRules();
+  cfg.localRules.minCoveragePerDay=1;
+  cfg.localRules.maxConsecutiveDays=5;
+  cfg.localRules.maxHoursWeek=Math.max(45,+cfg.localRules.maxHoursWeek||45);
+  cfg.localRules.lunchMins=30;
+  const sn=bwEnsureStandardShift(cfg);
+  cfg.sharedBlueprint={1:{0:sn,1:sn,2:sn,3:sn,4:sn,5:"RDO",6:"RDO"}};
+  renderBuildWizard();
+  toast("Standard Mon-Fri pattern applied","ok",2200);
+}
 
 function startBuildWizard(preset){
   const p=BUILD_PRESETS[preset]||BUILD_PRESETS.custom;
@@ -11276,7 +11499,8 @@ function startBuildWizard(preset){
     shifts:p.shifts.map(s=>({...s,breakLunch:30,breakCount:2,breakLen:15,paidHrs:calcHrs(s.s,s.e)})),
     offTypes:["OFF","LEAVE","SICK","PH","TRAINING","WFH"],
     blueprint:{},sharedBlueprint:{},generated:false,
-    rotaStartDay:1,minHours:36,maxHours:40,staggerLeaders:true
+    rotaStartDay:1,minHours:36,maxHours:40,staggerLeaders:p.cycleLen>1,
+    localRules:bwDefaultLocalRules()
   };
   S.buildStep=1;S.buildMode=true;
   renderBuildWizard();
@@ -11340,16 +11564,20 @@ function bwStep1(cfg){
   h+=`</select></div></div>`;
   h+=`<div><div style="font-size:11px;font-weight:600;color:var(--tm);margin-bottom:4px">Rotation cycle</div>`;
   h+=`<div style="display:flex;align-items:center;gap:8px">`;
-  h+=`<button onclick="if(S.buildConfig.cycleLen>2){S.buildConfig.cycleLen--;renderBuildWizard();}" style="width:28px;height:28px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--text);font-family:inherit;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">−</button>`;
-  h+=`<div style="min-width:80px;text-align:center;padding:6px 12px;border:1px solid var(--accent);border-radius:6px;background:var(--al);color:var(--accent);font-size:13px;font-weight:700">${cfg.cycleLen}-week</div>`;
-  h+=`<button onclick="if(S.buildConfig.cycleLen<12){S.buildConfig.cycleLen++;renderBuildWizard();}" style="width:28px;height:28px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--text);font-family:inherit;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">+</button>`;
-  h+=`<span style="font-size:10px;color:var(--tm)">W1–W${cfg.cycleLen} · ${cfg.cycleLen} rotation weeks</span>`;
+  h+=`<button onclick="bwSetCycleLen((S.buildConfig.cycleLen||1)-1)" style="width:28px;height:28px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--text);font-family:inherit;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">−</button>`;
+  h+=`<div style="min-width:88px;text-align:center;padding:6px 12px;border:1px solid var(--accent);border-radius:6px;background:var(--al);color:var(--accent);font-size:13px;font-weight:700">${cfg.cycleLen===1?"1-week":cfg.cycleLen+"-week"}</div>`;
+  h+=`<button onclick="bwSetCycleLen((S.buildConfig.cycleLen||1)+1)" style="width:28px;height:28px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--text);font-family:inherit;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">+</button>`;
+  h+=`<span style="font-size:10px;color:var(--tm)">${cfg.cycleLen===1?"Fixed weekly pattern · no staggered starts":`W1–W${cfg.cycleLen} · ${cfg.cycleLen} rotation weeks`}</span>`;
   h+=`</div></div>`;
+  h+=`<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">`;
+  h+=`<button onclick="bwApplyStandardWeek()" style="padding:6px 12px;border:1px solid var(--accent);border-radius:7px;background:var(--al);color:var(--accent);font-family:inherit;font-size:11px;font-weight:700;cursor:pointer">Mon-Fri 09:00-17:00</button>`;
+  h+=`<span style="font-size:10px;color:var(--tm)">Sets 1-week cycle, 5 operating days, 1 TL minimum, and a Standard shift.</span>`;
+  h+=`</div>`;
   h+=`<div><div style="font-size:11px;font-weight:600;color:var(--tm);margin-bottom:4px">Operating days</div><div style="display:flex;gap:4px">`;
   BWDOW.forEach((d,i)=>{const on=cfg.opDays.includes(i);h+=`<button onclick="const a=S.buildConfig.opDays;const x=a.indexOf(${i});if(x>=0)a.splice(x,1);else a.push(${i});a.sort();renderBuildWizard()" style="width:42px;padding:6px 0;text-align:center;border:1px solid ${on?'var(--accent)':'var(--bdr)'};border-radius:6px;background:${on?'var(--al)':'none'};color:${on?'var(--accent)':'var(--tm)'};font-family:inherit;font-size:11px;cursor:pointer;font-weight:${on?'600':'400'}">${d}</button>`;});
   h+=`</div><div style="font-size:10px;color:var(--tm);margin-top:4px">${cfg.opDays.length===7?'Full 7-day operation — min coverage rules apply per day':cfg.opDays.length===0?'Select at least one operating day':`${cfg.opDays.length} working day${cfg.opDays.length!==1?'s':''}/week · ${7-cfg.opDays.length} scheduled off`}</div></div>`;
   // Editable rules panel
-  if(!cfg.localRules)cfg.localRules={maxHoursWeek:S.rules.maxHoursWeek||45,maxConsecutiveDays:S.rules.maxConsecutiveDays||6,minCoveragePerDay:S.rules.minCoveragePerDay||2,lunchMins:S.rules.breaks?.lunch||30};
+  if(!cfg.localRules)cfg.localRules=bwDefaultLocalRules();
   h+=`<div style="padding:12px;border:1px solid var(--bdr);border-radius:10px;background:rgba(255,255,255,.03)">`;
   h+=`<div style="font-size:11px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Rules</div>`;
   h+=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">`;
@@ -11388,6 +11616,7 @@ function bwStep2(cfg){
 // ── Step 3: Shifts ──
 function bwStep3(cfg){
   const SHIFT_PRESETS=[
+    {name:"Standard",s:"09:00",e:"17:00",icon:"▣",tag:"weekday"},
     {name:"Early",s:"07:00",e:"15:30",icon:"🌅",tag:"weekday"},
     {name:"Mid",s:"09:00",e:"17:30",icon:"☀️",tag:"weekday"},
     {name:"Late",s:"11:00",e:"19:30",icon:"🌆",tag:"weekday"},
@@ -11498,11 +11727,14 @@ function bwStep4(cfg){
   if(!cfg.rotaStartDay)cfg.rotaStartDay=1;
   if(!cfg.minHours)cfg.minHours=36;
   if(!cfg.maxHours)cfg.maxHours=40;
-  if(cfg.staggerLeaders===undefined)cfg.staggerLeaders=true;
+  const canStagger=cfg.cycleLen>1&&names.length>1;
+  if(cfg.staggerLeaders===undefined)cfg.staggerLeaders=canStagger;
+  if(!canStagger)cfg.staggerLeaders=false;
+  const simpleCycle=cfg.cycleLen===1;
 
   let h=`<div style="display:flex;flex-direction:column;gap:16px">`;
   h+=`<h3 style="font-size:14px;font-weight:700;margin:0">Blueprint</h3>`;
-  h+=`<div style="font-size:12px;color:var(--tm)">Build one shared rotation pattern. Leaders will be assigned starting weeks automatically.</div>`;
+  h+=`<div style="font-size:12px;color:var(--tm)">${simpleCycle?"Build one weekly pattern. Use this for fixed Monday-Friday teams or a single leader tracking their own team.":"Build one shared rotation pattern. Leaders can be assigned starting weeks automatically."}</div>`;
   if(!names.length){
     h+=`<div style="padding:30px;text-align:center;border:1px dashed var(--bdr);border-radius:10px;color:var(--tm)">← Go back to Step 2 and add at least one leader</div></div>`;return h;
   }
@@ -11517,7 +11749,7 @@ function bwStep4(cfg){
   h+=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:12px;border:1px solid var(--bdr);border-radius:10px;background:rgba(255,255,255,.02)">`;
   // Rotation start day
   const dim=new Date(cfg.startYear,cfg.startMonth+1,0).getDate();
-  h+=`<div><div style="font-size:11px;font-weight:600;color:var(--tm);margin-bottom:5px">Rotation starts on day</div>`;
+  h+=`<div><div style="font-size:11px;font-weight:600;color:var(--tm);margin-bottom:5px">${simpleCycle?"Pattern starts on day":"Rotation starts on day"}</div>`;
   h+=`<select onchange="S.buildConfig.rotaStartDay=+this.value;renderBuildWizard()" style="width:100%;padding:7px;border:1px solid var(--bdr);border-radius:7px;background:var(--card);color:var(--text);font-family:inherit;font-size:12px">`;
   for(let d=1;d<=dim;d++){h+=`<option value="${d}"${d===cfg.rotaStartDay?" selected":""}>${d} ${MOFULL[cfg.startMonth]}</option>`;}
   h+=`</select></div>`;
@@ -11529,23 +11761,20 @@ function bwStep4(cfg){
   h+=`<input type="number" value="${cfg.maxHours}" min="1" max="60" onchange="S.buildConfig.maxHours=+this.value" style="width:55px;padding:7px;border:1px solid var(--bdr);border-radius:7px;background:var(--card);color:var(--text);font-family:inherit;font-size:12px;text-align:center">`;
   h+=`<span style="font-size:11px;color:var(--tm)">h</span>`;
   h+=`</div></div>`;
-  // Stagger leaders
   h+=`<div><div style="font-size:11px;font-weight:600;color:var(--tm);margin-bottom:5px">Leader assignment</div>`;
-  h+=`<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;padding-top:2px">`;
-  h+=`<input type="checkbox" ${cfg.staggerLeaders?"checked":""} onchange="S.buildConfig.staggerLeaders=this.checked;renderBuildWizard()" style="width:14px;height:14px;accent-color:var(--accent)">`;
-  h+=`<span>Stagger start weeks</span></label>`;
-  h+=`<div style="font-size:10px;color:var(--tm);margin-top:3px">${cfg.staggerLeaders?"Each leader starts on a different rotation week":"All leaders start on W1"}</div>`;
-  h+=`</div>`;
-  // Stagger leaders
-  h+=`<div><div style="font-size:11px;font-weight:600;color:var(--tm);margin-bottom:5px">Leader assignment</div>`;
-  h+=`<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;padding-top:2px">`;
-  h+=`<input type="checkbox" ${cfg.staggerLeaders?"checked":""} onchange="S.buildConfig.staggerLeaders=this.checked;renderBuildWizard()" style="width:14px;height:14px;accent-color:var(--accent)">`;
-  h+=`<span>Stagger start weeks</span></label>`;
-  h+=`<div style="font-size:10px;color:var(--tm);margin-top:3px">${cfg.staggerLeaders?"Each leader starts on a different rotation week":"All leaders start on W1"}</div>`;
+  if(!canStagger){
+    h+=`<div style="font-size:12px;font-weight:700;color:var(--text);padding-top:2px">${simpleCycle?"Fixed weekly":"Single start week"}</div>`;
+    h+=`<div style="font-size:10px;color:var(--tm);margin-top:3px">${simpleCycle?"All leaders use W1; staggered starts are not used.":"Only one leader is defined, so staggered starts are not used."}</div>`;
+  }else{
+    h+=`<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;padding-top:2px">`;
+    h+=`<input type="checkbox" ${cfg.staggerLeaders?"checked":""} onchange="S.buildConfig.staggerLeaders=this.checked;renderBuildWizard()" style="width:14px;height:14px;accent-color:var(--accent)">`;
+    h+=`<span>Stagger start weeks</span></label>`;
+    h+=`<div style="font-size:10px;color:var(--tm);margin-top:3px">${cfg.staggerLeaders?"Each leader starts on a different rotation week":"All leaders start on W1"}</div>`;
+  }
   h+=`</div>`;
   h+=`<div><div style="font-size:11px;font-weight:600;color:var(--tm);margin-bottom:5px">Cycle</div>`;
   h+=`<div style="font-size:22px;font-weight:800;color:var(--accent);font-family:'DM Mono',monospace">${cfg.cycleLen}w</div>`;
-  h+=`<div style="font-size:10px;color:var(--tm)">W1–W${cfg.cycleLen} · ${names.length} leader${names.length!==1?'s':''}</div>`;
+  h+=`<div style="font-size:10px;color:var(--tm)">${simpleCycle?"W1 only · weekly repeat":`W1–W${cfg.cycleLen} · ${names.length} leader${names.length!==1?'s':''}`}</div>`;
   h+=`</div></div>`;
   h+=`<div style="display:flex;gap:6px;align-items:center">`;
   h+=`<button onclick="bwAutoFillShared()" style="padding:6px 14px;border:1px solid var(--accent);border-radius:6px;background:var(--al);color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer;font-weight:600">⚡ Auto-fill</button>`;
@@ -11554,7 +11783,7 @@ function bwStep4(cfg){
   h+=`</div>`;
   h+=`<div style="border:1px solid var(--bdr);border-radius:8px;overflow:hidden;background:var(--card)">`;
   h+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;background:rgba(255,255,255,.03);border-bottom:1px solid rgba(255,255,255,.05);display:flex;justify-content:space-between;align-items:center">`;
-  h+=`<span>Shared rotation pattern <span style="font-weight:400;color:var(--tm)">— ${cfg.cycleLen} weeks, applied to all ${names.length} leader${names.length!==1?'s':''}</span></span>`;
+  h+=`<span>${simpleCycle?"Weekly pattern":"Shared rotation pattern"} <span style="font-weight:400;color:var(--tm)">— ${simpleCycle?"1 week, repeated":cfg.cycleLen+" weeks, applied to all "+names.length+" leader"+(names.length!==1?"s":"")}</span></span>`;
   h+=`<span style="font-size:10px;color:var(--tm)">Use dropdowns to set each day</span></div>`;
   h+=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px">`;
   h+=`<tr style="background:rgba(255,255,255,.02)"><td style="padding:6px 10px;color:var(--tm);font-weight:600;width:40px;white-space:nowrap">Wk</td>`;
@@ -11606,7 +11835,7 @@ function bwStep4(cfg){
   h+=`</div></div>`;
 
   // ── Leader assignment preview ──
-  if(names.length&&Object.keys(sb).some(w=>Object.keys(sb[w]).length)){
+  if(canStagger&&names.length&&Object.keys(sb).some(w=>Object.keys(sb[w]).length)){
     h+=`<div style="padding:10px 12px;border:1px solid var(--bdr);border-radius:8px;background:rgba(255,255,255,.02)">`;
     h+=`<div style="font-size:11px;font-weight:600;margin-bottom:8px;color:var(--tm)">Leader start-week assignment</div>`;
     h+=`<div style="display:flex;flex-wrap:wrap;gap:6px">`;
@@ -11648,7 +11877,7 @@ function bwStep5(cfg){
   h+=`<div style="color:var(--tm)">Cycle: <strong style="color:var(--text)">${cfg.cycleLen}-week</strong></div>`;
   h+=`<div style="color:var(--tm)">Rota starts day: <strong style="color:var(--text)">${cfg.rotaStartDay||1}</strong></div>`;
   h+=`<div style="color:var(--tm)">Hours/week: <strong style="color:var(--text)">${cfg.minHours||36}–${cfg.maxHours||40}h</strong></div>`;
-  h+=`<div style="color:var(--tm)">Stagger: <strong style="color:var(--text)">${cfg.staggerLeaders?"yes":"no"}</strong></div>`;
+  h+=`<div style="color:var(--tm)">Stagger: <strong style="color:var(--text)">${cfg.cycleLen===1||names.length<=1?"not used":cfg.staggerLeaders?"yes":"no"}</strong></div>`;
   h+=`</div></div>`;
   const warns=[];
   if(!names.length)warns.push("No leaders defined");
@@ -11682,7 +11911,7 @@ function bwStep5(cfg){
       });
     }
     const covSummary=buildCoverageSummary(previewEntries,cfg);
-    const rulesCheck=validateScheduleRules(previewEntries,names);
+    const rulesCheck=validateScheduleRules(previewEntries,names,bwRules(cfg));
     if(covSummary)h+=renderCoverageCheck(covSummary);
     h+=renderRulesCheck(rulesCheck);
   }
@@ -11906,6 +12135,12 @@ function executeBuildGenerate(){
   const cfg=S.buildConfig;if(!cfg)return;
   const names=cfg.teams.filter(t=>t.leader).map(t=>t.leader);
   if(!names.length){toast("Add at least one leader","warn");return;}
+  const buildRules=bwRules(cfg);
+  S.rules.maxHoursWeek=buildRules.maxHoursWeek;
+  S.rules.maxConsecutiveDays=buildRules.maxConsecutiveDays;
+  S.rules.minCoveragePerDay=buildRules.minCoveragePerDay;
+  if(!S.rules.breaks)S.rules.breaks={};
+  S.rules.breaks.lunch=buildRules.breaks.lunch;
 
   // v48.3: Expand shared blueprint into per-person blueprints before generating
   if(cfg.sharedBlueprint&&Object.keys(cfg.sharedBlueprint).length){
@@ -11955,6 +12190,10 @@ function executeBuildGenerate(){
   }
   // SA timezone
   entries.forEach(e=>{if(e.ukS){e.saS=u2s(e.ukS,e.date);e.saE=u2s(e.ukE,e.date);}});
+
+  // Generated schedules are new workspaces by default; do not inherit prior file cache.
+  _clearOperationalSessionData({clearStorage:true,resetWorkspace:true});
+
   // Load into workspace
   const planStartDate=new Date(cfg.startYear,cfg.startMonth,1);
   S.entries=entries;S.fn=cfg.deptName||"New Schedule";S.shs=["Generated"];S.sh="__all__";
@@ -11980,7 +12219,7 @@ function executeBuildGenerate(){
     S.shiftLib[sh.name]={name:sh.name,startTime:sh.s,endTime:sh.e,paidHours:sh.paidHrs||calcHrs(sh.s,sh.e),
       type:sh.name.toLowerCase().includes("early")?"early":sh.name.toLowerCase().includes("mid")?"mid":sh.name.toLowerCase().includes("late")||sh.name.toLowerCase().includes("night")?"late":"mid",
       breakRules:{lunch:sh.breakLunch,lunchPaid:false,breaks:sh.breakCount,breakLength:sh.breakLen},source:"build-wizard"};});
-  savePeople();saveShiftLib();S.entriesVer=(S.entriesVer||0)+1;invalidateDerivedCache();
+  savePeople();saveShiftLib();saveSettings();S.entriesVer=(S.entriesVer||0)+1;invalidateDerivedCache();
   closeBuildWizard();
   $("us").style.display="none";$("mv").classList.remove("hid");$("mv").style.display="flex";
   $("ha").style.display="flex";setDeptName(cfg.deptName||"New Schedule");$("kbh").style.display="flex";
@@ -12335,8 +12574,20 @@ function analyseMonthCoverage(monthKey,entries){
 // Coverage summary for build wizard step 5
 function buildCoverageSummary(entries,cfg){
   if(!entries||!entries.length)return null;
+  const rules=cfg?bwRules(cfg):S.rules;
   // Quick coverage by day — just count working TLs per day
   const dayMap={};
+  const datedEntries=entries.filter(e=>e.date);
+  if(rules._opDays&&rules._opDays.length&&datedEntries.length){
+    const minDate=new Date(Math.min(...datedEntries.map(e=>+e.date)));
+    const maxDate=new Date(Math.max(...datedEntries.map(e=>+e.date)));
+    for(let dt=new Date(minDate);dt<=maxDate;dt.setDate(dt.getDate()+1)){
+      const dow=(dt.getDay()+6)%7;
+      if(!rules._opDays.includes(dow))continue;
+      const dk=excKey(dt);
+      dayMap[dk]={date:new Date(dt),count:0,names:new Set()};
+    }
+  }
   entries.forEach(e=>{
     if(!e.date||e.isOff)return;
     const dk=excKey(e.date);
@@ -12345,7 +12596,7 @@ function buildCoverageSummary(entries,cfg){
   });
   
   const days=Object.values(dayMap);
-  const minCov=S.rules.minCoveragePerDay||3;
+  const minCov=rules.minCoveragePerDay||3;
   const underCovered=days.filter(d=>d.count<minCov);
   const avgCoverage=days.length?Math.round(days.reduce((s,d)=>s+d.count,0)/days.length*10)/10:0;
   
@@ -12365,7 +12616,7 @@ function buildCoverageSummary(entries,cfg){
   const weekCount=Math.max(1,cfg?cfg.horizonMonths*4.33:4);
   const hrsPerWeek={};
   Object.entries(nameHrs).forEach(([n,h])=>{hrsPerWeek[n]=Math.round(h/weekCount*10)/10;});
-  const overHours=Object.entries(hrsPerWeek).filter(([,h])=>h>(S.rules.maxHoursWeek||45));
+  const overHours=Object.entries(hrsPerWeek).filter(([,h])=>h>(rules.maxHoursWeek||45));
   
   // Consecutive days check
   const consecWarnings=[];
@@ -12379,11 +12630,12 @@ function buildCoverageSummary(entries,cfg){
       if(diff===1){streak++;if(streak>maxStreak)maxStreak=streak;}
       else streak=1;
     }
-    if(maxStreak>(S.rules.maxConsecutiveDays||6))consecWarnings.push({name,streak:maxStreak});
+    if(maxStreak>(rules.maxConsecutiveDays||6))consecWarnings.push({name,streak:maxStreak});
   });
   
   return{
     totalDays:days.length,avgCoverage,underCovered:underCovered.length,minCov,
+    maxHoursWeek:rules.maxHoursWeek||45,maxConsecutiveDays:rules.maxConsecutiveDays||6,
     avgWeekday:avgWkd,avgWeekend:avgWke,
     overHours,consecWarnings,
     grade:underCovered.length===0&&overHours.length===0&&consecWarnings.length===0?"pass":"warn"
@@ -12408,8 +12660,8 @@ function renderCoverageCheck(summary){
   // Warnings
   const warns=[];
   if(summary.underCovered>0)warns.push({sev:"high",msg:`${summary.underCovered} day${summary.underCovered>1?"s":""} below minimum coverage (${summary.minCov} TLs)`,icon:"📉"});
-  summary.overHours.forEach(([name,hrs])=>{warns.push({sev:"medium",msg:`${name.split(" ")[0]}: ${hrs}h/week exceeds ${S.rules.maxHoursWeek||45}h limit`,icon:"⏱"});});
-  summary.consecWarnings.forEach(w=>{warns.push({sev:"medium",msg:`${w.name.split(" ")[0]}: ${w.streak} consecutive work days (max ${S.rules.maxConsecutiveDays||6})`,icon:"📅"});});
+  summary.overHours.forEach(([name,hrs])=>{warns.push({sev:"medium",msg:`${name.split(" ")[0]}: ${hrs}h/week exceeds ${summary.maxHoursWeek||45}h limit`,icon:"⏱"});});
+  summary.consecWarnings.forEach(w=>{warns.push({sev:"medium",msg:`${w.name.split(" ")[0]}: ${w.streak} consecutive work days (max ${summary.maxConsecutiveDays||6})`,icon:"📅"});});
   
   if(warns.length){
     warns.forEach(w=>{
@@ -12625,9 +12877,9 @@ function coachQualityBadge(name,small){
    coaching safe-window, analytics flags.
    ═══════════════════════════════════════════════════════════════ */
 
-function validateScheduleRules(entries,names){
+function validateScheduleRules(entries,names,rulesOverride){
   if(!entries||!entries.length)return{pass:true,warnings:[],checks:[]};
-  const rules=S.rules;const warnings=[];const checks=[];
+  const rules=rulesOverride||S.rules;const warnings=[];const checks=[];
   
   names=(names||[...new Set(entries.map(e=>e.name))]).sort();
   
@@ -12667,6 +12919,16 @@ function validateScheduleRules(entries,names){
   
   // 3. Minimum coverage per day
   const dayMap={};
+  const datedEntries=entries.filter(e=>e.date);
+  if(rules._opDays&&rules._opDays.length&&datedEntries.length){
+    const minDate=new Date(Math.min(...datedEntries.map(e=>+e.date)));
+    const maxDate=new Date(Math.max(...datedEntries.map(e=>+e.date)));
+    for(let dt=new Date(minDate);dt<=maxDate;dt.setDate(dt.getDate()+1)){
+      const dow=(dt.getDay()+6)%7;
+      if(!rules._opDays.includes(dow))continue;
+      dayMap[excKey(dt)]=0;
+    }
+  }
   entries.forEach(e=>{if(!e.date||e.isOff)return;const dk=excKey(e.date);if(!dayMap[dk])dayMap[dk]=0;dayMap[dk]++;});
   const underCovered=Object.entries(dayMap).filter(([,c])=>c<rules.minCoveragePerDay);
   if(underCovered.length){
