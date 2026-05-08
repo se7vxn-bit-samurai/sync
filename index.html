@@ -1282,6 +1282,7 @@ body[data-theme="tide"]:is([data-variant="seafoam-day"],[data-variant="ice-sheet
 .pl-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 .pl-btn.danger{color:#dc2626;border-color:rgba(220,38,38,.3)}.pl-btn.danger:hover{background:rgba(220,38,38,.1)}
 .pl-btn.danger.active{background:#dc2626;color:#fff}
+@media(max-width:900px){.leader-planner-layout{grid-template-columns:1fr!important}}
 /* Rotation map */
 /* .rot-grid card layout removed — class is used exclusively for the 7-col blueprint grid (defined below) */
 .rot-card{border:1px solid var(--bdr);border-radius:10px;padding:10px 12px;background:rgba(255,255,255,.03)}
@@ -1663,7 +1664,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .ot-wrap{max-width:1200px}
 .ot-agent-row:hover{background:var(--al)!important}
 .ot-panels{min-height:320px}
-@media(max-width:768px){.ot-panels{grid-template-columns:1fr!important;gap:10px}}
+@media(max-width:768px){.ot-panels,.ot-month-layout{grid-template-columns:1fr!important;gap:10px}}
 
 /* ═══ v52 — Tactile button feedback ═══ */
 button,
@@ -2079,9 +2080,9 @@ button:active,
         <span class="qs-ico">⚡</span>
         <div><div class="qs-text">Team intelligence</div><div class="qs-sub">Analytics → Dashboard → signals, coaching, risk</div></div>
       </button>
-      <button class="ls-qs" onclick="closeSplash();setTab('calendar');S.calSubTab='schedule';S.plSubTab='schedule';ren()">
+      <button class="ls-qs" onclick="closeSplash();setTab('analytics');setAnalyticsView('blueprint')">
         <span class="qs-ico">🔮</span>
-        <div><div class="qs-text">Project forward</div><div class="qs-sub">Calendar → Planner → rotations, leave, scenarios</div></div>
+        <div><div class="qs-text">Project forward</div><div class="qs-sub">Analytics → Blueprint → rotations, leave, scenarios</div></div>
       </button>
     </div>
     <div class="ls-actions">
@@ -2133,7 +2134,10 @@ let S={wb:null,fn:"",shs:[],sh:"",raw:[],entries:[],team:"all",emp:"all",tz:true
       consecutiveDays:{enabled:true,threshold:6,label:"Worked N+ consecutive days"},
       overHours:{enabled:true,threshold:45,label:"Over weekly hours limit"},
       otIneligible:{enabled:true,lookback:0,label:"Marked OT-ineligible"},
-      training:{enabled:false,lookback:0,label:"In training"}
+      training:{enabled:false,lookback:0,label:"In training"},
+      qualityScore:{enabled:false,threshold:70,label:"Quality score below threshold"},
+      recentOT:{enabled:false,lookback:30,label:"Worked OT recently"},
+      attendance:{enabled:false,lookback:30,threshold:2,label:"Attendance events in window"}
     },
     selections:{},// "Agent Name" → {selected,shiftStart,shiftEnd,lunchMins,notes}
     defaultShift:{start:"09:00",end:"17:30",lunchMins:30},
@@ -2163,6 +2167,7 @@ let S={wb:null,fn:"",shs:[],sh:"",raw:[],entries:[],team:"all",emp:"all",tz:true
   peopleDashView:"today_ops",// "today_ops" | "week_risk" | "monthly_review"
   peopleHomeNotes:{},// "dept|leader|home" → note text
   peopleLogbook:[],// [{id,dept,createdAt,date,kind,leader,agent,title,body,tags,status,dueDate}]
+  leaderPlanner:{tasks:[],filter:"open",selectedDay:null},// Calendar Planner workbench tasks
   _peopleLogFilter:"all",// "all" | "note" | "followup" | "summary" | "event"
   _peopleView:"cards",// Cards tab sub-view: "cards" | "table"
   _eventsDateFilter:null,_eventsLeaderFilter:"all",_eventsTypeFilter:"all",
@@ -2190,7 +2195,8 @@ const STORAGE_REBRAND_COMPAT={
   "sc_positions":["mfs_positions"],
   "sc_exceptions":["mfs_exceptions"],
   "sc_dayclosed":["mfs_dayclosed"],
-  "sc_coaching":["mfs_coaching"]
+  "sc_coaching":["mfs_coaching"],
+  "sc_leaderplanner":["mfs_leaderplanner"]
 };
 const DEFAULT_COACH_START_BUFFER=90;   // min after shift start
 const DEFAULT_COACH_END_BUFFER=60;     // min before shift end
@@ -2677,7 +2683,8 @@ function getSearchMatches(query){
       {keys:["signal","sig"],label:"Signals",tab:"analytics",view:"signals"},
       {keys:["flag","alert","data issue","whitelist"],label:"Flags",tab:"analytics",view:"flags"},
       {keys:["ops","intel","command"],label:"⚡ Ops",tab:"analytics",view:"ops"},
-      {keys:["planner","blueprint","project"],label:"Planner",tab:"calendar",view:null,calSubTab:"schedule"},
+      {keys:["planner","todo","task","deadline"],label:"Planner",tab:"calendar",view:null,calSubTab:"schedule"},
+      {keys:["blueprint","project","projection"],label:"Blueprint",tab:"analytics",view:"blueprint"},
       {keys:["coaching","coach","session"],label:"Coaching",tab:"calendar",view:null,calSubTab:"coaching"},
       {keys:["overtime","ot","ccs"],label:"Overtime",tab:"calendar",view:null,calSubTab:"overtime"},
       {keys:["calendar","cal"],label:"Calendar",tab:"calendar",view:null},
@@ -7962,7 +7969,7 @@ function _clearOperationalSessionData(opts={}){
   S.swaps=[];S._swapFormDay=null;
   S._wfmEntries=[];S._wfmMeta=null;
   _wvWeeks=[];_wvIdx=0;_wvTab="schedule";_wvSrch="";_wvTeam="all";_wvExcFilter="all";_wvSelDay=null;
-  S.otPlan={targetDate:null,lookbackDays:14,autoExclude:true,exclusionRules:S.otPlan&&S.otPlan.exclusionRules?S.otPlan.exclusionRules:{},selections:{},defaultShift:{start:"09:00",end:"17:30",lunchMins:30},history:[]};
+  S.otPlan={targetDate:null,lookbackDays:14,autoExclude:true,exclusionRules:getDefaultOTRules(),selections:{},defaultShift:{start:"09:00",end:"17:30",lunchMins:30},history:[]};
   if(resetWorkspace){
     S.wb=null;S.fn="";S.shs=[];S.sh="";S.raw=[];S.entries=[];S.team="all";S.emp="all";S.month=null;S.months=[];S.mIdx=0;S.calDay=null;
     S.workspace={};S.activeDept=null;S.rotationDef=null;S.parseInfo=[];S.changeLog=null;S.allMonths=false;S.collapsed={};
@@ -8429,6 +8436,7 @@ function _buildAppStateSnapshot(){
     notes:S.notes,hc:S.hc,att:S.att,
     exceptions:S.exceptions||[],dayClosed:S.dayClosed||{},
     coachPlan:S.coachPlan||{},coachHistory:S.coachHistory||[],coachBlackouts:S.coachBlackouts||{},coachDuration:S.coachDuration||30,
+    coachManualSessions:S.coachManualSessions||[],coachBudgetHrs:S.coachBudgetHrs||{},
     coachTargetDaily:S.coachTargetDaily||1,plSubTab:S.plSubTab||'schedule',
     tab:S.tab,th:S.th,thVariant:S.thVariant||0,tz:S.tz,hlToday:S.hlToday,covMin:S.covMin,hrsMax:S.hrsMax,cbMode:S.cbMode,density:S.density,
     targetHours:S.targetHours||0,ratePerHour:S.ratePerHour||0,showCardWk:S.showCardWk!==false,
@@ -8439,8 +8447,10 @@ function _buildAppStateSnapshot(){
     agentStatuses:S.agentStatuses||{},agentNotes:S.agentNotes||{},peopleSubTab:S.peopleSubTab||'dashboard',
     peopleDashView:S.peopleDashView||'today_ops',peopleView:S._peopleView||'cards',peopleLogFilter:S._peopleLogFilter||'all',
     eventsDateFilter:S._eventsDateFilter||null,eventsLeaderFilter:S._eventsLeaderFilter||'all',eventsTypeFilter:S._eventsTypeFilter||'all',
-    peopleHomeNotes:S.peopleHomeNotes||{},peopleLogbook:S.peopleLogbook||[],
+    peopleHomeNotes:S.peopleHomeNotes||{},peopleLogbook:S.peopleLogbook||[],leaderPlanner:S.leaderPlanner||{tasks:[],filter:"open",selectedDay:null},
     otPlan:{
+      targetDate:ot.targetDate||null,
+      autoExclude:ot.autoExclude!==false,
       exclusionRules:ot.exclusionRules||{},
       defaultShift:ot.defaultShift||{start:"09:00",end:"17:30",lunchMins:30},
       lookbackDays:ot.lookbackDays||30,
@@ -8528,10 +8538,10 @@ function restoreFromSaveFile(wb,filename){
     const restoreKeys=["months","month","mIdx","rotationDef","plBlueprints","plPositions",
       "plCellOverrides","savedMonths","plLeave","plHires","plRemoved","notes","hc","att",
       "exceptions","dayClosed","people","rosterFile","shiftLib","coverageReq","forecast",
-      "coachPlan","coachHistory","coachBlackouts","coachDuration","coachTargetDaily","plSubTab","exportSelection",
+      "coachPlan","coachHistory","coachBlackouts","coachDuration","coachManualSessions","coachBudgetHrs","coachTargetDaily","plSubTab","exportSelection",
       "tab","th","thVariant","tz","hlToday","covMin","hrsMax","cbMode","density","targetHours","ratePerHour","showCardWk","collapsed","team","emp","dayFilter",
       "allMonths","parseInfo","anDay","anMode","shiftFilter","sumMode","anView","cardShow","flagSettings",
-      "agentStatuses","agentNotes","peopleSubTab","peopleDashView","peopleHomeNotes","peopleLogbook","anScope","otPlan"];
+      "agentStatuses","agentNotes","peopleSubTab","peopleDashView","peopleHomeNotes","peopleLogbook","leaderPlanner","anScope","otPlan"];
     restoreKeys.forEach(k=>{if(snap[k]!==undefined)S[k]=snap[k];});
     if(snap.peopleView&&["cards","table"].includes(snap.peopleView))S._peopleView=snap.peopleView;
     if(snap.peopleLogFilter&&["all","note","followup","summary","event"].includes(snap.peopleLogFilter))S._peopleLogFilter=snap.peopleLogFilter;
@@ -8557,10 +8567,7 @@ function restoreFromSaveFile(wb,filename){
     if(typeof _ensurePeopleOpsState==="function")_ensurePeopleOpsState();
     // OT Planner defensive restore
     if(S.otPlan&&typeof S.otPlan==='object'){
-      if(!S.otPlan.exclusionRules)S.otPlan.exclusionRules={sick:{enabled:true,lookback:7},awol:{enabled:true,lookback:14},leave:{enabled:true,lookback:0},consecutiveDays:{enabled:true,threshold:6},overHours:{enabled:true,threshold:45},otIneligible:{enabled:true,lookback:0},training:{enabled:false,lookback:0}};
-      if(!S.otPlan.defaultShift)S.otPlan.defaultShift={start:"09:00",end:"17:30",lunchMins:30};
-      if(!Array.isArray(S.otPlan.history))S.otPlan.history=[];
-      if(!S.otPlan.selections)S.otPlan.selections={};
+      ensureOTPlanDefaults();
     }
     // Validate coaching plan date strings
     Object.keys(S.coachPlan).forEach(k=>{
@@ -9520,7 +9527,12 @@ function rCal(el){
     if(prevCalSubTab!=="cards")_cardsExpandVisibleByDefault();
     S.plSubTab="cards";var _t=document.createElement("div");rCards(_t);el.innerHTML='<div style="display:flex;flex-direction:column;height:100%">'+renderCalendarSubtabNav("cards")+'<div style="flex:1;overflow-y:auto;padding:8px">'+_t.innerHTML+'</div></div>';_initCardsAllMonthVirtualization(el);return;
   }
-  if(S.calSubTab==="schedule"||S.calSubTab==="coaching"||S.calSubTab==="overtime"){
+  if(S.calSubTab==="schedule"){
+    S.plSubTab="schedule";
+    el.innerHTML='<div style="display:flex;flex-direction:column;height:100%">'+renderCalendarSubtabNav("schedule")+'<div style="flex:1;overflow-y:auto;padding:8px">'+rLeaderPlanner()+'</div></div>';
+    return;
+  }
+  if(S.calSubTab==="coaching"||S.calSubTab==="overtime"){
     S.plSubTab=_calendarToPlannerSubTab(S.calSubTab);
     var _pl=document.createElement("div");
     rPlanner(_pl,{embeddedCalendar:true});
@@ -10588,7 +10600,32 @@ function loadPeople(){
   try{const r=localStorage.getItem("sc_people");if(r)S.people=JSON.parse(r);}catch(e){}
   try{const r=localStorage.getItem("sc_rosterfile");if(r)S.rosterFile=JSON.parse(r);}catch(e){}
 }
+function getDefaultOTRules(){
+  return{
+    sick:{enabled:true,lookback:7,label:"Sick in last N days"},
+    awol:{enabled:true,lookback:14,label:"AWOL/No-show in last N days"},
+    leave:{enabled:true,lookback:0,label:"Currently on leave"},
+    consecutiveDays:{enabled:true,threshold:6,label:"Worked N+ consecutive days"},
+    overHours:{enabled:true,threshold:45,label:"Over weekly hours limit"},
+    otIneligible:{enabled:true,lookback:0,label:"Marked OT-ineligible"},
+    training:{enabled:false,lookback:0,label:"In training"},
+    qualityScore:{enabled:false,threshold:70,label:"Quality score below threshold"},
+    recentOT:{enabled:false,lookback:30,label:"Worked OT recently"},
+    attendance:{enabled:false,lookback:30,threshold:2,label:"Attendance events in window"}
+  };
+}
+function ensureOTPlanDefaults(){
+  if(!S.otPlan||typeof S.otPlan!=="object")S.otPlan={};
+  const defaults=getDefaultOTRules();
+  S.otPlan.exclusionRules=Object.assign(defaults,S.otPlan.exclusionRules||{});
+  if(!S.otPlan.defaultShift)S.otPlan.defaultShift={start:"09:00",end:"17:30",lunchMins:30};
+  if(!Array.isArray(S.otPlan.history))S.otPlan.history=[];
+  if(!S.otPlan.selections||typeof S.otPlan.selections!=="object")S.otPlan.selections={};
+  if(!S.otPlan.lookbackDays)S.otPlan.lookbackDays=14;
+  if(typeof S.otPlan.autoExclude!=="boolean")S.otPlan.autoExclude=true;
+}
 function saveOTPlan(){
+  ensureOTPlanDefaults();
   try{_persistSet("sc_otplan",JSON.stringify(S.otPlan));}catch(e){}
 }
 function loadOTPlan(){
@@ -10597,11 +10634,33 @@ function loadOTPlan(){
     if(r){const saved=JSON.parse(r);
       if(saved.exclusionRules)S.otPlan.exclusionRules=Object.assign(S.otPlan.exclusionRules,saved.exclusionRules);
       if(saved.defaultShift)S.otPlan.defaultShift=saved.defaultShift;
+      if(saved.targetDate!==undefined)S.otPlan.targetDate=saved.targetDate;
+      if(typeof saved.autoExclude==="boolean")S.otPlan.autoExclude=saved.autoExclude;
       if(saved.lookbackDays)S.otPlan.lookbackDays=saved.lookbackDays;
       if(Array.isArray(saved.history))S.otPlan.history=saved.history;
       if(saved.selections)S.otPlan.selections=saved.selections;
     }
   }catch(e){}
+  ensureOTPlanDefaults();
+}
+
+function saveLeaderPlanner(){
+  try{
+    const lp=S.leaderPlanner||{tasks:[],filter:"open",selectedDay:null};
+    if(lp.tasks&&lp.tasks.length)_persistSet("sc_leaderplanner",JSON.stringify(lp));
+    else _persistRemove("sc_leaderplanner");
+  }catch(e){}
+}
+function loadLeaderPlanner(){
+  try{
+    const r=_storageGetCompat("sc_leaderplanner");
+    if(r){
+      const saved=JSON.parse(r);
+      if(saved&&typeof saved==="object")S.leaderPlanner=Object.assign({tasks:[],filter:"open",selectedDay:null},saved);
+    }
+  }catch(e){}
+  if(!_isPlainObject(S.leaderPlanner))S.leaderPlanner={tasks:[],filter:"open",selectedDay:null};
+  if(!Array.isArray(S.leaderPlanner.tasks))S.leaderPlanner.tasks=[];
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -10609,19 +10668,54 @@ function loadOTPlan(){
    Builds available agent pool, computes exclusions, finalises plans.
    ═══════════════════════════════════════════════════════════════ */
 
+function getAgentQualityScore(agentName){
+  const p=S.people&&S.people[agentName]?S.people[agentName]:null;
+  const direct=p?[p.qualityScore,p.qaScore,p.quality,p.score].find(v=>v!==undefined&&v!==null&&v!==""):null;
+  const q=S.coachQuality&&S.coachQuality[agentName]&&S.coachQuality[agentName].scores?S.coachQuality[agentName].scores.total:null;
+  const val=direct!==null&&direct!==undefined?direct:q;
+  const num=parseFloat(val);
+  return Number.isFinite(num)?num:null;
+}
+function getRecentOTCount(agentName,targetDateStr,lookbackDays){
+  const td=new Date(targetDateStr+"T00:00:00");
+  const ws=new Date(td);ws.setDate(ws.getDate()-(lookbackDays||30));
+  return (S.otPlan.history||[]).filter(plan=>{
+    if(!plan||!plan.targetDate)return false;
+    const pd=new Date(plan.targetDate+"T00:00:00");
+    if(pd<ws||pd>=td)return false;
+    return (plan.agents||[]).some(a=>(a.name||a)===agentName);
+  }).length;
+}
+function getAttendanceEventCount(agentName,targetDateStr,lookbackDays){
+  const td=new Date(targetDateStr+"T00:00:00");
+  const ws=new Date(td);ws.setDate(ws.getDate()-(lookbackDays||30));
+  let count=0;
+  (S.exceptions||[]).forEach(ex=>{
+    if(ex.agentName!==agentName&&ex.person!==agentName)return;
+    const ed=new Date(ex.date+"T00:00:00");
+    if(ed<ws||ed>td)return;
+    if(["sick","no_show","awol","halfday","family_responsibility"].includes(ex.type))count++;
+  });
+  for(let i=0;i<(lookbackDays||30);i++){
+    const d=new Date(td);d.setDate(d.getDate()-i);
+    const st=getAgentStatus(agentName,d);
+    if(["sick","awol","halfday","leave"].includes(st))count++;
+  }
+  return count;
+}
+
 function computeOTExclusions(agentName,targetDateStr,rules,lookbackDays){
   const reasons=[];
   const person=S.people[agentName];
-  if(!person)return{excluded:false,reasons};
   rules=rules||S.otPlan.exclusionRules;
   lookbackDays=lookbackDays||S.otPlan.lookbackDays;
 
   // 1. OT ineligible
-  if(rules.otIneligible&&rules.otIneligible.enabled&&person.otEligible===false){
+  if(person&&rules.otIneligible&&rules.otIneligible.enabled&&person.otEligible===false){
     reasons.push({rule:"otIneligible",severity:"high",text:"Not OT eligible"});
   }
   // 2. Restrictions
-  if(person.restrictions&&person.restrictions.length){
+  if(person&&person.restrictions&&person.restrictions.length){
     reasons.push({rule:"restrictions",severity:"medium",text:"Restrictions: "+person.restrictions.join(", ")});
   }
 
@@ -10674,6 +10768,23 @@ function computeOTExclusions(agentName,targetDateStr,rules,lookbackDays){
     const statusTrain=getAgentStatus(agentName,td)==="training";
     if(inTraining||statusTrain)reasons.push({rule:"training",severity:"medium",text:"In training on target date"});
   }
+  if(rules.qualityScore&&rules.qualityScore.enabled){
+    const threshold=rules.qualityScore.threshold||70;
+    const score=getAgentQualityScore(agentName);
+    if(score===null)reasons.push({rule:"qualityScore",severity:"medium",text:"No quality score"});
+    else if(score<threshold)reasons.push({rule:"qualityScore",severity:"high",text:"Quality "+Math.round(score)+" below "+threshold});
+  }
+  if(rules.recentOT&&rules.recentOT.enabled){
+    const lb=rules.recentOT.lookback||30;
+    const recent=getRecentOTCount(agentName,targetDateStr,lb);
+    if(recent>0)reasons.push({rule:"recentOT",severity:"high",text:"OT in last "+lb+"d ("+recent+"x)"});
+  }
+  if(rules.attendance&&rules.attendance.enabled){
+    const lb=rules.attendance.lookback||30;
+    const threshold=rules.attendance.threshold||2;
+    const attCount=getAttendanceEventCount(agentName,targetDateStr,lb);
+    if(attCount>=threshold)reasons.push({rule:"attendance",severity:"high",text:attCount+" attendance events in "+lb+"d"});
+  }
 
   // 5. Consecutive work days
   if(rules.consecutiveDays&&rules.consecutiveDays.enabled){
@@ -10722,6 +10833,8 @@ function buildOTPool(targetDateStr,lookbackDays){
       excluded:result.excluded,
       reasons:result.reasons,
       severity:result.reasons.length?Math.max(...result.reasons.map(r=>r.severity==="high"?3:r.severity==="medium"?2:1)):0,
+      recentOT:getRecentOTCount(p.name,targetDateStr,(rules.recentOT&&rules.recentOT.lookback)||30),
+      qualityScore:getAgentQualityScore(p.name),
       selected:!!(S.otPlan.selections[p.name]&&S.otPlan.selections[p.name].selected)
     });
   });
@@ -10729,6 +10842,7 @@ function buildOTPool(targetDateStr,lookbackDays){
   pool.sort((a,b)=>{
     if(a.excluded!==b.excluded)return a.excluded?1:-1;
     if(a.severity!==b.severity)return a.severity-b.severity;
+    if(a.recentOT!==b.recentOT)return a.recentOT-b.recentOT;
     return a.name.localeCompare(b.name);
   });
   return pool;
@@ -10878,6 +10992,23 @@ function otSetLookback(days){
 function otSetTargetDate(val){
   S.otPlan.targetDate=val;S.otPlan.selections={};saveOTPlan();rerenderPlannerSubTab("overtime");
 }
+function getOTViewMonth(){
+  if(S.otPlan&&S.otPlan.targetDate){
+    const d=new Date(S.otPlan.targetDate+"T00:00:00");
+    if(!isNaN(d))return{y:d.getFullYear(),m:d.getMonth()};
+  }
+  if(S.month){
+    const parts=String(S.month).split("-").map(Number);
+    if(parts.length===2&&Number.isFinite(parts[0])&&Number.isFinite(parts[1]))return{y:parts[0],m:parts[1]};
+  }
+  const now=new Date();
+  return{y:now.getFullYear(),m:now.getMonth()};
+}
+function otMoveMonth(delta){
+  const cur=getOTViewMonth();
+  const d=new Date(cur.y,cur.m+(delta||0),1);
+  otSetTargetDate(d.getFullYear()+"-"+P(d.getMonth()+1)+"-"+P(1));
+}
 function otCopyToNextDay(){
   if(!S.otPlan.targetDate)return;
   // Save current plan to history first
@@ -10929,6 +11060,57 @@ function otOverrideExclusion(name){
   if(!S.otPlan.selections[name])S.otPlan.selections[name]={selected:false,shiftStart:null,shiftEnd:null,lunchMins:null,notes:""};
   S.otPlan.selections[name]._overridden=true;
   saveOTPlan();rerenderPlannerSubTab("overtime");
+}
+function renderOTMonthCalendar(){
+  const vm=getOTViewMonth();
+  const first=new Date(vm.y,vm.m,1);
+  const last=new Date(vm.y,vm.m+1,0);
+  const startPad=(first.getDay()+6)%7;
+  const selected=S.otPlan.targetDate||"";
+  let h=`<div style="display:grid;grid-template-columns:260px 1fr;gap:14px;margin-bottom:14px" class="ot-month-layout">`;
+  h+=`<div style="border:1px solid var(--bdr);border-radius:8px;overflow:hidden;background:rgba(255,255,255,.015)">`;
+  h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--bdr)">`;
+  h+=`<button onclick="otMoveMonth(-1)" class="pl-btn" style="padding:2px 7px">◀</button>`;
+  h+=`<div style="font-size:13px;font-weight:700">${MOFULL[vm.m]} ${vm.y}</div>`;
+  h+=`<button onclick="otMoveMonth(1)" class="pl-btn" style="padding:2px 7px">▶</button>`;
+  h+=`</div>`;
+  h+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);font-size:9px;color:var(--tm);border-bottom:1px solid var(--bdr)">`;
+  ["M","T","W","T","F","S","S"].forEach(d=>h+=`<div style="padding:5px;text-align:center;font-weight:700">${d}</div>`);
+  h+=`</div><div style="display:grid;grid-template-columns:repeat(7,1fr)">`;
+  for(let i=0;i<startPad;i++)h+=`<div style="min-height:48px;border-right:1px solid var(--bdr)22;border-bottom:1px solid var(--bdr)22"></div>`;
+  for(let d=1;d<=last.getDate();d++){
+    const iso=vm.y+"-"+P(vm.m+1)+"-"+P(d);
+    const pool=buildOTPool(iso,S.otPlan.lookbackDays);
+    const ok=pool.filter(p=>!p.excluded&&p.severity===0).length;
+    const warn=pool.filter(p=>!p.excluded&&p.severity>0).length;
+    const blocked=pool.filter(p=>p.excluded).length;
+    const isSel=iso===selected;
+    const dt=new Date(vm.y,vm.m,d);
+    const isWknd=dt.getDay()===0||dt.getDay()===6;
+    h+=`<button onclick="otSetTargetDate('${iso}')" style="min-height:48px;text-align:left;padding:5px 5px;border:none;border-right:1px solid var(--bdr)22;border-bottom:1px solid var(--bdr)22;background:${isSel?"var(--al)":isWknd?"rgba(251,191,36,.035)":"transparent"};color:var(--text);cursor:pointer;border-left:${isSel?"2px solid var(--accent)":"2px solid transparent"};font-family:inherit">`;
+    h+=`<div style="font-size:11px;font-weight:700;color:${isSel?"var(--accent)":isWknd?"var(--wknd)":"var(--tm)"}">${d}</div>`;
+    h+=`<div style="display:flex;gap:2px;margin-top:3px;flex-wrap:wrap">`;
+    h+=`<span style="font-size:8px;padding:1px 4px;border-radius:6px;background:rgba(52,211,153,.12);color:var(--early)">${ok}</span>`;
+    if(warn)h+=`<span style="font-size:8px;padding:1px 4px;border-radius:6px;background:rgba(251,191,36,.12);color:var(--wknd)">${warn}</span>`;
+    if(blocked)h+=`<span style="font-size:8px;padding:1px 4px;border-radius:6px;background:rgba(220,38,38,.1);color:#dc2626">${blocked}</span>`;
+    h+=`</div></button>`;
+  }
+  h+=`</div></div>`;
+  h+=`<div style="border:1px solid var(--bdr);border-radius:8px;padding:12px;background:rgba(255,255,255,.015);display:grid;grid-template-columns:repeat(3,1fr);gap:8px;align-content:start">`;
+  const monthDays=Array.from({length:last.getDate()},(_,i)=>vm.y+"-"+P(vm.m+1)+"-"+P(i+1));
+  const totals=monthDays.reduce((acc,iso)=>{
+    const pool=buildOTPool(iso,S.otPlan.lookbackDays);
+    acc.ok+=pool.filter(p=>!p.excluded&&p.severity===0).length;
+    acc.warn+=pool.filter(p=>!p.excluded&&p.severity>0).length;
+    acc.blocked+=pool.filter(p=>p.excluded).length;
+    return acc;
+  },{ok:0,warn:0,blocked:0});
+  h+=`<div style="padding:10px;border-radius:7px;background:rgba(52,211,153,.08)"><div style="font-size:20px;font-weight:700;color:var(--early)">${Math.round(totals.ok/monthDays.length)}</div><div style="font-size:10px;color:var(--tm)">Avg eligible/day</div></div>`;
+  h+=`<div style="padding:10px;border-radius:7px;background:rgba(251,191,36,.08)"><div style="font-size:20px;font-weight:700;color:var(--wknd)">${Math.round(totals.warn/monthDays.length)}</div><div style="font-size:10px;color:var(--tm)">Avg warnings/day</div></div>`;
+  h+=`<div style="padding:10px;border-radius:7px;background:rgba(220,38,38,.07)"><div style="font-size:20px;font-weight:700;color:#dc2626">${Math.round(totals.blocked/monthDays.length)}</div><div style="font-size:10px;color:var(--tm)">Avg blocked/day</div></div>`;
+  h+=`<div style="grid-column:1/-1;font-size:11px;color:var(--tm);line-height:1.5">Click any day to rebuild the OT pool using the active rules. Green = clean eligible, amber = eligible with warnings, red = excluded.</div>`;
+  h+=`</div></div>`;
+  return h;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -13564,9 +13746,18 @@ function rAnalyticsContent(ad){
   if(S.anView==="absence") return rAbsenceBreakdown(y,m,monthEnt);
   if(S.anView==="alerts") return _rAlertsContent(monthEnt,y,m);
   if(S.anView==="rawdata") return _rRawDataContent(y,m,monthEnt);
+  if(S.anView==="blueprint") return rBlueprintAnalyticsContent();
   if(S.anView==="dashboard") return ''; // Dashboard appends via rIntel after innerHTML
   // coverage is the default
   return _rCoverageContent(ad);
+}
+function rBlueprintAnalyticsContent(){
+  const prev=S.plSubTab;
+  S.plSubTab="schedule";
+  const tmp=document.createElement("div");
+  rPlanner(tmp,{embeddedCalendar:true});
+  S.plSubTab=prev;
+  return tmp.innerHTML;
 }
 // ═══ RAW DATA TAB — shows all parsed data in browsable sub-tabs ═══
 function _rRawDataContent(y,m,monthEnt){
@@ -13891,7 +14082,7 @@ function rAnalytics(el){
   if(S.anView==="history")S.anView="coverage";
   if(S.anView==="ops")S.anView="dashboard";
   if(S.anView==="forecast"||S.anView==="capacity")S.anView="dashboard";
-  if(!["dashboard","coverage","alerts","absence","rawdata"].includes(S.anView))S.anView="dashboard";
+  if(!["dashboard","coverage","alerts","absence","rawdata","blueprint"].includes(S.anView))S.anView="dashboard";
 
   const flagCount=computeFlags().filter(f=>f.category==="operational"||f.category==="blueprint").length;
   const alertsBadge=flagCount>0?` <span style="font-size:10px;padding:1px 5px;border-radius:8px;background:rgba(220,38,38,.15);color:#dc2626;font-weight:700">${flagCount}</span>`:"";
@@ -13900,6 +14091,7 @@ function rAnalytics(el){
   h+=`<div id="analyticsModeControls" class="an-mode-toggle">`;
   h+=`<button class="an-mode-btn${S.anView==="dashboard"?" active":""}" data-anview="dashboard" onclick="setAnalyticsView('dashboard')">Dashboard</button>`;
   h+=`<button class="an-mode-btn${S.anView==="coverage"?" active":""}" data-anview="coverage" onclick="setAnalyticsView('coverage')">Coverage</button>`;
+  h+=`<button class="an-mode-btn${S.anView==="blueprint"?" active":""}" data-anview="blueprint" onclick="setAnalyticsView('blueprint')">Blueprint</button>`;
   h+=`<button class="an-mode-btn${S.anView==="absence"?" active":""}" data-anview="absence" onclick="setAnalyticsView('absence')">Absence</button>`;
   h+=`<button class="an-mode-btn${S.anView==="alerts"?" active":""}" data-anview="alerts" onclick="setAnalyticsView('alerts')">Alerts${alertsBadge}</button>`;
   h+=`<button class="an-mode-btn${S.anView==="rawdata"?" active":""}" data-anview="rawdata" onclick="setAnalyticsView('rawdata')">Data</button>`;
@@ -16609,17 +16801,25 @@ function addManualCoachSession(){
   const timeEl=document.getElementById("msTime");
   const noteEl=document.getElementById("msNote");
   const durEl=document.getElementById("msDuration");
+  const agentEl=document.getElementById("msAgent");
+  const topicEl=document.getElementById("msTopic");
+  const actionEl=document.getElementById("msAction");
+  const followEl=document.getElementById("msFollowup");
   if(!nameEl||!dateEl){toast("Form not found","err");return;}
   const name=nameEl.value.trim();
   const date=dateEl.value.trim();
   if(!name||!date){toast("Leader and date are required","warn");return;}
   const time=(timeEl?.value||"").trim();
   const note=(noteEl?.value||"").trim();
+  const agentName=(agentEl?.value||"").trim();
+  const topic=(topicEl?.value||"").trim();
+  const actionItem=(actionEl?.value||"").trim();
+  const followUpDate=(followEl?.value||"").trim();
   const duration=durEl?Math.max(5,Math.min(240,parseInt(durEl.value)||S.coachDuration||30)):S.coachDuration||30;
   if(!Array.isArray(S.coachManualSessions))S.coachManualSessions=[];
   const loggedAt=new Date().toISOString();
   S.coachManualSessions.push({
-    name,date,time:time||null,note:note||null,duration,
+    name,date,time:time||null,note:note||null,duration,agentName,topic,actionItem,followUpDate,
     dept:S.activeDept||"",
     loggedAt
   });
@@ -16630,9 +16830,20 @@ function addManualCoachSession(){
     slotLabel:time||"manual",slotQuality:"manual",
     qualityBucket:"neutral",duration,
     dept:S.activeDept||"",completedAt:loggedAt,
-    manual:true,note:note||""
+    manual:true,note:note||"",agentName,topic,actionItem,followUpDate
   });
+  if(actionItem||followUpDate){
+    leaderPlannerCreateTask({
+      title:actionItem||("Follow up coaching with "+(agentName||name)),
+      dueDate:followUpDate||date,
+      priority:"flag",
+      linkedAgent:agentName,
+      source:"coaching",
+      notes:(topic?topic+" · ":"")+(name?("Leader: "+name):"")
+    });
+  }
   schedulePersist(true);
+  saveLeaderPlanner();
   toast(name.split(" ")[0]+" session logged — "+date+(time?" at "+time:"")+" ("+duration+"min)","ok");
   rerenderPlannerSubTab("coaching");
 }
@@ -16792,14 +17003,14 @@ function markCoachMissed(name){
 function buildSheetCoachingHistory(wb){
   const hist=getCoachHistoryForDept();
   const ws=wb.addWorksheet('Coaching_History',{properties:{tabColor:{argb:EXC.INDIGO}}});
-  ws.addRow(['leader_name','month','scheduled_date','scheduled_time','slot_quality','quality_bucket','duration_min','department','completed_at']).eachCell(c=>{sC(c,{bold:true,color:EXC.ACCENT,fill:EXC.HDR,border:EXC.BORDER});});
-  if(!hist.length){ws.addRow(['','','No coaching history captured yet','','','','','','']); return;}
+  ws.addRow(['leader_name','coached_agent','topic','action_item','follow_up_date','month','scheduled_date','scheduled_time','slot_quality','quality_bucket','duration_min','department','completed_at']).eachCell(c=>{sC(c,{bold:true,color:EXC.ACCENT,fill:EXC.HDR,border:EXC.BORDER});});
+  if(!hist.length){ws.addRow(['','','No coaching history captured yet','','','','','','','','','','']); return;}
   hist.forEach(h=>{
     const d=h.date?safeExcelDate(new Date(h.date.split('-')[0],+h.date.split('-')[1]-1,+h.date.split('-')[2])):'';
-    ws.addRow([h.name||'',h.monthKey||((h.date||'').slice(0,7)),d||'',h.slotLabel||h.time||'',h.slotQuality||'',h.qualityBucket||coachQualityBucket(h.slotQuality),h.duration||'',h.dept||'',h.completedAt||'']).eachCell(c=>{sC(c,{border:EXC.BORDER});});
-    if(d)ws.getCell(ws.lastRow.number,3).numFmt='dd-mmm-yyyy';
+    ws.addRow([h.name||'',h.agentName||'',h.topic||'',h.actionItem||'',h.followUpDate||'',h.monthKey||((h.date||'').slice(0,7)),d||'',h.slotLabel||h.time||'',h.slotQuality||'',h.qualityBucket||coachQualityBucket(h.slotQuality),h.duration||'',h.dept||'',h.completedAt||'']).eachCell(c=>{sC(c,{border:EXC.BORDER});});
+    if(d)ws.getCell(ws.lastRow.number,7).numFmt='dd-mmm-yyyy';
   });
-  [24,12,14,16,12,14,12,18,22].forEach((w,i)=>ws.getColumn(i+1).width=w);
+  [24,24,18,28,14,12,14,16,12,14,12,18,22].forEach((w,i)=>ws.getColumn(i+1).width=w);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -16880,6 +17091,9 @@ function showOTRulesEditor(){
     {k:"overHours",label:"Over hours limit",desc:"Exclude agents exceeding weekly hours threshold",hasLookback:false,hasThreshold:true,thresholdLabel:"Max hrs/wk",thresholdMin:20,thresholdMax:80},
     {k:"otIneligible",label:"OT ineligible flag",desc:"Exclude agents flagged as ineligible for overtime",hasLookback:false},
     {k:"training",label:"In training",desc:"Exclude agents with training exceptions in lookback window",hasLookback:true},
+    {k:"qualityScore",label:"Quality score",desc:"Exclude agents below the minimum quality score; warn when no score exists",hasLookback:false,hasThreshold:true,thresholdLabel:"Min score",thresholdMin:0,thresholdMax:100},
+    {k:"recentOT",label:"Recent OT fairness",desc:"Exclude agents already used for OT inside the lookback window",hasLookback:true},
+    {k:"attendance",label:"Attendance window",desc:"Exclude agents with too many sick/AWOL/half-day events in the window",hasLookback:true,hasThreshold:true,thresholdLabel:"Max events",thresholdMin:1,thresholdMax:10},
   ];
   let existing=document.getElementById("otRulesOverlay");
   if(existing){existing.remove();return;}
@@ -16959,8 +17173,9 @@ function rOTPlanner(){
     h+=`<div style="padding:32px;text-align:center;color:var(--tm);font-size:13px">Load a roster or add agents via People tab to use OT Planner.</div>`;
     h+=`</div>`;return h;
   }
+  h+=renderOTMonthCalendar();
   if(!ot.targetDate){
-    h+=`<div style="padding:32px;text-align:center;color:var(--tm);font-size:13px">Select a target date above to build the OT pool.</div>`;
+    h+=`<div style="padding:22px;text-align:center;color:var(--tm);font-size:13px;border:1px dashed var(--bdr);border-radius:8px">Select a day in the monthly OT calendar to build the eligibility pool.</div>`;
     h+=`</div>`;return h;
   }
 
@@ -17087,6 +17302,193 @@ function rOTPlanner(){
   return h;
 }
 
+function ensureLeaderPlanner(){
+  if(!S.leaderPlanner||typeof S.leaderPlanner!=="object")S.leaderPlanner={tasks:[],filter:"open",selectedDay:null};
+  if(!Array.isArray(S.leaderPlanner.tasks))S.leaderPlanner.tasks=[];
+  if(!S.leaderPlanner.filter)S.leaderPlanner.filter="open";
+}
+function getLeaderPlannerMonth(){
+  ensureLeaderPlanner();
+  if(Number.isFinite(S.leaderPlanner.year)&&Number.isFinite(S.leaderPlanner.month))return{y:S.leaderPlanner.year,m:S.leaderPlanner.month};
+  if(S.month){
+    const p=String(S.month).split("-").map(Number);
+    if(p.length===2&&Number.isFinite(p[0])&&Number.isFinite(p[1]))return{y:p[0],m:p[1]};
+  }
+  const now=new Date();
+  return{y:now.getFullYear(),m:now.getMonth()};
+}
+function setLeaderPlannerMonth(delta){
+  const cur=getLeaderPlannerMonth();
+  const d=new Date(cur.y,cur.m+(delta||0),1);
+  ensureLeaderPlanner();
+  S.leaderPlanner.year=d.getFullYear();
+  S.leaderPlanner.month=d.getMonth();
+  S.leaderPlanner.selectedDay=null;
+  saveLeaderPlanner();
+  rerenderPlannerSubTab("schedule");
+}
+function setLeaderPlannerDay(dateISO){
+  ensureLeaderPlanner();
+  S.leaderPlanner.selectedDay=dateISO;
+  saveLeaderPlanner();
+  rerenderPlannerSubTab("schedule");
+}
+function leaderPlannerCreateTask(task){
+  ensureLeaderPlanner();
+  const now=new Date().toISOString();
+  const t=Object.assign({
+    id:"lp_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    title:"",dueDate:"",priority:"normal",status:"open",linkedAgent:"",source:"manual",notes:"",
+    createdAt:now,completedAt:null
+  },task||{});
+  if(!t.title)return null;
+  S.leaderPlanner.tasks.push(t);
+  saveLeaderPlanner();
+  return t;
+}
+function addLeaderPlannerTask(){
+  const title=(document.getElementById("lpTitle")?.value||"").trim();
+  if(!title){toast("Task title required","warn");return;}
+  const due=(document.getElementById("lpDue")?.value||"").trim();
+  const priority=(document.getElementById("lpPriority")?.value||"normal").trim();
+  const linkedAgent=(document.getElementById("lpAgent")?.value||"").trim();
+  const source=(document.getElementById("lpSource")?.value||"manual").trim();
+  const notes=(document.getElementById("lpNote")?.value||"").trim();
+  leaderPlannerCreateTask({title,dueDate:due,priority,linkedAgent,source,notes});
+  toast("Task added","ok");
+  rerenderPlannerSubTab("schedule");
+}
+function updateLeaderPlannerTask(id,field,value){
+  ensureLeaderPlanner();
+  const t=S.leaderPlanner.tasks.find(x=>x.id===id);
+  if(!t)return;
+  t[field]=value;
+  t.updatedAt=new Date().toISOString();
+  saveLeaderPlanner();
+  rerenderPlannerSubTab("schedule");
+}
+function toggleLeaderPlannerTask(id){
+  ensureLeaderPlanner();
+  const t=S.leaderPlanner.tasks.find(x=>x.id===id);
+  if(!t)return;
+  t.status=t.status==="done"?"open":"done";
+  t.completedAt=t.status==="done"?new Date().toISOString():null;
+  saveLeaderPlanner();
+  rerenderPlannerSubTab("schedule");
+}
+function deleteLeaderPlannerTask(id){
+  ensureLeaderPlanner();
+  S.leaderPlanner.tasks=S.leaderPlanner.tasks.filter(x=>x.id!==id);
+  saveLeaderPlanner();
+  rerenderPlannerSubTab("schedule");
+}
+function renderLeaderPlannerTaskRow(t,compact){
+  const done=t.status==="done";
+  const pri=t.priority||"normal";
+  const priCol=pri==="high"?"#dc2626":pri==="flag"?"var(--wknd)":pri==="low"?"var(--tm)":"var(--accent)";
+  const due=t.dueDate?`<span style="font-family:'JetBrains Mono',monospace;color:var(--tm);font-size:10px">${X(t.dueDate.slice(5))}</span>`:"";
+  let h=`<div style="display:flex;align-items:flex-start;gap:8px;padding:${compact?"6px 0":"8px 10px"};border-bottom:1px solid var(--bdr)22;opacity:${done?".55":"1"}">`;
+  h+=`<button onclick="toggleLeaderPlannerTask('${XJ(t.id)}')" style="width:18px;height:18px;border-radius:4px;border:1px solid ${done?"var(--early)":"var(--bdr)"};background:${done?"var(--early)":"none"};color:${done?"#000":"transparent"};cursor:pointer;flex-shrink:0;font-size:11px;line-height:16px">✓</button>`;
+  h+=`<div style="flex:1;min-width:0">`;
+  h+=`<div style="display:flex;align-items:center;gap:6px;min-width:0"><span style="font-size:12px;font-weight:600;color:${done?"var(--tm)":"var(--text)"};text-decoration:${done?"line-through":"none"};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(t.title)}</span><span style="font-size:9px;padding:1px 5px;border-radius:7px;background:${priCol}18;color:${priCol};text-transform:uppercase">${X(pri)}</span>${due}</div>`;
+  const meta=[];
+  if(t.linkedAgent)meta.push("Agent: "+t.linkedAgent);
+  if(t.source&&t.source!=="manual")meta.push(t.source);
+  if(t.notes)meta.push(t.notes);
+  if(meta.length)h+=`<div style="font-size:10px;color:var(--tm);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(meta.join(" · "))}</div>`;
+  h+=`</div>`;
+  h+=`<button onclick="deleteLeaderPlannerTask('${XJ(t.id)}')" style="background:none;border:none;color:var(--tm);cursor:pointer;font-size:12px;padding:1px 3px;opacity:.6">✕</button>`;
+  h+=`</div>`;
+  return h;
+}
+function rLeaderPlanner(){
+  ensureLeaderPlanner();
+  const vm=getLeaderPlannerMonth();
+  const first=new Date(vm.y,vm.m,1);
+  const last=new Date(vm.y,vm.m+1,0);
+  const monthKey=vm.y+"-"+P(vm.m+1);
+  const today=new Date();
+  const todayISO=today.getFullYear()+"-"+P(today.getMonth()+1)+"-"+P(today.getDate());
+  if(!S.leaderPlanner.selectedDay)S.leaderPlanner.selectedDay=todayISO.startsWith(monthKey)?todayISO:monthKey+"-01";
+  const selected=S.leaderPlanner.selectedDay;
+  const tasks=S.leaderPlanner.tasks.slice().sort((a,b)=>(a.status==="done")-(b.status==="done")||String(a.dueDate||"9999").localeCompare(String(b.dueDate||"9999"))||String(a.createdAt||"").localeCompare(String(b.createdAt||"")));
+  const monthTasks=tasks.filter(t=>(t.dueDate||"").startsWith(monthKey)||(!t.dueDate&&t.status!=="done"));
+  const open=monthTasks.filter(t=>t.status!=="done");
+  const done=monthTasks.filter(t=>t.status==="done");
+  const overdue=open.filter(t=>t.dueDate&&t.dueDate<todayISO);
+  const flagged=open.filter(t=>["high","flag"].includes(t.priority));
+  const filtered=monthTasks.filter(t=>{
+    const f=S.leaderPlanner.filter||"open";
+    if(f==="all")return true;
+    if(f==="done")return t.status==="done";
+    if(f==="flagged")return ["high","flag"].includes(t.priority)&&t.status!=="done";
+    return t.status!=="done";
+  });
+  const agentNames=Object.values(S.people||{}).filter(p=>p.role==="agent").map(p=>p.name).sort();
+  let h=`<div class="pl-wrap">`;
+  h+=`<div class="pl-section" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:10px 14px">`;
+  h+=`<div><h3 style="margin:0;font-size:15px">Planner</h3><div class="pl-hd-sub">Leader workbench · tasks, deadlines, follow-ups</div></div>`;
+  h+=`<div class="pl-nav"><button class="pl-nav-btn" onclick="setLeaderPlannerMonth(-1)">◀</button><span class="pl-nav-label">${MOFULL[vm.m]} ${vm.y}</span><button class="pl-nav-btn" onclick="setLeaderPlannerMonth(1)">▶</button></div>`;
+  h+=`</div>`;
+  h+=`<div style="display:grid;grid-template-columns:190px 1fr 300px;gap:10px" class="leader-planner-layout">`;
+  h+=`<div class="pl-section" style="padding:12px">`;
+  [[open.length,"Open","var(--accent)"],[flagged.length,"Flagged","var(--wknd)"],[overdue.length,"Overdue","#dc2626"],[done.length,"Done","var(--early)"]].forEach(([n,l,c])=>{
+    h+=`<div style="padding:9px 10px;border-radius:7px;background:${c}12;margin-bottom:7px"><div style="font-size:20px;font-weight:700;color:${c}">${n}</div><div style="font-size:10px;color:var(--tm);text-transform:uppercase;letter-spacing:.4px">${l}</div></div>`;
+  });
+  h+=`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:8px">`;
+  [["open","Open"],["flagged","Flagged"],["done","Done"],["all","All"]].forEach(f=>{
+    const on=S.leaderPlanner.filter===f[0]||(!S.leaderPlanner.filter&&f[0]==="open");
+    h+=`<button class="pl-btn${on?" active":""}" style="font-size:10px;padding:3px 8px" onclick="S.leaderPlanner.filter='${f[0]}';saveLeaderPlanner();rerenderPlannerSubTab('schedule')">${f[1]}</button>`;
+  });
+  h+=`</div></div>`;
+  h+=`<div class="pl-section" style="overflow:hidden">`;
+  h+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--bdr)">`;
+  ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].forEach(d=>h+=`<div style="padding:7px;text-align:center;font-size:10px;font-weight:700;color:var(--tm)">${d}</div>`);
+  h+=`</div><div style="display:grid;grid-template-columns:repeat(7,1fr)">`;
+  const startPad=(first.getDay()+6)%7;
+  for(let i=0;i<startPad;i++)h+=`<div style="min-height:72px;border-right:1px solid var(--bdr)22;border-bottom:1px solid var(--bdr)22"></div>`;
+  for(let d=1;d<=last.getDate();d++){
+    const iso=monthKey+"-"+P(d);
+    const dayTasks=tasks.filter(t=>t.dueDate===iso);
+    const dayOpen=dayTasks.filter(t=>t.status!=="done");
+    const dayFlag=dayOpen.some(t=>["high","flag"].includes(t.priority));
+    const isSel=selected===iso;
+    const isToday=iso===todayISO;
+    h+=`<button onclick="setLeaderPlannerDay('${iso}')" style="min-height:72px;text-align:left;padding:6px;border:none;border-right:1px solid var(--bdr)22;border-bottom:1px solid var(--bdr)22;background:${isSel?"var(--al)":isToday?"rgba(122,180,255,.05)":"transparent"};border-left:${isSel?"2px solid var(--accent)":"2px solid transparent"};color:var(--text);font-family:inherit;cursor:pointer">`;
+    h+=`<div style="font-size:11px;font-weight:700;color:${isToday?"var(--accent)":"var(--tm)"}">${d}</div>`;
+    dayTasks.slice(0,3).forEach(t=>{
+      const c=t.status==="done"?"var(--early)":["high","flag"].includes(t.priority)?"var(--wknd)":"var(--accent)";
+      h+=`<div style="margin-top:2px;font-size:9px;padding:1px 4px;border-radius:4px;background:${c}14;color:${c};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(t.title)}</div>`;
+    });
+    if(dayTasks.length>3)h+=`<div style="font-size:9px;color:var(--tm);margin-top:1px">+${dayTasks.length-3}</div>`;
+    if(dayFlag)h+=`<div style="position:absolute"></div>`;
+    h+=`</button>`;
+  }
+  h+=`</div></div>`;
+  h+=`<div class="pl-section" style="display:flex;flex-direction:column;min-height:420px">`;
+  h+=`<div style="padding:12px;border-bottom:1px solid var(--bdr)"><div style="font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Add task</div>`;
+  h+=`<div style="display:flex;flex-direction:column;gap:6px">`;
+  h+=`<input id="lpTitle" placeholder="Task title" style="padding:7px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:12px">`;
+  h+=`<div style="display:flex;gap:5px"><input id="lpDue" type="date" value="${selected||""}" style="flex:1;padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px"><select id="lpPriority" style="width:92px;padding:6px 7px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px"><option value="normal">Normal</option><option value="flag">Flag</option><option value="high">High</option><option value="low">Low</option></select></div>`;
+  h+=`<div style="display:flex;gap:5px"><select id="lpSource" style="flex:1;padding:6px 7px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px"><option value="manual">Manual</option><option value="coaching">Coaching</option><option value="overtime">Overtime</option><option value="people">People</option><option value="admin">Admin</option></select><select id="lpAgent" style="flex:1;padding:6px 7px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px"><option value="">Agent link</option>${agentNames.map(n=>`<option value="${X(n)}">${X(n.split(" ")[0])}</option>`).join("")}</select></div>`;
+  h+=`<input id="lpNote" placeholder="Note / context" style="padding:7px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:12px">`;
+  h+=`<button onclick="addLeaderPlannerTask()" style="padding:7px;border:none;border-radius:6px;background:var(--accent);color:#000;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">+ Add</button>`;
+  h+=`</div></div>`;
+  const selectedTasks=tasks.filter(t=>t.dueDate===selected);
+  h+=`<div style="padding:10px 12px;border-bottom:1px solid var(--bdr);font-size:11px;font-weight:700">${selected?selected:"No day selected"}</div>`;
+  h+=`<div style="padding:0 12px;overflow-y:auto">`;
+  if(!selectedTasks.length)h+=`<div style="padding:18px 0;text-align:center;color:var(--tm);font-size:11px">No tasks for this day.</div>`;
+  selectedTasks.forEach(t=>{h+=renderLeaderPlannerTaskRow(t,true);});
+  h+=`</div></div>`;
+  h+=`</div>`;
+  h+=`<div class="pl-section" style="overflow:hidden">`;
+  h+=`<div style="padding:10px 14px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;font-weight:700">Monthly tasks</span><span style="font-size:10px;color:var(--tm)">${filtered.length} shown</span></div>`;
+  if(!filtered.length)h+=`<div style="padding:24px;text-align:center;color:var(--tm);font-size:12px">No tasks in this filter.</div>`;
+  else filtered.forEach(t=>{h+=renderLeaderPlannerTaskRow(t,false);});
+  h+=`</div></div>`;
+  return h;
+}
+
 function rPlanner(el,opts){
   opts=opts||{};
   if(!S.entries.length){el.innerHTML='<div class="es-empty"><h3>Load a schedule first</h3></div>';return;}
@@ -17162,7 +17564,7 @@ function rPlanner(el,opts){
   // ═══ TOP: Title + month nav + actions (single row) ═══
   h+=`<div class="pl-section" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;padding:8px 14px">`;
   h+=`<div style="display:flex;align-items:center;gap:10px">`;
-  h+=`<h3 style="margin:0;font-size:15px">Planner</h3>`;
+  h+=`<h3 style="margin:0;font-size:15px">Blueprint</h3>`;
   h+=`<span class="pl-hd-sub">${bpCycleLen}w · ${names.length} ppl${hasGroups?" · "+Object.keys(bp.groups).length+" groups":""}</span>`;
   h+=`</div>`;
   h+=`<div style="display:flex;align-items:center;gap:6px">`;
@@ -17629,6 +18031,9 @@ function rCoachingTab(dk){
   // Validate _coachPerson is still in current names list
   if(!S._coachPerson||!names.includes(S._coachPerson)){S._coachPerson=names[0]||null;}
   const selPerson=S._coachPerson;
+  const allAgentNames=Object.values(S.people||{}).filter(p=>p.role==="agent").map(p=>p.name).filter(Boolean).sort();
+  const leaderAgentNames=selPerson?getAgents(selPerson).map(a=>a.name).filter(Boolean):[];
+  const coachedAgentOptions=[...new Set([...leaderAgentNames,...allAgentNames])].sort();
 
   let h=`<div class="pl-wrap">`;
 
@@ -17709,7 +18114,7 @@ function rCoachingTab(dk){
       // Show session dots / names
       const shown=daySessions.slice(0,3);
       shown.forEach(s=>{
-        h+=`<div style="font-size:9px;padding:1px 3px;border-radius:3px;background:var(--early)22;color:var(--early);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(s.name.split(" ")[0])}${s.time?" "+s.time:""}</div>`;
+        h+=`<div style="font-size:9px;padding:1px 3px;border-radius:3px;background:var(--early)22;color:var(--early);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X((s.agentName||s.name).split(" ")[0])}${s.time?" "+s.time:""}</div>`;
       });
       if(daySessions.length>3)h+=`<div style="font-size:9px;color:var(--tm)">+${daySessions.length-3} more</div>`;
     }
@@ -17727,11 +18132,18 @@ function rCoachingTab(dk){
   h+=`<option value="">— leader —</option>`;
   names.forEach(n=>{h+=`<option value="${X(n)}"${n===selPerson?` selected`:""}>${X(n.split(" ")[0])}</option>`;});
   h+=`</select>`;
+  h+=`<select id="msAgent" style="padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px">`;
+  h+=`<option value="">— coached agent —</option>`;
+  coachedAgentOptions.forEach(n=>{h+=`<option value="${X(n)}">${X(n)}</option>`;});
+  h+=`</select>`;
   h+=`<input id="msDate" type="date" value="${selDay}" style="padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px">`;
   h+=`<div style="display:flex;gap:4px">`;
   h+=`<input id="msTime" type="time" placeholder="Time" style="flex:1;padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px">`;
   h+=`<input id="msDuration" type="number" value="${defaultDur}" min="5" max="240" title="Duration (min)" style="width:56px;padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px;text-align:center">`;
   h+=`</div>`;
+  h+=`<input id="msTopic" type="text" placeholder="Topic / reason" style="padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px">`;
+  h+=`<input id="msAction" type="text" placeholder="Action item" style="padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px">`;
+  h+=`<input id="msFollowup" type="date" title="Follow-up due date" style="padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px">`;
   h+=`<input id="msNote" type="text" placeholder="Notes (optional)" style="padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px">`;
   h+=`<button onclick="addManualCoachSession()" style="padding:7px;border:none;border-radius:6px;background:var(--accent);color:#000;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">+ Log</button>`;
   h+=`</div></div>`;
@@ -17755,6 +18167,8 @@ function rCoachingTab(dk){
       if(s.time)h+=`<span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text)">${s.time}</span>`;
       h+=`<input type="number" value="${dur}" min="5" max="240" onchange="editCoachSessionDuration(${sIdx},+this.value)" style="width:48px;padding:1px 4px;border:1px solid var(--bdr);border-radius:3px;background:var(--bg);color:var(--text);font-size:10px;text-align:center;font-family:'JetBrains Mono',monospace"><span style="font-size:10px;color:var(--tm)">min</span>`;
       h+=`</div>`;
+      if(s.agentName||s.topic)h+=`<div style="font-size:10px;color:var(--tm)">${s.agentName?`Coached: ${X(s.agentName)}`:""}${s.agentName&&s.topic?" · ":""}${s.topic?X(s.topic):""}</div>`;
+      if(s.actionItem)h+=`<div style="font-size:10px;color:var(--wknd)">Action: ${X(s.actionItem)}${s.followUpDate?" · due "+X(s.followUpDate):""}</div>`;
       if(s.note)h+=`<div style="font-size:10px;color:var(--tm);font-style:italic">${X(s.note)}</div>`;
       h+=`</div>`;
     });
@@ -17774,6 +18188,7 @@ function rCoachingTab(dk){
         h+=`<span style="color:var(--tm);min-width:50px">${s.date.slice(5)}</span>`;
         if(s.time)h+=`<span style="font-family:'JetBrains Mono',monospace;color:var(--text)">${s.time}</span>`;
         h+=`<span style="color:var(--tm)">${dur}min</span>`;
+        if(s.agentName)h+=`<span style="color:var(--accent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(s.agentName.split(" ")[0])}</span>`;
         if(s.note)h+=`<span style="color:var(--tm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${X(s.note)}</span>`;
         h+=`</div>`;
       });
@@ -20462,7 +20877,7 @@ function rSum(el){
   h+=`<button onclick="setTab('analytics');setAnalyticsView('dashboard')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer;font-weight:500">Dashboard</button>`;
   h+=`<button onclick="setTab('analytics');setAnalyticsView('issues')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer;transition:all .1s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--bdr)';this.style.color='var(--tm)'">📊 Signals</button>`;
   h+=`<button onclick="setTab('analytics');setAnalyticsView('coverage')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer;transition:all .1s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--bdr)';this.style.color='var(--tm)'">📈 Coverage</button>`;
-  h+=`<button onclick="setTab('planner')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer;transition:all .1s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--bdr)';this.style.color='var(--tm)'">🔮 Planner</button>`;
+  h+=`<button onclick="setTab('analytics');setAnalyticsView('blueprint')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer;transition:all .1s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--bdr)';this.style.color='var(--tm)'">Blueprint</button>`;
   h+=`</div>`;
 
   el.innerHTML=h;
@@ -21972,7 +22387,8 @@ function _migrateCriticalStoragePayloads(){
     {key:"sc_positions",kind:"object"},
     {key:"sc_exceptions",kind:"array"},
     {key:"sc_dayclosed",kind:"object"},
-    {key:"sc_coaching",kind:"object"}
+    {key:"sc_coaching",kind:"object"},
+    {key:"sc_leaderplanner",kind:"object"}
   ];
   checks.forEach(({key,kind})=>{
     const raw=_storageGetCompat(key);
@@ -22005,6 +22421,11 @@ function _ensureCriticalRuntimeState(){
   if(!_isPlainObject(S.coachBlackouts))S.coachBlackouts={};
   if(!Array.isArray(S.coachManualSessions))S.coachManualSessions=[];
   if(!_isPlainObject(S.coachBudgetHrs))S.coachBudgetHrs={};
+  if(!_isPlainObject(S.leaderPlanner))S.leaderPlanner={tasks:[],filter:"open",selectedDay:null};
+  if(!Array.isArray(S.leaderPlanner.tasks))S.leaderPlanner.tasks=[];
+  if(!["open","all","done","flagged"].includes(S.leaderPlanner.filter))S.leaderPlanner.filter="open";
+  if(S.leaderPlanner.selectedDay&&typeof S.leaderPlanner.selectedDay!=="string")S.leaderPlanner.selectedDay=null;
+  try{ensureOTPlanDefaults();}catch(e){}
   S._schemaVersion=SETTINGS_SCHEMA_VERSION;
 }
 function saveSettings(){
@@ -22046,6 +22467,7 @@ function saveSettings(){
     if(hasCoachData)_persistSet("sc_coaching",JSON.stringify({plan:S.coachPlan||{},history:S.coachHistory||[],blackouts:S.coachBlackouts||{},duration:S.coachDuration,targetDaily:S.coachTargetDaily,manualSessions:S.coachManualSessions||[],budgetHrs:S.coachBudgetHrs||{}}));
     else _persistRemove("sc_coaching");
   }catch(e){}
+  try{saveLeaderPlanner();}catch(e){}
 }
 function loadSettings(){
   _migrateCriticalStoragePayloads();
@@ -22156,6 +22578,7 @@ loadShiftLib();
 loadCoachQuality();
 loadCoverageReq();
 loadForecast();
+loadLeaderPlanner();
 // Debounced persistence after render
 const _origRen=ren;
 ren=function(){_origRen();schedulePersist(false);};
@@ -22454,7 +22877,7 @@ function renderChangeLogPanel(){
 
 /* ═══ CLEAR ALL STORED DATA ═══ */
 function _clearAllDataStorageKeys(){
-  const base=["sc_att","sc_settings","sc_state_schema","sc_planner","sc_hc","sc_notes","sc_blueprints","sc_positions","sc_exceptions","sc_dayclosed","sc_coaching","sc_people","sc_rosterfile","sc_shiftlib","sc_coachquality","sc_coveragereq","sc_otplan","sc_agentstatuses","sc_agentnotes","sc_forecast","sc_people_view","sc_people_home","sc_people_logbook","sc_cards_zip_presets"];
+  const base=["sc_att","sc_settings","sc_state_schema","sc_planner","sc_hc","sc_notes","sc_blueprints","sc_positions","sc_exceptions","sc_dayclosed","sc_coaching","sc_leaderplanner","sc_people","sc_rosterfile","sc_shiftlib","sc_coachquality","sc_coveragereq","sc_otplan","sc_agentstatuses","sc_agentnotes","sc_forecast","sc_people_view","sc_people_home","sc_people_logbook","sc_cards_zip_presets"];
   const aliases=Object.values(STORAGE_REBRAND_COMPAT).flat();
   let dynamic=[];
   try{dynamic=Object.keys(localStorage).filter(k=>k.startsWith("sc_snap_")||k.startsWith("sc_swaps_")||k.startsWith("mfs_snap_")||k.startsWith("mfs_swaps_"));}catch(e){dynamic=[];}
@@ -22472,8 +22895,9 @@ function clearAllData(){
   S.targetHours=0;S.ratePerHour=0;
   S.coachBlackouts={};S.coachPlan={};S.coachHistory=[];S.coachDuration=30;S.coachTargetDaily=1;S.coachTargetMonthly=0;
   S.coachManualSessions=[];S.coachBudgetHrs={};S.swaps=[];S._swapFormDay=null;
+  S.leaderPlanner={tasks:[],filter:"open",selectedDay:null};
   S.peopleHomeNotes={};S.peopleLogbook=[];S.peopleSubTab="dashboard";S.peopleDashView="today_ops";S._peopleView="cards";S._peopleLogFilter="all";
-  S.otPlan={targetDate:null,lookbackDays:14,autoExclude:true,exclusionRules:S.otPlan.exclusionRules,selections:{},defaultShift:{start:"09:00",end:"17:30",lunchMins:30},history:[]};
+  S.otPlan={targetDate:null,lookbackDays:14,autoExclude:true,exclusionRules:getDefaultOTRules(),selections:{},defaultShift:{start:"09:00",end:"17:30",lunchMins:30},history:[]};
   invalidateDerivedCache();
   _persistSig="";
   ren();
@@ -22492,7 +22916,7 @@ const HELP_CONTENT={
       {n:2,text:"Check today",sub:"Calendar tab → day roster is auto-selected. Share to Teams with the 📋 button"},
       {n:3,text:"Read the team",sub:"Summary tab → Day / Week / Month toggle. Health tile expands for a per-person breakdown"},
       {n:4,text:"Act on signals",sub:"Analytics → Dashboard → coaching queue is sorted by urgency. Act Now items are highlighted"},
-      {n:5,text:"Plan ahead",sub:"Planner → rotation detection is automatic. Add leave, new hires, or what-if scenarios"},
+      {n:5,text:"Plan work",sub:"Calendar → Planner tracks deadlines, coaching follow-ups, OT prep, and monthly leader tasks"},
       {n:6,text:"Save your work",sub:"💾 Save+ preserves your session data, attendance records, and planner state across reloads"},
     ]
   },
@@ -22501,8 +22925,8 @@ const HELP_CONTENT={
     summary:{icon:"📋",title:"Summary",body:"The hub. Toggle between Day, Week, and Month to see the right window of data. KPI strip is always current. Health tile (month mode) is expandable — click it to see per-person scores, then 'Full detail →' to go to Dashboard.",shortcuts:[]},
     cards:{icon:"👥",title:"People",body:"Per-person schedule cards with colour-coded shift types, anomaly flags, and a heatmap strip. Toggle between Cards and Table views using the control at the top. Use ⊞ All Months to see the full history in one view.",shortcuts:["← → month","↑ ↓ person","C calendar"]},
     table:{icon:"📊",title:"People (Table)",body:"Flat view of all entries under the People tab. Sortable, filterable. Good for spot-checking raw data. Use the filter row to narrow by name, team, shift type, or day.",shortcuts:["← → month","C calendar"]},
-    analytics:{icon:"📈",title:"Analytics",body:"Four sub-views: Dashboard (coaching queue + team triage), Coverage (heatmap by time slot), Capacity (hours waterfall), and Issues (signals + data quality). The tab badge shows active Act Now count.",shortcuts:["← → month","C calendar"]},
-    planner:{icon:"🔮",title:"Planner",body:"Rotation detection is automatic from your uploaded data. The blueprint editor lets you define the intended schedule. Projection shows the next 1–6 months. Add leave periods, new hires, or cell-level overrides. Export sends to Excel.",shortcuts:["C calendar"]},
+    analytics:{icon:"📈",title:"Analytics",body:"Dashboard, Coverage, Blueprint, Absence, Alerts, and Data. Blueprint holds the rotation/projection planner and drift tools.",shortcuts:["← → month","C calendar"]},
+    planner:{icon:"🔮",title:"Planner",body:"Calendar Planner is the leader workbench: tasks, deadlines, flags, coaching follow-ups, linked agents, and monthly execution.",shortcuts:["C calendar"]},
     raw:{icon:"🗂",title:"Raw Data",body:"The raw sheet view. Use the tab strip to switch between sheets. Useful for diagnosing parse issues — compare what you see here with what the parser produces.",shortcuts:[]}
   },
   ctx:{
@@ -22918,6 +23342,25 @@ function renderAgentDrawerContent(agentName){
   }
   h+=`</div>`;
 
+  // ── Coaching history for this agent ──
+  const agentCoachSessions=(S.coachManualSessions||[]).filter(s=>s.agentName===agentName).sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))).slice(0,6);
+  h+=`<div class="agent-drawer-section">`;
+  h+=`<div class="ads-hd">Coaching <span style="font-size:11px;font-weight:400;color:var(--tm)">${agentCoachSessions.length}</span></div>`;
+  if(!agentCoachSessions.length){
+    h+=`<div style="font-size:12px;color:var(--tm);font-style:italic;padding:4px 0">No coaching logged for this agent.</div>`;
+  }else{
+    agentCoachSessions.forEach(s=>{
+      h+=`<div class="agent-event-item">`;
+      h+=`<span class="aei-icon">🎯</span>`;
+      h+=`<div class="aei-body">`;
+      h+=`<div class="aei-type">${X(s.topic||"Coaching session")}</div>`;
+      h+=`<div class="aei-meta">${X(s.date||"")} ${s.time?"· "+X(s.time):""} · ${s.duration||S.coachDuration||30}min${s.name?" · TL "+X(s.name.split(" ")[0]):""}</div>`;
+      if(s.actionItem)h+=`<div class="aei-note">Action: ${X(s.actionItem)}${s.followUpDate?" · due "+X(s.followUpDate):""}</div>`;
+      h+=`</div></div>`;
+    });
+  }
+  h+=`</div>`;
+
   // ── OT eligibility + history chip ──
   const otPlanHistory=S.otPlan&&Array.isArray(S.otPlan.history)?S.otPlan.history:[];
   const otAppearances=otPlanHistory.filter(plan=>plan.agents&&plan.agents.some(a=>(a.name||a)===agentName));
@@ -22944,7 +23387,7 @@ function renderAgentDrawerContent(agentName){
   h+=`Allow on OT plans`;
   h+=`</label>`;
   if(otAppearances.length>0){
-    h+=`<button onclick="_navPush();setTab('planner');S.plSubTab='overtime';ren()" style="font-size:10px;padding:2px 8px;border:1px solid var(--bdr);border-radius:4px;background:none;color:var(--accent);cursor:pointer;font-family:inherit;margin-left:auto">View plans →</button>`;
+    h+=`<button onclick="_navPush();S.tab='calendar';S.calSubTab='overtime';S.plSubTab='overtime';ren()" style="font-size:10px;padding:2px 8px;border:1px solid var(--bdr);border-radius:4px;background:none;color:var(--accent);cursor:pointer;font-family:inherit;margin-left:auto">View plans →</button>`;
   }
   h+=`</div>`;
   // Recent OT plan appearances (last 3)
