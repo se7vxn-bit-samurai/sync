@@ -1664,7 +1664,27 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .ot-wrap{max-width:1200px}
 .ot-agent-row:hover{background:var(--al)!important}
 .ot-panels{min-height:320px}
-@media(max-width:768px){.ot-panels,.ot-month-layout{grid-template-columns:1fr!important;gap:10px}}
+.ot-wishlist-panel label span{display:block;font-size:10px;font-weight:800;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.ot-wishlist-panel input,.ot-wishlist-panel select{width:100%;padding:6px 7px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:12px}
+.ot-wish-grid-scroll{overflow:auto;max-height:420px}
+.ot-wish-grid{border-collapse:collapse;min-width:980px;width:max-content;font-size:10px}
+.ot-wish-grid th,.ot-wish-grid td{border:1px solid var(--bdr);padding:0;text-align:center;min-width:42px;height:28px}
+.ot-wish-grid th:first-child,.ot-wish-grid td:first-child{position:sticky;left:0;z-index:2;background:var(--bg);min-width:210px;text-align:left;padding:4px 8px;font-weight:700;color:var(--text)}
+.ot-wish-team td{font-weight:800}
+.ot-wish-cell{width:100%;height:27px;border:0;background:transparent;color:var(--text);font-family:inherit;font-size:10px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 2px}
+.ot-wish-cell.block{background:#FEE2E2;color:#991B1B;font-weight:800}
+.ot-wish-cell.filled{background:#DCFCE7;color:#166534;font-weight:800}
+.ot-wish-cell.training{background:#FFF7ED;color:#C2410C;font-weight:800}
+.ot-wish-cell.unavailable{background:#F3E8FF;color:#581C87;font-weight:800}
+.ot-wish-cell.flag-excluded{background:#FEE2E2;color:#991B1B;font-weight:800}
+.ot-wish-cell.flag-warn{background:#FEF3C7;color:#92400E;font-weight:800}
+.ot-wish-cell.approved{outline:2px solid #166534;outline-offset:-2px}
+.ot-range-table{width:100%;border-collapse:collapse;font-size:11px}
+.ot-range-table th,.ot-range-table td{border-bottom:1px solid var(--bdr);padding:7px 9px;text-align:left;color:var(--text)}
+.ot-range-table th{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--tm);background:var(--card)}
+.ot-range-table tr.active td{background:var(--al)}
+@media(max-width:900px){.ot-wish-config-grid,.ot-wish-form-grid{grid-template-columns:1fr!important}}
+@media(max-width:768px){.ot-panels,.ot-month-layout,.ot-daily-shell{grid-template-columns:1fr!important;gap:10px}}
 
 /* ═══ v52 — Tactile button feedback ═══ */
 button,
@@ -1862,6 +1882,110 @@ button:active,
   padding:6px;border:1px solid var(--bdr);background:var(--bg2);color:var(--tm);cursor:pointer;
   border-radius:5px;transition:all .12s}
 .wv-card2-dl:hover{border-color:var(--accent);color:var(--accent);background:var(--al)}
+
+/* v65 visual harmonisation: Universal Design Bible default finish */
+:root{
+  --bg:#0d1014;--bg2:#141820;--bg3:#1c2028;
+  --ink:#c8d4e0;--ink2:#7890a0;--ink3:#485f70;--ink4:#2e3f50;
+  --rule:#243040;--rule2:#1e2a38;
+  --accent:#5a8ab0;--al:rgba(90,138,176,.15);--ah:#4a7aa0;
+  --text:#c8d4e0;--tm:#485f70;--bdr:rgba(200,212,224,.12);--hbg:#141820;--ht:#c8d4e0;
+  --card:rgba(20,28,42,.82);--card-border:rgba(90,138,176,.14);--card-top:rgba(90,138,176,.08);
+  --flag:#c07070;--flag-bg:rgba(180,80,80,.14);--ok:#60a878;--ok-bg:rgba(80,150,96,.12);
+  --early:#60a878;--mid:#5a8ab0;--late:#c07070;--wknd:#c4952a;
+  --glow1:rgba(90,138,176,.15);--glow2:rgba(160,112,144,.10);--dot:rgba(200,212,224,.08);
+  --am-col:#5a8ab0;--am-bg:rgba(90,138,176,.12);--am-border:#365f80;
+  --pm-col:#a07090;--pm-bg:rgba(160,112,144,.12);--pm-border:#704a66;
+  --mid-col:#60a878;--mid-bg:rgba(96,168,120,.12);--mid-border:#3f7654;
+  --late-col:#c07070;--late-bg:rgba(192,112,112,.12);--late-border:#824646;
+  --r:8px;--r-pill:999px;--sh:0 4px 20px rgba(8,16,30,.5);--sl:0 12px 40px rgba(8,16,30,.6);
+  --display:'Playfair Display',serif;--sans:'DM Sans',sans-serif;--mono:'DM Mono','JetBrains Mono',monospace;
+  --t:var(--text);--m:var(--tm);--c:var(--card);--b:var(--bdr);
+  --lc-nature-bg:radial-gradient(ellipse 70% 50% at 88% 2%,rgba(90,138,176,.13) 0%,transparent 55%),radial-gradient(ellipse 58% 62% at 6% 96%,rgba(160,112,144,.10) 0%,transparent 52%),linear-gradient(155deg,#0d1014 0%,#141820 56%,#1c2028 100%);
+  --lc-bg:#0d1014;--lc-right-bg:rgba(13,16,20,.82);--lc-border:rgba(90,138,176,.18);--lc-rule:rgba(90,138,176,.32);--lc-grid:rgba(200,212,224,.028);
+  --lc-glow1:rgba(90,138,176,.12);--lc-glow2:rgba(160,112,144,.08);--lc-accent:#5a8ab0;--lc-accent-faint:rgba(90,138,176,.12);--lc-accent-dashed:rgba(90,138,176,.3);
+  --lc-title:#c8d4e0;--lc-title-sub:#7890a0;--lc-feat-head:#c8d4e0;--lc-feat-body:#7890a0;
+  --lc-desc:#7890a0;--lc-label:#485f70;--lc-muted:#485f70;--lc-faint:#2e3f50;--lc-very-faint:#243040;
+  --lc-stat-bg:rgba(13,16,20,.96);--lc-stat-sep:rgba(90,138,176,.14);--lc-dz-bg:rgba(20,28,42,.65);--lc-new-bg:rgba(20,28,42,.55);--lc-new-border:rgba(90,138,176,.2);
+  --lc-sep-faint:rgba(90,138,176,.12);--lc-kbd-border:rgba(90,138,176,.16);--lc-or:#2e3f50;--lc-diamond:#485f70;
+}
+body{font-family:var(--sans);background:var(--bg);color:var(--text)}
+.app{background:radial-gradient(ellipse at top right,var(--glow1),transparent 34%),radial-gradient(ellipse at bottom left,var(--glow2),transparent 38%),var(--bg)}
+.uz{position:relative;isolation:isolate;background:var(--lc-bg);overflow:hidden}
+.uz::before,.uz::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none}
+.uz::before{
+  background:
+    repeating-radial-gradient(ellipse at 9% 28%,transparent 0 74px,color-mix(in srgb,var(--lc-accent) 22%,transparent) 75px 76px,transparent 77px 138px),
+    repeating-radial-gradient(ellipse at 88% 64%,transparent 0 96px,color-mix(in srgb,var(--lc-accent) 18%,transparent) 97px 98px,transparent 99px 170px),
+    linear-gradient(132deg,transparent 0 43%,color-mix(in srgb,var(--lc-accent) 12%,transparent) 43.1% 43.25%,transparent 43.5% 100%);
+  mask:radial-gradient(circle at 10% 30%,#000 0 24%,transparent 36%),radial-gradient(circle at 88% 62%,#000 0 18%,transparent 32%),linear-gradient(90deg,#000,transparent 36%,transparent 64%,#000);
+  opacity:.55;
+}
+.uz::after{
+  background:
+    linear-gradient(120deg,color-mix(in srgb,var(--lc-accent) 7%,transparent) 1px,transparent 1px),
+    linear-gradient(30deg,color-mix(in srgb,var(--lc-rule) 10%,transparent) 1px,transparent 1px),
+    radial-gradient(circle at 22% 18%,var(--lc-glow1),transparent 24%),
+    radial-gradient(circle at 78% 82%,var(--lc-glow2),transparent 24%);
+  background-size:88px 88px,132px 132px,100% 100%,100% 100%;
+  opacity:.42;
+}
+.lc-root{z-index:1;box-shadow:0 24px 80px rgba(0,0,0,.18)}
+.mf-masthead{height:38px;background:linear-gradient(180deg,rgba(255,255,255,.025),transparent),var(--bg2);border-bottom:1px solid var(--rule);box-shadow:0 1px 0 rgba(200,212,224,.04);font-family:var(--sans)}
+.mf-mh-brand{font-family:var(--display);font-weight:700;letter-spacing:.01em;color:var(--ink)}
+.mf-mh-dept,.mf-mh-stat,.mf-mh-ticker{font-family:var(--mono)}
+.mf-mh-sep{background:var(--rule)}
+.mf-body,.mf-content-col{background:transparent}
+.mf-content-col{background-image:radial-gradient(circle at 1px 1px,var(--dot) 1px,transparent 0);background-size:28px 28px}
+.mf-rail{background:linear-gradient(180deg,rgba(255,255,255,.018),transparent),var(--bg3);border-right:1px solid var(--rule);padding-top:10px}
+.mf-rail-bottom{background:transparent;border-top:1px solid var(--rule)}
+.mf-nav-toggle,.mf-rail-item{border-radius:var(--r)}
+.mf-rail-item:hover{background:var(--al);color:var(--accent)}
+.mf-rail-item.active{background:var(--al);color:var(--accent);box-shadow:inset 2px 0 0 var(--accent)}
+.mf-rail-item .ri-label{font-weight:600;color:var(--ink2)}
+.mf-rail-item.active .ri-label{color:var(--accent)}
+.mf-subbar{height:40px;background:color-mix(in srgb,var(--bg) 92%,transparent);border-bottom:1px solid var(--rule)}
+.ct{padding:18px}
+.people-subtab-nav{background:transparent;border-bottom:1px solid var(--rule);padding:0 18px}
+.pst-btn{padding:10px 14px;color:var(--ink2);border-radius:0}
+.pst-btn:hover{background:var(--al);color:var(--ink)}
+.pst-btn.a{background:transparent;color:var(--accent);border-bottom-color:var(--accent)}
+:is(.cal-left,.cal-mid,.cal-right,.ftw,.ec,.mc,.phq-card,.plg-card,.pw-block,.an-card,.wv-card2){
+  background:linear-gradient(180deg,var(--card-top),transparent 56%),var(--card);
+  border:1px solid var(--card-border);
+  border-radius:var(--r);
+  box-shadow:var(--sh);
+}
+:is(.ec,.mc,.phq-card,.plg-card,.pw-block,.an-card,.wv-card2):hover{border-color:color-mix(in srgb,var(--accent) 34%,var(--card-border))}
+:is(input,select,textarea){
+  border-color:var(--bdr);
+  border-radius:var(--r);
+  background:color-mix(in srgb,var(--bg2) 82%,transparent);
+  color:var(--text);
+}
+:is(input,select,textarea):focus{outline:1px solid color-mix(in srgb,var(--accent) 72%,transparent);box-shadow:0 0 0 3px var(--al)}
+button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot-wish-cell{border-radius:var(--r)}
+.bp,.pl-btn.active,.an-mode-btn.active,.agent-status-btn.active{background:var(--al);border-color:var(--accent);color:var(--accent)}
+.badge,.pill,.mh-theme-btn{border-radius:var(--r-pill)}
+.ot-wrap{max-width:1240px}
+.ot-wishlist-panel>div[style*="border:1px solid var(--bdr)"],.ot-wishlist-panel details,.ot-wish-grid-scroll{
+  background:linear-gradient(180deg,var(--card-top),transparent 56%),var(--card)!important;
+  border-color:var(--card-border)!important;
+  border-radius:var(--r)!important;
+  box-shadow:var(--sh);
+}
+.ot-wishlist-panel summary{border-bottom:1px solid var(--rule)}
+.ot-wish-grid th{background:color-mix(in srgb,var(--bg2) 86%,transparent)!important;color:var(--ink2)!important}
+.ot-wish-grid th:first-child,.ot-wish-grid td:first-child{background:var(--bg2);border-color:var(--rule);color:var(--text)}
+.ot-wish-grid th,.ot-wish-grid td{border-color:var(--rule)}
+.ot-wish-team td{background:var(--al)!important;color:var(--accent)!important}
+.ot-wish-cell.filled{background:rgba(96,168,120,.16);color:#8fd4a5}
+.ot-wish-cell.block{background:rgba(192,112,112,.16);color:#f0a3a3}
+.ot-wish-cell.training{background:rgba(245,138,66,.16);color:#ffb277}
+.ot-wish-cell.unavailable{background:rgba(157,122,255,.14);color:#c5b3ff}
+.ot-wish-cell.flag-excluded{background:rgba(192,112,112,.12);color:#f0a3a3}
+.ot-wish-cell.flag-warn{background:rgba(224,170,78,.13);color:#eac174}
+.ot-wish-cell.approved{outline-color:#60a878}
 </style>
 </head>
 <body>
@@ -2097,7 +2221,7 @@ button:active,
    STATE + CONSTANTS + UTILITIES + ALL PARSERS
    (preserved from v5 — identical parsing logic)
    ═══════════════════════════════════════════════════════════════ */
-let S={wb:null,fn:"",shs:[],sh:"",raw:[],entries:[],team:"all",emp:"all",tz:true,tab:"calendar",th:"surge",thVariant:0,
+let S={wb:null,fn:"",shs:[],sh:"",raw:[],entries:[],team:"all",emp:"all",tz:true,tab:"calendar",th:"newsprint",thVariant:15,
   month:null,months:[],mIdx:0,shiftFilter:"",compare:false,cmp2:"",calDay:null,rawSheet:"",collapsed:{},hlToday:true,srch:"",dayFilter:"",allMonths:false,covMin:3,hrsMax:45,cbMode:false,density:"comfortable",att:{},hc:{},notes:{},noteOpen:false,anDay:null,anMode:"roster",plMonths:2,plRemoved:{},plLeave:[],plOverrides:{},plHires:[],plEdit:null,tbOpen:false,rotationDef:null,rotPanelOpen:false,parseInfo:[],workspace:{},activeDept:null,plBlueprints:{},plPositions:{},plBpOpen:false,plPosOpen:true,plGenMonth:null,plGenYear:null,focusMode:"month",scratchpad:"",_scratchOpen:false,calSubTab:"day",
   tblDay:"all",tblWk:"all",tblType:"all",tblLeader:"all",tblHrsMin:"",tblHrsMax:"",tblDateFrom:"",tblDateTo:"",tblEra:"all",tblSortCol:"date",tblSortDir:"asc",
   plCellEdit:null,plCovOpen:true,plDriftOpen:true,plShowRotWk:true,plWkRemap:{},changeLog:null,changeLogOpen:true,showCardWk:true,
@@ -2141,7 +2265,11 @@ let S={wb:null,fn:"",shs:[],sh:"",raw:[],entries:[],team:"all",emp:"all",tz:true
     },
     selections:{},// "Agent Name" → {selected,shiftStart,shiftEnd,lunchMins,notes}
     defaultShift:{start:"09:00",end:"17:30",lunchMins:30},
-    history:[]// [{id,createdAt,targetDate,agents:[],notes}]
+    history:[],// [{id,createdAt,targetDate,agents:[],notes}]
+    rangeMode:"day",
+    rangeStart:"",
+    rangeEnd:"",
+    wishlist:{mode:"daily",months:[],anchorDate:"2026-05-04",openSlots:5,preFill:[],blocks:{},wishes:{},approvals:{},confirmed:{},importTeamByAgent:{}}
   },
 
   flagSettings:{
@@ -2176,7 +2304,7 @@ let S={wb:null,fn:"",shs:[],sh:"",raw:[],entries:[],team:"all",emp:"all",tz:true
 
 const APP_NAME="MirrorFlow Sync";
 const APP_VERSION="v64";
-const APP_BUILD_LABEL="fresh-load cache guard · relevant people reuse · planner purge";
+const APP_BUILD_LABEL="focus load · people bulk roster · landing texture";
 const APP_BUILD=APP_VERSION+" · "+APP_BUILD_LABEL;
 const SETTINGS_SCHEMA_VERSION=1;
 const CRITICAL_STATE_SCHEMA_VERSION=1;
@@ -3637,7 +3765,7 @@ function schedulePersist(force){
 // g1/g2=glow orb colors, dot=dot pattern color, early/mid/late/wknd=shift colors
 /* ── v60: 4 themes — 2 dark, 2 light — Surge/Tide/Press/Newsprint ── */
 const TH={
-  surge:     {n:"Surge",     dark:true,  cls:"",            d:"#c349ee", desc:"Violet energy — dark default"},
+  surge:     {n:"Surge",     dark:true,  cls:"",            d:"#5a8ab0", desc:"Cool neutral — MirrorFlow default"},
   tide:      {n:"Tide",      dark:true,  cls:"th-tide",     d:"#4db8c8", desc:"Teal-graphite — clinical"},
   press:     {n:"Press",     dark:false, cls:"th-press",    d:"#6B4C2A", desc:"Warm editorial light"},
   newsprint: {n:"Newsprint", dark:false, cls:"th-newsprint",d:"#9381FF", desc:"Cool editorial light"}
@@ -3652,7 +3780,7 @@ const THEME_VARIANTS={
 /* ── Dynamic card surface palettes (cycled by variant index) ── */
 const THEME_CARD_PALETTES={
   surge:[
-    {card:'rgba(30,21,53,.86)',border:'rgba(147,129,255,.15)',top:'rgba(147,129,255,.06)'},
+    {card:'rgba(20,28,42,.82)',border:'rgba(90,138,176,.14)',top:'rgba(90,138,176,.08)'},
     {card:'rgba(42,30,74,.84)',border:'rgba(128,108,233,.16)',top:'rgba(128,108,233,.07)'},
     {card:'rgba(27,24,66,.85)',border:'rgba(89,64,155,.18)',top:'rgba(126,108,206,.06)'},
     {card:'rgba(36,22,64,.84)',border:'rgba(141,43,144,.17)',top:'rgba(141,43,144,.06)'},
@@ -3679,7 +3807,7 @@ const THEME_CARD_PALETTES={
 /* ── v60: Variant labels for settings picker ── */
 const THEME_VARIANTS_LABELS={
   surge:{
-    "violet-core":{l:"Violet Core",c:"dark"},
+    "violet-core":{l:"MirrorFlow Core",c:"dark"},
     "electric-arc":{l:"Electric Arc",c:"dark"},
     "hot-fuchsia":{l:"Hot Fuchsia",c:"dark"},
     "tropical-mint":{l:"Tropical Mint",c:"dark"},
@@ -5835,6 +5963,7 @@ function handleRosterDrop(e,dropEl){
 }
 function isSaveFile(wb){return wb.SheetNames.some(s=>s==="_app_state");}
 let _pendingLoad=null;// holds {wb, filename, preview} while awaiting confirm
+let _pendingFocusNames=new Set();
 /* ═══════════════════════════════════════════════════════════════
    LANDING MODE — dual-mode routing
    'standard' = existing 5-parser engine via proc()
@@ -7717,11 +7846,7 @@ function _toggleGhost(name){
   }
   const ctr=document.getElementById('ghostCounter');
   if(ctr)ctr.textContent=_pendingGhosts.size?_pendingGhosts.size+' selected':'none selected';
-  const loadBtn=document.getElementById('parseLoadBtn');
-  if(loadBtn&&_pendingLoad){
-    const base=_pendingLoad.scan.total;
-    loadBtn.textContent='Load '+(base+_pendingGhosts.size*(_pendingLoad.scan.months||[]).length)+' entries';
-  }
+  _refreshParsePreviewLoadState();
 }
 
 function _toggleAllGhosts(allNamesJSON){
@@ -7740,11 +7865,7 @@ function _toggleAllGhosts(allNamesJSON){
   });
   const ctr=document.getElementById('ghostCounter');
   if(ctr)ctr.textContent=_pendingGhosts.size?_pendingGhosts.size+' selected':'none selected';
-  const loadBtn=document.getElementById('parseLoadBtn');
-  if(loadBtn&&_pendingLoad){
-    const base=_pendingLoad.scan.total;
-    loadBtn.textContent='Load '+(base+_pendingGhosts.size*(_pendingLoad.scan.months||[]).length)+' entries';
-  }
+  _refreshParsePreviewLoadState();
 }
 
 function _toggleMerge(from,to){
@@ -7758,6 +7879,43 @@ function _toggleMerge(from,to){
     chip.style.borderColor=sel?'#3b82f6':'rgba(59,130,246,.2)';
     chip.style.fontWeight=sel?'700':'400';
   }
+}
+
+function _previewFocusStats(){
+  const scan=_pendingLoad&&_pendingLoad.scan?_pendingLoad.scan:null;
+  if(!scan)return{names:0,totalNames:0,entries:0,totalEntries:0,ghostEntries:0};
+  const totalNames=(scan.names||[]).length;
+  const selected=(scan.names||[]).filter(n=>_pendingFocusNames.has(n));
+  const entries=selected.length===totalNames?scan.total:(scan.entries||[]).filter(e=>_pendingFocusNames.has(e.name)).length;
+  const ghostEntries=_pendingGhosts.size*((scan.months||[]).length||1);
+  return{names:selected.length,totalNames,entries,ghostEntries,totalEntries:entries+ghostEntries};
+}
+function _setPreviewFocusAll(on){
+  const scan=_pendingLoad&&_pendingLoad.scan?_pendingLoad.scan:null;if(!scan)return;
+  _pendingFocusNames=new Set(on?(scan.names||[]):[]);
+  _refreshPreviewFocusChips();
+  _refreshParsePreviewLoadState();
+}
+function _togglePreviewFocusName(name){
+  if(_pendingFocusNames.has(name))_pendingFocusNames.delete(name);
+  else _pendingFocusNames.add(name);
+  _refreshPreviewFocusChips();
+  _refreshParsePreviewLoadState();
+}
+function _refreshPreviewFocusChips(){
+  const scan=_pendingLoad&&_pendingLoad.scan?_pendingLoad.scan:null;if(!scan)return;
+  (scan.names||[]).forEach(n=>{
+    const el=document.getElementById('focus_'+n.replace(/[^a-zA-Z0-9]/g,'_'));
+    if(!el)return;
+    const on=_pendingFocusNames.has(n);
+    el.style.background=on?'var(--al)':'transparent';
+    el.style.borderColor=on?'var(--accent)':'var(--bdr)';
+    el.style.color=on?'var(--accent)':'var(--tm)';
+    el.style.fontWeight=on?'700':'500';
+  });
+  const stats=_previewFocusStats();
+  const ctr=document.getElementById('focusCounter');
+  if(ctr)ctr.textContent=stats.names===stats.totalNames?`All ${stats.totalNames}`:`${stats.names}/${stats.totalNames} selected`;
 }
 
 // Column mapper: cycle column type and re-parse with explicit mapping
@@ -7986,7 +8144,7 @@ function _clearOperationalSessionData(opts={}){
   S.swaps=[];S._swapFormDay=null;
   S._wfmEntries=[];S._wfmMeta=null;
   _wvWeeks=[];_wvIdx=0;_wvTab="schedule";_wvSrch="";_wvTeam="all";_wvExcFilter="all";_wvSelDay=null;
-  S.otPlan={targetDate:null,lookbackDays:14,autoExclude:true,exclusionRules:getDefaultOTRules(),selections:{},defaultShift:{start:"09:00",end:"17:30",lunchMins:30},history:[]};
+  S.otPlan={targetDate:null,lookbackDays:14,autoExclude:true,rangeMode:"day",rangeStart:"",rangeEnd:"",exclusionRules:getDefaultOTRules(),selections:{},defaultShift:{start:"09:00",end:"17:30",lunchMins:30},history:[],wishlist:getDefaultOTWishlist()};
   if(resetWorkspace){
     S.wb=null;S.fn="";S.shs=[];S.sh="";S.raw=[];S.entries=[];S.team="all";S.emp="all";S.month=null;S.months=[];S.mIdx=0;S.calDay=null;
     S.workspace={};S.activeDept=null;S.rotationDef=null;S.parseInfo=[];S.changeLog=null;S.allMonths=false;S.collapsed={};
@@ -8091,7 +8249,9 @@ function _refreshParsePreviewLoadState(){
   const guard=_pendingLoad&&_pendingLoad.rangeGuard?_pendingLoad.rangeGuard:null;
   const needsRangeFix=!!(guard&&!guard.accepted);
   const needsCacheChoice=!!((_pendingLoad&&_pendingLoad.hasCache)&&!_cacheMode);
-  const canLoad=!needsCacheChoice&&!needsRangeFix;
+  const focusStats=_previewFocusStats();
+  const needsFocus=!!(_pendingLoad&&focusStats.totalNames&&focusStats.names<1);
+  const canLoad=!needsCacheChoice&&!needsRangeFix&&!needsFocus;
   if(keepBtn){keepBtn.style.borderColor=_cacheMode==="keep"?"var(--accent)":"rgba(255,255,255,.08)";keepBtn.style.background=_cacheMode==="keep"?"var(--al)":"transparent";}
   if(freshBtn){freshBtn.style.borderColor=_cacheMode==="fresh"?"#dc2626":"rgba(255,255,255,.08)";freshBtn.style.background=_cacheMode==="fresh"?"rgba(220,38,38,.07)":"transparent";}
   if(rangeBtn&&guard){
@@ -8104,12 +8264,16 @@ function _refreshParsePreviewLoadState(){
   }
   if(loadBtn){
     loadBtn.disabled=!canLoad;
+    if(_pendingLoad)loadBtn.textContent='Load '+focusStats.totalEntries+' entries'+(focusStats.names<focusStats.totalNames?` · ${focusStats.names} focused`:'');
     loadBtn.style.opacity=canLoad?"1":".45";
     loadBtn.style.cursor=canLoad?"pointer":"not-allowed";
     loadBtn.style.filter=canLoad?"none":"saturate(.7)";
   }
   if(loadHint){
-    if(needsRangeFix){
+    if(needsFocus){
+      loadHint.textContent='Select at least one leader to load';
+      loadHint.style.color='#dc2626';
+    }else if(needsRangeFix){
       loadHint.textContent='Invalid anchor month detected — click "Use detected range" to continue';
       loadHint.style.color='#f59e0b';
     }else if(needsCacheChoice){
@@ -8151,6 +8315,7 @@ function showParsePreview(wb,filename){
   _cacheMode=null;
   _pendingGhosts=new Set();
   _pendingMerges=[];
+  _pendingFocusNames=new Set(scan.names||[]);
 
   // Date range
   let dateRange="";
@@ -8209,6 +8374,17 @@ function showParsePreview(wb,filename){
   });
   if(scan.names.length>60)h+=`<span style="font-size:10px;color:var(--tm);padding:2px 6px">+${scan.names.length-60} more</span>`;
   h+=`</div>`;
+  h+=`<div style="margin-top:12px;padding:10px;border:1px solid var(--bdr);border-radius:8px;background:rgba(255,255,255,.025)">`;
+  h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px"><div style="font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.12em">Focus load</div><span id="focusCounter" style="margin-left:auto;font-size:10px;color:var(--accent);font-weight:700">All ${scan.names.length}</span></div>`;
+  h+=`<div style="font-size:10px;color:var(--tm);line-height:1.4;margin-bottom:8px">Default loads everyone. Select one or more leaders to purge the rest from this session and exports.</div>`;
+  h+=`<div style="display:flex;gap:5px;margin-bottom:7px;flex-wrap:wrap"><button onclick="_setPreviewFocusAll(true)" style="font-size:10px;padding:2px 8px;border:1px solid var(--accent);border-radius:4px;background:var(--al);color:var(--accent);font-family:inherit;cursor:pointer">All</button><button onclick="_setPreviewFocusAll(false)" style="font-size:10px;padding:2px 8px;border:1px solid var(--bdr);border-radius:4px;background:none;color:var(--tm);font-family:inherit;cursor:pointer">None</button></div>`;
+  h+=`<div style="display:flex;flex-wrap:wrap;gap:4px;max-height:100px;overflow:auto">`;
+  scan.names.slice(0,80).forEach(n=>{
+    const fid=n.replace(/[^a-zA-Z0-9]/g,'_');
+    h+=`<button id="focus_${fid}" onclick="_togglePreviewFocusName('${XJ(n)}')" style="padding:2px 8px;border-radius:4px;font-size:11px;background:var(--al);border:1px solid var(--accent);color:var(--accent);font-family:inherit;font-weight:700;cursor:pointer">${X(n)}</button>`;
+  });
+  if(scan.names.length>80)h+=`<span style="font-size:10px;color:var(--tm);padding:2px 6px">+${scan.names.length-80} more</span>`;
+  h+=`</div></div>`;
   // Parser info inline
   h+=`<div style="margin-top:10px;display:flex;gap:5px;flex-wrap:wrap">`;
   h+=`<span style="padding:2px 7px;border-radius:4px;font-size:10px;background:var(--al);color:var(--tm)">Dept: ${X(scan.deptName)}</span>`;
@@ -8363,9 +8539,10 @@ function showParsePreview(wb,filename){
   const loadGated=rangeBlocked;
   const loadDisabled=loadGated?"disabled":"";
   const loadOp=loadGated?"opacity:.45;cursor:not-allowed;filter:saturate(.7)":"";
-  const actionTopBorder=loadGated?"":"border-top:1px solid var(--bdr);";
+  const actionTopBorder="";
   if(!hasCache){
     if(loadGated)h+=`<div id="parseLoadHint" style="padding:10px 16px 0;border-top:1px solid var(--bdr);font-size:11px;color:var(--tm);text-align:right">Invalid anchor month detected — click <strong>Use detected range</strong></div>`;
+    else h+=`<div id="parseLoadHint" style="padding:10px 16px 0;border-top:1px solid var(--bdr);font-size:11px;color:var(--tm);text-align:right">Ready to load</div>`;
     h+=`<div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;padding:12px 16px;${actionTopBorder}">`;
     h+=`<button onclick="cancelParsePreview()" style="padding:7px 18px;border:1px solid var(--bdr);border-radius:7px;background:none;color:var(--tm);font-family:inherit;font-size:12px;cursor:pointer">Cancel</button>`;
     h+=`<button id="parseLoadBtn" onclick="confirmParsePreview()" ${loadDisabled} style="padding:7px 24px;border:none;border-radius:7px;background:var(--accent);color:#000;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;${loadOp}">Load ${scan.total} entries</button>`;
@@ -8395,6 +8572,13 @@ function confirmParsePreview(){
     _refreshParsePreviewLoadState();
     return;
   }
+  const focusStats=_previewFocusStats();
+  if(focusStats.totalNames&&focusStats.names<1){
+    toast('Select at least one leader to load','warn');
+    _refreshParsePreviewLoadState();
+    return;
+  }
+  const focusNames=focusStats.names<focusStats.totalNames?[..._pendingFocusNames]:[];
   const overlay=document.getElementById("parsePreviewOverlay");
   if(overlay)overlay.remove();
   _pendingLoad=null;
@@ -8426,7 +8610,8 @@ function confirmParsePreview(){
   _cacheMode=null;
   const rangeFix=rangeGuard&&rangeGuard.accepted&&rangeGuard.fix?rangeGuard.fix:null;
   try{
-    loadIntoWorkspace(wb,filename,{cacheKept,rangeFix});
+    loadIntoWorkspace(wb,filename,{cacheKept,rangeFix,focusNames,ghostNames:[..._pendingGhosts],merges:[..._pendingMerges]});
+    _pendingGhosts=new Set();_pendingMerges=[];_pendingFocusNames=new Set();
   }catch(err){
     console.error("Load failed:",err);
     toast("Could not complete file load. Check console for details.","err");
@@ -8437,6 +8622,7 @@ function cancelParsePreview(){
   const overlay=document.getElementById("parsePreviewOverlay");
   if(overlay)overlay.remove();
   _pendingLoad=null;
+  _pendingGhosts=new Set();_pendingMerges=[];_pendingFocusNames=new Set();
   toast("File load cancelled","info",2000);
 }
 
@@ -8472,7 +8658,8 @@ function _buildAppStateSnapshot(){
       defaultShift:ot.defaultShift||{start:"09:00",end:"17:30",lunchMins:30},
       lookbackDays:ot.lookbackDays||30,
       history:Array.isArray(ot.history)?ot.history:[],
-      selections:ot.selections||{}
+      selections:ot.selections||{},
+      wishlist:ot.wishlist||getDefaultOTWishlist()
     }
   };
 }
@@ -8860,6 +9047,53 @@ function detectDeptName(filename,sheetNames){
   return(filename||"Dept").replace(/\.(xlsx?|csv)$/i,"").substring(0,20);
 }
 
+function _refreshLoadedMonthsFromEntries(){
+  const months=[...new Set((S.entries||[]).filter(e=>e.date).map(e=>e.date.getFullYear()+"-"+P(e.date.getMonth())))].sort();
+  S.months=months;
+  if(!months.length){S.month=null;S.mIdx=0;return;}
+  if(!S.month||!months.includes(S.month)){S.month=months[0];S.mIdx=0;}
+  else S.mIdx=months.indexOf(S.month);
+}
+function _applyFocusToLoadedEntries(focusNames,merges){
+  if(!Array.isArray(focusNames)||!focusNames.length)return null;
+  const allowed=new Set(focusNames.filter(Boolean));
+  (merges||[]).forEach(m=>{
+    if(!m)return;
+    if(allowed.has(m.to))allowed.add(m.from);
+    if(allowed.has(m.from))allowed.add(m.to);
+  });
+  if(!allowed.size)return null;
+  const beforeEntries=(S.entries||[]).length;
+  const beforeNames=new Set((S.entries||[]).map(e=>e.name));
+  S.entries=(S.entries||[]).filter(e=>allowed.has(e.name));
+  const afterNames=new Set(S.entries.map(e=>e.name));
+  S.team="all";S.emp="all";S.calDay=null;S.dayFilter="";S.shiftFilter="";
+  S.entriesVer=(S.entriesVer||0)+1;
+  _refreshLoadedMonthsFromEntries();
+  invalidateDerivedCache();
+  return{keptNames:afterNames.size,removedNames:Math.max(0,beforeNames.size-afterNames.size),keptEntries:S.entries.length,removedEntries:Math.max(0,beforeEntries-S.entries.length),allowed};
+}
+function _prunePeopleToFocus(allowedNames){
+  if(!allowedNames||!allowedNames.size||!S.people)return;
+  Object.keys(S.people).forEach(name=>{
+    const p=S.people[name]||{};
+    if(p.role==="agent"){
+      if(!allowedNames.has(name)&&(!p.teamLeader||!allowedNames.has(p.teamLeader)))delete S.people[name];
+    }else if(p.role==="leader"||!p.role){
+      if(!allowedNames.has(name))delete S.people[name];
+    }
+  });
+  const kept=new Set([...allowedNames,...Object.keys(S.people||{})]);
+  Object.keys(S.agentNotes||{}).forEach(name=>{if(!kept.has(name))delete S.agentNotes[name];});
+  Object.keys(S.agentStatuses||{}).forEach(k=>{const name=String(k).split("|")[0];if(!kept.has(name))delete S.agentStatuses[k];});
+  if(Array.isArray(S.exceptions)){
+    _setExceptions(S.exceptions.filter(ex=>{
+      const n=ex.agentName||ex.person||"";
+      return !n||kept.has(n);
+    }));
+  }
+}
+
 function loadIntoWorkspace(wb,sourceName,opts={}){
   // ── Read prior snapshot for this dept BEFORE overwriting entries ──
   const _prevActiveDept=S.activeDept;
@@ -8897,6 +9131,10 @@ function loadIntoWorkspace(wb,sourceName,opts={}){
   if(_lastRangeFixResult&&_lastRangeFixResult.shifted){
     const fix=_lastRangeFixResult.fix||{};
     toast(`Date range corrected: ${_monthKeyLabel(fix.sourceStart)} → ${_monthKeyLabel(fix.detectedStart)}`,"ok",3200);
+  }
+  const focusResult=_applyFocusToLoadedEntries(opts.focusNames||[],opts.merges||[]);
+  if(focusResult&&focusResult.removedEntries){
+    toast(`Focus loaded ${focusResult.keptNames} leader${focusResult.keptNames!==1?"s":""} · ${focusResult.removedEntries} entries purged`,"ok",3400);
   }
 
   // ── Ghost agent promotion: inject placeholder entries ──
@@ -8985,6 +9223,7 @@ function loadIntoWorkspace(wb,sourceName,opts={}){
     syncPeopleFromEntries();
     // v51: Auto-extract agent names from schedule data (person-per-sheet and wide-horiz formats only)
     extractAgentsFromSchedule();
+    if(focusResult&&focusResult.allowed)_prunePeopleToFocus(focusResult.allowed);
     seedShiftLibrary();
     savePeople();
     saveShiftLib();
@@ -10117,6 +10356,62 @@ function getAllAgentCount(){return Object.values(S.people).filter(p=>p.role==="a
 function getTeamSize(leaderName){return getAgentCount(leaderName)+1;}
 function getSpanOfControl(leaderName){const n=getAgentCount(leaderName);return{agents:n,ratio:n>0?"1:"+n:"—"};}
 function hasRosterData(){return Object.values(S.people).some(p=>p.role==="agent");}
+function _parseAgentNameLines(raw){
+  raw=String(raw||"").trim();
+  if(!raw)return[];
+  const rows=raw.includes("\n")?raw.split(/\r?\n/):raw.split(/[;,]/);
+  const names=rows.map(row=>{
+    const cells=String(row||"").split(/\t|,/).map(x=>x.trim()).filter(Boolean);
+    return cells[0]||"";
+  }).map(n=>n.replace(/\s+/g," ").trim()).filter(n=>n&&n.length>=2&&!isHeaderRow(n)&&!/\d{2}:\d{2}/.test(n));
+  return[...new Set(names)];
+}
+function peopleAddAgentsToLeader(tlName,sourceId){
+  tlName=String(tlName||"").trim();
+  if(!tlName){toast("Select a leader first","warn");return;}
+  ensurePerson(tlName,{role:"leader",teamLeader:null,source:(S.people[tlName]&&S.people[tlName].source)||"manual"});
+  const el=$(sourceId);
+  const names=_parseAgentNameLines(el?el.value:"");
+  if(!names.length){toast("Paste or type at least one agent name","warn");return;}
+  let added=0,moved=0,skipped=0;
+  names.forEach(name=>{
+    if(name===tlName){skipped++;return;}
+    const existing=S.people[name];
+    if(existing&&existing.role==="leader"){skipped++;return;}
+    if(existing&&existing.role==="agent"){
+      if(existing.teamLeader!==tlName){existing.teamLeader=tlName;existing.team=(S.people[tlName]||{}).team||existing.team||"Main";moved++;}
+      else skipped++;
+      return;
+    }
+    S.people[name]={id:_personId(),name,aliases:[],role:"agent",team:(S.people[tlName]||{}).team||"Main",teamLeader:tlName,contractHours:0,contractType:null,fte:1,skills:[],platforms:[],restrictions:[],otEligible:true,otMaxWeekly:0,startDate:null,endDate:null,source:"manual",addedAt:new Date().toISOString()};
+    added++;
+  });
+  if(el)el.value="";
+  savePeople();
+  toast(`${added} added${moved?`, ${moved} moved`:""}${skipped?`, ${skipped} skipped`:""}`,"ok");
+  rPeople($("ca"));
+}
+function peopleRemoveAgent(name){
+  const p=S.people[name];
+  if(!p||p.role!=="agent"){toast("Agent not found","warn");return;}
+  if(!confirm("Remove "+name+" from the agent roster?"))return;
+  delete S.people[name];
+  delete S.agentNotes[name];
+  Object.keys(S.agentStatuses||{}).forEach(k=>{if(k.startsWith(name+"|"))delete S.agentStatuses[k];});
+  if(Array.isArray(S.exceptions))_setExceptions(S.exceptions.filter(ex=>ex.agentName!==name&&ex.person!==name));
+  savePeople();saveAgentNotes();saveAgentStatuses();schedulePersist(false);
+  if(S._agentsViewSel===name)S._agentsViewSel=null;
+  toast(name+" removed","ok");
+  rPeople($("ca"));
+}
+function renderPeopleAgentAddBox(tlName,ctx){
+  const id="agentBulk_"+domKey(tlName||"team")+"_"+(ctx||"x");
+  return `<div style="padding:8px 10px;border:1px solid var(--accent);border-radius:8px;background:var(--al);margin:${ctx==="inline"?"0":"4px 0 8px"}">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px"><div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.4px">Add agents</div><span style="font-size:10px;color:var(--tm)">One per line or pasted column</span></div>
+    <textarea id="${id}" placeholder="Agent name&#10;Next agent&#10;Another agent" style="width:100%;min-height:58px;resize:vertical;padding:6px 7px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);color:var(--text);font-family:inherit;font-size:11px;box-sizing:border-box"></textarea>
+    <div style="display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap"><button onclick="peopleAddAgentsToLeader('${XJ(tlName)}','${id}')" style="padding:5px 12px;border:none;border-radius:6px;background:var(--accent);color:#000;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer">Add names</button><button onclick="triggerRosterUpload()" style="padding:5px 10px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">Upload roster</button></div>
+  </div>`;
+}
 
 // ── Create or update a person record ──
 function ensurePerson(name,updates){
@@ -10631,6 +10926,9 @@ function getDefaultOTRules(){
     attendance:{enabled:false,lookback:30,threshold:2,label:"Attendance events in window"}
   };
 }
+function getDefaultOTWishlist(){
+  return{mode:"daily",months:[],anchorDate:"2026-05-04",openSlots:5,preFill:[],blocks:{},wishes:{},approvals:{},confirmed:{},importTeamByAgent:{}};
+}
 function ensureOTPlanDefaults(){
   if(!S.otPlan||typeof S.otPlan!=="object")S.otPlan={};
   const defaults=getDefaultOTRules();
@@ -10640,6 +10938,21 @@ function ensureOTPlanDefaults(){
   if(!S.otPlan.selections||typeof S.otPlan.selections!=="object")S.otPlan.selections={};
   if(!S.otPlan.lookbackDays)S.otPlan.lookbackDays=14;
   if(typeof S.otPlan.autoExclude!=="boolean")S.otPlan.autoExclude=true;
+  const w=Object.assign(getDefaultOTWishlist(),S.otPlan.wishlist||{});
+  if(!Array.isArray(w.months))w.months=[];
+  if(!Array.isArray(w.preFill))w.preFill=Array.isArray(w.prefillNames)?w.prefillNames:[];
+  if(!w.blocks||typeof w.blocks!=="object")w.blocks={};
+  if(!w.wishes||typeof w.wishes!=="object")w.wishes={};
+  if(!w.approvals||typeof w.approvals!=="object")w.approvals={};
+  if(!w.confirmed||typeof w.confirmed!=="object")w.confirmed={};
+  if(!w.importTeamByAgent||typeof w.importTeamByAgent!=="object")w.importTeamByAgent={};
+  w.openSlots=Math.max(0,Math.min(25,parseInt(w.openSlots,10)||5));
+  if(!w.anchorDate)w.anchorDate="2026-05-04";
+  if(!w.mode)w.mode="daily";
+  S.otPlan.wishlist=w;
+  if(!S.otPlan.rangeMode)S.otPlan.rangeMode="day";
+  if(!S.otPlan.rangeStart)S.otPlan.rangeStart="";
+  if(!S.otPlan.rangeEnd)S.otPlan.rangeEnd="";
 }
 function saveOTPlan(){
   ensureOTPlanDefaults();
@@ -10654,8 +10967,12 @@ function loadOTPlan(){
       if(saved.targetDate!==undefined)S.otPlan.targetDate=saved.targetDate;
       if(typeof saved.autoExclude==="boolean")S.otPlan.autoExclude=saved.autoExclude;
       if(saved.lookbackDays)S.otPlan.lookbackDays=saved.lookbackDays;
+      if(saved.rangeMode)S.otPlan.rangeMode=saved.rangeMode;
+      if(saved.rangeStart!==undefined)S.otPlan.rangeStart=saved.rangeStart;
+      if(saved.rangeEnd!==undefined)S.otPlan.rangeEnd=saved.rangeEnd;
       if(Array.isArray(saved.history))S.otPlan.history=saved.history;
       if(saved.selections)S.otPlan.selections=saved.selections;
+      if(saved.wishlist&&typeof saved.wishlist==="object")S.otPlan.wishlist=saved.wishlist;
     }
   }catch(e){}
   ensureOTPlanDefaults();
@@ -10739,6 +11056,13 @@ function computeOTExclusions(agentName,targetDateStr,rules,lookbackDays){
   // Date math
   const td=new Date(targetDateStr+"T00:00:00");
   const tdKey=targetDateStr;
+  const wishStatus=typeof otWishlistExplicitStatus==="function"?otWishlistExplicitStatus(agentName,tdKey):"";
+  const wishApproved=typeof otWishlistIsApproved==="function"&&otWishlistIsApproved(agentName,tdKey);
+
+  if(wishStatus==="🔒 Blocked")reasons.push({rule:"wishlistBlock",severity:"high",text:"Wishlist blocked"});
+  else if(wishStatus==="🚫 Unavailable")reasons.push({rule:"wishlistUnavailable",severity:"high",text:"Wishlist unavailable"});
+  else if(wishStatus==="🎓 Training")reasons.push({rule:"wishlistTraining",severity:"medium",text:"Wishlist training"});
+  else if(wishApproved)reasons.push({rule:"wishlistApproved",severity:"low",text:"Wishlist approved OT"});
 
   // 3. Already rostered on target date
   const rostered=S.entries.filter(e=>e.name===agentName&&e.date&&excKey(e.date)===tdKey&&!e.isOff);
@@ -10855,6 +11179,21 @@ function buildOTPool(targetDateStr,lookbackDays){
       selected:!!(S.otPlan.selections[p.name]&&S.otPlan.selections[p.name].selected)
     });
   });
+  // Overlay wishlist: 🔒 Blocked → exclusion; 🙋 OT / approval → badge flags
+  const wl=S.otPlan&&S.otPlan.wishlist;
+  if(wl&&targetDateStr){
+    pool.forEach(p=>{
+      const wlStatus=typeof otWishlistExplicitStatus==='function'?otWishlistExplicitStatus(p.name,targetDateStr):'';
+      const wlApproved=typeof otWishlistIsApproved==='function'?otWishlistIsApproved(p.name,targetDateStr):false;
+      if(wlStatus==='🔒 Blocked'&&!p.excluded){
+        p.excluded=true;
+        p.reasons.push({text:'WL blocked',severity:'high'});
+        p.severity=Math.max(p.severity,3);
+      }
+      if(wlStatus==='🙋 OT')p.wishlistOT=true;
+      if(wlApproved)p.wishlistApproved=true;
+    });
+  }
   // Sort: available first, then warned, then excluded; within each group alphabetical
   pool.sort((a,b)=>{
     if(a.excluded!==b.excluded)return a.excluded?1:-1;
@@ -10891,6 +11230,32 @@ function finaliseOTPlan(){
   const year=dateObj.getFullYear();
   const title="CCS - "+dayName+" "+dayNum+" "+monName+" "+year;
   return{agents,totalHrs,title,targetDate:td,dateObj,dayName,monName,year,dayNum};
+}
+function otSyncPlanToWishlist(plan){
+  if(!plan||!plan.targetDate||!plan.agents)return;
+  ensureOTPlanDefaults();
+  plan.agents.forEach(a=>{
+    otWishlistSetCellStatus(a.name,plan.targetDate,"🙋 OT",{silent:true,approved:true,confirmed:{shiftStart:a.shiftStart,shiftEnd:a.shiftEnd,lunchMins:a.lunchMins,hours:a.hours}});
+  });
+}
+function otLoadSelectionsFromWishlistDate(dateISO){
+  ensureOTPlanDefaults();
+  const w=S.otPlan.wishlist||{};
+  const next={};
+  const names=new Set();
+  Object.values(S.people||{}).forEach(p=>{if(p&&p.role==="agent"&&p.name)names.add(p.name);});
+  gN().forEach(n=>names.add(n));
+  Object.keys(w.approvals||{}).forEach(n=>names.add(n));
+  Object.keys(w.confirmed||{}).forEach(n=>names.add(n));
+  names.forEach(name=>{
+    const status=otWishlistExplicitStatus(name,dateISO);
+    if(status&&status!=="🙋 OT")return;
+    if(!otWishlistIsApproved(name,dateISO))return;
+    const c=w.confirmed&&w.confirmed[name]&&w.confirmed[name][dateISO];
+    next[name]={selected:true,shiftStart:(c&&c.shiftStart)||S.otPlan.defaultShift.start,shiftEnd:(c&&c.shiftEnd)||S.otPlan.defaultShift.end,lunchMins:(c&&c.lunchMins!=null)?c.lunchMins:S.otPlan.defaultShift.lunchMins,notes:"Wishlist approved"};
+  });
+  S.otPlan.selections=next;
+  return Object.keys(next).length;
 }
 
 function otCopyClipboard(){
@@ -10957,9 +11322,752 @@ async function otExportPNG(){
   }catch(e){toast("PNG export failed","err");}
 }
 
+function otPromptSavePlusFirst(){
+  toast("Upload a SavePlus file first to generate the OT Wishlist","warn",4200);
+}
+function otLocalISO(d){
+  if(!d||isNaN(d))return"";
+  return d.getFullYear()+"-"+P(d.getMonth()+1)+"-"+P(d.getDate());
+}
+function otDateFromISO(iso){
+  const p=String(iso||"").split("-").map(Number);
+  if(p.length!==3||!p.every(Number.isFinite))return null;
+  return new Date(p[0],p[1]-1,p[2]);
+}
+function otMonthKeyFromDate(d){
+  return d&& !isNaN(d)?d.getFullYear()+"-"+P(d.getMonth()+1):"";
+}
+function otDateFromMonthKey(k){
+  const p=String(k||"").split("-").map(Number);
+  if(p.length!==2||!p.every(Number.isFinite))return null;
+  return new Date(p[0],p[1]-1,1);
+}
+function otMonthLabelFromKey(k){
+  const d=otDateFromMonthKey(k);
+  return d?MOFULL[d.getMonth()]+" "+d.getFullYear():"";
+}
+function otAddMonthsKey(k,delta){
+  const d=otDateFromMonthKey(k);
+  if(!d)return"";
+  d.setMonth(d.getMonth()+(delta||0));
+  return otMonthKeyFromDate(d);
+}
+function otWishlistHasSourceData(){
+  const agents=Object.values(S.people||{}).filter(p=>p&&p.role==="agent");
+  return !!(S.entries&&S.entries.length&&agents.length);
+}
+function otWishlistDetectedMonths(){
+  const set=new Set();
+  (S.entries||[]).forEach(e=>{if(e&&e.date)set.add(otMonthKeyFromDate(e.date));});
+  const months=[...set].filter(Boolean).sort();
+  if(months.length)return months;
+  if(Array.isArray(S.months)&&S.months.length){
+    return S.months.map(m=>{
+      const p=String(m).split("-").map(Number);
+      return p.length===2&&Number.isFinite(p[0])&&Number.isFinite(p[1])?p[0]+"-"+P(p[1]+1):"";
+    }).filter(Boolean).sort();
+  }
+  return[otMonthKeyFromDate(new Date())];
+}
+function otWishlistGetMonths(){
+  ensureOTPlanDefaults();
+  const w=S.otPlan.wishlist;
+  const detected=otWishlistDetectedMonths();
+  w.months=(w.months||[]).filter(Boolean).slice(0,3);
+  if(!w.months.length)w.months=detected.slice(0,3);
+  if(!w.months.length)w.months=[otMonthKeyFromDate(new Date())];
+  saveOTPlan();
+  return w.months;
+}
+function otWishlistSetStartMonth(key){
+  ensureOTPlanDefaults();
+  const count=Math.max(1,Math.min(3,(S.otPlan.wishlist.months||[]).length||1));
+  S.otPlan.wishlist.months=Array.from({length:count},(_,i)=>otAddMonthsKey(key,i)).filter(Boolean);
+  saveOTPlan();rerenderPlannerSubTab("overtime");
+}
+function otWishlistSetMonthCount(count){
+  ensureOTPlanDefaults();
+  count=Math.max(1,Math.min(3,parseInt(count,10)||1));
+  const start=(S.otPlan.wishlist.months&&S.otPlan.wishlist.months[0])||otWishlistDetectedMonths()[0]||otMonthKeyFromDate(new Date());
+  S.otPlan.wishlist.months=Array.from({length:count},(_,i)=>otAddMonthsKey(start,i)).filter(Boolean);
+  saveOTPlan();rerenderPlannerSubTab("overtime");
+}
+function otWishlistSetMode(mode){
+  ensureOTPlanDefaults();
+  S.otPlan.wishlist.mode=mode==="wishlist"?"wishlist":"daily";
+  saveOTPlan();rerenderPlannerSubTab("overtime");
+}
+function otWishlistSetAnchorDate(val){
+  ensureOTPlanDefaults();
+  S.otPlan.wishlist.anchorDate=val||"2026-05-04";
+  saveOTPlan();rerenderPlannerSubTab("overtime");
+}
+function otWishlistAutoAnchor(){
+  ensureOTPlanDefaults();
+  S.otPlan.wishlist.anchorDate=otWishlistDetectAnchorDate();
+  saveOTPlan();rerenderPlannerSubTab("overtime");
+}
+function otWishlistSetOpenSlots(val){
+  ensureOTPlanDefaults();
+  S.otPlan.wishlist.openSlots=Math.max(0,Math.min(25,parseInt(val,10)||5));
+  saveOTPlan();rerenderPlannerSubTab("overtime");
+}
+function otWishlistSetPreFill(){
+  ensureOTPlanDefaults();
+  const el=document.getElementById("otWishlistPrefill");
+  if(!el)return;
+  S.otPlan.wishlist.preFill=String(el.value||"").split(/\r?\n|,/).map(s=>s.trim()).filter(Boolean);
+  saveOTPlan();rerenderPlannerSubTab("overtime");
+}
+function otWishlistDetectAnchorDate(){
+  const leaders=Object.values(S.people||{}).filter(p=>p&&p.role==="leader");
+  const mpho=(leaders.find(p=>/mpho/i.test(p.name))||{}).name;
+  const candidates=(S.entries||[]).filter(e=>e&&e.date&&e.date.getDay()===1&&String(e.week||"").toUpperCase().includes("W1"));
+  const preferred=candidates.find(e=>mpho&&e.name===mpho)||candidates[0];
+  return preferred?otLocalISO(preferred.date):"2026-05-04";
+}
+function otGetMonday(d){
+  const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  x.setDate(x.getDate()-((x.getDay()+6)%7));
+  return x;
+}
+function otTlWeek(date,leaderName,teamIndex){
+  const anchor=otDateFromISO((S.otPlan&&S.otPlan.wishlist&&S.otPlan.wishlist.anchorDate)||"2026-05-04")||new Date(2026,4,4);
+  const deltaWeeks=Math.round((otGetMonday(date)-otGetMonday(anchor))/604800000);
+  const baseW1=deltaWeeks%2===0;
+  const nm=String(leaderName||"").toLowerCase();
+  const invert=nm.includes("thato")||(!nm.includes("mpho")&&(teamIndex||0)%2===1);
+  return invert?(baseW1?"W2":"W1"):(baseW1?"W1":"W2");
+}
+function otWishlistDayMeta(date,leaderName,teamIndex){
+  const wknd=date.getDay()===0||date.getDay()===6;
+  if(wknd)return{kind:"weekend",label:"📅 Wknd OT",short:"📅",fill:"FFE0F2FE",font:"FF0369A1"};
+  const wk=otTlWeek(date,leaderName,teamIndex);
+  return wk==="W1"
+    ?{kind:"w1",label:"✅ Eligible",short:"✅",fill:"FFDCFCE7",font:"FF166534"}
+    :{kind:"w2",label:"⚠️ Late",short:"⚠️",fill:"FFFEF3C7",font:"FF92400E"};
+}
+function otWishlistMonthDays(monthKey){
+  const start=otDateFromMonthKey(monthKey);
+  if(!start)return[];
+  const days=[];
+  const last=new Date(start.getFullYear(),start.getMonth()+1,0).getDate();
+  for(let d=1;d<=last;d++)days.push(new Date(start.getFullYear(),start.getMonth(),d));
+  return days;
+}
+function otWishlistGetTeams(){
+  const agents=Object.values(S.people||{}).filter(p=>p&&p.role==="agent").sort((a,b)=>(a.teamLeader||"").localeCompare(b.teamLeader||"")||a.name.localeCompare(b.name));
+  const byLeader={},known={};
+  agents.forEach(a=>{
+    const leader=a.teamLeader||"Unassigned";
+    if(!byLeader[leader])byLeader[leader]=[];
+    byLeader[leader].push(a.name);
+    known[a.name]=true;
+  });
+  const w=S.otPlan&&S.otPlan.wishlist||{};
+  const importedNames=new Set();
+  ["wishes","blocks","approvals","confirmed","importTeamByAgent"].forEach(k=>Object.keys(w[k]||{}).forEach(n=>{if(!known[n])importedNames.add(n);}));
+  importedNames.forEach(name=>{
+    const leader=(w.importTeamByAgent&&w.importTeamByAgent[name])||"Imported wishlist";
+    if(!byLeader[leader])byLeader[leader]=[];
+    if(!byLeader[leader].includes(name))byLeader[leader].push(name);
+  });
+  const leaderOrder=Object.values(S.people||{}).filter(p=>p&&p.role==="leader").map(p=>p.name);
+  Object.keys(byLeader).forEach(n=>{if(!leaderOrder.includes(n))leaderOrder.push(n);});
+  return leaderOrder.filter(n=>byLeader[n]&&byLeader[n].length).map((leader,i)=>({leader,agents:byLeader[leader].sort(),index:i}));
+}
+function otWishlistNormalizeStatus(v){
+  const s=String(v||"").replace(/\u00a0/g," ").trim();
+  if(!s)return"";
+  const l=s.toLowerCase();
+  if(l.includes("monthly total")||l.includes("approved")||l.includes("wknd")||l.includes("eligible")||l.includes("late wk")||l.includes("ot week")||l.includes("team ot"))return"";
+  if(s.includes("🔒")||l.includes("blocked"))return"🔒 Blocked";
+  if(s.includes("🎓")||l.includes("training"))return"🎓 Training";
+  if(s.includes("🚫")||l.includes("unavailable"))return"🚫 Unavailable";
+  if(s.includes("🙋")||l==="ot"||/\bot\b/.test(l)||l.includes("overtime"))return"🙋 OT";
+  return"";
+}
+function otWishlistExplicitStatus(name,dateISO){
+  const w=S.otPlan.wishlist||{};
+  if(w.blocks&&w.blocks[name]&&w.blocks[name][dateISO])return"🔒 Blocked";
+  return(w.wishes&&w.wishes[name]&&w.wishes[name][dateISO])||"";
+}
+function otWishlistCellStatus(name,dateISO){
+  return otWishlistExplicitStatus(name,dateISO);
+}
+function otWishlistIsApproved(name,dateISO){
+  const a=S.otPlan.wishlist&&S.otPlan.wishlist.approvals;
+  const c=S.otPlan.wishlist&&S.otPlan.wishlist.confirmed;
+  return !!((a&&a[name]&&a[name][dateISO])||(c&&c[name]&&c[name][dateISO]));
+}
+function otWishlistCellFlag(name,dateISO){
+  const explicit=otWishlistExplicitStatus(name,dateISO);
+  if(explicit)return null;
+  if(typeof computeOTExclusions!=="function"||!S.otPlan)return null;
+  const result=computeOTExclusions(name,dateISO,S.otPlan.exclusionRules,S.otPlan.lookbackDays);
+  const high=(result.reasons||[]).filter(r=>r.severity==="high");
+  const med=(result.reasons||[]).filter(r=>r.severity==="medium");
+  if(result.excluded||high.length)return{kind:"excluded",short:"✕",label:"Excluded by daily rules",title:high.map(r=>r.text).join("; ")||"Excluded by daily rules"};
+  if(med.length)return{kind:"warn",short:"⚠",label:"Daily warning",title:med.map(r=>r.text).join("; ")};
+  return null;
+}
+function otWishlistExportStatus(name,dateISO){
+  const explicit=otWishlistExplicitStatus(name,dateISO);
+  if(explicit)return explicit;
+  const flag=otWishlistCellFlag(name,dateISO);
+  return flag&&flag.kind==="excluded"?"🚫 Unavailable":"";
+}
+function otWishlistSetCellStatus(name,dateISO,status,opts){
+  ensureOTPlanDefaults();
+  const w=S.otPlan.wishlist;
+  status=otWishlistNormalizeStatus(status);
+  if(!name||!dateISO)return;
+  ["blocks","wishes","approvals","confirmed"].forEach(k=>{if(!w[k][name])w[k][name]={};});
+  delete w.blocks[name][dateISO];
+  delete w.wishes[name][dateISO];
+  if(status==="🔒 Blocked"){
+    w.blocks[name][dateISO]=status;
+    delete w.approvals[name][dateISO];
+    delete w.confirmed[name][dateISO];
+  }else if(status){
+    w.wishes[name][dateISO]=status;
+    if(status==="🚫 Unavailable"||status==="🎓 Training"){
+      delete w.approvals[name][dateISO];
+      delete w.confirmed[name][dateISO];
+    }
+  }else{
+    delete w.approvals[name][dateISO];
+    delete w.confirmed[name][dateISO];
+  }
+  if(opts&&opts.approved!==undefined){
+    if(opts.approved){
+      w.approvals[name][dateISO]=true;
+      if(status==="🙋 OT")w.confirmed[name][dateISO]=opts.confirmed||true;
+    }else{
+      delete w.approvals[name][dateISO];
+      delete w.confirmed[name][dateISO];
+    }
+  }
+  if(!(opts&&opts.silent)){saveOTPlan();rerenderPlannerSubTab("overtime");}
+}
+function otWishlistToggleBlock(name,dateISO){
+  const blocked=otWishlistExplicitStatus(name,dateISO)==="🔒 Blocked";
+  otWishlistSetCellStatus(name,dateISO,blocked?"":"🔒 Blocked");
+}
+function otWishlistCycleCell(name,dateISO){
+  const order=["","🙋 OT","🎓 Training","🚫 Unavailable","🔒 Blocked"];
+  const cur=otWishlistExplicitStatus(name,dateISO);
+  const next=order[(Math.max(0,order.indexOf(cur))+1)%order.length];
+  otWishlistSetCellStatus(name,dateISO,next);
+}
+function otWishlistToggleApproval(name,dateISO){
+  ensureOTPlanDefaults();
+  let status=otWishlistExplicitStatus(name,dateISO);
+  if(status==="🔒 Blocked"){toast("Blocked cells cannot be approved","warn");return;}
+  if(status&&status!=="🙋 OT"){toast("Only OT cells can be approved","warn");return;}
+  const w=S.otPlan.wishlist;
+  if(!w.approvals[name])w.approvals[name]={};
+  if(!w.confirmed[name])w.confirmed[name]={};
+  if(w.approvals[name][dateISO]||w.confirmed[name][dateISO]){
+    delete w.approvals[name][dateISO];delete w.confirmed[name][dateISO];
+  }else{
+    if(!status){otWishlistSetCellStatus(name,dateISO,"🙋 OT",{silent:true});status="🙋 OT";}
+    w.approvals[name][dateISO]=true;
+    if(status==="🙋 OT")w.confirmed[name][dateISO]=true;
+  }
+  saveOTPlan();rerenderPlannerSubTab("overtime");
+}
+function otWishlistDateFromHeader(v,defaultMonthKey){
+  if(v instanceof Date&&!isNaN(v))return otLocalISO(v);
+  const raw=String(v||"").replace(/\u00a0/g," ").replace(/[\u200B-\u200D\uFEFF]/g,"").trim();
+  if(!raw)return"";
+  const cleaned=raw.replace(/\n/g," ").replace(/\s+/g," ");
+  let m=raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if(m)return m[1]+"-"+P(+m[2])+"-"+P(+m[3]);
+  m=raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if(m){const y=+m[3]<100?2000+(+m[3]):+m[3];return y+"-"+P(+m[2])+"-"+P(+m[1]);}
+  m=cleaned.match(/^(\d{1,2})[\/\-](\d{1,2})$/);
+  if(m&&defaultMonthKey){const p=defaultMonthKey.split("-").map(Number);return p[0]+"-"+P(+m[2])+"-"+P(+m[1]);}
+  const months=otWishlistGetMonths();
+  const monthNames=MOFULL.map(x=>x.toLowerCase()).concat(MO.map(x=>x.toLowerCase()));
+  m=cleaned.match(/^(\d{1,2})[\s\-\/]+([A-Za-z]+)(?:[\s\-\/]+(\d{2,4}))?$/);
+  if(m){
+    const mi=monthNames.indexOf(m[2].toLowerCase());
+    if(mi>=0){
+      const month=(mi%12)+1;
+      const mk=months.find(k=>+k.split("-")[1]===month)||defaultMonthKey;
+      const y=m[3]?(+m[3]<100?2000+(+m[3]):+m[3]):(mk?+mk.split("-")[0]:new Date().getFullYear());
+      return y+"-"+P(month)+"-"+P(+m[1]);
+    }
+  }
+  m=cleaned.match(/^([A-Za-z]+)[\s\-\/]+(\d{1,2})(?:[\s\-\/]+(\d{2,4}))?$/);
+  if(m){
+    const mi=monthNames.indexOf(m[1].toLowerCase());
+    if(mi>=0){
+      const month=(mi%12)+1;
+      const mk=months.find(k=>+k.split("-")[1]===month)||defaultMonthKey;
+      const y=m[3]?(+m[3]<100?2000+(+m[3]):+m[3]):(mk?+mk.split("-")[0]:new Date().getFullYear());
+      return y+"-"+P(month)+"-"+P(+m[2]);
+    }
+  }
+  if(/^\d{1,2}$/.test(raw)&&defaultMonthKey){
+    const p=defaultMonthKey.split("-").map(Number);
+    return p[0]+"-"+P(p[1])+"-"+P(+raw);
+  }
+  // Day-of-week abbrev + day number: "Su 1", "Mo 4", "Sa\n31" (from Save+ OT XLSX headers)
+  m=cleaned.match(/^(?:Su|Mo|Tu|We|Th|Fr|Sa)\s+(\d{1,2})$/i);
+  if(m){
+    const dayNum=+m[1];
+    if(dayNum>=1&&dayNum<=31){
+      const mk=months[0]||defaultMonthKey;
+      if(mk){const p=mk.split("-").map(Number);return p[0]+"-"+P(p[1])+"-"+P(dayNum);}
+      return new Date().getFullYear()+"-01-"+P(dayNum);
+    }
+  }
+  // Excel serial date numbers (e.g. 46010 = 2026-01-01)
+  const serial=Number(raw);
+  if(!isNaN(serial)&&serial>40000&&serial<60000){
+    const dt=new Date(1899,11,30);
+    dt.setDate(dt.getDate()+Math.floor(serial));
+    if(!isNaN(dt))return otLocalISO(dt);
+  }
+  return"";
+}
+function otWishlistCleanRowName(v){
+  return String(v||"").replace(/\s+/g," ").trim().replace(/^[^\w]+/,"").trim();
+}
+function otWishlistRowTeamLabel(row,dateCols){
+  const firstDate=dateCols&&dateCols.length?Math.min(...dateCols.map(c=>c.idx)):row.length;
+  for(let i=0;i<Math.max(1,firstDate);i++){
+    const raw=String(row[i]||"").replace(/\u00a0/g," ").replace(/\s+/g," ").trim();
+    if(!raw)continue;
+    let m=raw.match(/(?:👥\s*)?(.+?)['’]?\s+TEAM\b/i);
+    if(m){
+      const label=otWishlistCleanRowName(m[1]).replace(/\s+/g," ").trim();
+      if(label)return label.charAt(0).toUpperCase()+label.slice(1).toLowerCase()+" team";
+    }
+    m=raw.match(/\bTEAM\s*[:\-]\s*(.+)$/i);
+    if(m){
+      const label=otWishlistCleanRowName(m[1]);
+      if(label)return label;
+    }
+  }
+  return"";
+}
+function otWishlistKnownNameMap(){
+  const map={};
+  const add=n=>{const clean=otWishlistCleanRowName(n).toLowerCase();if(clean&&!map[clean])map[clean]=otWishlistCleanRowName(n);};
+  Object.values(S.people||{}).forEach(p=>{if(p&&p.name)add(p.name);});
+  gN().forEach(add);
+  ((S.otPlan&&S.otPlan.wishlist&&S.otPlan.wishlist.preFill)||[]).forEach(add);
+  return map;
+}
+function otWishlistInferMonthKey(rows,fallback){
+  const monthNames=MOFULL.map(x=>x.toLowerCase()).concat(MO.map(x=>x.toLowerCase()));
+  const all=(rows||[]).slice(0,30).flat().map(v=>String(v||"").replace(/\u00a0/g," ").trim()).filter(Boolean);
+  for(const raw of all){
+    const text=raw.replace(/[—–]/g," ").replace(/\s+/g," ");
+    let m=text.match(new RegExp("\\b("+MOFULL.concat(MO).join("|")+")\\b\\s+(20\\d{2})","i"));
+    if(m){
+      const mi=monthNames.indexOf(m[1].toLowerCase());
+      if(mi>=0)return m[2]+"-"+P((mi%12)+1);
+    }
+    m=text.match(new RegExp("\\b(20\\d{2})\\s+("+MOFULL.concat(MO).join("|")+")\\b","i"));
+    if(m){
+      const mi=monthNames.indexOf(m[2].toLowerCase());
+      if(mi>=0)return m[1]+"-"+P((mi%12)+1);
+    }
+    m=text.match(/^(\d{1,2})[\s\-\/]+([A-Za-z]+)(?:[\s\-\/]+(20\d{2}))?$/);
+    if(m){
+      const mi=monthNames.indexOf(m[2].toLowerCase());
+      if(mi>=0){
+        const year=m[3]||String(fallback||"").split("-")[0]||new Date().getFullYear();
+        return year+"-"+P((mi%12)+1);
+      }
+    }
+  }
+  return fallback||otWishlistGetMonths()[0]||otMonthKeyFromDate(new Date());
+}
+function otWishlistParseClipboardTable(text){
+  const src=String(text||"").replace(/\u0000/g,"");
+  const delimiter=src.includes("\t")?"\t":",";
+  const rows=[];let row=[],cell="",quoted=false;
+  for(let i=0;i<src.length;i++){
+    const ch=src[i],next=src[i+1];
+    if(ch==='"'){
+      if(quoted&&next==='"'){cell+='"';i++;}
+      else quoted=!quoted;
+      continue;
+    }
+    if(!quoted&&ch===delimiter){row.push(cell);cell="";continue;}
+    if(!quoted&&(ch==="\n"||ch==="\r")){
+      if(ch==="\r"&&next==="\n")i++;
+      row.push(cell);cell="";
+      rows.push(row);row=[];
+      continue;
+    }
+    cell+=ch;
+  }
+  row.push(cell);rows.push(row);
+  return rows.map(r=>{
+    const out=r.map(c=>String(c||"").replace(/\u00a0/g," ").trim());
+    while(out.length&&out[out.length-1]==="")out.pop();
+    return out;
+  }).filter(r=>r.some(c=>String(c||"").trim()));
+}
+function otWishlistResolveRowName(row,dateCols,nameMap){
+  const firstDate=Math.min(...dateCols.map(c=>c.idx));
+  for(let i=0;i<Math.max(1,firstDate);i++){
+    const raw=row[i];
+    const clean=otWishlistCleanRowName(raw);
+    if(!clean)continue;
+    if(/^(agent|name|team leads|team ot|total ot|open slots|eligibility|monthly total|approved)$/i.test(clean))continue;
+    if(/\b(team|shift reference|messenger ot wishlist|open slots)\b/i.test(clean))continue;
+    if(/^\d+\s*(\|\s*\d+)?$/.test(clean))continue;
+    const key=clean.toLowerCase();
+    return nameMap[key]||clean;
+  }
+  return"";
+}
+function otWishlistApplyRows(rows,defaultMonthKey){
+  ensureOTPlanDefaults();
+  rows=(rows||[]).filter(r=>Array.isArray(r)&&r.some(c=>String(c||"").trim()));
+  defaultMonthKey=otWishlistInferMonthKey(rows,defaultMonthKey);
+  const headers=[];
+  for(let i=0;i<rows.length;i++){
+    const cols=[],seen={};
+    const monthKey=otWishlistInferMonthKey(rows.slice(Math.max(0,i-8),i+1),defaultMonthKey);
+    (rows[i]||[]).forEach((cell,idx)=>{
+      const iso=otWishlistDateFromHeader(cell,monthKey);
+      if(iso&&!seen[iso]){cols.push({idx,iso});seen[iso]=true;}
+    });
+    if(cols.length>=2)headers.push({idx:i,dateCols:cols,monthKey});
+  }
+  if(!headers.length)return 0;
+  let imported=0;
+  const nameMap=otWishlistKnownNameMap();
+  headers.forEach((head,hi)=>{
+    const end=hi+1<headers.length?headers[hi+1].idx:rows.length;
+    let currentTeam="";
+    for(let r=head.idx+1;r<end;r++){
+      const row=rows[r]||[];
+      const leadText=row.slice(0,Math.min(...head.dateCols.map(c=>c.idx))).join(" ").replace(/\u00a0/g," ").toLowerCase();
+      if(/team leads|shift reference/.test(leadText)){currentTeam="";continue;}
+      if(/open slots/.test(leadText)){currentTeam="Open slots";continue;}
+      const teamLabel=otWishlistRowTeamLabel(row,head.dateCols);
+      if(teamLabel){currentTeam=teamLabel;continue;}
+      const name=otWishlistResolveRowName(row,head.dateCols,nameMap);
+      if(!name)continue;
+      if(currentTeam){
+        const w=S.otPlan.wishlist;
+        if(!w.importTeamByAgent)w.importTeamByAgent={};
+        if(!w.importTeamByAgent[name])w.importTeamByAgent[name]=currentTeam;
+      }
+      head.dateCols.forEach(dc=>{
+        const raw=String(row[dc.idx]||"").replace(/\u00a0/g," ").trim();
+        const status=otWishlistNormalizeStatus(raw);
+        if(!status)return;
+        otWishlistSetCellStatus(name,dc.iso,status,{silent:true,approved:raw.includes("👍")||/\bapproved\b/i.test(raw)});
+        imported++;
+      });
+    }
+  });
+  return imported;
+}
+function otWishlistImportClipboardText(txt){
+  const rows=otWishlistParseClipboardTable(txt);
+  const count=otWishlistApplyRows(rows,otWishlistInferMonthKey(rows,otWishlistGetMonths()[0]));
+  saveOTPlan();
+  rerenderPlannerSubTab("overtime");
+  toast(count?("Imported "+count+" wishlist cell"+(count!==1?"s":"")):"No wishlist cells detected",count?"ok":"warn",3500);
+  return count;
+}
+function otWishlistHandlePasteEvent(ev){
+  const target=ev&&ev.target;
+  if(target&&/^(INPUT|TEXTAREA)$/i.test(target.tagName||"")&&target.id!=="otWishlistPasteText")return;
+  const txt=ev&&ev.clipboardData?ev.clipboardData.getData("text/plain"):"";
+  if(txt&&txt.trim()){
+    ev.preventDefault();ev.stopPropagation();
+    otWishlistImportClipboardText(txt);
+    return;
+  }
+  setTimeout(()=>otWishlistApplyPaste(),0);
+}
+function otWishlistApplyPaste(){
+  const el=document.getElementById("otWishlistPasteText");
+  const txt=el?el.value:"";
+  if(!txt.trim()){toast("Paste copied wishlist cells first","warn");return;}
+  const count=otWishlistImportClipboardText(txt);
+  if(el)el.value="";
+}
+function otWishlistImportWorkbook(wb,filename){
+  if(!wb||!wb.SheetNames)return 0;
+  let imported=0;
+  wb.SheetNames.forEach(sh=>{
+    if(/^how/i.test(sh)||sh.startsWith("_"))return;
+    const ws=wb.Sheets[sh];
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:"",raw:false});
+    const month=otWishlistGetMonths().find(k=>otMonthLabelFromKey(k).toLowerCase().startsWith(sh.toLowerCase()))||otWishlistGetMonths()[0];
+    imported+=otWishlistApplyRows(rows,month);
+  });
+  saveOTPlan();rerenderPlannerSubTab("overtime");
+  toast(imported?("Imported "+imported+" cell"+(imported!==1?"s":"")+" from "+(filename||"workbook")):"No wishlist cells detected",imported?"ok":"warn",3500);
+  return imported;
+}
+function otWishlistHandleUpload(file){
+  if(!file)return;
+  if(typeof XLSX==="undefined"){toast("Excel parser is still loading. Try again in a moment.","warn");return;}
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const wb=XLSX.read(new Uint8Array(ev.target.result),{type:"array",cellDates:true});
+      otWishlistImportWorkbook(wb,file.name);
+    }catch(e){console.error(e);toast("Could not read OT Wishlist file","err");}
+  };
+  reader.readAsArrayBuffer(file);
+}
+function otWishlistTriggerUpload(){
+  let inp=document.getElementById("otWishlistFileInput");
+  if(!inp){
+    inp=document.createElement("input");
+    inp.type="file";inp.id="otWishlistFileInput";inp.accept=".xlsx,.xls,.csv";inp.style.display="none";
+    inp.onchange=function(){if(this.files&&this.files[0])otWishlistHandleUpload(this.files[0]);this.value="";};
+    document.body.appendChild(inp);
+  }
+  inp.click();
+}
+function otXlCol(n){
+  let s="";
+  while(n>0){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26);}
+  return s;
+}
+function otArgb(hex){
+  return "FF"+String(hex||"").replace("#","").toUpperCase();
+}
+function otStyleCell(cell,o){
+  o=o||{};
+  if(o.font||o.bold||o.color||o.size)cell.font={name:"Calibri",bold:!!o.bold,size:o.size||10,color:{argb:o.color||"FF111827"}};
+  if(o.fill)cell.fill={type:"pattern",pattern:"solid",fgColor:{argb:o.fill}};
+  cell.alignment={horizontal:o.align||"center",vertical:"middle",wrapText:o.wrap!==false};
+  if(o.border!==false)cell.border={top:{style:"thin",color:{argb:"FFE2E8F0"}},bottom:{style:"thin",color:{argb:"FFE2E8F0"}},left:{style:"thin",color:{argb:"FFE2E8F0"}},right:{style:"thin",color:{argb:"FFE2E8F0"}}};
+}
+function otStatusStyle(cell,status){
+  const map={
+    "🙋 OT":["FFDCFCE7","FF166534"],
+    "🎓 Training":["FFFFF7ED","FFC2410C"],
+    "🚫 Unavailable":["FFF3E8FF","FF581C87"],
+    "🔒 Blocked":["FFFEE2E2","FF991B1B"]
+  };
+  if(map[status])otStyleCell(cell,{fill:map[status][0],color:map[status][1],bold:true});
+}
+function otWishlistFilename(){
+  const first=otWishlistGetMonths()[0]||otMonthKeyFromDate(new Date());
+  const d=otDateFromMonthKey(first)||new Date();
+  return "Messenger_OT_Wishlist_"+MOFULL[d.getMonth()]+"_"+d.getFullYear()+".xlsx";
+}
+function otWishlistBuildGuideSheet(wb){
+  const ws=wb.addWorksheet("How To Use");
+  ws.columns=[{width:26},{width:64}];
+  const rows=[
+    ["📋  Messenger OT Wishlist — Guide",""],
+    ["STATUS OPTIONS",""],
+    ["🙋 OT","Agent wants to work Messenger OT this day."],
+    ["🎓 Training","Agent is in training and cannot work OT."],
+    ["🚫 Unavailable","Agent is personally unavailable."],
+    ["🔒 Blocked","TL block. Do not plan this agent for OT."],
+    ["Clear a cell","Select the cell and press Delete to remove an entry."],
+    ["",""],
+    ["ELIGIBILITY",""],
+    ["✅ OT Week (W1)","Early shift week. Weekday OT eligible."],
+    ["⚠️ Late Week (W2)","Late shift week. Weekday OT not available by default."],
+    ["📅 Weekend OT","Weekend days open for all agents regardless of rotation."],
+    ["",""],
+    ["TOTALS",""],
+    ["Monthly Total","Shows each agent's OT and Training count for the month."],
+    ["Approved","Shows TL-approved wishlist cells tracked in Sync."],
+    ["Team count row","Shows daily OT and Training counts per team section."]
+  ];
+  rows.forEach((r,i)=>{
+    const row=ws.addRow(r);
+    row.eachCell(c=>otStyleCell(c,{align:i===0?"center":"left",bold:i===0||["STATUS OPTIONS","ELIGIBILITY","TOTALS"].includes(r[0]),fill:i===0?"FF0F172A":(["STATUS OPTIONS","ELIGIBILITY","TOTALS"].includes(r[0])?"FFE2E8F0":undefined),color:i===0?"FFFFFFFF":"FF111827"}));
+  });
+  ["A1:B1","A2:B2","A9:B9","A14:B14"].forEach(r=>ws.mergeCells(r));
+}
+function otWishlistBuildMonthSheet(wb,monthKey,teams){
+  const d0=otDateFromMonthKey(monthKey);
+  const days=otWishlistMonthDays(monthKey);
+  const w=S.otPlan.wishlist;
+  const lastDayCol=1+days.length;
+  const totalCol=lastDayCol+1;
+  const approvedCol=lastDayCol+2;
+  const lastCol=approvedCol;
+  const ws=wb.addWorksheet(MOFULL[d0.getMonth()].substring(0,31));
+  ws.views=[{state:"frozen",xSplit:1,ySplit:5}];
+  ws.getColumn(1).width=28;
+  for(let c=2;c<=lastDayCol;c++)ws.getColumn(c).width=9.2;
+  ws.getColumn(totalCol).width=13;
+  ws.getColumn(approvedCol).width=10;
+
+  ws.mergeCells(1,1,1,lastCol);
+  ws.getCell(1,1).value="📋  Messenger OT Wishlist — "+MOFULL[d0.getMonth()]+" "+d0.getFullYear();
+  otStyleCell(ws.getCell(1,1),{fill:"FF0F172A",color:"FFFFFFFF",bold:true,size:14});
+
+  let segStart=2,segLabel=null;
+  days.forEach((day,i)=>{
+    const meta=otWishlistDayMeta(day,teams[0]?teams[0].leader:"",0);
+    const lbl=meta.kind==="w1"?"W1 — Early  ✅":meta.kind==="w2"?"W2 — Late  ⚠️":"Weekend  📅";
+    if(segLabel===null)segLabel=lbl;
+    if(lbl!==segLabel){
+      ws.mergeCells(2,segStart,2,i+1);
+      const c=ws.getCell(2,segStart);c.value=segLabel;otStyleCell(c,{fill:segLabel.includes("W1")?"FF166534":segLabel.includes("W2")?"FF92400E":"FF0369A1",color:"FFFFFFFF",bold:true});
+      segStart=i+2;segLabel=lbl;
+    }
+  });
+  if(days.length){
+    ws.mergeCells(2,segStart,2,lastDayCol);
+    const c=ws.getCell(2,segStart);c.value=segLabel;otStyleCell(c,{fill:segLabel.includes("W1")?"FF166534":segLabel.includes("W2")?"FF92400E":"FF0369A1",color:"FFFFFFFF",bold:true});
+  }
+  [totalCol,approvedCol].forEach(c=>otStyleCell(ws.getCell(2,c),{fill:"FF0F172A",color:"FFFFFFFF",bold:true}));
+
+  days.forEach((day,i)=>{
+    const col=i+2,meta=otWishlistDayMeta(day,teams[0]?teams[0].leader:"",0);
+    ws.getCell(3,col).value=meta.kind==="w1"?"✅ OT Week":meta.kind==="w2"?"⚠️ Late Wk":"📅 Wknd OT";
+    otStyleCell(ws.getCell(3,col),{fill:meta.fill,color:meta.font,bold:true});
+    ws.getCell(4,col).value=DOW[day.getDay()].substring(0,3);
+    otStyleCell(ws.getCell(4,col),{fill:(day.getDay()===0||day.getDay()===6)?"FFE0F2FE":"FFF8FAFC",bold:true});
+    ws.getCell(5,col).value=day.getDate()+" "+MO[day.getMonth()];
+    otStyleCell(ws.getCell(5,col),{fill:(day.getDay()===0||day.getDay()===6)?"FFE0F2FE":"FFFFFFFF",bold:true});
+  });
+  ws.getCell(5,totalCol).value="Monthly Total";otStyleCell(ws.getCell(5,totalCol),{fill:"FF0F766E",color:"FFFFFFFF",bold:true});
+  ws.getCell(5,approvedCol).value="Approved";otStyleCell(ws.getCell(5,approvedCol),{fill:"FF166534",color:"FFFFFFFF",bold:true});
+
+  ws.mergeCells(6,1,6,lastCol);
+  ws.getCell(6,1).value="  TEAM LEADS — Shift Reference (SA Time)";
+  otStyleCell(ws.getCell(6,1),{fill:"FF1E293B",color:"FFFFFFFF",bold:true,align:"left"});
+  let rowNo=7;
+  teams.forEach((team,i)=>{
+    const row=ws.getRow(rowNo++);
+    row.getCell(1).value="  "+team.leader;
+    otStyleCell(row.getCell(1),{fill:i%2?"FFEDE9FE":"FFDBEAFE",color:i%2?"FF7C3AED":"FF1D4ED8",bold:true,align:"left"});
+    days.forEach((day,di)=>{
+      const cell=row.getCell(di+2);
+      cell.value=(day.getDay()===0||day.getDay()===6)?"OFF":"09:30–17:30";
+      otStyleCell(cell,{fill:(day.getDay()===0||day.getDay()===6)?"FFF8FAFC":"FFFFFFFF",color:(day.getDay()===0||day.getDay()===6)?"FF64748B":"FF111827"});
+    });
+  });
+
+  const dataRanges=[];
+  teams.forEach((team,ti)=>{
+    const header=ws.getRow(rowNo++);
+    header.getCell(1).value="  👥  "+team.leader.split(" ")[0].toUpperCase()+"'S TEAM  ("+team.agents.length+" agents)";
+    otStyleCell(header.getCell(1),{fill:ti%2?"FFEDE9FE":"FFDBEAFE",color:ti%2?"FF7C3AED":"FF1D4ED8",bold:true,align:"left"});
+    days.forEach((day,di)=>{
+      const meta=otWishlistDayMeta(day,team.leader,ti);
+      const cell=header.getCell(di+2);
+      cell.value=meta.label;
+      otStyleCell(cell,{fill:meta.fill,color:meta.font,bold:true});
+    });
+    otStyleCell(header.getCell(totalCol),{fill:"FF0F766E",color:"FFFFFFFF",bold:true});
+    otStyleCell(header.getCell(approvedCol),{fill:"FF166534",color:"FFFFFFFF",bold:true});
+
+    const startRow=rowNo;
+    team.agents.forEach((name,ai)=>{
+      const row=ws.getRow(rowNo++);
+      row.getCell(1).value="  "+name;
+      otStyleCell(row.getCell(1),{fill:ti%2?"FFEDE9FE":"FFDBEAFE",color:ti%2?"FF7C3AED":"FF1D4ED8",bold:false,align:"left"});
+      let approvedCount=0;
+      days.forEach((day,di)=>{
+        const iso=otLocalISO(day),meta=otWishlistDayMeta(day,team.leader,ti),cell=row.getCell(di+2);
+        const status=otWishlistExportStatus(name,iso);
+        cell.value=status||"";
+        cell.dataValidation={type:"list",allowBlank:true,formulae:['"🙋 OT,🎓 Training,🚫 Unavailable,🔒 Blocked"']};
+        otStyleCell(cell,{fill:status?undefined:meta.fill,color:meta.font,bold:!!status});
+        otStatusStyle(cell,status);
+        if(otWishlistIsApproved(name,iso)){approvedCount++;cell.border={top:{style:"medium",color:{argb:"FF166534"}},bottom:{style:"medium",color:{argb:"FF166534"}},left:{style:"medium",color:{argb:"FF166534"}},right:{style:"medium",color:{argb:"FF166534"}}};}
+      });
+      const first=otXlCol(2)+row.number,last=otXlCol(lastDayCol)+row.number;
+      row.getCell(totalCol).value={formula:'COUNTIF('+first+":"+last+',"🙋 OT")&"  |  "&COUNTIF('+first+":"+last+',"🎓 Training")'};
+      row.getCell(approvedCol).value=approvedCount||"";
+      otStyleCell(row.getCell(totalCol),{fill:"FFF0FDFA",color:"FF0F766E",bold:true});
+      otStyleCell(row.getCell(approvedCol),{fill:"FFDCFCE7",color:"FF166534",bold:true});
+    });
+    const endRow=rowNo-1;
+    dataRanges.push({start:startRow,end:endRow});
+    const total=ws.getRow(rowNo++);
+    total.getCell(1).value="  📊 Team OT";
+    otStyleCell(total.getCell(1),{fill:"FFF1F5F9",color:"FF111827",bold:true,align:"left"});
+    days.forEach((day,di)=>{
+      const col=di+2,letter=otXlCol(col),cell=total.getCell(col);
+      cell.value={formula:'COUNTIF('+letter+startRow+":"+letter+endRow+',"🙋 OT")&" OT  "&COUNTIF('+letter+startRow+":"+letter+endRow+',"🎓 Training")&" Tr"'};
+      otStyleCell(cell,{fill:(day.getDay()===0||day.getDay()===6)?"FFE0F2FE":"FFF8FAFC",color:"FF0F766E",bold:true});
+    });
+  });
+
+  const openStartHeader=rowNo++;
+  ws.mergeCells(openStartHeader,1,openStartHeader,lastCol);
+  ws.getCell(openStartHeader,1).value="  ✏️  OPEN SLOTS — Type name in Col A, use dropdowns for days";
+  otStyleCell(ws.getCell(openStartHeader,1),{fill:"FF0F766E",color:"FFFFFFFF",bold:true,align:"left"});
+  const openNames=(w.preFill||[]).slice();
+  const openRows=Math.max(w.openSlots||5,openNames.length);
+  const openStart=rowNo;
+  for(let i=0;i<openRows;i++){
+    const name=openNames[i]||"";
+    const row=ws.getRow(rowNo++);
+    row.getCell(1).value=name;
+    otStyleCell(row.getCell(1),{fill:"FFF0FDFA",color:"FF0F766E",align:"left"});
+    let approvedCount=0;
+    days.forEach((day,di)=>{
+      const iso=otLocalISO(day),cell=row.getCell(di+2);
+      const status=name?otWishlistExportStatus(name,iso):"";
+      cell.value=status||"";
+      cell.dataValidation={type:"list",allowBlank:true,formulae:['"🙋 OT,🎓 Training,🚫 Unavailable,🔒 Blocked"']};
+      otStyleCell(cell,{fill:"FFFFFFFF"});
+      otStatusStyle(cell,status);
+      if(name&&otWishlistIsApproved(name,iso))approvedCount++;
+    });
+    const first=otXlCol(2)+row.number,last=otXlCol(lastDayCol)+row.number;
+    row.getCell(totalCol).value={formula:'COUNTIF('+first+":"+last+',"🙋 OT")&"  |  "&COUNTIF('+first+":"+last+',"🎓 Training")'};
+    row.getCell(approvedCol).value=approvedCount||"";
+    otStyleCell(row.getCell(totalCol),{fill:"FFF0FDFA",color:"FF0F766E",bold:true});
+    otStyleCell(row.getCell(approvedCol),{fill:"FFDCFCE7",color:"FF166534",bold:true});
+  }
+  if(openRows)dataRanges.push({start:openStart,end:rowNo-1});
+
+  const grand=ws.getRow(rowNo++);
+  grand.getCell(1).value="  📊 Total OT Requests";
+  otStyleCell(grand.getCell(1),{fill:"FF0F172A",color:"FFFFFFFF",bold:true,align:"left"});
+  days.forEach((day,di)=>{
+    const col=di+2,letter=otXlCol(col),cell=grand.getCell(col);
+    const parts=dataRanges.map(r=>'COUNTIF('+letter+r.start+":"+letter+r.end+',"🙋 OT")');
+    cell.value={formula:parts.join("+")||"0"};
+    otStyleCell(cell,{fill:"FF0F172A",color:"FFFFFFFF",bold:true});
+  });
+}
+async function otExportWishlistXLSX(){
+  ensureOTPlanDefaults();
+  if(!otWishlistHasSourceData()){otPromptSavePlusFirst();return;}
+  if(typeof ExcelJS==="undefined"){toast("ExcelJS not loaded","warn");return;}
+  const teams=otWishlistGetTeams();
+  if(!teams.length){otPromptSavePlusFirst();return;}
+  const months=otWishlistGetMonths().slice(0,3);
+  return withExportLock("ot-wishlist",async()=>{
+    toast("Building OT Wishlist...","info",6000);
+    try{
+      const wb=new ExcelJS.Workbook();
+      applyExportMetadata(wb,"OT Wishlist","overtime");
+      otWishlistBuildGuideSheet(wb);
+      months.forEach(m=>otWishlistBuildMonthSheet(wb,m,teams));
+      const buffer=await wb.xlsx.writeBuffer();
+      triggerBlobDownload(new Blob([buffer],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),otWishlistFilename());
+      toast("OT Wishlist exported","ok");
+    }catch(err){console.error(err);toast("OT Wishlist export failed","err");}
+  });
+}
+
 function otSavePlanToHistory(){
   const plan=finaliseOTPlan();
   if(!plan||!plan.agents.length){toast("No agents selected","warn");return;}
+  otSyncPlanToWishlist(plan);
   S.otPlan.history.push({
     id:Date.now().toString(36)+Math.random().toString(36).substring(2,6),
     createdAt:new Date().toISOString(),
@@ -10969,12 +12077,21 @@ function otSavePlanToHistory(){
     title:plan.title
   });
   saveOTPlan();
-  toast("Plan saved to history","ok");
+  toast("Plan saved and synced to OT Wishlist","ok");
 }
 
 function otToggleAgent(name){
   if(!S.otPlan.selections[name])S.otPlan.selections[name]={selected:false,shiftStart:null,shiftEnd:null,lunchMins:null,notes:""};
-  S.otPlan.selections[name].selected=!S.otPlan.selections[name].selected;
+  const wasSelected=S.otPlan.selections[name].selected;
+  S.otPlan.selections[name].selected=!wasSelected;
+  // When selecting, auto-confirm wishlist OT for this date
+  if(!wasSelected&&S.otPlan.targetDate){
+    const wlStatus=typeof otWishlistExplicitStatus==='function'?otWishlistExplicitStatus(name,S.otPlan.targetDate):'';
+    if(wlStatus==='🙋 OT'&&typeof otWishlistToggleApproval==='function'){
+      const alreadyApproved=typeof otWishlistIsApproved==='function'&&otWishlistIsApproved(name,S.otPlan.targetDate);
+      if(!alreadyApproved)otWishlistToggleApproval(name,S.otPlan.targetDate);
+    }
+  }
   saveOTPlan();
   rerenderPlannerSubTab("overtime");
 }
@@ -11006,8 +12123,91 @@ function otClearSelections(){
 function otSetLookback(days){
   S.otPlan.lookbackDays=days;saveOTPlan();rerenderPlannerSubTab("overtime");
 }
+function otSetRangeToWeek(dateISO,silent){
+  const d=otDateFromISO(dateISO);
+  if(!d)return;
+  const mon=new Date(d);mon.setDate(mon.getDate()-((mon.getDay()+6)%7));
+  const sun=new Date(mon);sun.setDate(mon.getDate()+6);
+  S.otPlan.rangeStart=otLocalISO(mon);
+  S.otPlan.rangeEnd=otLocalISO(sun);
+  if(!silent){saveOTPlan();rerenderPlannerSubTab("overtime");}
+}
+function otSetRangeMode(mode){
+  ensureOTPlanDefaults();
+  S.otPlan.rangeMode=["day","week","period"].includes(mode)?mode:"day";
+  const base=S.otPlan.targetDate||S.month&&String(S.month)+"-01"||otLocalISO(new Date());
+  if(S.otPlan.rangeMode==="week")otSetRangeToWeek(base,true);
+  else if(S.otPlan.rangeMode==="day"){S.otPlan.rangeStart=base;S.otPlan.rangeEnd=base;}
+  else{
+    if(!S.otPlan.rangeStart)S.otPlan.rangeStart=base;
+    if(!S.otPlan.rangeEnd)S.otPlan.rangeEnd=S.otPlan.rangeStart;
+  }
+  saveOTPlan();rerenderPlannerSubTab("overtime");
+}
+function otSetRangeBoundary(field,val){
+  ensureOTPlanDefaults();
+  if(field==="start")S.otPlan.rangeStart=val;
+  if(field==="end")S.otPlan.rangeEnd=val;
+  if(S.otPlan.rangeStart&&S.otPlan.rangeEnd&&S.otPlan.rangeEnd<S.otPlan.rangeStart)S.otPlan.rangeEnd=S.otPlan.rangeStart;
+  saveOTPlan();rerenderPlannerSubTab("overtime");
+}
+function otPlannerRangeDates(){
+  ensureOTPlanDefaults();
+  const ot=S.otPlan;
+  if(ot.rangeMode==="week"&&ot.targetDate)otSetRangeToWeek(ot.targetDate,true);
+  if(ot.rangeMode==="day")return ot.targetDate?[ot.targetDate]:[];
+  let start=ot.rangeStart||ot.targetDate,end=ot.rangeEnd||ot.targetDate;
+  if(!start||!end)return[];
+  if(end<start){const t=start;start=end;end=t;}
+  const out=[],d=otDateFromISO(start),last=otDateFromISO(end);
+  if(!d||!last)return[];
+  while(d<=last&&out.length<45){out.push(otLocalISO(d));d.setDate(d.getDate()+1);}
+  return out;
+}
+function otRangeApprovedNames(dateISO){
+  const w=S.otPlan.wishlist||{},names=new Set();
+  Object.keys(w.approvals||{}).forEach(n=>{if(otWishlistIsApproved(n,dateISO)&&otWishlistExplicitStatus(n,dateISO)!=="🔒 Blocked")names.add(n);});
+  Object.keys(w.confirmed||{}).forEach(n=>{if(otWishlistIsApproved(n,dateISO)&&otWishlistExplicitStatus(n,dateISO)!=="🔒 Blocked")names.add(n);});
+  return [...names].sort((a,b)=>a.localeCompare(b));
+}
+function renderOTRangePlanner(){
+  const dates=otPlannerRangeDates();
+  if(S.otPlan.rangeMode==="day"||dates.length<2)return"";
+  let h=`<div id="otRangePlanner" style="border:1px solid var(--bdr);border-radius:8px;overflow:hidden;margin:0 0 14px;background:rgba(255,255,255,.015)">`;
+  h+=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--bdr);flex-wrap:wrap"><div><div style="font-size:13px;font-weight:800;color:var(--text)">Range OT Planner</div><div style="font-size:10px;color:var(--tm)">${dates[0]} → ${dates[dates.length-1]} · ${dates.length} days</div></div><button class="pl-btn" onclick="otExportRangePNG()">📷 Range PNG</button></div>`;
+  h+=`<div style="overflow:auto"><table class="ot-range-table"><thead><tr><th>Date</th><th>Available</th><th>Warnings</th><th>Excluded</th><th>Confirmed wishlist</th><th>Saved plan</th><th></th></tr></thead><tbody>`;
+  dates.forEach(iso=>{
+    const d=otDateFromISO(iso),pool=buildOTPool(iso,S.otPlan.lookbackDays);
+    const ok=pool.filter(p=>!p.excluded&&p.severity===0).length;
+    const warn=pool.filter(p=>!p.excluded&&p.severity>0).length;
+    const blocked=pool.filter(p=>p.excluded).length;
+    const approved=otRangeApprovedNames(iso);
+    const hist=(S.otPlan.history||[]).filter(p=>p.targetDate===iso);
+    const selected=iso===S.otPlan.targetDate;
+    h+=`<tr${selected?' class="active"':""}><td><b>${DOW[d.getDay()].substring(0,3)}</b> ${iso}</td><td>${ok}</td><td>${warn||""}</td><td>${blocked||""}</td><td>${approved.length?X(approved.slice(0,4).join(", "))+(approved.length>4?" +"+(approved.length-4):""):""}</td><td>${hist.length?hist[hist.length-1].agents.length+" agents":""}</td><td><button class="pl-btn${selected?" active":""}" onclick="otSetTargetDate('${iso}')">Plan</button></td></tr>`;
+  });
+  h+=`</tbody></table></div></div>`;
+  return h;
+}
+async function otExportRangePNG(){
+  const el=document.getElementById("otRangePlanner");
+  if(!el){toast("Switch OT range to week or period first","warn");return;}
+  if(typeof html2canvas==="undefined"){toast("html2canvas not loaded","warn");return;}
+  try{
+    await _awaitFontRenderReady(1600);
+    const canvas=await html2canvas(el,{scale:2,backgroundColor:"#ffffff"});
+    const dates=otPlannerRangeDates();
+    const a=document.createElement("a");a.download="CCS-OT-Range-"+(dates[0]||"week")+"-"+(dates[dates.length-1]||"")+".png";
+    a.href=canvas.toDataURL("image/png");a.click();toast("Range PNG exported","ok");
+  }catch(e){toast("Range PNG export failed","err");}
+}
 function otSetTargetDate(val){
-  S.otPlan.targetDate=val;S.otPlan.selections={};saveOTPlan();rerenderPlannerSubTab("overtime");
+  S.otPlan.targetDate=val;
+  if(S.otPlan.rangeMode==="week")otSetRangeToWeek(val,true);
+  else if(S.otPlan.rangeMode==="day"){S.otPlan.rangeStart=val||"";S.otPlan.rangeEnd=val||"";}
+  const loaded=otLoadSelectionsFromWishlistDate(val);
+  saveOTPlan();rerenderPlannerSubTab("overtime");
+  if(loaded)toast("Loaded "+loaded+" approved wishlist OT selection"+(loaded!==1?"s":""),"ok",2200);
 }
 function getOTViewMonth(){
   if(S.otPlan&&S.otPlan.targetDate){
@@ -11031,6 +12231,7 @@ function otCopyToNextDay(){
   // Save current plan to history first
   const plan=finaliseOTPlan();
   if(plan&&plan.agents.length){
+    otSyncPlanToWishlist(plan);
     S.otPlan.history.push({
       id:Date.now().toString(36)+Math.random().toString(36).substring(2,6),
       createdAt:new Date().toISOString(),
@@ -11048,6 +12249,8 @@ function otCopyToNextDay(){
     if(sel.selected)preserved[name]={...sel};
   });
   S.otPlan.targetDate=nextISO;
+  if(S.otPlan.rangeMode==="week")otSetRangeToWeek(nextISO,true);
+  else if(S.otPlan.rangeMode==="day"){S.otPlan.rangeStart=nextISO;S.otPlan.rangeEnd=nextISO;}
   S.otPlan.selections=preserved;
   saveOTPlan();
   rerenderPlannerSubTab("overtime");
@@ -11058,13 +12261,15 @@ function otRestoreFromHistory(idx){
   if(!plan)return;
   // Restore target date and rebuild selections from plan.agents
   S.otPlan.targetDate=plan.targetDate;
+  if(S.otPlan.rangeMode==="week")otSetRangeToWeek(plan.targetDate,true);
+  else if(S.otPlan.rangeMode==="day"){S.otPlan.rangeStart=plan.targetDate;S.otPlan.rangeEnd=plan.targetDate;}
   S.otPlan.selections={};
   (plan.agents||[]).forEach(a=>{
     const name=a.name||a;
     S.otPlan.selections[name]={
       selected:true,
-      shiftStart:a.start||null,
-      shiftEnd:a.end||null,
+      shiftStart:a.shiftStart||a.start||null,
+      shiftEnd:a.shiftEnd||a.end||null,
       lunchMins:a.lunchMins||null,
       notes:a.notes||""
     };
@@ -11101,6 +12306,7 @@ function renderOTMonthCalendar(){
     const ok=pool.filter(p=>!p.excluded&&p.severity===0).length;
     const warn=pool.filter(p=>!p.excluded&&p.severity>0).length;
     const blocked=pool.filter(p=>p.excluded).length;
+    const approved=otRangeApprovedNames(iso).length;
     const isSel=iso===selected;
     const dt=new Date(vm.y,vm.m,d);
     const isWknd=dt.getDay()===0||dt.getDay()===6;
@@ -11110,6 +12316,7 @@ function renderOTMonthCalendar(){
     h+=`<span style="font-size:8px;padding:1px 4px;border-radius:6px;background:rgba(52,211,153,.12);color:var(--early)">${ok}</span>`;
     if(warn)h+=`<span style="font-size:8px;padding:1px 4px;border-radius:6px;background:rgba(251,191,36,.12);color:var(--wknd)">${warn}</span>`;
     if(blocked)h+=`<span style="font-size:8px;padding:1px 4px;border-radius:6px;background:rgba(220,38,38,.1);color:#dc2626">${blocked}</span>`;
+    if(approved)h+=`<span style="font-size:8px;padding:1px 4px;border-radius:6px;background:rgba(14,165,233,.12);color:#0ea5e9">${approved}✓</span>`;
     h+=`</div></button>`;
   }
   h+=`</div></div>`;
@@ -17098,9 +18305,8 @@ function renderOTSelectedPanel(){
   return h;
 }
 
-function showOTRulesEditor(){
-  const rules=S.otPlan.exclusionRules;
-  const RULE_DEFS=[
+function otRuleDefs(){
+  return[
     {k:"sick",label:"Sick absence",desc:"Exclude agents with sick exceptions in lookback window",hasLookback:true},
     {k:"awol",label:"AWOL / No-show",desc:"Exclude agents with AWOL/no-show in lookback window",hasLookback:true},
     {k:"leave",label:"On leave (target date)",desc:"Exclude agents rostered on leave on the OT date",hasLookback:false},
@@ -17112,6 +18318,10 @@ function showOTRulesEditor(){
     {k:"recentOT",label:"Recent OT fairness",desc:"Exclude agents already used for OT inside the lookback window",hasLookback:true},
     {k:"attendance",label:"Attendance window",desc:"Exclude agents with too many sick/AWOL/half-day events in the window",hasLookback:true,hasThreshold:true,thresholdLabel:"Max events",thresholdMin:1,thresholdMax:10},
   ];
+}
+function showOTRulesEditor(){
+  const rules=S.otPlan.exclusionRules;
+  const RULE_DEFS=otRuleDefs();
   let existing=document.getElementById("otRulesOverlay");
   if(existing){existing.remove();return;}
   let h=`<div id="otRulesOverlay" style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px">`;
@@ -17155,11 +18365,118 @@ function showOTRulesEditor(){
   const div=document.createElement("div");div.innerHTML=h;
   document.body.appendChild(div.firstElementChild);
 }
+function renderOTRulesPanelInline(){
+  const rules=S.otPlan.exclusionRules||{};
+  let h=`<aside class="ot-rules-inline" style="border:1px solid var(--bdr);border-radius:8px;background:rgba(255,255,255,.015);padding:10px;align-self:start;position:sticky;top:92px;max-height:calc(100vh - 130px);overflow:auto">`;
+  h+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px"><div><div style="font-size:13px;font-weight:800;color:var(--text)">OT rules</div><div style="font-size:10px;color:var(--tm)">Live daily exclusions</div></div><button class="pl-btn" onclick="showOTRulesEditor()">Full</button></div>`;
+  otRuleDefs().forEach(def=>{
+    const rule=rules[def.k]||{enabled:false,lookback:7,threshold:def.thresholdMin||0};
+    h+=`<div style="padding:8px 0;border-top:1px solid var(--bdr)">`;
+    h+=`<label style="display:flex;align-items:flex-start;gap:7px;cursor:pointer"><input type="checkbox" ${rule.enabled?"checked":""} onchange="S.otPlan.exclusionRules['${def.k}'].enabled=this.checked;saveOTPlan();rerenderPlannerSubTab('overtime')" style="margin-top:2px;accent-color:var(--accent)"><span style="min-width:0"><b style="display:block;font-size:11px;color:${rule.enabled?"var(--text)":"var(--tm)"}">${def.label}</b><small style="display:block;font-size:10px;color:var(--tm);line-height:1.35">${def.desc}</small></span></label>`;
+    if(rule.enabled&&(def.hasLookback||def.hasThreshold)){
+      h+=`<div style="display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap;padding-left:22px">`;
+      if(def.hasLookback)h+=`<label style="font-size:10px;color:var(--tm)">Days <input type="number" min="1" max="90" value="${rule.lookback||7}" onchange="S.otPlan.exclusionRules['${def.k}'].lookback=+this.value;saveOTPlan();rerenderPlannerSubTab('overtime')" style="width:54px;padding:3px 5px;border:1px solid var(--bdr);border-radius:5px;background:var(--card);color:var(--text);font-size:10px"></label>`;
+      if(def.hasThreshold)h+=`<label style="font-size:10px;color:var(--tm)">${def.thresholdLabel||"Limit"} <input type="number" min="${def.thresholdMin||0}" max="${def.thresholdMax||999}" value="${rule.threshold||def.thresholdMin||0}" onchange="S.otPlan.exclusionRules['${def.k}'].threshold=+this.value;saveOTPlan();rerenderPlannerSubTab('overtime')" style="width:54px;padding:3px 5px;border:1px solid var(--bdr);border-radius:5px;background:var(--card);color:var(--text);font-size:10px"></label>`;
+      h+=`</div>`;
+    }
+    h+=`</div>`;
+  });
+  h+=`</aside>`;
+  return h;
+}
+
+function renderOTModeSwitch(){
+  ensureOTPlanDefaults();
+  const mode=(S.otPlan.wishlist&&S.otPlan.wishlist.mode)||"daily";
+  const btn=(id,label,sub)=>`<button onclick="otWishlistSetMode('${id}')" style="flex:1;min-width:150px;text-align:left;padding:9px 12px;border:1px solid ${mode===id?"var(--accent)":"var(--bdr)"};border-radius:7px;background:${mode===id?"var(--al)":"rgba(255,255,255,.015)"};color:${mode===id?"var(--accent)":"var(--text)"};font-family:inherit;cursor:pointer">
+    <div style="font-size:12px;font-weight:800">${label}</div><div style="font-size:10px;color:var(--tm);margin-top:2px">${sub}</div>
+  </button>`;
+  return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">${btn("daily","Daily Planner","One-day OT pool and CCS export")}${btn("wishlist","OT Wishlist","Monthly Save+ OT workbook")}</div>`;
+}
+function renderOTWishlistGrid(kind){
+  const teams=otWishlistGetTeams();
+  const months=otWishlistGetMonths();
+  let h="";
+  months.forEach(monthKey=>{
+    const days=otWishlistMonthDays(monthKey);
+    h+=`<div style="border:1px solid var(--bdr);border-radius:8px;overflow:hidden;margin-top:10px;background:rgba(255,255,255,.012)">`;
+    h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--bdr)"><span style="font-size:12px;font-weight:800;color:var(--text)">${X(otMonthLabelFromKey(monthKey))}</span><span style="font-size:10px;color:var(--tm)">Click cycles status · right-click approves OT</span></div>`;
+    h+=`<div class="ot-wish-grid-scroll"><table class="ot-wish-grid"><thead><tr><th>Agent</th>`;
+    days.forEach(d=>{const wk=d.getDay()===0||d.getDay()===6;h+=`<th style="background:${wk?"#E0F2FE":"var(--card)"};color:${wk?"#0369A1":"var(--tm)"}"><div>${d.getDate()}</div><div>${DOW[d.getDay()].substring(0,1)}</div></th>`;});
+    h+=`</tr></thead><tbody>`;
+    teams.forEach(team=>{
+      h+=`<tr class="ot-wish-team"><td>${X(team.leader)}</td>`;
+      days.forEach(d=>{const meta=otWishlistDayMeta(d,team.leader,team.index);h+=`<td style="background:#${meta.fill.slice(2)};color:#${meta.font.slice(2)}">${meta.short}</td>`;});
+      h+=`</tr>`;
+      team.agents.forEach(name=>{
+        h+=`<tr><td>${X(name)}</td>`;
+        days.forEach(d=>{
+          const iso=otLocalISO(d);
+          const status=otWishlistExplicitStatus(name,iso);
+          const flag=otWishlistCellFlag(name,iso);
+          const approved=otWishlistIsApproved(name,iso);
+          const cls=status==="🔒 Blocked"?" block":status==="🎓 Training"?" training":status==="🚫 Unavailable"?" unavailable":status?" filled":flag?(" flag-"+flag.kind):"";
+          const text=status?(approved?"👍 ":"")+status:(approved?"👍":(flag?flag.short:""));
+          const title=(status?status:(flag?flag.title:"No status"))+" · "+name+" · "+iso;
+          h+=`<td><button class="ot-wish-cell${cls}${approved?" approved":""}" onclick="otWishlistCycleCell('${XJ(name)}','${iso}')" oncontextmenu="event.preventDefault();otWishlistToggleApproval('${XJ(name)}','${iso}')" title="${X(title)}">${X(text)}</button></td>`;
+        });
+        h+=`</tr>`;
+      });
+    });
+    h+=`</tbody></table></div></div>`;
+  });
+  return h;
+}
+function rOTWishlistPanel(){
+  ensureOTPlanDefaults();
+  const w=S.otPlan.wishlist;
+  const sourceReady=otWishlistHasSourceData();
+  const months=otWishlistGetMonths();
+  const detected=otWishlistDetectedMonths();
+  const start=months[0]||detected[0];
+  const choices=[...new Set(detected.concat(start?[start]:[]))].filter(Boolean).sort();
+  const preFill=(w.preFill||[]).join("\n");
+  let h=`<div class="ot-wishlist-panel" tabindex="0" onpaste="otWishlistHandlePasteEvent(event)">`;
+  if(!sourceReady){
+    h+=`<div style="padding:18px;border:1px dashed var(--bdr);border-radius:8px;background:rgba(251,191,36,.06);color:var(--wknd);font-size:13px;font-weight:700">Upload a SavePlus file first to generate the OT Wishlist</div>`;
+    h+=`</div>`;
+    return h;
+  }
+  const teams=otWishlistGetTeams();
+  const agentCount=teams.reduce((s,t)=>s+t.agents.length,0);
+  h+=`<div style="display:grid;grid-template-columns:minmax(260px,1.2fr) minmax(260px,1fr);gap:12px" class="ot-wish-config-grid">`;
+  h+=`<div style="border:1px solid var(--bdr);border-radius:8px;padding:12px;background:rgba(255,255,255,.015)">`;
+  h+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px"><div><div style="font-size:14px;font-weight:800;color:var(--text)">OT Wishlist Generator</div><div style="font-size:11px;color:var(--tm)">${agentCount} agents · ${teams.length} team${teams.length!==1?"s":""}</div></div><button onclick="otExportWishlistXLSX()" style="padding:7px 12px;border:1px solid var(--early);border-radius:6px;background:var(--early)18;color:var(--early);font-family:inherit;font-size:12px;font-weight:800;cursor:pointer">💾 Save+ OT Wishlist</button></div>`;
+  h+=`<div style="display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:8px" class="ot-wish-form-grid">`;
+  h+=`<label><span>Start month</span><select onchange="otWishlistSetStartMonth(this.value)">${choices.map(k=>`<option value="${k}"${k===start?" selected":""}>${X(otMonthLabelFromKey(k))}</option>`).join("")}</select></label>`;
+  h+=`<label><span>Range</span><select onchange="otWishlistSetMonthCount(this.value)">${[1,2,3].map(n=>`<option value="${n}"${months.length===n?" selected":""}>${n} month${n!==1?"s":""}</option>`).join("")}</select></label>`;
+  h+=`<label><span>W1 anchor</span><input type="date" value="${X(w.anchorDate||"2026-05-04")}" onchange="otWishlistSetAnchorDate(this.value)"></label>`;
+  h+=`<label><span>Open slots</span><input type="number" min="0" max="25" value="${w.openSlots||5}" onchange="otWishlistSetOpenSlots(this.value)"></label>`;
+  h+=`</div>`;
+  h+=`<div style="display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap"><button class="pl-btn" onclick="otWishlistAutoAnchor()">Auto anchor</button><span style="font-size:10px;color:var(--tm)">Anchor drives W1/W2 alternation. Current default: Mon 4 May 2026.</span></div>`;
+  h+=`<label style="display:block;margin-top:10px"><span style="display:block;font-size:10px;font-weight:800;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Open slot pre-fill names</span><textarea id="otWishlistPrefill" onblur="otWishlistSetPreFill()" placeholder="One name per line" style="width:100%;min-height:54px;resize:vertical;padding:7px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:12px">${X(preFill)}</textarea></label>`;
+  h+=`</div>`;
+  h+=`<div style="border:1px solid var(--bdr);border-radius:8px;padding:12px;background:rgba(255,255,255,.015)">`;
+  h+=`<div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px">Import filled wishlist</div>`;
+  h+=`<div style="font-size:11px;color:var(--tm);line-height:1.45;margin-bottom:8px">Click this panel and paste copied Excel cells. Sync imports the table immediately.</div>`;
+  h+=`<textarea id="otWishlistPasteText" onpaste="otWishlistHandlePasteEvent(event)" placeholder="Paste copied sheet cells here" style="width:100%;min-height:86px;resize:vertical;padding:7px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:11px"></textarea>`;
+  h+=`<div style="display:flex;gap:7px;margin-top:8px;flex-wrap:wrap"><button class="pl-btn active" onclick="otWishlistApplyPaste()">Apply paste</button><button class="pl-btn" onclick="otWishlistTriggerUpload()">Upload filled XLSX</button></div>`;
+  h+=`</div></div>`;
+  h+=`<details open style="margin-top:12px"><summary style="cursor:pointer;font-size:12px;font-weight:800;color:var(--text);padding:8px 0">🧭 Planning grid · wishes, blocks, approvals, daily-rule flags</summary>${renderOTWishlistGrid("planning")}</details>`;
+  h+=`</div>`;
+  return h;
+}
 
 function rOTPlanner(){
   const ot=S.otPlan;
   const hasAgents=Object.values(S.people).some(p=>p.role==="agent")||(gN().length>0);
   let h=`<div class="ot-wrap" style="padding:12px 16px">`;
+  h+=renderOTModeSwitch();
+  if(ot.wishlist&&ot.wishlist.mode==="wishlist"){
+    h+=rOTWishlistPanel();
+    h+=`</div>`;
+    return h;
+  }
 
   // ═══ CONFIG BAR ═══
   h+=`<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">`;
@@ -17175,25 +18492,36 @@ function rOTPlanner(){
     h+=`<button onclick="otSetLookback(${d})" style="font-family:DM Mono,monospace;font-size:11px;padding:3px 8px;border:1px solid ${active?"var(--accent)":"var(--bdr)"};border-radius:12px;background:${active?"var(--al)":"none"};color:${active?"var(--accent)":"var(--tm)"};cursor:pointer;font-weight:${active?600:400}">${d}d</button>`;
   });
   h+=`</div>`;
-  // Rules editor gear + history count
+  h+=`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">`;
+  h+=`<label style="font-size:11px;color:var(--tm)">Plan:</label>`;
+  h+=`<select onchange="otSetRangeMode(this.value)" style="font-family:inherit;font-size:11px;padding:4px 7px;border:1px solid var(--bdr);border-radius:6px;background:var(--c);color:var(--t)">`;
+  [["day","Day"],["week","Week"],["period","Period"]].forEach(o=>{h+=`<option value="${o[0]}"${ot.rangeMode===o[0]?" selected":""}>${o[1]}</option>`;});
+  h+=`</select>`;
+  if(ot.rangeMode==="period"){
+    h+=`<input type="date" value="${ot.rangeStart||ot.targetDate||""}" onchange="otSetRangeBoundary('start',this.value)" style="font-family:DM Mono,monospace;font-size:11px;padding:3px 7px;border:1px solid var(--bdr);border-radius:5px;background:var(--c);color:var(--t)">`;
+    h+=`<input type="date" value="${ot.rangeEnd||ot.targetDate||""}" onchange="otSetRangeBoundary('end',this.value)" style="font-family:DM Mono,monospace;font-size:11px;padding:3px 7px;border:1px solid var(--bdr);border-radius:5px;background:var(--c);color:var(--t)">`;
+  }
+  if(ot.rangeMode!=="day")h+=`<button class="pl-btn" onclick="otExportRangePNG()">📷 Range PNG</button>`;
+  h+=`</div>`;
+  // Rules count + history count
   const histCount=ot.history.length;
   const activeRules=Object.values(ot.exclusionRules||{}).filter(r=>r.enabled).length;
   h+=`<div style="display:flex;align-items:center;gap:8px;margin-left:auto">`;
-  h+=`<button onclick="showOTRulesEditor()" title="Configure exclusion rules" style="display:flex;align-items:center;gap:5px;font-family:inherit;font-size:11px;padding:4px 10px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--tm);cursor:pointer">`;
-  h+=`⚙ Rules<span style="font-size:10px;padding:1px 5px;border-radius:8px;background:var(--al);color:var(--accent);font-weight:700">${activeRules}</span>`;
-  h+=`</button>`;
+  h+=`<span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--tm)">Rules <b style="font-size:10px;padding:1px 5px;border-radius:8px;background:var(--al);color:var(--accent)">${activeRules}</b></span>`;
   if(histCount>0)h+=`<span style="font-size:11px;color:var(--tm)">${histCount} saved plan${histCount!==1?"s":""}</span>`;
   h+=`</div>`;
   h+=`</div>`;
+  h+=`<div class="ot-daily-shell" style="display:grid;grid-template-columns:minmax(0,1fr) 286px;gap:14px;align-items:start"><div class="ot-daily-main">`;
 
   if(!hasAgents){
     h+=`<div style="padding:32px;text-align:center;color:var(--tm);font-size:13px">Load a roster or add agents via People tab to use OT Planner.</div>`;
-    h+=`</div>`;return h;
+    h+=`</div>${renderOTRulesPanelInline()}</div></div>`;return h;
   }
   h+=renderOTMonthCalendar();
+  h+=renderOTRangePlanner();
   if(!ot.targetDate){
     h+=`<div style="padding:22px;text-align:center;color:var(--tm);font-size:13px;border:1px dashed var(--bdr);border-radius:8px">Select a day in the monthly OT calendar to build the eligibility pool.</div>`;
-    h+=`</div>`;return h;
+    h+=`</div>${renderOTRulesPanelInline()}</div></div>`;return h;
   }
 
   // Build pool
@@ -17240,6 +18568,8 @@ function rOTPlanner(){
       h+=`<div class="ot-agent-row" data-name="${X(p.name)}" style="display:flex;align-items:center;gap:6px;padding:5px 12px;border-bottom:1px solid var(--bdr);cursor:pointer;transition:background .1s${isSel?" ;background:var(--al)":""}" onclick="otToggleAgent('${XJ(p.name)}')">`;
       h+=`<span style="width:16px;height:16px;border:1.5px solid ${isSel?"var(--accent)":"var(--bdr)"};border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;background:${isSel?"var(--accent)":"none"};color:${isSel?"#fff":"transparent"}">${isSel?"✓":""}</span>`;
       h+=`<span style="font-size:12px;font-weight:500;flex:1;color:var(--t)">${X(p.name)}</span>`;
+      if(p.wishlistApproved)h+=`<span style="font-size:10px" title="Wishlist: approved for OT this day">✅</span>`;
+      else if(p.wishlistOT)h+=`<span style="font-size:10px" title="Wishlist: wants OT this day">🙋</span>`;
       if(hasWarns){
         p.reasons.forEach(r=>{
           const col=r.severity==="high"?"#dc2626":r.severity==="medium"?"#d97706":"var(--tm)";
@@ -17315,6 +18645,7 @@ function rOTPlanner(){
     h+=`</div></details>`;
   }
 
+  h+=`</div>${renderOTRulesPanelInline()}</div>`;
   h+=`</div>`;// close ot-wrap
   return h;
 }
@@ -21217,6 +22548,15 @@ function _themeVariantName(theme,idx){
 function _themeVariantLabel(v){
   return String(v||"").split("-").map(p=>p?p.charAt(0).toUpperCase()+p.slice(1):"").join(" ");
 }
+const DEFAULT_LAUNCH_THEME="newsprint";
+const DEFAULT_LAUNCH_VARIANT="nordic-pine";
+function _applyDefaultLaunchTheme(){
+  const variants=_themeVariantsFor(DEFAULT_LAUNCH_THEME);
+  const idx=Math.max(0,variants.indexOf(DEFAULT_LAUNCH_VARIANT));
+  S.th=DEFAULT_LAUNCH_THEME;
+  S.thVariant=idx;
+  setTh(DEFAULT_LAUNCH_THEME,{skipCycle:true});
+}
 function _readThemeStorage(){
   let theme="",variantIdx=null;
   try{theme=String(localStorage.getItem("mf_theme")||"").trim();}catch(e){}
@@ -22488,6 +23828,7 @@ function saveSettings(){
 }
 function loadSettings(){
   _migrateCriticalStoragePayloads();
+  let themeApplied=false;
   try{
     const raw=_storageGetCompat("sc_settings");
     if(raw){
@@ -22505,6 +23846,7 @@ function loadSettings(){
         const parsedVariant=Number.parseInt(variantRaw,10);
         S.thVariant=Number.isNaN(parsedVariant)?0:parsedVariant;
         setTh(themeKey,{skipCycle:true});
+        themeApplied=true;
       }
       if(typeof s.tz==="boolean")S.tz=s.tz;
       if(typeof s.hlToday==="boolean")S.hlToday=s.hlToday;
@@ -22544,11 +23886,13 @@ function loadSettings(){
     else S._schemaVersion=SETTINGS_SCHEMA_VERSION;
     // Fallback compatibility: dedicated theme keys
     const t=_readThemeStorage();
-    if(!raw&&t.theme){
+    if(!themeApplied&&t.theme){
       S.th=t.theme;
       if(t.variantIdx!==null)S.thVariant=t.variantIdx;
       setTh(S.th,{skipCycle:true});
+      themeApplied=true;
     }
+    if(!themeApplied)_applyDefaultLaunchTheme();
   }catch(e){}
   try{
     const rp=_storageGetCompat("sc_planner");
@@ -24842,8 +26186,17 @@ function rPeopleAgentsView(){
 
   // ════ RIGHT PANEL — agent detail ════
   h+=`<div style="flex:1;display:flex;flex-direction:column;overflow-y:auto">`;
+  const addLeaders=_peopleScopeLeaders();
+  if(addLeaders.length){
+    if(!S._agentsBulkTL||!addLeaders.includes(S._agentsBulkTL))S._agentsBulkTL=(S.emp!=="all"&&addLeaders.includes(S.emp))?S.emp:(S._agentsViewTLFilter&&addLeaders.includes(S._agentsViewTLFilter)?S._agentsViewTLFilter:addLeaders[0]);
+    h+=`<details ${!allAgents.length?"open":""} style="border-bottom:1px solid var(--bdr);padding:8px 18px;background:rgba(255,255,255,.012)">`;
+    h+=`<summary style="cursor:pointer;font-size:11px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.08em">Add / paste agents</summary>`;
+    h+=`<div style="display:flex;align-items:center;gap:8px;margin:8px 0 6px"><span style="font-size:10px;color:var(--tm);font-weight:700;text-transform:uppercase">Leader</span><select onchange="S._agentsBulkTL=this.value;rPeople($('ca'))" style="padding:4px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);color:var(--text);font-family:inherit;font-size:11px">${addLeaders.map(l=>`<option value="${XJ(l)}"${S._agentsBulkTL===l?" selected":""}>${X(l)}</option>`).join("")}</select></div>`;
+    h+=renderPeopleAgentAddBox(S._agentsBulkTL,"agents");
+    h+=`</details>`;
+  }
   if(!sel||!allAgents.length){
-    h+=`<div class="es-empty"><div class="es-icon">🔍</div><h3>Select an agent</h3><p>Click a name on the left to inspect.</p></div>`;
+    h+=`<div class="es-empty"><div class="es-icon">🔍</div><h3>Select an agent</h3><p>Click a name on the left to inspect, or paste agents above.</p></div>`;
   } else {
     const leaderName=selPerson.teamLeader||"";
     const status=getAgentStatus(sel,now);
@@ -24858,6 +26211,7 @@ function rPeopleAgentsView(){
     h+=`<div style="font-size:12px;color:var(--tm)">${leaderName?"TL: "+X(leaderName):""}</div>`;
     h+=`</div>`;
     h+=`<span style="padding:4px 12px;border-radius:8px;background:${statusDef.col}18;color:${statusDef.col};font-size:12px;font-weight:600">${statusDef.icon} ${statusDef.label}</span>`;
+    h+=`<button onclick="peopleRemoveAgent('${XJ(sel)}')" style="padding:5px 9px;border:1px solid rgba(220,38,38,.32);border-radius:6px;background:rgba(220,38,38,.06);color:#dc2626;font-family:inherit;font-size:11px;cursor:pointer">Remove</button>`;
     // Quick status buttons
     h+=`<div style="display:flex;gap:3px">`;
     [{k:"present",i:"✓"},{k:"sick",i:"🤒"},{k:"leave",i:"📅"},{k:"halfday",i:"½"},{k:"awol",i:"✕"}].forEach(s=>{
@@ -25507,13 +26861,7 @@ function _renderTLDetailPanel(tlName,todayISO,today){
     h+=`</div>`;
     // Manual add form
     if(_showAddAgent){
-      h+=`<div style="padding:8px 10px;margin-bottom:8px;border:1px solid var(--accent);border-radius:8px;background:var(--al)">`;
-      h+=`<div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px">Add Agent Manually</div>`;
-      h+=`<div style="display:flex;gap:5px;align-items:flex-end">`;
-      h+=`<div style="flex:1"><label style="font-size:10px;color:var(--tm);display:block;margin-bottom:2px">Name</label><input id="manualAgentName" type="text" placeholder="Agent name…" style="width:100%;padding:5px 7px;border:1px solid var(--bdr);border-radius:5px;background:var(--bg);color:var(--text);font-family:inherit;font-size:11px;box-sizing:border-box"></div>`;
-      h+=`<button onclick="(function(){const nm=document.getElementById('manualAgentName').value.trim();if(!nm){toast('Enter a name','warn');return;}if(S.people[nm]){toast('Name already exists','warn');return;}S.people[nm]={name:nm,role:'agent',teamLeader:'${XJ(tlName)}',source:'manual',skills:[],contract:'',hours:0};savePeople();S._addAgentTL=null;toast(nm+' added','ok');rPeople($('ca'));})()" style="padding:5px 12px;border:none;border-radius:5px;background:var(--accent);color:#000;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">Add</button>`;
-      h+=`<button onclick="S._addAgentTL=null;rPeople($('ca'))" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">✕</button>`;
-      h+=`</div></div>`;
+      h+=renderPeopleAgentAddBox(tlName,"team");
     }
     h+=`<div style="display:flex;flex-direction:column;gap:4px">`;
     agents.forEach(agent=>{
@@ -25537,10 +26885,7 @@ function _renderTLDetailPanel(tlName,todayISO,today){
         const srcCol=agent.source==='manual'?'var(--accent)':'var(--wknd)';
         h+=`<span style="font-size:9px;padding:1px 5px;border-radius:4px;border:1px solid ${srcCol}30;color:${srcCol};opacity:.7;margin-left:2px">${agent.source}</span>`;
       }
-      // Remove button — only for non-roster agents
-      if(agent.source!=='roster'){
-        h+=`<button onclick="event.stopPropagation();if(confirm('Remove ${agent.name.replace(/'/g,"\\'")} from team?')){delete S.people['${XJ(agent.name)}'];savePeople();rPeople($('ca'));}" style="background:none;border:none;color:var(--tm);cursor:pointer;font-size:11px;padding:2px 4px;margin-left:2px;opacity:.3;flex-shrink:0" onmouseover="this.style.opacity=1;this.style.color='#dc2626'" onmouseout="this.style.opacity=.3;this.style.color='var(--tm)'" title="Remove agent">✕</button>`;
-      }
+      h+=`<button onclick="event.stopPropagation();peopleRemoveAgent('${XJ(agent.name)}')" style="background:none;border:none;color:var(--tm);cursor:pointer;font-size:11px;padding:2px 4px;margin-left:2px;opacity:.35;flex-shrink:0" onmouseover="this.style.opacity=1;this.style.color='#dc2626'" onmouseout="this.style.opacity=.35;this.style.color='var(--tm)'" title="Remove agent">✕</button>`;
       h+=`</div>`;
     });
     h+=`</div></div>`;
@@ -25556,13 +26901,7 @@ function _renderTLDetailPanel(tlName,todayISO,today){
     h+=`<button onclick="triggerRosterUpload()" style="padding:5px 12px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">↑ Upload Roster</button>`;
     h+=`</div></div>`;
     if(_showAddEmpty){
-      h+=`<div style="padding:8px 10px;border:1px solid var(--accent);border-radius:8px;background:var(--al);margin-top:4px">`;
-      h+=`<div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px">Add Agent Manually</div>`;
-      h+=`<div style="display:flex;gap:5px;align-items:flex-end">`;
-      h+=`<div style="flex:1"><label style="font-size:10px;color:var(--tm);display:block;margin-bottom:2px">Name</label><input id="manualAgentName" type="text" placeholder="Agent name…" style="width:100%;padding:5px 7px;border:1px solid var(--bdr);border-radius:5px;background:var(--bg);color:var(--text);font-family:inherit;font-size:11px;box-sizing:border-box"></div>`;
-      h+=`<button onclick="(function(){const nm=document.getElementById('manualAgentName').value.trim();if(!nm){toast('Enter a name','warn');return;}if(S.people[nm]){toast('Name already exists','warn');return;}S.people[nm]={name:nm,role:'agent',teamLeader:'${XJ(tlName)}',source:'manual',skills:[],contract:'',hours:0};savePeople();S._addAgentTL=null;toast(nm+' added','ok');rPeople($('ca'));})()" style="padding:5px 12px;border:none;border-radius:5px;background:var(--accent);color:#000;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">Add</button>`;
-      h+=`<button onclick="S._addAgentTL=null;rPeople($('ca'))" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">✕</button>`;
-      h+=`</div></div>`;
+      h+=renderPeopleAgentAddBox(tlName,"empty");
     }
     h+=`</div>`;
   }
