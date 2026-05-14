@@ -1679,6 +1679,9 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .ot-wish-cell.flag-excluded{background:#FEE2E2;color:#991B1B;font-weight:800}
 .ot-wish-cell.flag-warn{background:#FEF3C7;color:#92400E;font-weight:800}
 .ot-wish-cell.approved{outline:2px solid #166534;outline-offset:-2px}
+.ot-wish-cell.decision-confirmed{box-shadow:inset 0 0 0 2px #0369A1}
+.ot-wish-cell.decision-exported{box-shadow:inset 0 0 0 2px #0F766E}
+.ot-wish-cell.decision-declined{background:#FEE2E2;color:#991B1B;text-decoration:line-through}
 .ot-range-table{width:100%;border-collapse:collapse;font-size:11px}
 .ot-range-table th,.ot-range-table td{border-bottom:1px solid var(--bdr);padding:7px 9px;text-align:left;color:var(--text)}
 .ot-range-table th{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--tm);background:var(--card)}
@@ -1986,6 +1989,9 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
 .ot-wish-cell.flag-excluded{background:rgba(192,112,112,.12);color:#f0a3a3}
 .ot-wish-cell.flag-warn{background:rgba(224,170,78,.13);color:#eac174}
 .ot-wish-cell.approved{outline-color:#60a878}
+.ot-wish-cell.decision-confirmed{box-shadow:inset 0 0 0 2px #4fb5d9}
+.ot-wish-cell.decision-exported{box-shadow:inset 0 0 0 2px #60a878}
+.ot-wish-cell.decision-declined{background:rgba(192,112,112,.18);color:#f0a3a3}
 </style>
 </head>
 <body>
@@ -2269,7 +2275,7 @@ let S={wb:null,fn:"",shs:[],sh:"",raw:[],entries:[],team:"all",emp:"all",tz:true
     rangeMode:"day",
     rangeStart:"",
     rangeEnd:"",
-    wishlist:{mode:"daily",months:[],anchorDate:"2026-05-04",openSlots:5,preFill:[],blocks:{},wishes:{},approvals:{},confirmed:{},importTeamByAgent:{}}
+    wishlist:{mode:"daily",months:[],anchorDate:"2026-05-04",openSlots:5,preFill:[],blocks:{},wishes:{},approvals:{},confirmed:{},declined:{},exported:{},aliases:{},importTeamByAgent:{},lastImportAudit:null}
   },
 
   flagSettings:{
@@ -10927,7 +10933,7 @@ function getDefaultOTRules(){
   };
 }
 function getDefaultOTWishlist(){
-  return{mode:"daily",months:[],anchorDate:"2026-05-04",openSlots:5,preFill:[],blocks:{},wishes:{},approvals:{},confirmed:{},importTeamByAgent:{}};
+  return{mode:"daily",months:[],anchorDate:"2026-05-04",openSlots:5,preFill:[],blocks:{},wishes:{},approvals:{},confirmed:{},declined:{},exported:{},aliases:{},importTeamByAgent:{},lastImportAudit:null};
 }
 function ensureOTPlanDefaults(){
   if(!S.otPlan||typeof S.otPlan!=="object")S.otPlan={};
@@ -10945,7 +10951,11 @@ function ensureOTPlanDefaults(){
   if(!w.wishes||typeof w.wishes!=="object")w.wishes={};
   if(!w.approvals||typeof w.approvals!=="object")w.approvals={};
   if(!w.confirmed||typeof w.confirmed!=="object")w.confirmed={};
+  if(!w.declined||typeof w.declined!=="object")w.declined={};
+  if(!w.exported||typeof w.exported!=="object")w.exported={};
+  if(!w.aliases||typeof w.aliases!=="object")w.aliases={};
   if(!w.importTeamByAgent||typeof w.importTeamByAgent!=="object")w.importTeamByAgent={};
+  if(w.lastImportAudit&&typeof w.lastImportAudit!=="object")w.lastImportAudit=null;
   w.openSlots=Math.max(0,Math.min(25,parseInt(w.openSlots,10)||5));
   if(!w.anchorDate)w.anchorDate="2026-05-04";
   if(!w.mode)w.mode="daily";
@@ -11238,6 +11248,18 @@ function otSyncPlanToWishlist(plan){
     otWishlistSetCellStatus(a.name,plan.targetDate,"🙋 OT",{silent:true,approved:true,confirmed:{shiftStart:a.shiftStart,shiftEnd:a.shiftEnd,lunchMins:a.lunchMins,hours:a.hours}});
   });
 }
+function otMarkPlanExported(plan){
+  if(!plan||!plan.targetDate||!plan.agents)return;
+  ensureOTPlanDefaults();
+  const w=S.otPlan.wishlist;
+  plan.agents.forEach(a=>{
+    ["approvals","confirmed","exported","declined"].forEach(k=>{if(!w[k][a.name])w[k][a.name]={};});
+    w.approvals[a.name][plan.targetDate]=true;
+    w.confirmed[a.name][plan.targetDate]=w.confirmed[a.name][plan.targetDate]||true;
+    w.exported[a.name][plan.targetDate]=true;
+    delete w.declined[a.name][plan.targetDate];
+  });
+}
 function otLoadSelectionsFromWishlistDate(dateISO){
   ensureOTPlanDefaults();
   const w=S.otPlan.wishlist||{};
@@ -11298,6 +11320,7 @@ function otExportXLSX(){
     const blob=new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
     const url=URL.createObjectURL(blob);const a=document.createElement("a");
     a.href=url;a.download="CCS-OT-"+plan.targetDate+".xlsx";a.click();URL.revokeObjectURL(url);
+    otMarkPlanExported(plan);saveOTPlan();
     toast("XLSX exported","ok");
   });
 }
@@ -11458,15 +11481,15 @@ function otWishlistMonthDays(monthKey){
 function otWishlistGetTeams(){
   const agents=Object.values(S.people||{}).filter(p=>p&&p.role==="agent").sort((a,b)=>(a.teamLeader||"").localeCompare(b.teamLeader||"")||a.name.localeCompare(b.name));
   const byLeader={},known={};
+  const w=S.otPlan&&S.otPlan.wishlist||{};
   agents.forEach(a=>{
-    const leader=a.teamLeader||"Unassigned";
+    const leader=a.teamLeader||(w.importTeamByAgent&&w.importTeamByAgent[a.name])||"Unassigned";
     if(!byLeader[leader])byLeader[leader]=[];
     byLeader[leader].push(a.name);
     known[a.name]=true;
   });
-  const w=S.otPlan&&S.otPlan.wishlist||{};
   const importedNames=new Set();
-  ["wishes","blocks","approvals","confirmed","importTeamByAgent"].forEach(k=>Object.keys(w[k]||{}).forEach(n=>{if(!known[n])importedNames.add(n);}));
+  ["wishes","blocks","approvals","confirmed","declined","exported","importTeamByAgent"].forEach(k=>Object.keys(w[k]||{}).forEach(n=>{if(!known[n])importedNames.add(n);}));
   importedNames.forEach(name=>{
     const leader=(w.importTeamByAgent&&w.importTeamByAgent[name])||"Imported wishlist";
     if(!byLeader[leader])byLeader[leader]=[];
@@ -11498,7 +11521,23 @@ function otWishlistCellStatus(name,dateISO){
 function otWishlistIsApproved(name,dateISO){
   const a=S.otPlan.wishlist&&S.otPlan.wishlist.approvals;
   const c=S.otPlan.wishlist&&S.otPlan.wishlist.confirmed;
-  return !!((a&&a[name]&&a[name][dateISO])||(c&&c[name]&&c[name][dateISO]));
+  const x=S.otPlan.wishlist&&S.otPlan.wishlist.exported;
+  const d=S.otPlan.wishlist&&S.otPlan.wishlist.declined;
+  return !((d&&d[name]&&d[name][dateISO]))&&!!((a&&a[name]&&a[name][dateISO])||(c&&c[name]&&c[name][dateISO])||(x&&x[name]&&x[name][dateISO]));
+}
+function otWishlistDecision(name,dateISO){
+  const w=S.otPlan.wishlist||{};
+  if(w.declined&&w.declined[name]&&w.declined[name][dateISO])return"declined";
+  if(w.exported&&w.exported[name]&&w.exported[name][dateISO])return"exported";
+  if(w.confirmed&&w.confirmed[name]&&w.confirmed[name][dateISO])return"confirmed";
+  if(w.approvals&&w.approvals[name]&&w.approvals[name][dateISO])return"approved";
+  if(otWishlistExplicitStatus(name,dateISO)==="🙋 OT")return"wanted";
+  return"";
+}
+function otWishlistDecisionBadge(name,dateISO){
+  const d=otWishlistDecision(name,dateISO);
+  const map={wanted:["W","Wanted"],approved:["A","Approved"],confirmed:["C","Confirmed"],exported:["E","Exported"],declined:["D","Declined"]};
+  return map[d]||["",""];
 }
 function otWishlistCellFlag(name,dateISO){
   const explicit=otWishlistExplicitStatus(name,dateISO);
@@ -11522,30 +11561,39 @@ function otWishlistSetCellStatus(name,dateISO,status,opts){
   const w=S.otPlan.wishlist;
   status=otWishlistNormalizeStatus(status);
   if(!name||!dateISO)return;
-  ["blocks","wishes","approvals","confirmed"].forEach(k=>{if(!w[k][name])w[k][name]={};});
+  ["blocks","wishes","approvals","confirmed","declined","exported"].forEach(k=>{if(!w[k][name])w[k][name]={};});
   delete w.blocks[name][dateISO];
   delete w.wishes[name][dateISO];
   if(status==="🔒 Blocked"){
     w.blocks[name][dateISO]=status;
     delete w.approvals[name][dateISO];
     delete w.confirmed[name][dateISO];
+    delete w.declined[name][dateISO];
+    delete w.exported[name][dateISO];
   }else if(status){
     w.wishes[name][dateISO]=status;
     if(status==="🚫 Unavailable"||status==="🎓 Training"){
       delete w.approvals[name][dateISO];
       delete w.confirmed[name][dateISO];
+      delete w.declined[name][dateISO];
+      delete w.exported[name][dateISO];
     }
   }else{
     delete w.approvals[name][dateISO];
     delete w.confirmed[name][dateISO];
+    delete w.declined[name][dateISO];
+    delete w.exported[name][dateISO];
   }
   if(opts&&opts.approved!==undefined){
     if(opts.approved){
       w.approvals[name][dateISO]=true;
-      if(status==="🙋 OT")w.confirmed[name][dateISO]=opts.confirmed||true;
+      if(status==="🙋 OT"&&opts.confirmed)w.confirmed[name][dateISO]=opts.confirmed;
+      delete w.declined[name][dateISO];
     }else{
       delete w.approvals[name][dateISO];
       delete w.confirmed[name][dateISO];
+      delete w.exported[name][dateISO];
+      delete w.declined[name][dateISO];
     }
   }
   if(!(opts&&opts.silent)){saveOTPlan();rerenderPlannerSubTab("overtime");}
@@ -11568,14 +11616,42 @@ function otWishlistToggleApproval(name,dateISO){
   const w=S.otPlan.wishlist;
   if(!w.approvals[name])w.approvals[name]={};
   if(!w.confirmed[name])w.confirmed[name]={};
-  if(w.approvals[name][dateISO]||w.confirmed[name][dateISO]){
-    delete w.approvals[name][dateISO];delete w.confirmed[name][dateISO];
-  }else{
-    if(!status){otWishlistSetCellStatus(name,dateISO,"🙋 OT",{silent:true});status="🙋 OT";}
-    w.approvals[name][dateISO]=true;
-    if(status==="🙋 OT")w.confirmed[name][dateISO]=true;
-  }
+  if(!w.declined[name])w.declined[name]={};
+  if(!w.exported[name])w.exported[name]={};
+  if(!status){otWishlistSetCellStatus(name,dateISO,"🙋 OT",{silent:true});status="🙋 OT";}
+  const cur=otWishlistDecision(name,dateISO);
+  delete w.approvals[name][dateISO];delete w.confirmed[name][dateISO];delete w.exported[name][dateISO];delete w.declined[name][dateISO];
+  if(cur===""||cur==="wanted")w.approvals[name][dateISO]=true;
+  else if(cur==="approved"){w.approvals[name][dateISO]=true;w.confirmed[name][dateISO]=true;}
+  else if(cur==="confirmed"){w.approvals[name][dateISO]=true;w.confirmed[name][dateISO]=true;w.exported[name][dateISO]=true;}
+  else if(cur==="exported")w.declined[name][dateISO]=true;
   saveOTPlan();rerenderPlannerSubTab("overtime");
+}
+function otWishlistBulkAction(action,monthKey,teamLeader){
+  ensureOTPlanDefaults();
+  const w=S.otPlan.wishlist;
+  const teams=otWishlistGetTeams().filter(t=>!teamLeader||t.leader===teamLeader);
+  const months=monthKey?[monthKey]:otWishlistGetMonths();
+  let touched=0;
+  months.forEach(m=>{
+    const days=otWishlistMonthDays(m).map(otLocalISO);
+    teams.forEach(team=>team.agents.forEach(name=>days.forEach(iso=>{
+      const status=otWishlistExplicitStatus(name,iso);
+      ["approvals","confirmed","declined","exported"].forEach(k=>{if(!w[k][name])w[k][name]={};});
+      if(action==="approve-wishes"&&status==="🙋 OT"){
+        w.approvals[name][iso]=true;delete w.declined[name][iso];touched++;
+      }else if(action==="confirm-approved"&&otWishlistIsApproved(name,iso)&&status==="🙋 OT"){
+        w.approvals[name][iso]=true;w.confirmed[name][iso]=true;delete w.declined[name][iso];touched++;
+      }else if(action==="clear-decisions"){
+        if(w.approvals[name][iso]||w.confirmed[name][iso]||w.declined[name][iso]||w.exported[name][iso])touched++;
+        delete w.approvals[name][iso];delete w.confirmed[name][iso];delete w.declined[name][iso];delete w.exported[name][iso];
+      }else if(action==="clear-blocks"&&w.blocks[name]&&w.blocks[name][iso]){
+        delete w.blocks[name][iso];touched++;
+      }
+    })));
+  });
+  saveOTPlan();rerenderPlannerSubTab("overtime");
+  toast(touched?("Updated "+touched+" OT planner cell"+(touched!==1?"s":"")):"No matching cells found",touched?"ok":"warn",2600);
 }
 function otWishlistDateFromHeader(v,defaultMonthKey){
   if(v instanceof Date&&!isNaN(v))return otLocalISO(v);
@@ -11662,6 +11738,38 @@ function otWishlistKnownNameMap(){
   ((S.otPlan&&S.otPlan.wishlist&&S.otPlan.wishlist.preFill)||[]).forEach(add);
   return map;
 }
+function otWishlistNameKey(n){
+  return String(n||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim().replace(/\s+/g," ");
+}
+function otWishlistNameDistance(a,b){
+  a=otWishlistNameKey(a);b=otWishlistNameKey(b);
+  const m=a.length,n=b.length;
+  if(!m||!n)return Math.max(m,n);
+  const dp=Array.from({length:m+1},()=>Array(n+1).fill(0));
+  for(let i=0;i<=m;i++)dp[i][0]=i;
+  for(let j=0;j<=n;j++)dp[0][j]=j;
+  for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+  return dp[m][n];
+}
+function otWishlistBestNameMatch(raw,nameMap){
+  const key=otWishlistNameKey(raw);
+  if(!key)return"";
+  const alias=(S.otPlan.wishlist.aliases||{})[key];
+  if(alias)return alias;
+  const normalized={};
+  Object.keys(nameMap||{}).forEach(k=>normalized[otWishlistNameKey(k)]=nameMap[k]);
+  if(normalized[key])return normalized[key];
+  const rawTokens=new Set(key.split(" ").filter(Boolean));
+  let best="",bestScore=0;
+  Object.entries(normalized).forEach(([k,name])=>{
+    const toks=k.split(" ").filter(Boolean);
+    const overlap=toks.filter(t=>rawTokens.has(t)).length/Math.max(1,Math.max(toks.length,rawTokens.size));
+    const dist=otWishlistNameDistance(key,k);
+    const score=(overlap*.65)+(1-Math.min(dist,10)/10)*.35;
+    if(score>bestScore){bestScore=score;best=name;}
+  });
+  return bestScore>=.82?best:"";
+}
 function otWishlistInferMonthKey(rows,fallback){
   const monthNames=MOFULL.map(x=>x.toLowerCase()).concat(MO.map(x=>x.toLowerCase()));
   const all=(rows||[]).slice(0,30).flat().map(v=>String(v||"").replace(/\u00a0/g," ").trim()).filter(Boolean);
@@ -11715,7 +11823,7 @@ function otWishlistParseClipboardTable(text){
     return out;
   }).filter(r=>r.some(c=>String(c||"").trim()));
 }
-function otWishlistResolveRowName(row,dateCols,nameMap){
+function otWishlistResolveRowName(row,dateCols,nameMap,audit){
   const firstDate=Math.min(...dateCols.map(c=>c.idx));
   for(let i=0;i<Math.max(1,firstDate);i++){
     const raw=row[i];
@@ -11725,7 +11833,13 @@ function otWishlistResolveRowName(row,dateCols,nameMap){
     if(/\b(team|shift reference|messenger ot wishlist|open slots)\b/i.test(clean))continue;
     if(/^\d+\s*(\|\s*\d+)?$/.test(clean))continue;
     const key=clean.toLowerCase();
-    return nameMap[key]||clean;
+    if(nameMap[key])return nameMap[key];
+    const matched=otWishlistBestNameMatch(clean,nameMap);
+    if(matched&&matched!==clean){
+      if(audit&&audit.mapped) audit.mapped.push({from:clean,to:matched});
+      return matched;
+    }
+    return clean;
   }
   return"";
 }
@@ -11733,6 +11847,7 @@ function otWishlistApplyRows(rows,defaultMonthKey){
   ensureOTPlanDefaults();
   rows=(rows||[]).filter(r=>Array.isArray(r)&&r.some(c=>String(c||"").trim()));
   defaultMonthKey=otWishlistInferMonthKey(rows,defaultMonthKey);
+  const audit={at:new Date().toISOString(),rows:rows.length,month:defaultMonthKey,headers:0,sections:[],agents:[],unknown:[],mapped:[],imported:0,ignored:0};
   const headers=[];
   for(let i=0;i<rows.length;i++){
     const cols=[],seen={};
@@ -11743,7 +11858,8 @@ function otWishlistApplyRows(rows,defaultMonthKey){
     });
     if(cols.length>=2)headers.push({idx:i,dateCols:cols,monthKey});
   }
-  if(!headers.length)return 0;
+  audit.headers=headers.length;
+  if(!headers.length){S.otPlan.wishlist.lastImportAudit=audit;return 0;}
   let imported=0;
   const nameMap=otWishlistKnownNameMap();
   headers.forEach((head,hi)=>{
@@ -11755,23 +11871,28 @@ function otWishlistApplyRows(rows,defaultMonthKey){
       if(/team leads|shift reference/.test(leadText)){currentTeam="";continue;}
       if(/open slots/.test(leadText)){currentTeam="Open slots";continue;}
       const teamLabel=otWishlistRowTeamLabel(row,head.dateCols);
-      if(teamLabel){currentTeam=teamLabel;continue;}
-      const name=otWishlistResolveRowName(row,head.dateCols,nameMap);
-      if(!name)continue;
+      if(teamLabel){currentTeam=teamLabel;if(!audit.sections.includes(teamLabel))audit.sections.push(teamLabel);continue;}
+      const name=otWishlistResolveRowName(row,head.dateCols,nameMap,audit);
+      if(!name){audit.ignored++;continue;}
+      const rowStatusCells=head.dateCols.map(dc=>({dc,raw:String(row[dc.idx]||"").replace(/\u00a0/g," ").trim(),status:otWishlistNormalizeStatus(row[dc.idx])})).filter(x=>x.status);
+      if(!currentTeam&&!rowStatusCells.length)continue;
       if(currentTeam){
         const w=S.otPlan.wishlist;
         if(!w.importTeamByAgent)w.importTeamByAgent={};
         if(!w.importTeamByAgent[name])w.importTeamByAgent[name]=currentTeam;
       }
-      head.dateCols.forEach(dc=>{
-        const raw=String(row[dc.idx]||"").replace(/\u00a0/g," ").trim();
-        const status=otWishlistNormalizeStatus(raw);
-        if(!status)return;
+      if(!audit.agents.includes(name))audit.agents.push(name);
+      rowStatusCells.forEach(({dc,raw,status})=>{
         otWishlistSetCellStatus(name,dc.iso,status,{silent:true,approved:raw.includes("👍")||/\bapproved\b/i.test(raw)});
         imported++;
       });
     }
   });
+  audit.imported=imported;
+  audit.agents.sort((a,b)=>a.localeCompare(b));
+  const knownNames=new Set(Object.values(nameMap).map(otWishlistNameKey));
+  audit.unknown=audit.agents.filter(n=>!knownNames.has(otWishlistNameKey(n))).sort((a,b)=>a.localeCompare(b));
+  S.otPlan.wishlist.lastImportAudit=audit;
   return imported;
 }
 function otWishlistImportClipboardText(txt){
@@ -11781,6 +11902,19 @@ function otWishlistImportClipboardText(txt){
   rerenderPlannerSubTab("overtime");
   toast(count?("Imported "+count+" wishlist cell"+(count!==1?"s":"")):"No wishlist cells detected",count?"ok":"warn",3500);
   return count;
+}
+function otWishlistSetAlias(raw,target){
+  ensureOTPlanDefaults();
+  const key=otWishlistNameKey(raw);
+  if(!key)return;
+  if(target)S.otPlan.wishlist.aliases[key]=target;
+  else delete S.otPlan.wishlist.aliases[key];
+  saveOTPlan();rerenderPlannerSubTab("overtime");
+}
+function otWishlistClearImportAudit(){
+  ensureOTPlanDefaults();
+  S.otPlan.wishlist.lastImportAudit=null;
+  saveOTPlan();rerenderPlannerSubTab("overtime");
 }
 function otWishlistHandlePasteEvent(ev){
   const target=ev&&ev.target;
@@ -18393,6 +18527,35 @@ function renderOTModeSwitch(){
   </button>`;
   return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">${btn("daily","Daily Planner","One-day OT pool and CCS export")}${btn("wishlist","OT Wishlist","Monthly Save+ OT workbook")}</div>`;
 }
+function renderOTWishlistImportAudit(){
+  const audit=S.otPlan.wishlist&&S.otPlan.wishlist.lastImportAudit;
+  if(!audit)return"";
+  const known=Object.values(S.people||{}).filter(p=>p&&p.role==="agent").map(p=>p.name).concat(gN()).filter(Boolean).sort((a,b)=>a.localeCompare(b));
+  let h=`<div style="border:1px solid var(--bdr);border-radius:8px;padding:10px;background:rgba(14,165,233,.06);margin-top:12px">`;
+  h+=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div><div style="font-size:12px;font-weight:800;color:var(--text)">Import audit</div><div style="font-size:10px;color:var(--tm)">${audit.imported||0} cells · ${(audit.agents||[]).length} agents · ${(audit.sections||[]).length} sections · ${audit.month||""}</div></div><button class="pl-btn" onclick="otWishlistClearImportAudit()">Clear audit</button></div>`;
+  if((audit.sections||[]).length)h+=`<div style="font-size:10px;color:var(--tm);margin-top:7px">Sections: ${X(audit.sections.join(" · "))}</div>`;
+  if((audit.mapped||[]).length)h+=`<div style="font-size:10px;color:var(--early);margin-top:7px">Auto-mapped: ${X(audit.mapped.slice(0,4).map(m=>m.from+" → "+m.to).join(" · "))}${audit.mapped.length>4?" · +"+(audit.mapped.length-4):""}</div>`;
+  if((audit.unknown||[]).length){
+    h+=`<div style="margin-top:8px;font-size:10px;font-weight:800;color:var(--wknd)">Unknown/imported names</div>`;
+    h+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px;margin-top:5px">`;
+    audit.unknown.slice(0,12).forEach(name=>{
+      const key=otWishlistNameKey(name),alias=(S.otPlan.wishlist.aliases||{})[key]||"";
+      h+=`<label style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--tm)"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(name)}</span><select onchange="otWishlistSetAlias('${XJ(name)}',this.value)" style="max-width:130px;padding:3px 5px;font-size:10px"><option value="">Keep imported</option>${known.map(n=>`<option value="${X(n)}"${alias===n?" selected":""}>${X(n)}</option>`).join("")}</select></label>`;
+    });
+    h+=`</div>`;
+  }
+  h+=`</div>`;
+  return h;
+}
+function renderOTWishlistBulkBar(monthKey){
+  return `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:10px;color:var(--tm)">
+    <span>Bulk:</span>
+    <button class="pl-btn" onclick="otWishlistBulkAction('approve-wishes','${monthKey}')">Approve wishes</button>
+    <button class="pl-btn" onclick="otWishlistBulkAction('confirm-approved','${monthKey}')">Confirm approved</button>
+    <button class="pl-btn" onclick="otWishlistBulkAction('clear-decisions','${monthKey}')">Clear decisions</button>
+    <button class="pl-btn" onclick="otWishlistBulkAction('clear-blocks','${monthKey}')">Clear blocks</button>
+  </div>`;
+}
 function renderOTWishlistGrid(kind){
   const teams=otWishlistGetTeams();
   const months=otWishlistGetMonths();
@@ -18400,7 +18563,7 @@ function renderOTWishlistGrid(kind){
   months.forEach(monthKey=>{
     const days=otWishlistMonthDays(monthKey);
     h+=`<div style="border:1px solid var(--bdr);border-radius:8px;overflow:hidden;margin-top:10px;background:rgba(255,255,255,.012)">`;
-    h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--bdr)"><span style="font-size:12px;font-weight:800;color:var(--text)">${X(otMonthLabelFromKey(monthKey))}</span><span style="font-size:10px;color:var(--tm)">Click cycles status · right-click approves OT</span></div>`;
+    h+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-bottom:1px solid var(--bdr);flex-wrap:wrap"><span style="font-size:12px;font-weight:800;color:var(--text)">${X(otMonthLabelFromKey(monthKey))}</span><span style="font-size:10px;color:var(--tm)">Click cycles status · right-click moves W→A→C→E→D</span>${renderOTWishlistBulkBar(monthKey)}</div>`;
     h+=`<div class="ot-wish-grid-scroll"><table class="ot-wish-grid"><thead><tr><th>Agent</th>`;
     days.forEach(d=>{const wk=d.getDay()===0||d.getDay()===6;h+=`<th style="background:${wk?"#E0F2FE":"var(--card)"};color:${wk?"#0369A1":"var(--tm)"}"><div>${d.getDate()}</div><div>${DOW[d.getDay()].substring(0,1)}</div></th>`;});
     h+=`</tr></thead><tbody>`;
@@ -18415,9 +18578,11 @@ function renderOTWishlistGrid(kind){
           const status=otWishlistExplicitStatus(name,iso);
           const flag=otWishlistCellFlag(name,iso);
           const approved=otWishlistIsApproved(name,iso);
-          const cls=status==="🔒 Blocked"?" block":status==="🎓 Training"?" training":status==="🚫 Unavailable"?" unavailable":status?" filled":flag?(" flag-"+flag.kind):"";
-          const text=status?(approved?"👍 ":"")+status:(approved?"👍":(flag?flag.short:""));
-          const title=(status?status:(flag?flag.title:"No status"))+" · "+name+" · "+iso;
+          const badge=otWishlistDecisionBadge(name,iso);
+          const decision=otWishlistDecision(name,iso);
+          const cls=(status==="🔒 Blocked"?" block":status==="🎓 Training"?" training":status==="🚫 Unavailable"?" unavailable":status?" filled":flag?(" flag-"+flag.kind):"")+(decision?(" decision-"+decision):"");
+          const text=status?(badge[0]?badge[0]+" ":"")+status:(badge[0]|| (flag?flag.short:""));
+          const title=(status?status:(flag?flag.title:"No status"))+(badge[1]?" · "+badge[1]:"")+" · "+name+" · "+iso;
           h+=`<td><button class="ot-wish-cell${cls}${approved?" approved":""}" onclick="otWishlistCycleCell('${XJ(name)}','${iso}')" oncontextmenu="event.preventDefault();otWishlistToggleApproval('${XJ(name)}','${iso}')" title="${X(title)}">${X(text)}</button></td>`;
         });
         h+=`</tr>`;
@@ -18462,6 +18627,7 @@ function rOTWishlistPanel(){
   h+=`<textarea id="otWishlistPasteText" onpaste="otWishlistHandlePasteEvent(event)" placeholder="Paste copied sheet cells here" style="width:100%;min-height:86px;resize:vertical;padding:7px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:11px"></textarea>`;
   h+=`<div style="display:flex;gap:7px;margin-top:8px;flex-wrap:wrap"><button class="pl-btn active" onclick="otWishlistApplyPaste()">Apply paste</button><button class="pl-btn" onclick="otWishlistTriggerUpload()">Upload filled XLSX</button></div>`;
   h+=`</div></div>`;
+  h+=renderOTWishlistImportAudit();
   h+=`<details open style="margin-top:12px"><summary style="cursor:pointer;font-size:12px;font-weight:800;color:var(--text);padding:8px 0">🧭 Planning grid · wishes, blocks, approvals, daily-rule flags</summary>${renderOTWishlistGrid("planning")}</details>`;
   h+=`</div>`;
   return h;
