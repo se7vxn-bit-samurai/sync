@@ -2245,7 +2245,7 @@ let S={wb:null,fn:"",shs:[],sh:"",raw:[],entries:[],team:"all",emp:"all",tz:true
   plCoachOpen:true,coachDuration:30,coachBlackouts:{},coachPlan:{},coachHistory:[],plSubTab:"schedule",coachTargetDaily:1,coachTargetMonthly:0,targetHours:0,ratePerHour:0,cache:{},entriesVer:0,exceptionsVer:0,_schemaVersion:1,
   exportSelection:{overview:true,leaders:true,analytics:true,scheduleData:true,notes:true,blueprint:true,positions:true,exceptions:true,coaching:true,people:true},
   // Phase A — People ops surface
-  peopleSubTab:"dashboard",// "dashboard" | "team" | "agents" | "logbook"
+  peopleSubTab:"dashboard",// "dashboard" | "team" | "agents" | "logbook" | "events"
   selectedTL:null,// selected team leader in team view
   _agentDrawerOpen:false,_agentDrawerName:null,// current agent drawer
   _quickEventForm:{type:null,agentName:"",date:"",time:"",note:"",duration:30},// quick event state
@@ -3002,8 +3002,8 @@ function renderDayIntelligencePanel(intelOrName,dateInput,sourceLabel){
   h+=`<div class="day-drill-row"><span>HC</span><strong>${intel.hc.total||intel.hc.present?`${intel.hc.present||0}/${intel.hc.total||0}${intel.hcPct!==null?` · ${intel.hcPct}%`:''}`:'not entered'}</strong></div>`;
   h+=`<div class="day-drill-row"><span>Exceptions logged</span><strong>${intel.personExcs.length?`${intel.personExcs.length} · ${intel.lostToday}h lost`:'none'}</strong></div>`;
   if(intel.note)h+=`<div class="dd-note">${X(intel.note.length>220?intel.note.slice(0,220)+'…':intel.note)}</div>`;
-  h+=`<div class="dd-actions"><button class="dd-mini-btn" onclick="navToPerson('${XJ(intel.name)}')">Open month card</button><button class="dd-mini-btn" onclick="S.noteOpen=true;S.calDay=new Date(${intel.date.getFullYear()},${intel.date.getMonth()},${intel.date.getDate()});ren()">Open notes</button>`;
-  if(intel.personExcs.length)h+=`<button class="dd-mini-btn" onclick="S._excFormOpen='${XJ(intel.name)}|${intel.dateKey}';S.calDay=new Date(${intel.date.getFullYear()},${intel.date.getMonth()},${intel.date.getDate()});ren()">Open flags</button>`;
+  h+=`<div class="dd-actions"><button class="dd-mini-btn" onclick="navToPerson('${XJS(intel.name)}')">Open month card</button><button class="dd-mini-btn" onclick="S.noteOpen=true;S.calDay=new Date(${intel.date.getFullYear()},${intel.date.getMonth()},${intel.date.getDate()});ren()">Open notes</button>`;
+  if(intel.personExcs.length)h+=`<button class="dd-mini-btn" onclick="S._excFormOpen='${XJS(intel.name)}|${intel.dateKey}';S.calDay=new Date(${intel.date.getFullYear()},${intel.date.getMonth()},${intel.date.getDate()});ren()">Open flags</button>`;
   h+=`</div></div>`;
   return h;
 }
@@ -3379,7 +3379,7 @@ function _renderCommandPaletteRows(){
   host.innerHTML=rows.length?rows.map((a,idx)=>{
     _cmdActionMap[a.id]=a.run;
     const sel=idx===S._cmdPaletteIndex;
-    return `<button onclick="runCommandPaletteAction('${XJ(a.id)}')" style="width:100%;text-align:left;padding:9px 10px;border:1px solid ${sel?'var(--accent)':'var(--bdr)'};border-radius:7px;background:${sel?'var(--al)':'transparent'};color:${sel?'var(--accent)':'var(--text)'};font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:12px">${X(a.label)}</span><span style="font-size:10px;color:var(--tm)">${X(a.hint||"")}</span></button>`;
+    return `<button onclick="runCommandPaletteAction('${XJS(a.id)}')" style="width:100%;text-align:left;padding:9px 10px;border:1px solid ${sel?'var(--accent)':'var(--bdr)'};border-radius:7px;background:${sel?'var(--al)':'transparent'};color:${sel?'var(--accent)':'var(--text)'};font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:12px">${X(a.label)}</span><span style="font-size:10px;color:var(--tm)">${X(a.hint||"")}</span></button>`;
   }).join(""):`<div style="padding:16px;text-align:center;font-size:12px;color:var(--tm)">No actions match “${X(q)}”</div>`;
 }
 function commandPaletteKeydown(e){
@@ -3525,7 +3525,7 @@ function setTodayHighlight(v){
 
 // ── Focus mode (Today / Week / Month) ──
 function setFocusMode(mode){
-  S.focusMode='month';
+  S.focusMode=['today','week','month'].includes(mode)?mode:'month';
   schedulePersist(true);
   rerenderCurrentSurface();
   rerenderChromeOnly();
@@ -3643,7 +3643,7 @@ function inspectPersonDay(name,dateInput,source){
   setCalendarDay(nextDay.getFullYear(),nextDay.getMonth(),nextDay.getDate());
 }
 function anomChipHTML(a,name,source){
-  const click=(a&&a.dateKey&&name)?` style="cursor:pointer" onclick="openDayInvestigation('${XJ(name)}','${a.dateKey}','${source||'cards'}')" title="Inspect this day"`:'';
+  const click=(a&&a.dateKey&&name)?` style="cursor:pointer" onclick="openDayInvestigation('${XJS(name)}','${a.dateKey}','${source||'cards'}')" title="Inspect this day"`:'';
   return `<span class="anom"${click}>${a.icon||'⚠'} ${X(a.msg)}</span>`;
 }
 function setTableSort(col){
@@ -3942,6 +3942,13 @@ const TRE=/(\d{1,2})[:\.](\d{2})\s*(am|pm)?\s*[-–—]\s*(\d{1,2})[:\.](\d{2})\
 function X(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
 function XA(s){return X(s);}
 function XJ(s){return String(s).replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/"/g,'\\"');}
+function XJS(s){return X(XJ(s));}
+function cssAlpha(color,pct){return `color-mix(in srgb, ${color} ${pct}%, transparent)`;}
+const CSS_ALPHA_BDR_13=cssAlpha("var(--bdr)",13);
+const CSS_ALPHA_BDR_7=cssAlpha("var(--bdr)",7);
+const CSS_ALPHA_EARLY_10=cssAlpha("var(--early)",10);
+const CSS_ALPHA_EARLY_13=cssAlpha("var(--early)",13);
+const CSS_ALPHA_ACCENT_13=cssAlpha("var(--accent)",13);
 function P(n){return String(n).padStart(2,"0");}
 function fD(d){return P(d.getDate())+"-"+MO[d.getMonth()];}
 function fDF(d){return P(d.getDate())+" "+MO[d.getMonth()]+" "+d.getFullYear();}
@@ -7704,11 +7711,82 @@ function scanFileQuick(wb,filename){
     const autoMergeCandidates=_findAutoMergeCandidates(names);
 
     return{entries,names,months,work:work.length,off:off.length,total:entries.length,
-      sheets:shs.length,deptName,confidence:bestConf,parsers,parseInfo,warnings,dupes,fingerprints,ghostAgents,
+      sheets:shs.length,sheetNames:shs.slice(),deptName,confidence:bestConf,parsers,parseInfo,warnings,dupes,fingerprints,ghostAgents,
       crossSheetNames,autoMergeCandidates};
   }finally{
     _parseYearHint=_prevHint;
   }
+}
+
+function showParseFailureModal(scan,filename){
+  const info=(scan&&Array.isArray(scan.parseInfo))?scan.parseInfo:[];
+  const sheetNames=(scan&&Array.isArray(scan.sheetNames))?scan.sheetNames:[];
+  const warnings=(scan&&Array.isArray(scan.warnings))?scan.warnings:[];
+  let h=`<div id="parsePreviewOverlay" role="dialog" aria-modal="true" aria-label="Parse failure" style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px">`;
+  h+=`<div style="background:var(--bg);border:1px solid var(--bdr);border-radius:14px;width:min(760px,96vw);max-height:88vh;overflow:auto;box-shadow:var(--sl)">`;
+  h+=`<div style="display:flex;align-items:flex-start;gap:12px;padding:16px 18px;border-bottom:1px solid var(--bdr)">`;
+  h+=`<div style="width:34px;height:34px;border-radius:10px;background:rgba(220,38,38,.1);color:#dc2626;display:flex;align-items:center;justify-content:center;font-weight:900">!</div>`;
+  h+=`<div style="min-width:0;flex:1"><div style="font-size:15px;font-weight:800;color:var(--text)">No schedule entries detected</div>`;
+  h+=`<div style="font-size:11px;color:var(--tm);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(filename||"file")}</div></div>`;
+  h+=`<button onclick="closeParseFailureModal()" style="border:1px solid var(--bdr);background:none;color:var(--tm);border-radius:7px;padding:5px 9px;font-family:inherit;cursor:pointer">Close</button>`;
+  h+=`</div>`;
+
+  h+=`<div style="padding:16px 18px;display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.55fr);gap:14px">`;
+  h+=`<div style="min-width:0">`;
+  h+=`<div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:8px">Parser attempts</div>`;
+  if(info.length){
+    h+=`<div style="display:flex;flex-direction:column;gap:6px">`;
+    info.forEach(p=>{
+      const cc=p.confidence==="high"?"var(--early)":p.confidence==="medium"?"var(--wknd)":"#dc2626";
+      h+=`<div style="padding:8px 10px;border:1px solid var(--bdr);border-radius:8px;background:rgba(255,255,255,.025)">`;
+      h+=`<div style="display:flex;align-items:center;gap:7px;min-width:0">`;
+      h+=`<span style="font-size:12px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(p.sheet||"sheet")}</span>`;
+      h+=`<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:${cssAlpha(cc,10)};color:${cc};font-weight:700">${X(p.confidence||"low")}</span>`;
+      h+=`<span style="font-size:10px;color:var(--tm);font-family:'JetBrains Mono',monospace">${X(p.parser||"parser")}</span>`;
+      h+=`<span style="margin-left:auto;font-size:10px;color:#dc2626">${Number(p.count||0)} entries</span>`;
+      h+=`</div>`;
+      if(p.reason)h+=`<div style="font-size:11px;color:var(--tm);margin-top:5px;line-height:1.45">${X(p.reason)}</div>`;
+      if(p.warnings&&p.warnings.length)h+=`<div style="font-size:10px;color:var(--wknd);margin-top:5px">${X(p.warnings[0])}${p.warnings.length>1?` +${p.warnings.length-1} more`:""}</div>`;
+      h+=`</div>`;
+    });
+    h+=`</div>`;
+  }else{
+    h+=`<div style="padding:10px;border:1px solid var(--bdr);border-radius:8px;background:rgba(255,255,255,.025);font-size:11px;color:var(--tm);line-height:1.45">No parser attempts were recorded. The workbook may have no readable roster sheets or the worksheet data may be empty after import.</div>`;
+  }
+  h+=`</div>`;
+
+  h+=`<div style="min-width:0">`;
+  h+=`<div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:8px">What to check</div>`;
+  h+=`<div style="padding:10px;border-radius:8px;background:rgba(255,255,255,.025);border:1px solid var(--bdr);font-size:11px;color:var(--tm);line-height:1.55">`;
+  h+=`<div>Supported layouts: horizontal, vertical, blocks, or person-sheet rosters.</div>`;
+  h+=`<div>Dates must be visible as Excel dates or parseable date text.</div>`;
+  h+=`<div>Shift cells need times, ranges, or clear OFF/leave values.</div>`;
+  h+=`<div>Avoid summary-only exports with no agent/day grid.</div>`;
+  h+=`</div>`;
+  h+=`<div style="font-size:12px;font-weight:800;color:var(--text);margin:12px 0 8px">Scanned sheets</div>`;
+  h+=`<div style="display:flex;flex-wrap:wrap;gap:5px">`;
+  if(sheetNames.length)sheetNames.slice(0,24).forEach(n=>{h+=`<span style="font-size:10px;padding:3px 7px;border-radius:5px;background:var(--al);color:var(--tm);border:1px solid var(--bdr)">${X(n)}</span>`;});
+  else h+=`<span style="font-size:11px;color:var(--tm)">No sheets detected.</span>`;
+  if(sheetNames.length>24)h+=`<span style="font-size:10px;color:var(--tm);padding:3px 5px">+${sheetNames.length-24} more</span>`;
+  h+=`</div>`;
+  if(warnings.length){
+    h+=`<div style="font-size:12px;font-weight:800;color:var(--text);margin:12px 0 8px">Warnings</div>`;
+    warnings.slice(0,4).forEach(w=>{h+=`<div style="font-size:11px;color:var(--wknd);padding:2px 0">${X(w)}</div>`;});
+  }
+  h+=`</div></div>`;
+  h+=`<div style="display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid var(--bdr)">`;
+  h+=`<button onclick="closeParseFailureModal()" style="padding:7px 16px;border:1px solid var(--bdr);border-radius:7px;background:none;color:var(--tm);font-family:inherit;font-size:12px;cursor:pointer">Close</button>`;
+  h+=`</div></div></div>`;
+  let overlay=document.getElementById("parsePreviewOverlay");
+  if(overlay)overlay.remove();
+  const div=document.createElement("div");div.innerHTML=h;
+  document.body.appendChild(div.firstElementChild);
+}
+
+function closeParseFailureModal(){
+  const overlay=document.getElementById("parsePreviewOverlay");
+  if(overlay)overlay.remove();
+  _pendingLoad=null;
 }
 
 function detectDuplicateNames(names){
@@ -8313,7 +8391,7 @@ function showParsePreview(wb,filename){
   const scan=scanFileQuick(wb,filename);
   if(!scan.total){
     _pendingLoad=null;
-    toast('No schedule entries detected in '+(filename||'file')+'. File was not loaded.','err',6200);
+    showParseFailureModal(scan,filename);
     return;
   }
   const rangeGuard=_detectMonthRangeGuard(scan,filename,wb&&wb.SheetNames?wb.SheetNames:[]);
@@ -8353,7 +8431,7 @@ function showParsePreview(wb,filename){
   h+=`<div style="min-width:0;flex:1"><div style="font-size:14px;font-weight:700;color:var(--text)">File Preview</div>`;
   h+=`<div style="font-size:11px;color:var(--tm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(filename)}</div></div>`;
   if(dateRange)h+=`<span style="font-size:11px;padding:3px 10px;border-radius:5px;background:var(--al);color:var(--accent);font-weight:600;white-space:nowrap">${dateRange}</span>`;
-  h+=`<span style="font-size:10px;padding:3px 9px;border-radius:5px;background:${confCol}18;border:1px solid ${confCol}30;color:${confCol};font-weight:700;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">${scan.confidence}</span>`;
+  h+=`<span style="font-size:10px;padding:3px 9px;border-radius:5px;background:${cssAlpha(confCol,10)};border:1px solid ${cssAlpha(confCol,19)};color:${confCol};font-weight:700;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">${scan.confidence}</span>`;
   h+=`</div>`;
 
   // ── Horizontal stats row ──
@@ -8387,7 +8465,7 @@ function showParsePreview(wb,filename){
   h+=`<div style="display:flex;flex-wrap:wrap;gap:4px;max-height:100px;overflow:auto">`;
   scan.names.slice(0,80).forEach(n=>{
     const fid=n.replace(/[^a-zA-Z0-9]/g,'_');
-    h+=`<button id="focus_${fid}" onclick="_togglePreviewFocusName('${XJ(n)}')" style="padding:2px 8px;border-radius:4px;font-size:11px;background:var(--al);border:1px solid var(--accent);color:var(--accent);font-family:inherit;font-weight:700;cursor:pointer">${X(n)}</button>`;
+    h+=`<button id="focus_${fid}" onclick="_togglePreviewFocusName('${XJS(n)}')" style="padding:2px 8px;border-radius:4px;font-size:11px;background:var(--al);border:1px solid var(--accent);color:var(--accent);font-family:inherit;font-weight:700;cursor:pointer">${X(n)}</button>`;
   });
   if(scan.names.length>80)h+=`<span style="font-size:10px;color:var(--tm);padding:2px 6px">+${scan.names.length-80} more</span>`;
   h+=`</div></div>`;
@@ -8411,7 +8489,7 @@ function showParsePreview(wb,filename){
       h+=`<div style="display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:5px;background:rgba(255,255,255,.02);margin-bottom:2px;font-size:11px">`;
       h+=`<span style="font-weight:500;color:var(--text);min-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${X(p.sheet||'')}">${X(p.sheet||p.parser)}</span>`;
       h+=`<span style="color:var(--tm);font-family:'JetBrains Mono',monospace;font-size:10px">${p.count||0} entries</span>`;
-      h+=`<span style="padding:1px 5px;border-radius:3px;background:${cc}18;color:${cc};font-size:10px;font-weight:500">${p.confidence||'?'}</span>`;
+      h+=`<span style="padding:1px 5px;border-radius:3px;background:${cssAlpha(cc,10)};color:${cc};font-size:10px;font-weight:500">${p.confidence||'?'}</span>`;
       h+=`<span style="color:var(--tm);font-size:10px">${p.parser}</span>`;
       if(p.warnings&&p.warnings.length)h+=`<span style="color:#dc2626;font-size:10px">⚠ ${p.warnings.length}</span>`;
       h+=`</div>`;
@@ -8441,12 +8519,12 @@ function showParsePreview(wb,filename){
     h+=`<span id="ghostCounter" style="margin-left:auto;font-size:10px;color:var(--tm)">none selected</span></div>`;
     h+=`<div style="font-size:10px;color:var(--tm);margin-bottom:7px;line-height:1.5">Click names to include them as off-duty placeholders so they appear in calendar and analytics.</div>`;
     h+=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">`;
-    h+=`<button onclick="_toggleAllGhosts('${XJ(JSON.stringify(gNames))}')" style="font-size:10px;padding:2px 8px;border:1px solid rgba(148,103,189,.3);border-radius:4px;background:none;color:#9467bd;cursor:pointer;font-family:inherit">Select all</button>`;
+    h+=`<button onclick="_toggleAllGhosts('${XJS(JSON.stringify(gNames))}')" style="font-size:10px;padding:2px 8px;border:1px solid rgba(148,103,189,.3);border-radius:4px;background:none;color:#9467bd;cursor:pointer;font-family:inherit">Select all</button>`;
     h+=`</div>`;
     h+=`<div style="display:flex;flex-wrap:wrap;gap:4px">`;
     scan.ghostAgents.forEach(g=>{
       const cid=g.name.replace(/[^a-zA-Z0-9]/g,'_');
-      h+=`<span id="ghost_${cid}" onclick="_toggleGhost('${XJ(g.name)}')" style="padding:2px 8px;border-radius:4px;font-size:11px;background:rgba(148,103,189,.12);border:1px solid rgba(148,103,189,.2);color:#9467bd;cursor:pointer;transition:all .15s" title="Found in: ${X(g.sheet)}">${X(g.name)}</span>`;
+      h+=`<span id="ghost_${cid}" onclick="_toggleGhost('${XJS(g.name)}')" style="padding:2px 8px;border-radius:4px;font-size:11px;background:rgba(148,103,189,.12);border:1px solid rgba(148,103,189,.2);color:#9467bd;cursor:pointer;transition:all .15s" title="Found in: ${X(g.sheet)}">${X(g.name)}</span>`;
     });
     h+=`</div></div>`;
   }
@@ -8459,7 +8537,7 @@ function showParsePreview(wb,filename){
     h+=`<div style="display:flex;flex-direction:column;gap:4px">`;
     scan.autoMergeCandidates.forEach(mc=>{
       const mid=mc.from.replace(/[^a-zA-Z0-9]/g,'_');
-      h+=`<div id="merge_${mid}" onclick="_toggleMerge('${XJ(mc.from)}','${XJ(mc.to)}')" style="display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:4px;font-size:11px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);cursor:pointer;transition:all .15s">`;
+      h+=`<div id="merge_${mid}" onclick="_toggleMerge('${XJS(mc.from)}','${XJS(mc.to)}')" style="display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:4px;font-size:11px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);cursor:pointer;transition:all .15s">`;
       h+=`<span style="color:var(--tm);text-decoration:line-through">${X(mc.from)}</span>`;
       h+=`<span style="color:var(--tm)">→</span>`;
       h+=`<span style="color:#3b82f6;font-weight:600">${X(mc.to)}</span>`;
@@ -9255,10 +9333,10 @@ function updateDeptStrip(){
     const rotDef=isActive?S.rotationDef:snap?.rotationDef;
     const rotBadge=rotDef?`<span class="dt-badge">${rotDef.cycleLen}w</span>`:"";
     const pplBadge=pplCount?`<span class="dt-badge">${pplCount}</span>`:"";
-    h+=`<div class="dept-tab${isActive?" active":""}" onclick="activateDept('${XJ(name)}')" title="${X(name)}">`;
+    h+=`<div class="dept-tab${isActive?" active":""}" onclick="activateDept('${XJS(name)}')" title="${X(name)}">`;
     h+=`<span class="dt-name">${X(name)}</span>`;
     h+=pplBadge+rotBadge;
-    h+=`<button class="dt-close" onclick="event.stopPropagation();removeDept('${XJ(name)}')" title="Close ${X(name)}">✕</button>`;
+    h+=`<button class="dt-close" onclick="event.stopPropagation();removeDept('${XJS(name)}')" title="Close ${X(name)}">✕</button>`;
     h+=`</div>`;
   });
   h+=`<button class="dept-add" onclick="document.getElementById('fiAdd').click()" title="Load another department">+</button>`;
@@ -9487,7 +9565,7 @@ function renderSearchDropdown(){
   let h=`<div class="srch-dd" style="position:absolute;top:100%;right:0;margin-top:4px;width:280px;background:var(--bg2,rgba(10,14,26,.97));border:1px solid var(--rule,var(--bdr));border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.4);z-index:300;overflow:hidden;max-height:320px;overflow-y:auto">`;
   if(matchNames.length){
     h+=`<div class="srch-section"><div class="srch-label">Leaders</div>`;
-    matchNames.forEach(n=>{h+=`<div class="srch-item" onmousedown="applySearchSelection('name','${XJ(n)}')"><span style="font-size:12px">👤</span><span>${X(n)}</span></div>`;});
+    matchNames.forEach(n=>{h+=`<div class="srch-item" onmousedown="applySearchSelection('name','${XJS(n)}')"><span style="font-size:12px">👤</span><span>${X(n)}</span></div>`;});
     h+=`</div>`;
   }
   if(matchDays.length){
@@ -9573,7 +9651,7 @@ function buildInfoBarHTML(){
   const agentBit=_agentTotal>0?` · <span style="color:var(--accent);cursor:pointer" onclick="setTab('people');S.peopleSubTab='team'" title="${_agentTotal} agents">👥 ${_agentTotal}</span>`:"";
   // Health
   let healthBit="";
-  if(S.month){const ths=computeTeamHealthScore(S.month);if(ths)healthBit=` · <span style="font-weight:700;padding:1px 6px;border-radius:8px;background:${ths.gradeCol}18;color:${ths.gradeCol};font-family:'JetBrains Mono',monospace;cursor:pointer" onclick="setTab('analytics');setAnalyticsView('dashboard')" title="Team Health Score ${ths.grade} ${ths.avg}/100&#10;&#10;A = 85–100 · Strong schedule health&#10;B = 70–84 · Minor issues present&#10;C = 55–69 · Review recommended&#10;D/F = below 55 · Significant problems&#10;&#10;Factors: shift consistency, coverage, hours spread, weekend balance&#10;Click to open full breakdown">${ths.grade} ${ths.avg}</span><span style="font-size:10px;color:var(--tm);cursor:help;margin-left:1px" title="Team Health Score — A/B/C/D/F grade based on shift consistency, coverage gaps, hours distribution, and weekend balance. Click the grade to see full breakdown.">?</span>`;}
+  if(S.month){const ths=computeTeamHealthScore(S.month);if(ths)healthBit=` · <span style="font-weight:700;padding:1px 6px;border-radius:8px;background:${cssAlpha(ths.gradeCol,10)};color:${ths.gradeCol};font-family:'JetBrains Mono',monospace;cursor:pointer" onclick="setTab('analytics');setAnalyticsView('dashboard')" title="Team Health Score ${ths.grade} ${ths.avg}/100&#10;&#10;A = 85–100 · Strong schedule health&#10;B = 70–84 · Minor issues present&#10;C = 55–69 · Review recommended&#10;D/F = below 55 · Significant problems&#10;&#10;Factors: shift consistency, coverage, hours spread, weekend balance&#10;Click to open full breakdown">${ths.grade} ${ths.avg}</span><span style="font-size:10px;color:var(--tm);cursor:help;margin-left:1px" title="Team Health Score — A/B/C/D/F grade based on shift consistency, coverage gaps, hours distribution, and weekend balance. Click the grade to see full breakdown.">?</span>`;}
   // Active filters
   const filterBit=S.calDay&&S.tab==="calendar"?` · <span class="l" style="cursor:pointer;font-size:12px" onclick="clearCalendarDaySelection()">✕ ${fDF(S.calDay)}</span>`:S.dayFilter?` · <span class="l" style="cursor:pointer;font-size:12px" onclick="clearDayFilter()">✕ ${S.dayFilter}s</span>`:"";
   // Person filter active indicator
@@ -9631,7 +9709,7 @@ function renderInfoBar(){
   const hEl=$("mhHealth");
   if(hEl&&S.month){
     const ths=computeTeamHealthScore(S.month);
-    if(ths){hEl.innerHTML=`<span style="font-weight:700;color:${ths.gradeCol};background:${ths.gradeCol}18;padding:1px 5px;border-radius:3px;cursor:pointer" onclick="setTab('analytics');setAnalyticsView('dashboard')">${ths.grade} ${ths.avg}</span>${loadBit}`;
+    if(ths){hEl.innerHTML=`<span style="font-weight:700;color:${ths.gradeCol};background:${cssAlpha(ths.gradeCol,10)};padding:1px 5px;border-radius:3px;cursor:pointer" onclick="setTab('analytics');setAnalyticsView('dashboard')">${ths.grade} ${ths.avg}</span>${loadBit}`;
     }else hEl.innerHTML=loadBit;
   }else if(hEl)hEl.innerHTML=loadBit;
   // Ticker — floor window + exception count for today
@@ -9706,8 +9784,8 @@ function renderQuickActions(){
     let h='<div class="qa-item">';
     h+='<span class="qa-icon">'+it.icon+'</span>';
     h+='<span class="qa-text">'+X(it.text)+'</span>';
-    h+='<button class="qa-btn" onclick="'+XJ(it.action)+'">'+X(it.btn)+'</button>';
-    h+='<button class="qa-dismiss" onclick="S._qaDismissed[\''+XJ(it.id)+'\']=true;renderQuickActions()" title="Dismiss">✕</button>';
+    h+='<button class="qa-btn" onclick="'+XA(it.action)+'">'+X(it.btn)+'</button>';
+    h+='<button class="qa-dismiss" onclick="S._qaDismissed[\''+XJS(it.id)+'\']=true;renderQuickActions()" title="Dismiss">✕</button>';
     if(i<show.length-1)h+='<span class="qa-sep"></span>';
     h+='</div>';
     return h;
@@ -9892,7 +9970,7 @@ function rCal(el){
       const dotParts=[];
       _dayExcAll.forEach(ex=>{
         const cls2=['sick','no_show','family_responsibility'].includes(ex.type)?'cad-red':['annual_leave','training'].includes(ex.type)?'cad-blue':'cad-amber';
-        dotParts.push(`<span class="cad ${cls2}" title="${ex.agentName||ex.person||''}"></span>`);
+        dotParts.push(`<span class="cad ${cls2}" title="${XA(ex.agentName||ex.person||'')}"></span>`);
       });
       if(dotParts.length)agentDotsHtml=`<div class="cal-agent-dots">${dotParts.slice(0,6).join('')}</div>`;
     }
@@ -9955,7 +10033,7 @@ function rCal(el){
         if(isAbsent)mid+=`<span class="swap-tag absent" title="Absent — covered by ${isAbsent.coverLeader}">⇄ absent</span>`;
         mid+=`<button class="dd-mini-btn" onclick="navToPerson('${esc}')" title="Open month card">Month</button>`;
         const _excWithAgent=personExcs.find(ex=>ex.agentName);
-        mid+=`<button class="exc-flag${hasExc?' has-exc':''}" onclick="${_excWithAgent?`openAgentDrawer('${XJ(_excWithAgent.agentName)}')`:`S._excFormOpen=S._excFormOpen==='${formKey}'?null:'${formKey}';ren()`}">${hasExc?'⚡'+personExcs.length:'+ Flag'}</button>`;
+        mid+=`<button class="exc-flag${hasExc?' has-exc':''}" onclick="${_excWithAgent?`openAgentDrawer('${XJS(_excWithAgent.agentName)}')`:`S._excFormOpen=S._excFormOpen==='${formKey}'?null:'${formKey}';ren()`}">${hasExc?'⚡'+personExcs.length:'+ Flag'}</button>`;
         // Swap button — opens inline swap log form prefilled with this person as absent
         const swapFormKey='swap|'+excKey(selDate)+'|'+esc;
         mid+=`<button class="dd-mini-btn" style="${isCovering||isAbsent?'color:var(--early)':''}" onclick="S._swapFormDay=S._swapFormDay==='${swapFormKey}'?null:'${swapFormKey}';ren()" title="Log shift swap for this day">⇄</button>`;
@@ -9988,7 +10066,7 @@ function rCal(el){
         // Inline exception form
         if(formOpen){
           const leaderAgents=getAgents(e.name);
-          const agentOpts=leaderAgents.length?leaderAgents.map(a=>`<option value="${XJ(a.name)}">${X(a.name)}</option>`).join(''):'';
+          const agentOpts=leaderAgents.length?leaderAgents.map(a=>`<option value="${XA(a.name)}">${X(a.name)}</option>`).join(''):'';
           const agentPicker=leaderAgents.length?`<select id="excAgent" class="exc-sev" style="min-width:90px;max-width:140px" title="Agent (optional)"><option value="">— agent —</option>${agentOpts}</select>`:'';
           mid+=`<div class="exc-form" style="width:100%" id="excForm">`;
           if(agentPicker)mid+=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.06)"><span style="font-size:10px;color:var(--tm)">Agent:</span>${agentPicker}<span style="font-size:10px;color:var(--tm);opacity:.6">optional — links flag to agent drawer</span></div>`;
@@ -10018,7 +10096,7 @@ function rCal(el){
         const swapFormKey='swap|'+excKey(selDate)+'|off|'+XJ(e.name);
         const rowCls=covered?'roster-item off-item swap-covered':'roster-item off-item';
         mid+=`<div class="${rowCls}">`;
-        mid+=`<span class="ri-name" style="cursor:pointer" onclick="openDayInvestigation('${XJ(e.name)}','${excKey(selDate)}','calendar')">${X(e.name)}${tag}</span>`;
+        mid+=`<span class="ri-name" style="cursor:pointer" onclick="openDayInvestigation('${XJS(e.name)}','${excKey(selDate)}','calendar')">${X(e.name)}${tag}</span>`;
         mid+=`<span class="ri-shift s-off">${e.offL||'OFF'}</span>`;
         if(covered){
           mid+=`<span class="swap-tag" style="margin-left:auto" title="Covered by ${covered.coverLeader}">⇄ ${X(covered.coverLeader.split(' ')[0])}</span>`;
@@ -10415,7 +10493,7 @@ function renderPeopleAgentAddBox(tlName,ctx){
   return `<div style="padding:8px 10px;border:1px solid var(--accent);border-radius:8px;background:var(--al);margin:${ctx==="inline"?"0":"4px 0 8px"}">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px"><div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.4px">Add agents</div><span style="font-size:10px;color:var(--tm)">One per line or pasted column</span></div>
     <textarea id="${id}" placeholder="Agent name&#10;Next agent&#10;Another agent" style="width:100%;min-height:58px;resize:vertical;padding:6px 7px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);color:var(--text);font-family:inherit;font-size:11px;box-sizing:border-box"></textarea>
-    <div style="display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap"><button onclick="peopleAddAgentsToLeader('${XJ(tlName)}','${id}')" style="padding:5px 12px;border:none;border-radius:6px;background:var(--accent);color:#000;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer">Add names</button><button onclick="triggerRosterUpload()" style="padding:5px 10px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">Upload roster</button></div>
+    <div style="display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap"><button onclick="peopleAddAgentsToLeader('${XJS(tlName)}','${id}')" style="padding:5px 12px;border:none;border-radius:6px;background:var(--accent);color:#000;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer">Add names</button><button onclick="triggerRosterUpload()" style="padding:5px 10px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">Upload roster</button></div>
   </div>`;
 }
 
@@ -10797,7 +10875,7 @@ function showRosterPreview(parsed){
       h+=`<span style="flex:1;color:var(--text)">${X(m.rosterName)}</span>`;
       h+=`<span style="color:var(--tm)">→</span>`;
       h+=`<span style="flex:1;color:var(--text);font-weight:500">${X(m.scheduleName)}</span>`;
-      h+=`<span style="font-size:10px;padding:1px 5px;border-radius:4px;background:${confCol}18;color:${confCol}">${m.agentCount} agents</span>`;
+      h+=`<span style="font-size:10px;padding:1px 5px;border-radius:4px;background:${cssAlpha(confCol,10)};color:${confCol}">${m.agentCount} agents</span>`;
       h+=`</div>`;
     });
     
@@ -10809,7 +10887,7 @@ function showRosterPreview(parsed){
       h+=`<span style="color:var(--tm)">→</span>`;
       h+=`<select id="rosterMatch${idx}" style="flex:1;padding:3px 6px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);color:var(--text);font-size:11px;font-family:inherit" onchange="_pendingRoster.matchResult.unmatched[${idx}].manualMatch=this.value">`;
       h+=`<option value="">(no match)</option>`;
-      scheduleNames.forEach(sn=>{h+=`<option value="${XJ(sn)}">${X(sn)}</option>`;});
+      scheduleNames.forEach(sn=>{h+=`<option value="${XA(sn)}">${X(sn)}</option>`;});
       h+=`</select>`;
       h+=`<span style="font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(220,38,38,.12);color:#dc2626">${u.agentCount} agents</span>`;
       h+=`</div>`;
@@ -12433,7 +12511,7 @@ function renderOTMonthCalendar(){
   h+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);font-size:9px;color:var(--tm);border-bottom:1px solid var(--bdr)">`;
   ["M","T","W","T","F","S","S"].forEach(d=>h+=`<div style="padding:5px;text-align:center;font-weight:700">${d}</div>`);
   h+=`</div><div style="display:grid;grid-template-columns:repeat(7,1fr)">`;
-  for(let i=0;i<startPad;i++)h+=`<div style="min-height:48px;border-right:1px solid var(--bdr)22;border-bottom:1px solid var(--bdr)22"></div>`;
+  for(let i=0;i<startPad;i++)h+=`<div style="min-height:48px;border-right:1px solid ${CSS_ALPHA_BDR_13};border-bottom:1px solid ${CSS_ALPHA_BDR_13}"></div>`;
   for(let d=1;d<=last.getDate();d++){
     const iso=vm.y+"-"+P(vm.m+1)+"-"+P(d);
     const pool=buildOTPool(iso,S.otPlan.lookbackDays);
@@ -12444,7 +12522,7 @@ function renderOTMonthCalendar(){
     const isSel=iso===selected;
     const dt=new Date(vm.y,vm.m,d);
     const isWknd=dt.getDay()===0||dt.getDay()===6;
-    h+=`<button onclick="otSetTargetDate('${iso}')" style="min-height:48px;text-align:left;padding:5px 5px;border:none;border-right:1px solid var(--bdr)22;border-bottom:1px solid var(--bdr)22;background:${isSel?"var(--al)":isWknd?"rgba(251,191,36,.035)":"transparent"};color:var(--text);cursor:pointer;border-left:${isSel?"2px solid var(--accent)":"2px solid transparent"};font-family:inherit">`;
+    h+=`<button onclick="otSetTargetDate('${iso}')" style="min-height:48px;text-align:left;padding:5px 5px;border:none;border-right:1px solid ${CSS_ALPHA_BDR_13};border-bottom:1px solid ${CSS_ALPHA_BDR_13};background:${isSel?"var(--al)":isWknd?"rgba(251,191,36,.035)":"transparent"};color:var(--text);cursor:pointer;border-left:${isSel?"2px solid var(--accent)":"2px solid transparent"};font-family:inherit">`;
     h+=`<div style="font-size:11px;font-weight:700;color:${isSel?"var(--accent)":isWknd?"var(--wknd)":"var(--tm)"}">${d}</div>`;
     h+=`<div style="display:flex;gap:2px;margin-top:3px;flex-wrap:wrap">`;
     h+=`<span style="font-size:8px;padding:1px 4px;border-radius:6px;background:rgba(52,211,153,.12);color:var(--early)">${ok}</span>`;
@@ -12556,7 +12634,7 @@ function showPeoplePanel(){
     h+=`<div style="display:flex;flex-wrap:wrap;gap:4px">`;
     shiftDefs.forEach(s=>{
       const typeCol=s.type==="early"?"var(--early)":s.type==="mid"?"var(--mid)":s.type==="late"?"var(--late)":s.type==="wknd"?"var(--wknd)":"var(--tm)";
-      h+=`<span style="padding:3px 8px;border-radius:5px;font-size:11px;background:${typeCol}15;color:${typeCol};border:1px solid ${typeCol}25">${X(s.name)} <span style="opacity:.7;font-family:'JetBrains Mono',monospace;font-size:10px">${s.startTime}–${s.endTime}</span></span>`;
+      h+=`<span style="padding:3px 8px;border-radius:5px;font-size:11px;background:${cssAlpha(typeCol,8)};color:${typeCol};border:1px solid ${cssAlpha(typeCol,15)}">${X(s.name)} <span style="opacity:.7;font-family:'JetBrains Mono',monospace;font-size:10px">${s.startTime}–${s.endTime}</span></span>`;
     });
     h+=`</div></div>`;
   }
@@ -12580,7 +12658,7 @@ function showPeoplePanel(){
       h+=`<div style="padding:8px 12px;display:flex;align-items:center;gap:8px;border-bottom:${agents.length?"1px solid rgba(255,255,255,.05)":"none"}">`;
       h+=`<div style="width:28px;height:28px;border-radius:50%;background:var(--al);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--accent)">${X(leader.name.charAt(0))}</div>`;
       h+=`<div style="flex:1;min-width:0">`;
-      h+=`<div style="font-size:12px;font-weight:600;cursor:pointer;color:var(--text)" onclick="closePeoplePanel();S.emp='${XJ(leader.name)}';setTab('cards')">${X(leader.name)}</div>`;
+      h+=`<div style="font-size:12px;font-weight:600;cursor:pointer;color:var(--text)" onclick="closePeoplePanel();S.emp='${XJS(leader.name)}';setTab('cards')">${X(leader.name)}</div>`;
       h+=`<div style="font-size:11px;color:var(--tm)">${X(leader.team)}${entCount?" · "+entCount+" entries":""}</div>`;
       h+=`</div>`;
       if(agents.length){
@@ -14192,7 +14270,7 @@ function renderCoverageCheck(summary){
   // KPI strip
   h+=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">`;
   const covCol=summary.underCovered===0?"var(--early)":summary.underCovered<=3?"var(--wknd)":"#dc2626";
-  h+=`<div style="padding:8px;border-radius:6px;background:${covCol}12;text-align:center"><div style="font-size:16px;font-weight:700;color:${covCol}">${summary.avgCoverage}</div><div style="font-size:10px;color:var(--tm)">Avg TLs/day</div></div>`;
+  h+=`<div style="padding:8px;border-radius:6px;background:${cssAlpha(covCol,7)};text-align:center"><div style="font-size:16px;font-weight:700;color:${covCol}">${summary.avgCoverage}</div><div style="font-size:10px;color:var(--tm)">Avg TLs/day</div></div>`;
   h+=`<div style="padding:8px;border-radius:6px;background:${summary.underCovered?'rgba(220,38,38,.08)':'rgba(52,211,153,.08)'};text-align:center"><div style="font-size:16px;font-weight:700;color:${summary.underCovered?'#dc2626':'var(--early)'}">${summary.underCovered}</div><div style="font-size:10px;color:var(--tm)">Under min (${summary.minCov})</div></div>`;
   h+=`<div style="padding:8px;border-radius:6px;background:var(--al);text-align:center"><div style="font-size:16px;font-weight:700;color:var(--text)">${summary.avgWeekday} / ${summary.avgWeekend}</div><div style="font-size:10px;color:var(--tm)">Wkd / Wke avg</div></div>`;
   h+=`</div>`;
@@ -14206,7 +14284,7 @@ function renderCoverageCheck(summary){
   if(warns.length){
     warns.forEach(w=>{
       const col=w.sev==="high"?"#dc2626":"var(--wknd)";
-      h+=`<div style="padding:6px 10px;border-radius:6px;background:${col}0a;border:1px solid ${col}20;margin-bottom:4px;font-size:11px;display:flex;align-items:center;gap:6px">`;
+      h+=`<div style="padding:6px 10px;border-radius:6px;background:${cssAlpha(col,4)};border:1px solid ${cssAlpha(col,13)};margin-bottom:4px;font-size:11px;display:flex;align-items:center;gap:6px">`;
       h+=`<span>${w.icon}</span><span style="color:${col}">${w.msg}</span></div>`;
     });
   } else {
@@ -14372,7 +14450,7 @@ function showCoachRecordModal(name){
   // Actions
   h+=`<div style="display:flex;gap:8px;justify-content:flex-end">`;
   h+=`<button onclick="document.getElementById('coachRecordModal').remove()" style="padding:8px 16px;border:1px solid var(--bdr);border-radius:8px;background:none;color:var(--text);font-family:inherit;font-size:12px;cursor:pointer">Cancel</button>`;
-  h+=`<button onclick="submitCoachRecord('${XJ(name)}')" style="padding:8px 18px;border:none;border-radius:8px;background:var(--accent);color:#000;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">Save Session</button>`;
+  h+=`<button onclick="submitCoachRecord('${XJS(name)}')" style="padding:8px 18px;border:none;border-radius:8px;background:var(--accent);color:#000;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">Save Session</button>`;
   h+=`</div></div></div>`;
   
   const overlay=document.createElement("div");overlay.innerHTML=h;
@@ -14407,7 +14485,7 @@ function coachQualityBadge(name,small){
   const score=getCoachQualityScore(name);
   if(!score)return"";
   const sz=small?"9px":"11px";
-  return`<span style="font-size:${sz};font-weight:600;padding:1px 5px;border-radius:8px;background:${score.gradeCol}15;color:${score.gradeCol};font-family:'JetBrains Mono',monospace" title="Coaching quality: ${score.total}/100 — Freq:${score.frequency} Timing:${score.timing} Outcome:${score.outcome} Actions:${score.actions} (${score.sessionCount} sessions)">${score.grade}${small?"":"·"+score.total}</span>`;
+  return`<span style="font-size:${sz};font-weight:600;padding:1px 5px;border-radius:8px;background:${cssAlpha(score.gradeCol,8)};color:${score.gradeCol};font-family:'JetBrains Mono',monospace" title="Coaching quality: ${score.total}/100 — Freq:${score.frequency} Timing:${score.timing} Outcome:${score.outcome} Actions:${score.actions} (${score.sessionCount} sessions)">${score.grade}${small?"":"·"+score.total}</span>`;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -14508,7 +14586,7 @@ function renderRulesCheck(validation){
   h+=`<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">`;
   validation.checks.forEach(c=>{
     const ok=c.violations===0;
-    h+=`<div style="padding:4px 8px;border-radius:5px;font-size:11px;background:${ok?'rgba(52,211,153,.08)':'rgba(220,38,38,.08)'};color:${ok?'var(--early)':'#dc2626'};border:1px solid ${ok?'var(--early)':'#dc2626'}22">`;
+    h+=`<div style="padding:4px 8px;border-radius:5px;font-size:11px;background:${ok?'rgba(52,211,153,.08)':'rgba(220,38,38,.08)'};color:${ok?'var(--early)':'#dc2626'};border:1px solid ${cssAlpha(ok?'var(--early)':'#dc2626',13)}">`;
     h+=`${ok?'✓':'✕'} ${c.rule}: ${c.value}${c.violations>0?' · '+c.violations+' violation'+(c.violations>1?'s':''):''}`;
     h+=`</div>`;
   });
@@ -14518,7 +14596,7 @@ function renderRulesCheck(validation){
   if(validation.warnings.length){
     validation.warnings.slice(0,8).forEach(w=>{
       const col=w.severity==="high"?"#dc2626":"var(--wknd)";
-      h+=`<div style="padding:5px 10px;border-radius:6px;background:${col}08;border-left:2px solid ${col};margin-bottom:3px;font-size:11px;color:${col}">${w.msg}</div>`;
+      h+=`<div style="padding:5px 10px;border-radius:6px;background:${cssAlpha(col,3)};border-left:2px solid ${col};margin-bottom:3px;font-size:11px;color:${col}">${w.msg}</div>`;
     });
     if(validation.warnings.length>8)h+=`<div style="font-size:11px;color:var(--tm);padding:4px 0">+ ${validation.warnings.length-8} more warnings</div>`;
   }
@@ -14839,7 +14917,7 @@ function renderCardHeaderBlock(ctx){
   const shiftsPart=cs.shifts!==false?`<span class="meta-pill"><strong>${ctx.workCount}</strong> shifts</span>`:"";
   const offPart=cs.off!==false?`<span class="meta-pill"><strong>${ctx.offCount}</strong> off</span>`:"";
   const _ac=getAgentCount(ctx.name);
-  const agentPart=_ac>0?`<span class="meta-pill" style="color:var(--accent);border-color:rgba(122,180,255,.2)" title="${_ac} agents under ${ctx.name.split(' ')[0]}">👥 ${_ac}</span>`:"";
+  const agentPart=_ac>0?`<span class="meta-pill" style="color:var(--accent);border-color:rgba(122,180,255,.2)" title="${_ac} agents under ${XA(ctx.name.split(' ')[0])}">👥 ${_ac}</span>`:"";
   const coachQBadge=coachQualityBadge(ctx.name,true);
   const coachPart=coachQBadge?`<span class="meta-pill" style="border:none;padding:0">${coachQBadge}</span>`:"";
   const metaContent=[hrsPart,shiftsPart,offPart,ctx.offBreak,agentPart,coachPart,ctx.weekBadge,ctx.teamBadge].filter(Boolean).join("");
@@ -14847,7 +14925,7 @@ function renderCardHeaderBlock(ctx){
   const _noteRaw=S.agentNotes&&S.agentNotes[ctx.name]?S.agentNotes[ctx.name].trim():"";
   const _noteSnippet=_noteRaw?`<div style="font-size:11px;color:var(--tm);margin-top:1px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-style:italic;opacity:.7" title="${X(_noteRaw)}">${X(_noteRaw.split('\n')[0].substring(0,60))}</div>`:"";
   const _cardTopRight=`<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">${hsPart}${pngBtn}</div>`;
-  return `<div class="ech${ctx.expanded?" collapsed":""}" style="cursor:default"><div class="ech-top"><div><h3 style="cursor:pointer" onclick="navToPerson('${XJ(ctx.name)}')">${X(ctx.name)}<span class="collapse-icon" style="cursor:pointer" onclick="event.stopPropagation();togCard('${XJ(ctx.name)}')" title="${ctx.expanded?'Collapse to summary':'Expand full table'}">▼</span></h3><div class="month-label">${ctx.mlabel}</div>${_noteSnippet}</div>${_cardTopRight}</div>${metaContent?`<div class="ech-meta">${metaContent}</div>`:""}</div>`;
+  return `<div class="ech${ctx.expanded?" collapsed":""}" style="cursor:default"><div class="ech-top"><div><h3 style="cursor:pointer" onclick="navToPerson('${XJS(ctx.name)}')">${X(ctx.name)}<span class="collapse-icon" style="cursor:pointer" onclick="event.stopPropagation();togCard('${XJS(ctx.name)}')" title="${ctx.expanded?'Collapse to summary':'Expand full table'}">▼</span></h3><div class="month-label">${ctx.mlabel}</div>${_noteSnippet}</div>${_cardTopRight}</div>${metaContent?`<div class="ech-meta">${metaContent}</div>`:""}</div>`;
 }
 
 function renderCard(n,ent,mlabel,monthKey){
@@ -14961,7 +15039,7 @@ function renderCard(n,ent,mlabel,monthKey){
     h+=`<label style="display:flex;align-items:center;gap:2px;cursor:pointer;font-size:11px;color:${S.showCardWk!==false?"var(--text)":"var(--tm)"};opacity:${S.showCardWk!==false?1:.5}"><input type="checkbox" ${S.showCardWk!==false?"checked":""} onchange="S.showCardWk=this.checked;ren()" style="width:10px;height:10px;accent-color:var(--accent)"> Wk col</label>`;
     h+=`</div>`;
 
-    h+=`<div class="card-expand-hint" onclick="togCard('${XJ(n)}')" style="text-align:center;padding:4px 0 2px;font-size:11px;color:var(--accent);opacity:.6;cursor:pointer;letter-spacing:.5px">▾ full schedule</div>`;
+    h+=`<div class="card-expand-hint" onclick="togCard('${XJS(n)}')" style="text-align:center;padding:4px 0 2px;font-size:11px;color:var(--accent);opacity:.6;cursor:pointer;letter-spacing:.5px">▾ full schedule</div>`;
     h+=`</div>`;
   } else {
     // EXPANDED: Full shift table — no anomaly chips here (they live on summary card)
@@ -15045,7 +15123,7 @@ function buildTableViewModel(){
 function renderTableControls(vm){
   let h=`<div class="tbl-filters">`;
   h+=`<label>Leader</label><select onchange="setTableFilter('tblLeader',this.value)"><option value="all">All</option>`;
-  vm.leaders.forEach(n=>{h+=`<option value="${XJ(n)}"${S.tblLeader===n?" selected":""}>${X(n)}</option>`;});
+  vm.leaders.forEach(n=>{h+=`<option value="${XA(n)}"${S.tblLeader===n?" selected":""}>${X(n)}</option>`;});
   h+=`</select>`;
   h+=`<label>From</label><input type="date" value="${S.tblDateFrom}" onchange="setTableFilter('tblDateFrom',this.value)" style="width:120px;font-size:11px">`;
   h+=`<label>To</label><input type="date" value="${S.tblDateTo}" onchange="setTableFilter('tblDateTo',this.value)" style="width:120px;font-size:11px">`;
@@ -15072,7 +15150,7 @@ function renderTableSummary(vm){
 }
 function renderTableBody(vm){
   let h=`<div class="ftw" style="border-radius:0 0 10px 10px"><table class="ft"><thead><tr>${buildSortTh('leader','Leader')}${buildSortTh('date','Date')}${buildSortTh('day','Day')}${buildSortTh('uk','UK Time')}${S.tz?buildSortTh('sa','SA Time'):''}${buildSortTh('hrs','Hrs')}${buildSortTh('week','Wk')}${buildSortTh('flags','Flags')}</tr></thead><tbody>`;
-  vm.all.forEach(e=>{const hrs=e.isOff?"":(calcHrs(S.tz&&e.saS?e.saS:e.ukS,S.tz&&e.saE?e.saE:e.ukE)).toFixed(1);const dayExc=e.date?getExcForPerson(e.date,e.name):[];const excIcons=dayExc.map(x=>{const t=EXC_TYPES.find(t=>t.id===x.type);return t?t.icon:'⚠';}).join('');const inspect=e.date?` onclick="openDayInvestigation('${XJ(e.name)}','${excKey(e.date)}','table')" style="cursor:pointer" title="Inspect this day"`:'';h+=`<tr class="${rCls(e)}"><td${inspect}>${X(e.name)}</td><td>${e.date?fDF(e.date):"—"}</td><td>${e.day?e.day.substring(0,3):"—"}</td><td class="${shiftCls(e)}">${e.isOff?offLabel(e):X(uD(e))}</td>${S.tz?`<td class="${shiftCls(e)}">${e.isOff?offLabel(e):X(sAD(e))}</td>`:''}<td class="sc" style="opacity:.5">${hrs}</td><td class="wk-lbl">${e.week||""}</td><td style="font-size:11px">${excIcons}</td></tr>`;});
+  vm.all.forEach(e=>{const hrs=e.isOff?"":(calcHrs(S.tz&&e.saS?e.saS:e.ukS,S.tz&&e.saE?e.saE:e.ukE)).toFixed(1);const dayExc=e.date?getExcForPerson(e.date,e.name):[];const excIcons=dayExc.map(x=>{const t=EXC_TYPES.find(t=>t.id===x.type);return t?t.icon:'⚠';}).join('');const inspect=e.date?` onclick="openDayInvestigation('${XJS(e.name)}','${excKey(e.date)}','table')" style="cursor:pointer" title="Inspect this day"`:'';h+=`<tr class="${rCls(e)}"><td${inspect}>${X(e.name)}</td><td>${e.date?fDF(e.date):"—"}</td><td>${e.day?e.day.substring(0,3):"—"}</td><td class="${shiftCls(e)}">${e.isOff?offLabel(e):X(uD(e))}</td>${S.tz?`<td class="${shiftCls(e)}">${e.isOff?offLabel(e):X(sAD(e))}</td>`:''}<td class="sc" style="opacity:.5">${hrs}</td><td class="wk-lbl">${e.week||""}</td><td style="font-size:11px">${excIcons}</td></tr>`;});
   return h+`</tbody></table></div>`;
 }
 function rerenderTableBodyBlock(){
@@ -15263,7 +15341,7 @@ function _rdRaw(q){
   let h=`<div style="display:flex;gap:2px;padding:6px 12px;overflow-x:auto;flex-shrink:0;border-bottom:1px solid var(--bdr)">`;
   sheets.forEach(sn=>{
     const active=sn===S._rdSheet;
-    h+=`<button onclick="S._rdSheet='${XJ(sn)}';rerenderAnalyticsSurface('view')" style="padding:4px 10px;border:1px solid ${active?'var(--accent)':'var(--bdr)'};border-radius:5px;background:${active?'var(--accent)':'none'};color:${active?'#000':'var(--tm)'};font-family:inherit;font-size:11px;font-weight:${active?'700':'400'};cursor:pointer;white-space:nowrap">${X(sn)}</button>`;
+    h+=`<button onclick="S._rdSheet='${XJS(sn)}';rerenderAnalyticsSurface('view')" style="padding:4px 10px;border:1px solid ${active?'var(--accent)':'var(--bdr)'};border-radius:5px;background:${active?'var(--accent)':'none'};color:${active?'#000':'var(--tm)'};font-family:inherit;font-size:11px;font-weight:${active?'700':'400'};cursor:pointer;white-space:nowrap">${X(sn)}</button>`;
   });
   h+=`</div>`;
   // Render sheet data
@@ -15328,7 +15406,7 @@ function _rdRaw(q){
     Object.entries(map).forEach(([col,type])=>{
       const c=_mapColors[type]||'var(--tm)';
       const label=headerRow[+col]!==undefined&&headerRow[+col]!==''?String(headerRow[+col]).substring(0,12):'Col '+(+col+1);
-      h+=`<span style="padding:2px 6px;border-radius:3px;background:${c}15;border:1px solid ${c}30;color:${c};font-size:10px">${label} → ${type}</span>`;
+      h+=`<span style="padding:2px 6px;border-radius:3px;background:${cssAlpha(c,8)};border:1px solid ${cssAlpha(c,19)};color:${c};font-size:10px">${label} → ${type}</span>`;
     });
     h+=`<button onclick="if(S._colMap)delete S._colMap[S._rdSheet];rerenderAnalyticsSurface('view')" style="margin-left:auto;font-size:10px;padding:2px 8px;border:1px solid var(--bdr);border-radius:4px;background:none;color:var(--tm);cursor:pointer;font-family:inherit">Clear all</button>`;
     h+=`</div>`;
@@ -15606,7 +15684,7 @@ function _rCoverageContent(ad){
           let leftPct=0,widthPct=100;
           if(s&&en){const[sh,sm2]=s.split(":").map(Number),[eh,em2]=en.split(":").map(Number);const sH=sh+sm2/60,eH=eh+em2/60;leftPct=Math.max(0,(sH-tlStart)/tlSpan*100);widthPct=Math.min(100-leftPct,(eH-sH)/tlSpan*100);}
           const stype=shiftType(e);const clrMap={early:"var(--early)",mid:"var(--mid)",late:"var(--late)",wknd:"var(--wknd)",off:"var(--tm)"};
-          h+=`<div class="da-tl-row"><div class="da-tl-name" onclick="navToPerson('${XJ(e.name)}')" title="${X(e.name)}">${X(e.name)}</div><div class="da-tl-bar-wrap"><div class="da-tl-bar" style="left:${leftPct.toFixed(1)}%;width:${Math.max(widthPct,4).toFixed(1)}%;background:${clrMap[stype]}"></div></div><div class="da-tl-hrs">${hrs.toFixed(1)}h</div></div>`;
+          h+=`<div class="da-tl-row"><div class="da-tl-name" onclick="navToPerson('${XJS(e.name)}')" title="${X(e.name)}">${X(e.name)}</div><div class="da-tl-bar-wrap"><div class="da-tl-bar" style="left:${leftPct.toFixed(1)}%;width:${Math.max(widthPct,4).toFixed(1)}%;background:${clrMap[stype]}"></div></div><div class="da-tl-hrs">${hrs.toFixed(1)}h</div></div>`;
         });
         h+=`</div>`;
       }
@@ -15627,7 +15705,7 @@ function _rCoverageContent(ad){
           const hasDefault=S.hc[hcDefaultKey(e.name)]?.total>0;
           const pct2=hc.total>0?Math.round((hc.present||0)/hc.total*100):null;
           const pctCls2=pct2!==null?(pct2>=90?"mr-ok":pct2>=75?"mr-warn":"mr-bad"):"";
-          h+=`<div class="da-an-row"><span class="dar-l" style="cursor:pointer" onclick="navToPerson('${XJ(e.name)}')">${X(e.name.split(" ")[0])}</span><span style="font-size:11px;font-family:'JetBrains Mono',monospace">${hc.present||"—"}/${hc.total||"—"}${pct2!==null?` <span class="${pctCls2}">(${pct2}%)</span>`:""}</span></div>`;
+          h+=`<div class="da-an-row"><span class="dar-l" style="cursor:pointer" onclick="navToPerson('${XJS(e.name)}')">${X(e.name.split(" ")[0])}</span><span style="font-size:11px;font-family:'JetBrains Mono',monospace">${hc.present||"—"}/${hc.total||"—"}${pct2!==null?` <span class="${pctCls2}">(${pct2}%)</span>`:""}</span></div>`;
         });
       } else {
         h+=`<div style="padding:14px;font-size:11px;color:var(--tm);text-align:center;line-height:1.6">No HC data for this day.<br><span style="opacity:.5">Enter counts on the Calendar tab.</span></div>`;
@@ -15658,7 +15736,7 @@ function _rCoverageContent(ad){
   // Leaderboard
   h+=`<div class="an-card an-c2"><div class="an-card-hd"><h4>Hours Leaderboard</h4><span>${MOFULL[m]}</span></div><div class="an-card-body" style="padding:8px 16px">`;
   lb.forEach((p,i)=>{
-    h+=`<div class="lb-row"><span class="lb-rank">${i+1}</span><div style="flex:1"><div class="lb-name" onclick="S.emp='${XJ(p.name)}';S.tab='people';S.peopleSubTab='cards';ren()">${X(p.name)}</div><div class="lb-bar" style="width:${Math.round(p.hrs/maxHrs*100)}%"></div></div><span class="lb-val">${p.hrs}h</span><span style="font-size:11px;color:var(--tm);margin-left:6px;min-width:20px">${p.avg}h/d</span></div>`;
+    h+=`<div class="lb-row"><span class="lb-rank">${i+1}</span><div style="flex:1"><div class="lb-name" onclick="S.emp='${XJS(p.name)}';S.tab='people';S.peopleSubTab='cards';ren()">${X(p.name)}</div><div class="lb-bar" style="width:${Math.round(p.hrs/maxHrs*100)}%"></div></div><span class="lb-val">${p.hrs}h</span><span style="font-size:11px;color:var(--tm);margin-left:6px;min-width:20px">${p.avg}h/d</span></div>`;
   });
   h+=`</div></div>`;
 
@@ -15671,7 +15749,7 @@ function _rCoverageContent(ad){
     ent.forEach(e=>{const t=shiftType(e);cnt[t]=(cnt[t]||0)+1;});
     const tot=ent.length||1;
     const st=cardStats(ent);
-    h+=`<div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><span style="font-size:12px;font-weight:500;cursor:pointer" onclick="S.emp='${XJ(n)}';S.tab='people';S.peopleSubTab='cards';ren()">${X(n)}</span><span style="font-size:11px;color:var(--tm)">${st.hrs}h · ${st.avg}h/d avg</span></div>`;
+    h+=`<div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><span style="font-size:12px;font-weight:500;cursor:pointer" onclick="S.emp='${XJS(n)}';S.tab='people';S.peopleSubTab='cards';ren()">${X(n)}</span><span style="font-size:11px;color:var(--tm)">${st.hrs}h · ${st.avg}h/d avg</span></div>`;
     h+=`<div style="display:flex;height:8px;border-radius:4px;overflow:hidden;background:rgba(255,255,255,.05)">`;
     if(cnt.early)h+=`<div style="width:${cnt.early/tot*100}%;background:var(--early)" title="Early: ${cnt.early}"></div>`;
     if(cnt.mid)h+=`<div style="width:${cnt.mid/tot*100}%;background:var(--mid)" title="Mid: ${cnt.mid}"></div>`;
@@ -15696,7 +15774,7 @@ function _rCoverageContent(ad){
     for(let d=0;d<numDays;d++){
       const c=grid[si][d];const lvl=c.count===0?0:c.count>=6?6:c.count;
       const tip=c.names.length?c.names.join(", "):"—";
-      h+=`<div class="hm-cell hm-${lvl}" onmouseenter="showTip(event,'${slotLabel(t)}–${slotLabel(t+slotStep)}','${XJ(tip)}')" onmouseleave="hideTip()">${c.count||""}</div>`;
+      h+=`<div class="hm-cell hm-${lvl}" onmouseenter="showTip(event,'${slotLabel(t)}–${slotLabel(t+slotStep)}','${XJS(tip)}')" onmouseleave="hideTip()">${c.count||""}</div>`;
     }
   });
   h+=`</div></div></div>`;
@@ -15952,7 +16030,7 @@ function rSignalsView(monthEnt,y,m){
     const personHs=ths?ths.personScores.find(p=>p.name===n):null;
 
     h+=`<div style="background:var(--card);border:1px solid ${borderCol};border-radius:11px;overflow:hidden;backdrop-filter:blur(12px)">`;
-    h+=`<div style="padding:10px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--bdr);cursor:pointer" onclick="_navPush();S.emp='${XJ(n)}';S.tab='people';S.peopleSubTab='cards';ren()">`;
+    h+=`<div style="padding:10px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--bdr);cursor:pointer" onclick="_navPush();S.emp='${XJS(n)}';S.tab='people';S.peopleSubTab='cards';ren()">`;
     h+=`<span style="font-size:13px;font-weight:700;flex:1">${X(n.split(" ")[0])} <span style="font-size:11px;font-weight:400;color:var(--tm)">${X(n.split(" ").slice(1).join(" "))}</span></span>`;
     if(wkLabel&&S.showCardWk!==false)h+=`<span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--accent);background:var(--al);padding:1px 5px;border-radius:4px">${wkLabel}</span>`;
     if(personHs)h+=healthScoreBadge(personHs,true);
@@ -16045,7 +16123,7 @@ function rFlagsView(){
     const thresholdLabel=key==="overHours"?"h/wk":key==="lowCoverage"?"TLs":key==="consecutiveDays"?"days":key==="longShift"?"hrs":key==="weekendBalance"?"%":key==="shiftDrift"?"%":"";
     const currentThreshold=cfg.threshold||(key==="overHours"?S.hrsMax:key==="lowCoverage"?S.covMin:cfg.threshold||"");
 
-    h+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:${isOn?"var(--al)":"rgba(255,255,255,.02)"};border:1px solid ${isOn?"var(--accent)22":"var(--bdr)"}">`;
+    h+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:${isOn?"var(--al)":"rgba(255,255,255,.02)"};border:1px solid ${isOn?CSS_ALPHA_ACCENT_13:"var(--bdr)"}">`;
     h+=`<label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex:1;min-width:0">`;
     h+=`<input type="checkbox" ${isOn?"checked":""} onchange="toggleFlagAlert('${key}')" style="width:14px;height:14px;accent-color:var(--accent)">`;
     h+=`<span style="font-size:12px;font-weight:500;color:${isOn?"var(--text)":"var(--tm)"}">${X(cfg.label)}</span>`;
@@ -16119,7 +16197,7 @@ function rDataQualityView(filterFocus){
       h+=`<span style="font-weight:500;color:var(--text)">${X(p.sheet||p.parser)}</span>`;
       h+=`<span style="color:var(--tm)">${p.count||0} entries</span>`;
       const confCol=p.confidence==="high"?"var(--early)":p.confidence==="medium"?"var(--wknd)":"#dc2626";
-      h+=`<span style="padding:1px 5px;border-radius:3px;background:${confCol}18;color:${confCol};font-weight:500">${p.confidence||"?"}</span>`;
+      h+=`<span style="padding:1px 5px;border-radius:3px;background:${cssAlpha(confCol,10)};color:${confCol};font-weight:500">${p.confidence||"?"}</span>`;
       if(p.warnings&&p.warnings.length)h+=`<span style="color:#dc2626">⚠ ${p.warnings.length} warning${p.warnings.length!==1?"s":""}</span>`;
       h+=`</div>`;
     });
@@ -16204,7 +16282,7 @@ function rOperationalFlagsView(){
     const isOn=cfg.on;
     const thresholdLabel=key==="overHours"?"h/wk":key==="lowCoverage"?"TLs":key==="consecutiveDays"?"days":key==="longShift"?"hrs":key==="weekendBalance"?"%":key==="shiftDrift"?"%":"";
     const currentThreshold=cfg.threshold||(key==="overHours"?S.hrsMax:key==="lowCoverage"?S.covMin:cfg.threshold||"");
-    h+=`<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;background:${isOn?"var(--al)":"rgba(255,255,255,.02)"};border:1px solid ${isOn?"var(--accent)22":"var(--bdr)"}">`;
+    h+=`<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;background:${isOn?"var(--al)":"rgba(255,255,255,.02)"};border:1px solid ${isOn?CSS_ALPHA_ACCENT_13:"var(--bdr)"}">`;
     h+=`<label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex:1"><input type="checkbox" ${isOn?"checked":""} onchange="toggleFlagAlert('${key}')" style="width:14px;height:14px;accent-color:var(--accent)"><span style="font-size:12px;font-weight:500;color:${isOn?"var(--text)":"var(--tm)"}">${X(cfg.label)}</span></label>`;
     if(thresholdLabel)h+=`<div style="display:flex;align-items:center;gap:4px"><input type="number" value="${currentThreshold}" onchange="setFlagThreshold('${key}',this.value)" style="width:50px;padding:3px 6px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);color:var(--text);font-size:11px;text-align:center;font-family:'JetBrains Mono',monospace"><span style="font-size:11px;color:var(--tm)">${thresholdLabel}</span></div>`;
     h+=`</div>`;
@@ -16224,13 +16302,13 @@ function renderFlagRow(f,notes){
   let h=`<div style="border:1px solid ${isExpanded?"var(--accent)":"var(--bdr)"};border-radius:8px;margin-bottom:4px;overflow:hidden;border-left:3px solid ${sevCol}">`;
 
   // ── Collapsed row ──
-  h+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;background:${isExpanded?sevBg:"transparent"}" onclick="S._expandedFlag=S._expandedFlag==='${XJ(f.id)}'?null:'${XJ(f.id)}';rerenderAnalyticsSurface('view')">`;
+  h+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;background:${isExpanded?sevBg:"transparent"}" onclick="S._expandedFlag=S._expandedFlag==='${XJS(f.id)}'?null:'${XJS(f.id)}';rerenderAnalyticsSurface('view')">`;
   h+=`<div style="flex:1;min-width:0">`;
   h+=`<span style="font-size:13px;font-weight:500">${X(f.title)}</span>`;
   // v48.2: Impact indicator
   const imp=f.impact||{level:"low",icon:"ℹ",label:"Informational"};
   const impCol=imp.level==="high"?"#dc2626":imp.level==="medium"?"var(--wknd)":"var(--tm)";
-  h+=`<span style="font-size:10px;margin-left:6px;padding:1px 5px;border-radius:3px;background:${impCol}12;color:${impCol};font-weight:500" title="${X(imp.label)}">${imp.level==="high"?"affects data":imp.level==="medium"?"review":"safe to ignore"}</span>`;
+  h+=`<span style="font-size:10px;margin-left:6px;padding:1px 5px;border-radius:3px;background:${cssAlpha(impCol,7)};color:${impCol};font-weight:500" title="${X(imp.label)}">${imp.level==="high"?"affects data":imp.level==="medium"?"review":"safe to ignore"}</span>`;
   h+=`<span style="font-size:12px;color:var(--tm);margin-left:6px">${X(f.detail.length>60?f.detail.substring(0,57)+"…":f.detail)}</span>`;
   h+=`</div>`;
   if(f.person)h+=`<span style="font-size:11px;padding:1px 6px;border-radius:4px;border:1px solid var(--bdr);color:var(--tm)">${X(f.person.split(" ")[0])}</span>`;
@@ -16245,7 +16323,7 @@ function renderFlagRow(f,notes){
     // v48.2: Impact explanation
     const imp2=f.impact||{level:"low",icon:"ℹ",label:"Informational",tip:""};
     const impCol2=imp2.level==="high"?"#dc2626":imp2.level==="medium"?"var(--wknd)":"var(--early)";
-    h+=`<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border-radius:6px;background:${impCol2}08;border:1px solid ${impCol2}20;margin-bottom:10px">`;
+    h+=`<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border-radius:6px;background:${cssAlpha(impCol2,3)};border:1px solid ${cssAlpha(impCol2,13)};margin-bottom:10px">`;
     h+=`<span style="font-size:14px;flex-shrink:0">${imp2.icon}</span>`;
     h+=`<div><div style="font-size:11px;font-weight:600;color:${impCol2}">${imp2.level==="high"?"Affects how data is read":imp2.level==="medium"?"Worth reviewing":"Safe to ignore"}</div>`;
     h+=`<div style="font-size:11px;color:var(--tm);margin-top:2px">${X(imp2.label)}${imp2.tip?" · "+X(imp2.tip):""}</div>`;
@@ -16295,7 +16373,7 @@ function renderFlagRow(f,notes){
       if(act==="note")return;// note input below
       // ── Apply blueprint fix (single entry) ──
       if(act==="apply_blueprint"&&f.person&&f.context&&f.context.date){
-        h+=`<button onclick="applyBlueprintFix('${XJ(f.person)}','${XJ(f.context.date)}')" style="padding:4px 10px;border:1px solid var(--accent);border-radius:5px;background:rgba(122,180,255,.08);color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer;font-weight:500">✓ Apply blueprint</button>`;
+        h+=`<button onclick="applyBlueprintFix('${XJS(f.person)}','${XJS(f.context.date)}')" style="padding:4px 10px;border:1px solid var(--accent);border-radius:5px;background:rgba(122,180,255,.08);color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer;font-weight:500">✓ Apply blueprint</button>`;
         return;
       }
       // ── Apply blueprint to ALL mismatches ──
@@ -16306,24 +16384,24 @@ function renderFlagRow(f,notes){
       }
       // ── Merge names action ──
       if(act==="merge"&&f.context&&f.context.nameA&&f.context.nameB){
-        h+=`<button onclick="mergeNames('${XJ(f.context.nameA)}','${XJ(f.context.nameB)}')" style="padding:4px 10px;border:1px solid var(--accent);border-radius:5px;background:rgba(122,180,255,.08);color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer;font-weight:500">Merge → ${X(f.context.nameA.split(" ")[0])}</button>`;
-        h+=`<button onclick="mergeNames('${XJ(f.context.nameB)}','${XJ(f.context.nameA)}')" style="padding:4px 10px;border:1px solid var(--accent);border-radius:5px;background:rgba(122,180,255,.08);color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer;font-weight:500">Merge → ${X(f.context.nameB.split(" ")[0])}</button>`;
+        h+=`<button onclick="mergeNames('${XJS(f.context.nameA)}','${XJS(f.context.nameB)}')" style="padding:4px 10px;border:1px solid var(--accent);border-radius:5px;background:rgba(122,180,255,.08);color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer;font-weight:500">Merge → ${X(f.context.nameA.split(" ")[0])}</button>`;
+        h+=`<button onclick="mergeNames('${XJS(f.context.nameB)}','${XJS(f.context.nameA)}')" style="padding:4px 10px;border:1px solid var(--accent);border-radius:5px;background:rgba(122,180,255,.08);color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer;font-weight:500">Merge → ${X(f.context.nameB.split(" ")[0])}</button>`;
       }
       // ── Mark as leave action ──
       else if(act==="mark_leave"&&f.context&&f.context.from&&f.context.to){
-        h+=`<button onclick="markGapAsLeave('${XJ(f.person)}','${f.context.from}','${f.context.to}','LEAVE')" style="padding:4px 10px;border:1px solid var(--accent);border-radius:5px;background:rgba(122,180,255,.08);color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer;font-weight:500">${labels[act]}</button>`;
+        h+=`<button onclick="markGapAsLeave('${XJS(f.person)}','${f.context.from}','${f.context.to}','LEAVE')" style="padding:4px 10px;border:1px solid var(--accent);border-radius:5px;background:rgba(122,180,255,.08);color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer;font-weight:500">${labels[act]}</button>`;
       }
       // ── Mark as sick action ──
       else if(act==="mark_sick"&&f.context&&f.context.from&&f.context.to){
-        h+=`<button onclick="markGapAsLeave('${XJ(f.person)}','${f.context.from}','${f.context.to}','SICK')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">${labels[act]}</button>`;
+        h+=`<button onclick="markGapAsLeave('${XJS(f.person)}','${f.context.from}','${f.context.to}','SICK')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">${labels[act]}</button>`;
       }
       // ── Dismiss/acknowledge/expected/not_same ──
       else if(act==="ignore"||act==="acknowledge"||act==="not_same"){
-        h+=`<button onclick="dismissFlag('${XJ(f.id)}')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">${labels[act]||act}</button>`;
+        h+=`<button onclick="dismissFlag('${XJS(f.id)}')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">${labels[act]||act}</button>`;
       }
       // ── Expected pattern → whitelist ──
       else if(act==="expected"){
-        h+=`<button onclick="addWhitelistRule('${XJ(f.id)}','Expected pattern')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">${labels[act]} (whitelist)</button>`;
+        h+=`<button onclick="addWhitelistRule('${XJS(f.id)}','Expected pattern')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">${labels[act]} (whitelist)</button>`;
       }
       // ── View in calendar ──
       else if(act==="view_calendar"){
@@ -16339,7 +16417,7 @@ function renderFlagRow(f,notes){
       }
       // ── Default dismiss ──
       else {
-        h+=`<button onclick="dismissFlag('${XJ(f.id)}','${act}')" style="padding:4px 10px;border:1px solid ${isPrimary?"var(--accent)":"var(--bdr)"};border-radius:5px;background:${isPrimary?"rgba(122,180,255,.08)":"none"};color:${isPrimary?"var(--accent)":"var(--tm)"};font-family:inherit;font-size:11px;cursor:pointer;${isPrimary?"font-weight:500":""}">${labels[act]||act}</button>`;
+        h+=`<button onclick="dismissFlag('${XJS(f.id)}','${act}')" style="padding:4px 10px;border:1px solid ${isPrimary?"var(--accent)":"var(--bdr)"};border-radius:5px;background:${isPrimary?"rgba(122,180,255,.08)":"none"};color:${isPrimary?"var(--accent)":"var(--tm)"};font-family:inherit;font-size:11px;cursor:pointer;${isPrimary?"font-weight:500":""}">${labels[act]||act}</button>`;
       }
     });
     h+=`</div>`;
@@ -16348,7 +16426,7 @@ function renderFlagRow(f,notes){
     if(f.actions.includes("note")){
       h+=`<div style="display:flex;gap:6px">`;
       h+=`<input type="text" id="flagNote_${safeId}" placeholder="Add a note about this flag..." value="${X(existingNote)}" style="flex:1;padding:4px 8px;border:1px solid var(--bdr);border-radius:5px;background:var(--bg);color:var(--text);font-size:11px">`;
-      h+=`<button onclick="addFlagNote('${XJ(f.id)}')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">Save</button>`;
+      h+=`<button onclick="addFlagNote('${XJS(f.id)}')" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">Save</button>`;
       h+=`</div>`;
     }
 
@@ -16409,7 +16487,7 @@ function rHistoryComparison(){
     const hsDeltaCol=hsDelta===null?"var(--tm)":hsDelta>0?"var(--early)":hsDelta<0?"#dc2626":"var(--tm)";
     const hsGrade=stats[stats.length-1].healthGrade||"—";
     const hsGradeCol=stats[stats.length-1].healthCol||"var(--tm)";
-    h+=`<div style="display:grid;grid-template-columns:110px 1fr 70px 50px;gap:8px;align-items:center;padding:8px 0 6px;margin-bottom:2px;border-bottom:2px solid ${hsGradeCol}22">`;
+    h+=`<div style="display:grid;grid-template-columns:110px 1fr 70px 50px;gap:8px;align-items:center;padding:8px 0 6px;margin-bottom:2px;border-bottom:2px solid ${cssAlpha(hsGradeCol,13)}">`;
     h+=`<span style="font-size:12px;font-weight:700;color:${hsGradeCol}">⚡ Health</span>`;
     h+=`<div style="display:flex;gap:2px;align-items:flex-end;height:32px">`;
     hsVals.forEach((v,i)=>{
@@ -16599,7 +16677,7 @@ function rAbsenceBreakdown(y,m,monthEnt){
     const topType=Object.entries(p.types).sort((a,b)=>b[1]-a[1])[0];
     const topT=topType?EXC_TYPES.find(t=>t.id===topType[0]):null;
     const upCount=monthExcs.filter(ex=>ex.person===p.name&&!['annual_leave','training','coaching','public_holiday'].includes(ex.type)).length;
-    h+=`<tr style="cursor:pointer" onclick="_navPush();S.emp='${XJ(p.name)}';S.tab='people';S.peopleSubTab='cards';ren()">`;
+    h+=`<tr style="cursor:pointer" onclick="_navPush();S.emp='${XJS(p.name)}';S.tab='people';S.peopleSubTab='cards';ren()">`;
     h+=`<td style="font-weight:500">${X(p.name)}</td>`;
     h+=`<td style="font-family:'JetBrains Mono',monospace">${p.count}</td>`;
     h+=`<td style="font-family:'JetBrains Mono',monospace;color:#dc2626;font-weight:600">${Math.round(p.hours*10)/10}h</td>`;
@@ -16625,7 +16703,7 @@ function rAbsenceBreakdown(y,m,monthEnt){
     h+=`<div class="ftw"><table class="ft" style="font-size:11px"><thead><tr><th>Agent</th><th>Leader</th><th>Events</th><th>Hrs Lost</th></tr></thead><tbody>`;
     agentSorted.slice(0,15).forEach(a=>{
       const flagCls=a.count>=3?'color:#dc2626;font-weight:700':'';
-      h+=`<tr${a.name?` style="cursor:pointer" onclick="openAgentDrawer('${XJ(a.name)}')"`:''}>`;
+      h+=`<tr${a.name?` style="cursor:pointer" onclick="openAgentDrawer('${XJS(a.name)}')"`:''}>`;
       h+=`<td style="font-weight:500;${flagCls}">${X(a.name)}${a.count>=3?' ⚠':''}</td>`;
       h+=`<td style="color:var(--tm)">${X(a.leader)}</td>`;
       h+=`<td style="font-family:'JetBrains Mono',monospace;${flagCls}">${a.count}</td>`;
@@ -16894,7 +16972,7 @@ function rCapacityWaterfall(y,m,numDays,monthEnt){
   if(monthAnomSummary.total){
     h+=`<div class="an-card an-c4"><div class="an-card-hd"><h4>Investigate Fast</h4><span>${monthAnomSummary.total} anomalies in current month view</span></div><div style="display:flex;flex-wrap:wrap;gap:6px">`;
     monthAnomSummary.top.slice(0,5).forEach(it=>{
-      h+=`<button class="dd-mini-btn" onclick="openDayInvestigation('${XJ(it.name)}','${it.dateKey||''}','analytics')">${X(it.name.split(' ')[0])} · ${X(it.msg.substring(0,34))}${it.msg.length>34?'…':''}</button>`;
+      h+=`<button class="dd-mini-btn" onclick="openDayInvestigation('${XJS(it.name)}','${it.dateKey||''}','analytics')">${X(it.name.split(' ')[0])} · ${X(it.msg.substring(0,34))}${it.msg.length>34?'…':''}</button>`;
     });
     h+=`</div></div>`;
   }
@@ -16914,7 +16992,7 @@ function rCapacityWaterfall(y,m,numDays,monthEnt){
       const excSummary=pExcs.length?pExcs.map(x=>{const t=EXC_TYPES.find(t=>t.id===x.type);return t?t.icon:x.type;}).join(' '):'—';
       const rowBg=util<75?' style="background:rgba(220,38,38,.06)"':util<90?' style="background:rgba(251,191,36,.04)"':'';
       const inspectDate=(pExcs[0]&&pExcs[0].date)?pExcs[0].date:(S.anDay?`${y}-${P(m+1)}-${P(S.anDay)}`:'');
-      h+=`<tr${rowBg}><td><strong style="cursor:pointer" onclick="openDayInvestigation('${XJ(name)}','${inspectDate}','analytics')">${X(name)}</strong></td><td style="font-family:'JetBrains Mono',monospace">${schedHrs}h</td>`;
+      h+=`<tr${rowBg}><td><strong style="cursor:pointer" onclick="openDayInvestigation('${XJS(name)}','${inspectDate}','analytics')">${X(name)}</strong></td><td style="font-family:'JetBrains Mono',monospace">${schedHrs}h</td>`;
       h+=`<td style="font-family:'JetBrains Mono',monospace;color:${lostHrs>0?'var(--late)':'var(--tm)'}">${lostHrs>0?'-'+lostHrs+'h':'—'}</td>`;
       h+=`<td style="font-family:'JetBrains Mono',monospace">${actualHrs}h</td>`;
       h+=`<td style="color:${util>=90?'var(--early)':util>=75?'var(--wknd)':'var(--late)'}">${util}%</td>`;
@@ -18401,7 +18479,7 @@ function renderOTSelectedPanel(){
   const tdObj=td?new Date(td+"T00:00:00"):null;
   const tdLabel=tdObj?DOW[tdObj.getDay()]+" "+P(tdObj.getDate())+" "+MOFULL[tdObj.getMonth()]+" "+tdObj.getFullYear():"";
   h+=`<div id="otSelectedTable" style="overflow-x:auto">`;
-  if(tdLabel)h+=`<div style="padding:8px 8px 4px;font-size:13px;font-weight:700;text-align:center;color:var(--t);background:var(--early)18;border-bottom:1px solid var(--bdr)">CCS – ${X(tdLabel)}</div>`;
+  if(tdLabel)h+=`<div style="padding:8px 8px 4px;font-size:13px;font-weight:700;text-align:center;color:var(--t);background:${CSS_ALPHA_EARLY_10};border-bottom:1px solid var(--bdr)">CCS – ${X(tdLabel)}</div>`;
   h+=`<table style="width:100%;border-collapse:collapse;font-size:12px">`;
   h+=`<thead><tr style="border-bottom:2px solid var(--bdr)">`;
   h+=`<th style="text-align:left;padding:6px 8px;font-size:11px;font-weight:600;color:var(--tm)">Agent</th>`;
@@ -18420,13 +18498,13 @@ function renderOTSelectedPanel(){
     totalHrs+=hrs;
     h+=`<tr style="border-bottom:1px solid var(--bdr)">`;
     h+=`<td style="padding:5px 8px;font-weight:500">${X(name)}</td>`;
-    h+=`<td style="text-align:center;padding:5px 4px"><input type="time" value="${start}" onchange="otSetAgentTime('${XJ(name)}','shiftStart',this.value)" style="font-family:DM Mono,monospace;font-size:11px;padding:1px 3px;border:1px solid var(--bdr);border-radius:3px;background:var(--c);color:var(--t);width:76px"></td>`;
-    h+=`<td style="text-align:center;padding:5px 4px"><input type="time" value="${end}" onchange="otSetAgentTime('${XJ(name)}','shiftEnd',this.value)" style="font-family:DM Mono,monospace;font-size:11px;padding:1px 3px;border:1px solid var(--bdr);border-radius:3px;background:var(--c);color:var(--t);width:76px"></td>`;
-    h+=`<td style="text-align:center;padding:5px 4px"><select onchange="otSetAgentTime('${XJ(name)}','lunchMins',+this.value)" style="font-family:inherit;font-size:11px;padding:1px 3px;border:1px solid var(--bdr);border-radius:3px;background:var(--c);color:var(--t)">`;
+    h+=`<td style="text-align:center;padding:5px 4px"><input type="time" value="${start}" onchange="otSetAgentTime('${XJS(name)}','shiftStart',this.value)" style="font-family:DM Mono,monospace;font-size:11px;padding:1px 3px;border:1px solid var(--bdr);border-radius:3px;background:var(--c);color:var(--t);width:76px"></td>`;
+    h+=`<td style="text-align:center;padding:5px 4px"><input type="time" value="${end}" onchange="otSetAgentTime('${XJS(name)}','shiftEnd',this.value)" style="font-family:DM Mono,monospace;font-size:11px;padding:1px 3px;border:1px solid var(--bdr);border-radius:3px;background:var(--c);color:var(--t);width:76px"></td>`;
+    h+=`<td style="text-align:center;padding:5px 4px"><select onchange="otSetAgentTime('${XJS(name)}','lunchMins',+this.value)" style="font-family:inherit;font-size:11px;padding:1px 3px;border:1px solid var(--bdr);border-radius:3px;background:var(--c);color:var(--t)">`;
     [0,15,30,45,60].forEach(m=>{h+=`<option value="${m}"${lunch===m?" selected":""}>${m}m</option>`;});
     h+=`</select></td>`;
     h+=`<td style="text-align:center;padding:5px 4px;font-family:DM Mono,monospace;font-weight:600">${hrs.toFixed(1)}</td>`;
-    h+=`<td style="padding:5px 4px"><button onclick="otRemoveAgent('${XJ(name)}')" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:14px" title="Remove">✕</button></td>`;
+    h+=`<td style="padding:5px 4px"><button onclick="otRemoveAgent('${XJS(name)}')" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:14px" title="Remove">✕</button></td>`;
     h+=`</tr>`;
   });
   h+=`</tbody></table></div>`;
@@ -18540,7 +18618,7 @@ function renderOTWishlistImportAudit(){
     h+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px;margin-top:5px">`;
     audit.unknown.slice(0,12).forEach(name=>{
       const key=otWishlistNameKey(name),alias=(S.otPlan.wishlist.aliases||{})[key]||"";
-      h+=`<label style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--tm)"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(name)}</span><select onchange="otWishlistSetAlias('${XJ(name)}',this.value)" style="max-width:130px;padding:3px 5px;font-size:10px"><option value="">Keep imported</option>${known.map(n=>`<option value="${X(n)}"${alias===n?" selected":""}>${X(n)}</option>`).join("")}</select></label>`;
+      h+=`<label style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--tm)"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(name)}</span><select onchange="otWishlistSetAlias('${XJS(name)}',this.value)" style="max-width:130px;padding:3px 5px;font-size:10px"><option value="">Keep imported</option>${known.map(n=>`<option value="${X(n)}"${alias===n?" selected":""}>${X(n)}</option>`).join("")}</select></label>`;
     });
     h+=`</div>`;
   }
@@ -18583,7 +18661,7 @@ function renderOTWishlistGrid(kind){
           const cls=(status==="🔒 Blocked"?" block":status==="🎓 Training"?" training":status==="🚫 Unavailable"?" unavailable":status?" filled":flag?(" flag-"+flag.kind):"")+(decision?(" decision-"+decision):"");
           const text=status?(badge[0]?badge[0]+" ":"")+status:(badge[0]|| (flag?flag.short:""));
           const title=(status?status:(flag?flag.title:"No status"))+(badge[1]?" · "+badge[1]:"")+" · "+name+" · "+iso;
-          h+=`<td><button class="ot-wish-cell${cls}${approved?" approved":""}" onclick="otWishlistCycleCell('${XJ(name)}','${iso}')" oncontextmenu="event.preventDefault();otWishlistToggleApproval('${XJ(name)}','${iso}')" title="${X(title)}">${X(text)}</button></td>`;
+          h+=`<td><button class="ot-wish-cell${cls}${approved?" approved":""}" onclick="otWishlistCycleCell('${XJS(name)}','${iso}')" oncontextmenu="event.preventDefault();otWishlistToggleApproval('${XJS(name)}','${iso}')" title="${X(title)}">${X(text)}</button></td>`;
         });
         h+=`</tr>`;
       });
@@ -18611,7 +18689,7 @@ function rOTWishlistPanel(){
   const agentCount=teams.reduce((s,t)=>s+t.agents.length,0);
   h+=`<div style="display:grid;grid-template-columns:minmax(260px,1.2fr) minmax(260px,1fr);gap:12px" class="ot-wish-config-grid">`;
   h+=`<div style="border:1px solid var(--bdr);border-radius:8px;padding:12px;background:rgba(255,255,255,.015)">`;
-  h+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px"><div><div style="font-size:14px;font-weight:800;color:var(--text)">OT Wishlist Generator</div><div style="font-size:11px;color:var(--tm)">${agentCount} agents · ${teams.length} team${teams.length!==1?"s":""}</div></div><button onclick="otExportWishlistXLSX()" style="padding:7px 12px;border:1px solid var(--early);border-radius:6px;background:var(--early)18;color:var(--early);font-family:inherit;font-size:12px;font-weight:800;cursor:pointer">💾 Save+ OT Wishlist</button></div>`;
+  h+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px"><div><div style="font-size:14px;font-weight:800;color:var(--text)">OT Wishlist Generator</div><div style="font-size:11px;color:var(--tm)">${agentCount} agents · ${teams.length} team${teams.length!==1?"s":""}</div></div><button onclick="otExportWishlistXLSX()" style="padding:7px 12px;border:1px solid var(--early);border-radius:6px;background:${CSS_ALPHA_EARLY_10};color:var(--early);font-family:inherit;font-size:12px;font-weight:800;cursor:pointer">💾 Save+ OT Wishlist</button></div>`;
   h+=`<div style="display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:8px" class="ot-wish-form-grid">`;
   h+=`<label><span>Start month</span><select onchange="otWishlistSetStartMonth(this.value)">${choices.map(k=>`<option value="${k}"${k===start?" selected":""}>${X(otMonthLabelFromKey(k))}</option>`).join("")}</select></label>`;
   h+=`<label><span>Range</span><select onchange="otWishlistSetMonthCount(this.value)">${[1,2,3].map(n=>`<option value="${n}"${months.length===n?" selected":""}>${n} month${n!==1?"s":""}</option>`).join("")}</select></label>`;
@@ -18731,7 +18809,7 @@ function rOTPlanner(){
     agents.forEach(p=>{
       const isSel=p.selected;
       const hasWarns=p.reasons.length>0;
-      h+=`<div class="ot-agent-row" data-name="${X(p.name)}" style="display:flex;align-items:center;gap:6px;padding:5px 12px;border-bottom:1px solid var(--bdr);cursor:pointer;transition:background .1s${isSel?" ;background:var(--al)":""}" onclick="otToggleAgent('${XJ(p.name)}')">`;
+      h+=`<div class="ot-agent-row" data-name="${X(p.name)}" style="display:flex;align-items:center;gap:6px;padding:5px 12px;border-bottom:1px solid var(--bdr);cursor:pointer;transition:background .1s${isSel?" ;background:var(--al)":""}" onclick="otToggleAgent('${XJS(p.name)}')">`;
       h+=`<span style="width:16px;height:16px;border:1.5px solid ${isSel?"var(--accent)":"var(--bdr)"};border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;background:${isSel?"var(--accent)":"none"};color:${isSel?"#fff":"transparent"}">${isSel?"✓":""}</span>`;
       h+=`<span style="font-size:12px;font-weight:500;flex:1;color:var(--t)">${X(p.name)}</span>`;
       if(p.wishlistApproved)h+=`<span style="font-size:10px" title="Wishlist: approved for OT this day">✅</span>`;
@@ -18739,7 +18817,7 @@ function rOTPlanner(){
       if(hasWarns){
         p.reasons.forEach(r=>{
           const col=r.severity==="high"?"#dc2626":r.severity==="medium"?"#d97706":"var(--tm)";
-          h+=`<span style="font-size:9px;padding:1px 5px;border-radius:8px;background:${col}18;color:${col};white-space:nowrap" title="${X(r.text)}">${X(r.text.length>20?r.text.substring(0,20)+"…":r.text)}</span>`;
+          h+=`<span style="font-size:9px;padding:1px 5px;border-radius:8px;background:${cssAlpha(col,10)};color:${col};white-space:nowrap" title="${X(r.text)}">${X(r.text.length>20?r.text.substring(0,20)+"…":r.text)}</span>`;
         });
       }
       h+=`</div>`;
@@ -18757,7 +18835,7 @@ function rOTPlanner(){
       p.reasons.filter(r=>r.severity==="high").forEach(r=>{
         h+=`<span style="font-size:9px;padding:1px 5px;border-radius:8px;background:#dc262618;color:#dc2626;white-space:nowrap">${X(r.text.length>25?r.text.substring(0,25)+"…":r.text)}</span>`;
       });
-      h+=`<button onclick="event.stopPropagation();otOverrideExclusion('${XJ(p.name)}')" style="font-size:9px;padding:1px 6px;border:1px solid var(--bdr);border-radius:4px;background:none;color:var(--tm);cursor:pointer;white-space:nowrap">Include</button>`;
+      h+=`<button onclick="event.stopPropagation();otOverrideExclusion('${XJS(p.name)}')" style="font-size:9px;padding:1px 6px;border:1px solid var(--bdr);border-radius:4px;background:none;color:var(--tm);cursor:pointer;white-space:nowrap">Include</button>`;
       h+=`</div>`;
     });
     h+=`</details>`;
@@ -18782,7 +18860,7 @@ function rOTPlanner(){
   if(selCount>0){
     h+=`<div style="display:flex;align-items:center;gap:8px;margin-top:14px;padding:10px 12px;border:1px solid var(--bdr);border-radius:8px;flex-wrap:wrap">`;
     h+=`<button onclick="otCopyClipboard()" style="font-family:inherit;font-size:12px;padding:5px 14px;border:1px solid var(--accent);border-radius:6px;background:var(--al);color:var(--accent);cursor:pointer;font-weight:600">📋 Copy</button>`;
-    h+=`<button onclick="otExportXLSX()" style="font-family:inherit;font-size:12px;padding:5px 14px;border:1px solid var(--early);border-radius:6px;background:var(--early)18;color:var(--early);cursor:pointer;font-weight:600">📊 XLSX</button>`;
+    h+=`<button onclick="otExportXLSX()" style="font-family:inherit;font-size:12px;padding:5px 14px;border:1px solid var(--early);border-radius:6px;background:${CSS_ALPHA_EARLY_10};color:var(--early);cursor:pointer;font-weight:600">📊 XLSX</button>`;
     h+=`<button onclick="otExportPNG()" style="font-family:inherit;font-size:12px;padding:5px 14px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--tm);cursor:pointer;font-weight:600">📷 PNG</button>`;
     h+=`<button onclick="otSavePlanToHistory()" style="font-family:inherit;font-size:12px;padding:5px 14px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--tm);cursor:pointer;font-weight:600">💾 Save Plan</button>`;
     h+=`<button onclick="otCopyToNextDay()" title="Save this plan and copy same agents to the next day" style="font-family:inherit;font-size:12px;padding:5px 14px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--tm);cursor:pointer;font-weight:600">→ Next Day</button>`;
@@ -18901,17 +18979,17 @@ function renderLeaderPlannerTaskRow(t,compact){
   const pri=t.priority||"normal";
   const priCol=pri==="high"?"#dc2626":pri==="flag"?"var(--wknd)":pri==="low"?"var(--tm)":"var(--accent)";
   const due=t.dueDate?`<span style="font-family:'JetBrains Mono',monospace;color:var(--tm);font-size:10px">${X(t.dueDate.slice(5))}</span>`:"";
-  let h=`<div style="display:flex;align-items:flex-start;gap:8px;padding:${compact?"6px 0":"8px 10px"};border-bottom:1px solid var(--bdr)22;opacity:${done?".55":"1"}">`;
-  h+=`<button onclick="toggleLeaderPlannerTask('${XJ(t.id)}')" style="width:18px;height:18px;border-radius:4px;border:1px solid ${done?"var(--early)":"var(--bdr)"};background:${done?"var(--early)":"none"};color:${done?"#000":"transparent"};cursor:pointer;flex-shrink:0;font-size:11px;line-height:16px">✓</button>`;
+  let h=`<div style="display:flex;align-items:flex-start;gap:8px;padding:${compact?"6px 0":"8px 10px"};border-bottom:1px solid ${CSS_ALPHA_BDR_13};opacity:${done?".55":"1"}">`;
+  h+=`<button onclick="toggleLeaderPlannerTask('${XJS(t.id)}')" style="width:18px;height:18px;border-radius:4px;border:1px solid ${done?"var(--early)":"var(--bdr)"};background:${done?"var(--early)":"none"};color:${done?"#000":"transparent"};cursor:pointer;flex-shrink:0;font-size:11px;line-height:16px">✓</button>`;
   h+=`<div style="flex:1;min-width:0">`;
-  h+=`<div style="display:flex;align-items:center;gap:6px;min-width:0"><span style="font-size:12px;font-weight:600;color:${done?"var(--tm)":"var(--text)"};text-decoration:${done?"line-through":"none"};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(t.title)}</span><span style="font-size:9px;padding:1px 5px;border-radius:7px;background:${priCol}18;color:${priCol};text-transform:uppercase">${X(pri)}</span>${due}</div>`;
+  h+=`<div style="display:flex;align-items:center;gap:6px;min-width:0"><span style="font-size:12px;font-weight:600;color:${done?"var(--tm)":"var(--text)"};text-decoration:${done?"line-through":"none"};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(t.title)}</span><span style="font-size:9px;padding:1px 5px;border-radius:7px;background:${cssAlpha(priCol,10)};color:${priCol};text-transform:uppercase">${X(pri)}</span>${due}</div>`;
   const meta=[];
   if(t.linkedAgent)meta.push("Agent: "+t.linkedAgent);
   if(t.source&&t.source!=="manual")meta.push(t.source);
   if(t.notes)meta.push(t.notes);
   if(meta.length)h+=`<div style="font-size:10px;color:var(--tm);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(meta.join(" · "))}</div>`;
   h+=`</div>`;
-  h+=`<button onclick="deleteLeaderPlannerTask('${XJ(t.id)}')" style="background:none;border:none;color:var(--tm);cursor:pointer;font-size:12px;padding:1px 3px;opacity:.6">✕</button>`;
+  h+=`<button onclick="deleteLeaderPlannerTask('${XJS(t.id)}')" style="background:none;border:none;color:var(--tm);cursor:pointer;font-size:12px;padding:1px 3px;opacity:.6">✕</button>`;
   h+=`</div>`;
   return h;
 }
@@ -18947,7 +19025,7 @@ function rLeaderPlanner(){
   h+=`<div style="display:grid;grid-template-columns:190px 1fr 300px;gap:10px" class="leader-planner-layout">`;
   h+=`<div class="pl-section" style="padding:12px">`;
   [[open.length,"Open","var(--accent)"],[flagged.length,"Flagged","var(--wknd)"],[overdue.length,"Overdue","#dc2626"],[done.length,"Done","var(--early)"]].forEach(([n,l,c])=>{
-    h+=`<div style="padding:9px 10px;border-radius:7px;background:${c}12;margin-bottom:7px"><div style="font-size:20px;font-weight:700;color:${c}">${n}</div><div style="font-size:10px;color:var(--tm);text-transform:uppercase;letter-spacing:.4px">${l}</div></div>`;
+    h+=`<div style="padding:9px 10px;border-radius:7px;background:${cssAlpha(c,7)};margin-bottom:7px"><div style="font-size:20px;font-weight:700;color:${c}">${n}</div><div style="font-size:10px;color:var(--tm);text-transform:uppercase;letter-spacing:.4px">${l}</div></div>`;
   });
   h+=`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:8px">`;
   [["open","Open"],["flagged","Flagged"],["done","Done"],["all","All"]].forEach(f=>{
@@ -18960,7 +19038,7 @@ function rLeaderPlanner(){
   ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].forEach(d=>h+=`<div style="padding:7px;text-align:center;font-size:10px;font-weight:700;color:var(--tm)">${d}</div>`);
   h+=`</div><div style="display:grid;grid-template-columns:repeat(7,1fr)">`;
   const startPad=(first.getDay()+6)%7;
-  for(let i=0;i<startPad;i++)h+=`<div style="min-height:72px;border-right:1px solid var(--bdr)22;border-bottom:1px solid var(--bdr)22"></div>`;
+  for(let i=0;i<startPad;i++)h+=`<div style="min-height:72px;border-right:1px solid ${CSS_ALPHA_BDR_13};border-bottom:1px solid ${CSS_ALPHA_BDR_13}"></div>`;
   for(let d=1;d<=last.getDate();d++){
     const iso=monthKey+"-"+P(d);
     const dayTasks=tasks.filter(t=>t.dueDate===iso);
@@ -18968,11 +19046,11 @@ function rLeaderPlanner(){
     const dayFlag=dayOpen.some(t=>["high","flag"].includes(t.priority));
     const isSel=selected===iso;
     const isToday=iso===todayISO;
-    h+=`<button onclick="setLeaderPlannerDay('${iso}')" style="min-height:72px;text-align:left;padding:6px;border:none;border-right:1px solid var(--bdr)22;border-bottom:1px solid var(--bdr)22;background:${isSel?"var(--al)":isToday?"rgba(122,180,255,.05)":"transparent"};border-left:${isSel?"2px solid var(--accent)":"2px solid transparent"};color:var(--text);font-family:inherit;cursor:pointer">`;
+    h+=`<button onclick="setLeaderPlannerDay('${iso}')" style="min-height:72px;text-align:left;padding:6px;border:none;border-right:1px solid ${CSS_ALPHA_BDR_13};border-bottom:1px solid ${CSS_ALPHA_BDR_13};background:${isSel?"var(--al)":isToday?"rgba(122,180,255,.05)":"transparent"};border-left:${isSel?"2px solid var(--accent)":"2px solid transparent"};color:var(--text);font-family:inherit;cursor:pointer">`;
     h+=`<div style="font-size:11px;font-weight:700;color:${isToday?"var(--accent)":"var(--tm)"}">${d}</div>`;
     dayTasks.slice(0,3).forEach(t=>{
       const c=t.status==="done"?"var(--early)":["high","flag"].includes(t.priority)?"var(--wknd)":"var(--accent)";
-      h+=`<div style="margin-top:2px;font-size:9px;padding:1px 4px;border-radius:4px;background:${c}14;color:${c};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(t.title)}</div>`;
+      h+=`<div style="margin-top:2px;font-size:9px;padding:1px 4px;border-radius:4px;background:${cssAlpha(c,8)};color:${c};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(t.title)}</div>`;
     });
     if(dayTasks.length>3)h+=`<div style="font-size:9px;color:var(--tm);margin-top:1px">+${dayTasks.length-3}</div>`;
     if(dayFlag)h+=`<div style="position:absolute"></div>`;
@@ -19086,7 +19164,7 @@ function rPlanner(el,opts){
   h+=`<span class="pl-nav-label">${MOFULL[S.plGenMonth]} ${S.plGenYear}</span>`;
   h+=`<button class="pl-nav-btn" onclick="S.plGenMonth++;if(S.plGenMonth>11){S.plGenMonth=0;S.plGenYear++;}S._generatedMonth=null;ren()">▶</button></div>`;
   if(genData){
-    h+=`<button class="pl-btn" onclick="S._generatedMonth=generateMonth('${XJ(dk)}',S.plGenYear,S.plGenMonth);exportPlannedMonth()">↓ Export</button>`;
+    h+=`<button class="pl-btn" onclick="S._generatedMonth=generateMonth('${XJS(dk)}',S.plGenYear,S.plGenMonth);exportPlannedMonth()">↓ Export</button>`;
     h+=`<button class="btn bp" style="font-size:11px;padding:4px 10px" onclick="savePlannedToSchedule()">💾 Save to Schedule</button>`;
   }
   const rotWkActive=S.plShowRotWk!==false;
@@ -19105,7 +19183,7 @@ function rPlanner(el,opts){
     h+=`<select onchange="plannerSelectBlueprintGroup(this.value)" style="padding:2px 6px;border:1px solid var(--bdr);border-radius:5px;background:var(--bg);color:var(--text);font-size:11px;max-width:170px">`;
     Object.entries(bp.groups).forEach(([gid,g])=>{
       const gl=(g&&g.label)||gid;
-      h+=`<option value="${XJ(gid)}"${gid===activeGroupId?" selected":""}>${X(gl)}</option>`;
+      h+=`<option value="${XA(gid)}"${gid===activeGroupId?" selected":""}>${X(gl)}</option>`;
     });
     h+=`</select>`;
   }
@@ -19210,7 +19288,7 @@ function rPlanner(el,opts){
     const cycleLenForName=Math.max(1,(bpForName&&bpForName.cycleLen)||bpCycleLen||5);
     h+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">`;
     h+=`<span style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${X(name.split(" ")[0])}</span>`;
-    h+=`<select onchange="confirmPosition('${XJ(name)}',+this.value)" style="padding:2px 4px;border:1px solid var(--bdr);border-radius:5px;background:var(--bg);color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;min-width:44px">`;
+    h+=`<select onchange="confirmPosition('${XJS(name)}',+this.value)" style="padding:2px 4px;border:1px solid var(--bdr);border-radius:5px;background:var(--bg);color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;min-width:44px">`;
     for(let w=1;w<=cycleLenForName;w++){h+=`<option value="${w}"${w===wk?" selected":""}>W${w}</option>`;}
     h+=`</select></div>`;
   });
@@ -19223,7 +19301,7 @@ function rPlanner(el,opts){
     h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">`;
     h+=`<span style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px">Wk Remap</span>`;
     const hasAnyRemap=S.plWkRemap&&Object.keys(S.plWkRemap).filter(k=>k.startsWith(dk+"|")).length>0;
-    if(hasAnyRemap){h+=`<button class="pl-btn" style="font-size:10px;padding:2px 5px" onclick="plannerClearWeekRemap('${XJ(dk)}')">✕ Clear</button>`;}
+    if(hasAnyRemap){h+=`<button class="pl-btn" style="font-size:10px;padding:2px 5px" onclick="plannerClearWeekRemap('${XJS(dk)}')">✕ Clear</button>`;}
     h+=`</div>`;
     h+=`<div style="font-size:11px;color:var(--tm);margin-bottom:6px;font-style:italic">Remap source weeks to match your blueprint order</div>`;
     allDetectedWks.forEach(srcWk=>{
@@ -19233,7 +19311,7 @@ function rPlanner(el,opts){
       h+=`<span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--accent);background:var(--al);padding:1px 5px;border-radius:4px">${srcWk}</span>`;
       h+=`<span style="font-size:11px;color:var(--tm)">→</span>`;
       // When remap changes: update mapping + swap blueprint rows (undo-enabled)
-      h+=`<select onchange="plannerApplyWeekRemap('${XJ(dk)}','${XJ(srcWk)}',this.value,'${XJ(curMapped)}')" style="padding:2px 4px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:11px;min-width:48px">`;
+      h+=`<select onchange="plannerApplyWeekRemap('${XJS(dk)}','${XJS(srcWk)}',this.value,'${XJS(curMapped)}')" style="padding:2px 4px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:11px;min-width:48px">`;
       for(let w=1;w<=bpCycleLen;w++){const opt=`W${w}`;h+=`<option value="${opt}"${opt===curMapped?" selected":""}>${opt}</option>`;}
       h+=`</select></div>`;
     });
@@ -19356,7 +19434,7 @@ function rPlanner(el,opts){
                 const lbl=TYPE_LABELS[dr.type]||dr.type;
                 h+=`<div style="display:grid;grid-template-columns:70px 80px 1fr 1fr;gap:4px;padding:4px 10px;align-items:center;border-top:1px solid rgba(255,255,255,.04)">`;
                 h+=`<span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--tm)">${fD(dr.date)} ${(dr.day||"").substring(0,3)}</span>`;
-                h+=`<span style="font-size:10px;padding:1px 5px;border-radius:4px;background:${col}18;color:${col};font-weight:600">${lbl}</span>`;
+                h+=`<span style="font-size:10px;padding:1px 5px;border-radius:4px;background:${cssAlpha(col,10)};color:${col};font-weight:600">${lbl}</span>`;
                 h+=`<span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--tm)" title="Blueprint says">${dr.planned}</span>`;
                 h+=`<span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:${col}" title="Actual schedule">${dr.actual}</span>`;
                 h+=`</div>`;
@@ -19481,7 +19559,7 @@ function rPlanner(el,opts){
           if(inMonth){
             cls+=" pw-editable";
             if(hasOverride)cls+=" pw-override";
-            h+=`<div class="${cls}" onclick="openCellEdit(event,'${XJ(name)}','${dateStr}','${XJ(overrideKey)}')" title="Click to edit">${txt}</div>`;
+            h+=`<div class="${cls}" onclick="openCellEdit(event,'${XJS(name)}','${dateStr}','${XJS(overrideKey)}')" title="Click to edit">${txt}</div>`;
           } else {
             h+=`<div class="${cls}">${txt}</div>`;
           }
@@ -19497,7 +19575,7 @@ function rPlanner(el,opts){
     h+=`<div style="display:flex;gap:6px;align-items:center">`;
     const savedKey=`${targetYear}-${targetMonth}`;
     if(S.savedMonths&&S.savedMonths[dk]&&S.savedMonths[dk][savedKey]){
-      h+=`<button class="rm-month-btn" onclick="removeSavedMonth('${XJ(dk)}','${savedKey}')">✕ Remove ${MOFULL[targetMonth]}</button>`;
+      h+=`<button class="rm-month-btn" onclick="removeSavedMonth('${XJS(dk)}','${savedKey}')">✕ Remove ${MOFULL[targetMonth]}</button>`;
     }
     h+=`<button class="btn bp" style="font-size:11px;padding:4px 12px" onclick="savePlannedToSchedule()">Save ${MOFULL[S.plGenMonth]} to Schedule</button>`;
     h+=`</div></div>`;
@@ -19575,7 +19653,7 @@ function rCoachingTab(dk){
     const totalMins=(byPerson[n]||[]).reduce((s,x)=>s+(x.duration||defaultDur),0);
     const lastSess=(byPerson[n]||[]).sort((a,b)=>b.date.localeCompare(a.date))[0];
     const isSel=n===selPerson;
-    h+=`<div onclick="S._coachPerson='${XJ(n)}';rerenderPlannerSubTab('coaching')" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--bdr)22;background:${isSel?"var(--al)":"transparent"};border-left:3px solid ${isSel?"var(--accent)":"transparent"}">`;
+    h+=`<div onclick="S._coachPerson='${XJS(n)}';rerenderPlannerSubTab('coaching')" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid ${CSS_ALPHA_BDR_13};background:${isSel?"var(--al)":"transparent"};border-left:3px solid ${isSel?"var(--accent)":"transparent"}">`;
     h+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">`;
     h+=`<span style="font-size:12px;font-weight:${isSel?"700":"500"};color:${isSel?"var(--accent)":"var(--text)"}">${X(n.split(" ")[0])}</span>`;
     h+=`<span style="font-size:11px;padding:1px 6px;border-radius:8px;background:${cnt>0?"var(--early)":"rgba(255,255,255,.06)"};color:${cnt>0?"#000":"var(--tm)"};font-weight:600">${cnt}</span>`;
@@ -19611,7 +19689,7 @@ function rCoachingTab(dk){
   const firstDay=new Date(targetY,targetM,1);
   const startPad=(firstDay.getDay()+6)%7;// Mon=0
   h+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);flex:1;align-content:start">`;
-  for(let pad=0;pad<startPad;pad++)h+=`<div style="padding:6px;border-right:1px solid var(--bdr)22;border-bottom:1px solid var(--bdr)22;min-height:56px"></div>`;
+  for(let pad=0;pad<startPad;pad++)h+=`<div style="padding:6px;border-right:1px solid ${CSS_ALPHA_BDR_13};border-bottom:1px solid ${CSS_ALPHA_BDR_13};min-height:56px"></div>`;
   for(let d=1;d<=numDays;d++){
     const dateISO=targetY+"-"+P(targetM+1)+"-"+P(d);
     const daySessions=byDate[dateISO]||[];
@@ -19622,13 +19700,13 @@ function rCoachingTab(dk){
     const isWknd=dt.getDay()===0||dt.getDay()===6;
     const bg=isSel?"var(--al)":isToday?"rgba(122,180,255,.06)":"transparent";
     const border=isSel?"var(--accent)":"transparent";
-    h+=`<div onclick="S._coachDay='${dateISO}';rerenderPlannerSubTab('coaching')" style="padding:5px 6px;border-right:1px solid var(--bdr)22;border-bottom:1px solid var(--bdr)22;min-height:56px;cursor:pointer;background:${bg};border-left:2px solid ${border};position:relative">`;
+    h+=`<div onclick="S._coachDay='${dateISO}';rerenderPlannerSubTab('coaching')" style="padding:5px 6px;border-right:1px solid ${CSS_ALPHA_BDR_13};border-bottom:1px solid ${CSS_ALPHA_BDR_13};min-height:56px;cursor:pointer;background:${bg};border-left:2px solid ${border};position:relative">`;
     h+=`<div style="font-size:11px;font-weight:${isToday?"700":"500"};color:${isToday?"var(--accent)":isWknd?"var(--wknd)":"var(--tm)"}">${d}</div>`;
     if(cnt>0){
       // Show session dots / names
       const shown=daySessions.slice(0,3);
       shown.forEach(s=>{
-        h+=`<div style="font-size:9px;padding:1px 3px;border-radius:3px;background:var(--early)22;color:var(--early);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X((s.agentName||s.name).split(" ")[0])}${s.time?" "+s.time:""}</div>`;
+        h+=`<div style="font-size:9px;padding:1px 3px;border-radius:3px;background:${CSS_ALPHA_EARLY_13};color:var(--early);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X((s.agentName||s.name).split(" ")[0])}${s.time?" "+s.time:""}</div>`;
       });
       if(daySessions.length>3)h+=`<div style="font-size:9px;color:var(--tm)">+${daySessions.length-3} more</div>`;
     }
@@ -19672,7 +19750,7 @@ function rCoachingTab(dk){
     selDaySessions.forEach((s,si)=>{
       const sIdx=(S.coachManualSessions||[]).findIndex(x=>x.name===s.name&&x.date===s.date&&x.loggedAt===s.loggedAt);
       const dur=s.duration||defaultDur;
-      h+=`<div style="padding:8px 12px;border-bottom:1px solid var(--bdr)22;display:flex;flex-direction:column;gap:3px">`;
+      h+=`<div style="padding:8px 12px;border-bottom:1px solid ${CSS_ALPHA_BDR_13};display:flex;flex-direction:column;gap:3px">`;
       h+=`<div style="display:flex;align-items:center;justify-content:space-between">`;
       h+=`<span style="font-size:12px;font-weight:600;color:var(--accent)">${X(s.name.split(" ")[0])}</span>`;
       h+=`<button onclick="removeManualCoachSession(${sIdx})" style="padding:1px 6px;border:1px solid var(--bdr);border-radius:3px;background:none;color:var(--tm);font-size:10px;cursor:pointer">✕</button>`;
@@ -19698,7 +19776,7 @@ function rCoachingTab(dk){
     } else {
       pSess.slice(0,6).forEach(s=>{
         const dur=s.duration||defaultDur;
-        h+=`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:10px;border-bottom:1px solid var(--bdr)11">`;
+        h+=`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:10px;border-bottom:1px solid ${CSS_ALPHA_BDR_7}">`;
         h+=`<span style="color:var(--tm);min-width:50px">${s.date.slice(5)}</span>`;
         if(s.time)h+=`<span style="font-family:'JetBrains Mono',monospace;color:var(--text)">${s.time}</span>`;
         h+=`<span style="color:var(--tm)">${dur}min</span>`;
@@ -19816,11 +19894,11 @@ function openCellEdit(evt,name,dateStr,overrideKey){
   pop.innerHTML=`
     <button class="pcp-close" onclick="document.getElementById('plCellPopup').remove()">✕</button>
     <div class="pcp-hd">${X(name.split(" ")[0])} · ${dayName} ${d.getDate()}</div>
-    <button class="pcp-opt pcp-off" onclick="applyCellEdit('${XJ(name)}','${dateStr}','${XJ(overrideKey)}','OFF')">OFF</button>
-    ${slots.map(s=>`<button class="pcp-opt" onclick="applyCellEdit('${XJ(name)}','${dateStr}','${XJ(overrideKey)}','${s}')">${s}</button>`).join("")}
+    <button class="pcp-opt pcp-off" onclick="applyCellEdit('${XJS(name)}','${dateStr}','${XJS(overrideKey)}','OFF')">OFF</button>
+    ${slots.map(s=>`<button class="pcp-opt" onclick="applyCellEdit('${XJS(name)}','${dateStr}','${XJS(overrideKey)}','${s}')">${s}</button>`).join("")}
     <div style="border-top:1px solid var(--bdr);margin:6px 0 4px"></div>
     <div style="font-size:11px;color:var(--tm);margin-bottom:3px">Custom</div>
-    <input class="pcp-inp" type="text" placeholder="08:00-16:00" onkeydown="if(event.key==='Enter'&&this.value.trim())applyCellEdit('${XJ(name)}','${dateStr}','${XJ(overrideKey)}',this.value.trim())">
+    <input class="pcp-inp" type="text" placeholder="08:00-16:00" onkeydown="if(event.key==='Enter'&&this.value.trim())applyCellEdit('${XJS(name)}','${dateStr}','${XJS(overrideKey)}',this.value.trim())">
   `;
   document.body.appendChild(pop);
 
@@ -19945,12 +20023,12 @@ function renderSwapFormInline(dateISO,prefillAbsent){
   h+=`<div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">`;
   h+=`<span style="font-size:11px;color:var(--tm)">Absent:</span>`;
   h+=`<select id="swAbsent_${esc}" style="padding:2px 6px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);color:#dc2626;font-size:11px;font-weight:600">`;
-  names.forEach(n=>{h+=`<option value="${XJ(n)}"${n===prefillAbsent?' selected':''}>${X(n.split(' ')[0])}</option>`;});
+  names.forEach(n=>{h+=`<option value="${XA(n)}"${n===prefillAbsent?' selected':''}>${X(n.split(' ')[0])}</option>`;});
   h+=`</select>`;
   h+=`<span style="font-size:11px;color:var(--tm)">Covered by:</span>`;
   h+=`<select id="swCover_${esc}" style="padding:2px 6px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);color:var(--early);font-size:11px;font-weight:600">`;
   h+=`<option value="">— select —</option>`;
-  names.filter(n=>n!==prefillAbsent).forEach(n=>{h+=`<option value="${XJ(n)}">${X(n.split(' ')[0])}</option>`;});
+  names.filter(n=>n!==prefillAbsent).forEach(n=>{h+=`<option value="${XA(n)}">${X(n.split(' ')[0])}</option>`;});
   h+=`</select>`;
   h+=`</div>`;
   h+=`<div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">`;
@@ -21913,7 +21991,7 @@ function healthScoreBadge(score,small){
   const pad=small?"1px 5px":"2px 7px";
   const ac=score.name?getAgentCount(score.name):0;
   const agentTip=ac>0?` · ${ac} agents`:"";
-  return`<span style="font-size:${sz};font-weight:700;padding:${pad};border-radius:10px;background:${score.gradeCol}18;color:${score.gradeCol};border:1px solid ${score.gradeCol}33;font-family:'JetBrains Mono',monospace" title="Month health: ${score.total}/100${agentTip} — Coverage:${score.scores.coverage} Exceptions:${score.scores.exceptions} Coaching:${score.scores.coaching} Hours:${score.scores.hours} Anomalies:${score.scores.anomalies}">${score.grade} ${score.total}</span>`;
+  return`<span style="font-size:${sz};font-weight:700;padding:${pad};border-radius:10px;background:${cssAlpha(score.gradeCol,10)};color:${score.gradeCol};border:1px solid ${cssAlpha(score.gradeCol,20)};font-family:'JetBrains Mono',monospace" title="Month health: ${score.total}/100${agentTip} — Coverage:${score.scores.coverage} Exceptions:${score.scores.exceptions} Coaching:${score.scores.coaching} Hours:${score.scores.hours} Anomalies:${score.scores.anomalies}">${score.grade} ${score.total}</span>`;
 }
 
 function renderTeamRiskPanel(risk){
@@ -21925,7 +22003,7 @@ function renderTeamRiskPanel(risk){
   risk.recommendations.forEach(r=>{
     const col=SEV_COLOR[r.severity]||"var(--tm)";
     const bg=SEV_BG[r.severity]||"var(--al)";
-    h+=`<div style="padding:7px 10px;border-radius:7px;background:${bg};border:1px solid ${col}22">`;
+    h+=`<div style="padding:7px 10px;border-radius:7px;background:${bg};border:1px solid ${cssAlpha(col,13)}">`;
     h+=`<div style="font-size:12px;font-weight:600;color:${col}">${r.msg}</div>`;
     if(r.detail)h+=`<div style="font-size:11px;color:var(--tm);margin-top:2px">${r.detail}</div>`;
     h+=`</div>`;
@@ -21959,7 +22037,7 @@ function renderSignalPanel(name, signals){
   [...issues,...info,...ok].forEach(sig=>{
     const col=SEV_COLOR[sig.severity]||"var(--tm)";
     const bg=SEV_BG[sig.severity]||"var(--al)";
-    h+=`<div style="display:flex;align-items:flex-start;gap:8px;padding:7px 10px;border-radius:7px;background:${bg};border:1px solid ${col}22">`;
+    h+=`<div style="display:flex;align-items:flex-start;gap:8px;padding:7px 10px;border-radius:7px;background:${bg};border:1px solid ${cssAlpha(col,13)}">`;
     h+=`<span style="font-size:13px;flex-shrink:0;margin-top:1px">${sig.icon}</span>`;
     h+=`<div style="flex:1;min-width:0">`;
     h+=`<div style="font-size:12px;font-weight:700;color:${col}">${sig.title}</div>`;
@@ -21968,7 +22046,7 @@ function renderSignalPanel(name, signals){
     h+=`</div>`;
     if(sig.action&&sig.actionFn){
       const idx=_sigActions.length;_sigActions.push(sig.actionFn);
-      h+=`<button onclick="_sigActions[${idx}]()" style="padding:3px 8px;border:1px solid ${col}44;border-radius:5px;background:none;color:${col};font-family:inherit;font-size:11px;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background .1s" onmouseenter="this.style.background='${col}18'" onmouseleave="this.style.background='none'">${sig.action}</button>`;
+      h+=`<button onclick="_sigActions[${idx}]()" style="padding:3px 8px;border:1px solid ${cssAlpha(col,27)};border-radius:5px;background:none;color:${col};font-family:inherit;font-size:11px;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background .1s" onmouseenter="this.style.background='${cssAlpha(col,10)}'" onmouseleave="this.style.background='none'">${sig.action}</button>`;
     }
     h+=`</div>`;
   });
@@ -22036,7 +22114,7 @@ function rIntel(el){
   h+=`<div style="font-size:12px;color:var(--tm);margin-top:2px">${names.length} leaders · ${monthEnt.filter(e=>!e.isOff).length} shifts · ${Math.round(monthEnt.reduce((s,e)=>s+(e.isOff?0:calcHrs(e.ukS,e.ukE)),0))}h</div>`;
   h+=`</div>`;
   if(ths){
-    h+=`<div style="text-align:center;padding:8px 16px;border-radius:10px;background:${ths.gradeCol}12;border:1px solid ${ths.gradeCol}28;cursor:pointer" onclick="S._sumHealthOpen=true;setTab('summary')" title="Click for full breakdown">`;
+    h+=`<div style="text-align:center;padding:8px 16px;border-radius:10px;background:${cssAlpha(ths.gradeCol,7)};border:1px solid ${cssAlpha(ths.gradeCol,16)};cursor:pointer" onclick="S._sumHealthOpen=true;setTab('summary')" title="Click for full breakdown">`;
     h+=`<div style="font-size:28px;font-weight:800;font-family:'JetBrains Mono',monospace;color:${ths.gradeCol};line-height:1">${ths.grade}</div>`;
     h+=`<div style="font-size:14px;font-weight:700;font-family:'JetBrains Mono',monospace;color:${ths.gradeCol}">${ths.avg}<span style="font-size:11px;color:var(--tm)">/100</span></div>`;
     h+=`<div style="font-size:10px;color:var(--tm);margin-top:2px;text-transform:uppercase;letter-spacing:.4px">Team Health</div>`;
@@ -22065,7 +22143,7 @@ function rIntel(el){
       const dayExc=todayExcs.filter(x=>x.person===e.name);
       const excBadge=dayExc.length?dayExc.map(x=>{const t=EXC_TYPES.find(t=>t.id===x.type);return t?t.icon:'⚠';}).join(''):'';
       const noteRaw=S.agentNotes&&S.agentNotes[e.name]?S.agentNotes[e.name].trim():'';
-      h+=`<div style="padding:6px 10px;border-radius:8px;background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.15);cursor:pointer" onclick="_navPush();S.emp='${XJ(e.name)}';S.tab='people';S.peopleSubTab='cards';ren()" title="${e.name}: ${e.ukS}–${e.ukE}${ac?' · '+ac+' agents':''}${noteRaw?' · Note: '+noteRaw:''}">`;
+      h+=`<div style="padding:6px 10px;border-radius:8px;background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.15);cursor:pointer" onclick="_navPush();S.emp='${XJS(e.name)}';S.tab='people';S.peopleSubTab='cards';ren()" title="${XA((e.name||'')+': '+(e.ukS||'')+'–'+(e.ukE||'')+(ac?' · '+ac+' agents':'')+(noteRaw?' · Note: '+noteRaw:''))}">`;
       h+=`<div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;font-weight:600">${X(e.name.split(" ")[0])}</span>${ac>0?`<span style="font-size:9px;color:var(--tm)">👥${ac}</span>`:''}</div>`;
       h+=`<div style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--early)">${e.ukS}–${e.ukE}</div>`;
       if(excBadge)h+=`<div style="font-size:11px">${excBadge}</div>`;
@@ -22080,7 +22158,7 @@ function rIntel(el){
     todayOff.forEach(e=>{
       const offType=(e.offL||'OFF').toUpperCase();
       const col=offType==='SICK'?'#F472B6':offType==='LEAVE'?'var(--accent)':'var(--tm)';
-      h+=`<div style="padding:4px 8px;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);cursor:pointer" onclick="_navPush();S.emp='${XJ(e.name)}';S.tab='people';S.peopleSubTab='cards';ren()">`;
+      h+=`<div style="padding:4px 8px;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);cursor:pointer" onclick="_navPush();S.emp='${XJS(e.name)}';S.tab='people';S.peopleSubTab='cards';ren()">`;
       h+=`<span style="font-size:11px;font-weight:500;color:var(--tm)">${X(e.name.split(" ")[0])}</span> <span style="font-size:10px;color:${col}">${offType}</span>`;
       h+=`</div>`;
     });
@@ -22155,7 +22233,7 @@ function rIntel(el){
       if(p.sickCount>=2)badges.push(`<span style="font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(244,114,182,.1);color:#F472B6">🤒 ${p.sickCount} sick</span>`);
       if(p.coachMissed)badges.push(`<span style="font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(220,38,38,.08);color:#dc2626">coaching missed</span>`);
       if(p.coachDone)badges.push(`<span style="font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(52,211,153,.08);color:var(--early)">✓ coached</span>`);
-      h+=`<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer" onclick="_navPush();S.emp='${XJ(p.name)}';S.tab='people';S.peopleSubTab='cards';ren()">`;
+      h+=`<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer" onclick="_navPush();S.emp='${XJS(p.name)}';S.tab='people';S.peopleSubTab='cards';ren()">`;
       h+=`<div style="flex:1;min-width:0">`;
       h+=`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span style="font-size:12px;font-weight:600">${X(p.name)}</span>${p.hs?healthScoreBadge(p.hs,true):''}${badges.join('')}</div>`;
       if(p.note)h+=`<div style="font-size:11px;color:var(--tm);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:400px">${X(p.note)}</div>`;
@@ -22179,7 +22257,7 @@ function rIntel(el){
     const noteRaw=S.agentNotes&&S.agentNotes[n]?S.agentNotes[n].trim():'';
     const personHs=ths?ths.personScores.find(p=>p.name===n):null;
     const statusBadge=personHs?`<span style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${personHs.gradeCol}">${personHs.grade} ${personHs.total}</span>`:'—';
-    h+=`<tr onclick="_navPush();S.emp='${XJ(n)}';S.tab='people';S.peopleSubTab='cards';ren()" style="cursor:pointer">`;
+    h+=`<tr onclick="_navPush();S.emp='${XJS(n)}';S.tab='people';S.peopleSubTab='cards';ren()" style="cursor:pointer">`;
     h+=`<td style="font-weight:500">${X(n)}</td>`;
     h+=`<td>${e.filter(x=>!x.isOff).length}</td>`;
     h+=`<td>${e.filter(x=>x.isOff).length}</td>`;
@@ -22271,7 +22349,7 @@ function rSum(el){
     h+=`<div class="scd"><div class="n" style="color:#F472B6">${offTots.SICK}</div><div class="lb">Sick</div></div>`;
     if(offTots.PH)h+=`<div class="scd"><div class="n" style="color:#b98bff">${offTots.PH}</div><div class="lb">🏛 PH</div></div>`;
   }
-  if(ths)h+=`<div class="scd" style="background:${ths.gradeCol}0d;cursor:pointer" onclick="S._sumHealthOpen=!S._sumHealthOpen;ren()" title="Health score — click to expand/collapse"><div class="n" style="color:${ths.gradeCol};font-family:'JetBrains Mono',monospace">${ths.grade} ${ths.avg}</div><div class="lb">Health</div></div>`;
+  if(ths)h+=`<div class="scd" style="background:${cssAlpha(ths.gradeCol,5)};cursor:pointer" onclick="S._sumHealthOpen=!S._sumHealthOpen;ren()" title="Health score — click to expand/collapse"><div class="n" style="color:${ths.gradeCol};font-family:'JetBrains Mono',monospace">${ths.grade} ${ths.avg}</div><div class="lb">Health</div></div>`;
   h+=`</div>`;
 
   // #3: Agent events strip — compact exceptions list in day/week mode
@@ -22322,7 +22400,7 @@ function rSum(el){
     h+=`</div>`;
     h+=`<table class="ft" style="font-size:11px"><thead><tr><th>Leader</th><th title="Coverage">Cov</th><th title="Exceptions">Exc</th><th title="Coaching">Coach</th><th title="Hours">Hrs</th><th title="Anomalies">Anom</th><th>Score</th><th>Grade</th></tr></thead><tbody>`;
     ths.personScores.sort((a,b)=>b.total-a.total).forEach(ps=>{
-      h+=`<tr onclick="_navPush();S.emp='${XJ(ps.name)}';S.tab='people';S.peopleSubTab='cards';ren()" style="cursor:pointer">`;
+      h+=`<tr onclick="_navPush();S.emp='${XJS(ps.name)}';S.tab='people';S.peopleSubTab='cards';ren()" style="cursor:pointer">`;
       h+=`<td style="font-weight:500">${X(ps.name.split(" ")[0])}</td>`;
       ['coverage','exceptions','coaching','hours','anomalies'].forEach(dim=>{
         const v=ps.scores[dim];
@@ -22357,7 +22435,7 @@ function rSum(el){
     const personHs=ths?ths.personScores.find(p=>p.name===n):null;
     const statusBadge=personHs?`<span style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${personHs.gradeCol}">${personHs.grade}</span>`:
       overHrs?`<span style="color:#dc2626;font-weight:600">⚠</span>`:`<span style="color:var(--early)">✓</span>`;
-    h+=`<tr onclick="_navPush();S.emp='${XJ(n)}';S.tab='people';S.peopleSubTab='cards';ren()" style="cursor:pointer">`;
+    h+=`<tr onclick="_navPush();S.emp='${XJS(n)}';S.tab='people';S.peopleSubTab='cards';ren()" style="cursor:pointer">`;
     h+=`<td style="font-weight:500">${X(n)}</td><td style="font-size:11px;color:var(--tm)">${X(e[0]?.team||"")}</td><td>${workShifts.length}</td><td>${e.filter(x=>x.isOff).length}</td>`;
     if(hasOffTypes)h+=`<td style="font-size:11px">${pOff.LEAVE||""}</td><td style="font-size:11px">${pOff.SICK||""}</td>`;
     h+=`<td class="sc">${st.hrs}h</td><td class="sc" style="color:var(--wknd)">${wkndPct}%</td><td class="sc${overHrs?" hrs-alert":""}">${wkAvg}h</td><td>${statusBadge}</td></tr>`;
@@ -22403,7 +22481,7 @@ function rRaw(el){
   // Sheet tabs for raw data
   let h=`<div class="raw-tabs">`;
   (S.sh==="__all__"?S.shs:[S.sh,...S.shs.filter(s=>s!==S.sh)]).forEach(sn=>{
-    h+=`<div class="raw-tab${sn===S.rawSheet?" active":""}" onclick="S.rawSheet='${XJ(sn)}';ren()">${X(sn)}</div>`;
+    h+=`<div class="raw-tab${sn===S.rawSheet?" active":""}" onclick="S.rawSheet='${XJS(sn)}';ren()">${X(sn)}</div>`;
   });
   h+=`</div>`;
   const ws=S.wb.Sheets[S.rawSheet];
@@ -23899,7 +23977,7 @@ function _normalizeSettingsSchemaPayload(src){
     if(s.cardShow!==undefined&&!_isPlainObject(s.cardShow))delete s.cardShow;
     if(s.flagSettings!==undefined&&!_isPlainObject(s.flagSettings))delete s.flagSettings;
   }
-  s.focusMode='month';
+  if(!['today','week','month'].includes(s.focusMode))s.focusMode='month';
   s._schemaVersion=SETTINGS_SCHEMA_VERSION;
   return{settings:s,changed:fromVersion!==SETTINGS_SCHEMA_VERSION};
 }
@@ -24025,11 +24103,11 @@ function loadSettings(){
       if(typeof s.cbMode==="boolean"){S.cbMode=s.cbMode;document.body.classList.toggle("cb-mode",S.cbMode);}
       if(s.density&&["compact","comfortable","spacious"].includes(s.density)){S.density=s.density;document.body.classList.remove("density-compact","density-spacious");if(s.density==="compact")document.body.classList.add("density-compact");else if(s.density==="spacious")document.body.classList.add("density-spacious");}
       if(s.tab)S.tab=s.tab;
-      if(s.peopleSubTab&&["dashboard","team","agents","logbook"].includes(s.peopleSubTab))S.peopleSubTab=s.peopleSubTab;
+      if(s.peopleSubTab&&["dashboard","team","agents","logbook","events"].includes(s.peopleSubTab))S.peopleSubTab=s.peopleSubTab;
       if(s.peopleDashView&&["today_ops","week_risk","monthly_review"].includes(s.peopleDashView))S.peopleDashView=s.peopleDashView;
       if(s.peopleView&&["cards","table"].includes(s.peopleView))S._peopleView=s.peopleView;
       if(s.peopleLogFilter&&["all","note","followup","summary","event"].includes(s.peopleLogFilter))S._peopleLogFilter=s.peopleLogFilter;
-      S.focusMode='month';
+      S.focusMode=s.focusMode&&['today','week','month'].includes(s.focusMode)?s.focusMode:'month';
       if(s.sumMode)S.sumMode=s.sumMode;
       if(s.anView&&s.anView!=="intel")S.anView=s.anView;
       if(s.flagSettings&&typeof s.flagSettings==="object"){
@@ -24585,6 +24663,17 @@ function getAgentStatus(agentName,date){
   return S.agentStatuses[k]||"unknown";
 }
 
+function getScheduledHoursForAgentEvent(agentName,dateISO,leaderName){
+  const dt=parseDateInput(dateISO)||new Date();
+  const dk=excKey(dt);
+  const person=(S.people||{})[agentName]||{};
+  const leader=leaderName||person.teamLeader||"";
+  const direct=(S.entries||[]).find(e=>e.name===agentName&&e.date&&excKey(e.date)===dk&&!e.isOff);
+  const leaderEntry=leader?(S.entries||[]).find(e=>e.name===leader&&e.date&&excKey(e.date)===dk&&!e.isOff):null;
+  const entry=direct||leaderEntry;
+  return entry?calcHrs(entry.ukS,entry.ukE):0;
+}
+
 function setAgentStatusQuick(agentName,status,date){
   const d=date instanceof Date?date:new Date();
   const k=agentStatusKey(agentName,d);
@@ -24600,11 +24689,9 @@ function setAgentStatusQuick(agentName,status,date){
       // Find which leader this agent belongs to
       const person=S.people[agentName];
       const leaderName=person?person.teamLeader:"";
-      // Get scheduled HC from that leader's roster entry
-      const leaderEntry=leaderName?S.entries.find(e=>e.name===leaderName&&e.date&&excKey(e.date)===today&&!e.isOff):null;
-      const schedHrs=leaderEntry?calcHrs(leaderEntry.ukS,leaderEntry.ukE):0;
-      const avgShiftHrs=8;// default if no schedule found
-      const hoursLost=status==="halfday"?Math.round(avgShiftHrs/2*10)/10:status==="sick"||status==="awol"?avgShiftHrs:0;
+      const schedHrs=getScheduledHoursForAgentEvent(agentName,today,leaderName);
+      const effectiveShiftHrs=schedHrs||8;
+      const hoursLost=status==="halfday"?Math.round(effectiveShiftHrs/2*10)/10:status==="sick"||status==="awol"?effectiveShiftHrs:0;
       if(!S.exceptions)S.exceptions=[];
       S.exceptions.push({
         id:excId(),
@@ -24617,8 +24704,8 @@ function setAgentStatusQuick(agentName,status,date){
         type:autoLogTypes[status],
         severity:status==="halfday"?"half-day":"full-day",
         hoursLost:hoursLost,
-        hoursWorked:status==="halfday"?Math.round(avgShiftHrs/2*10)/10:0,
-        scheduledHrs:avgShiftHrs,
+        hoursWorked:status==="halfday"?Math.round(effectiveShiftHrs/2*10)/10:0,
+        scheduledHrs:effectiveShiftHrs,
         notes:"",
         loggedAt:new Date().toISOString(),
         source:"agent-status",
@@ -24674,10 +24761,11 @@ function submitAgentQuickEvent(){
   const leaderName=person?person.teamLeader:"";
   const today=f.date||excKey(new Date());
   const typeDef=QUICK_EVENT_TYPES.find(t=>t.id===f.type)||{sev:"partial",hrsImpact:"partial"};
-  const avgShiftHrs=8;
+  const schedHrs=getScheduledHoursForAgentEvent(f.agentName,today,leaderName);
+  const effectiveShiftHrs=schedHrs||8;
   let hoursLost=0;
-  if(typeDef.hrsImpact==="full")hoursLost=avgShiftHrs;
-  else if(typeDef.hrsImpact==="half")hoursLost=Math.round(avgShiftHrs/2*10)/10;
+  if(typeDef.hrsImpact==="full")hoursLost=effectiveShiftHrs;
+  else if(typeDef.hrsImpact==="half")hoursLost=Math.round(effectiveShiftHrs/2*10)/10;
   else if(typeDef.hrsImpact==="partial"&&f.duration)hoursLost=Math.round(f.duration/60*10)/10;
   if(!S.exceptions)S.exceptions=[];
   const exc={
@@ -24691,8 +24779,8 @@ function submitAgentQuickEvent(){
     type:f.type,
     severity:typeDef.sev,
     hoursLost:hoursLost,
-    hoursWorked:Math.max(0,avgShiftHrs-hoursLost),
-    scheduledHrs:avgShiftHrs,
+    hoursWorked:Math.max(0,effectiveShiftHrs-hoursLost),
+    scheduledHrs:effectiveShiftHrs,
     notes:f.note||"",
     loggedAt:new Date().toISOString(),
     source:"quick-log",
@@ -24763,7 +24851,7 @@ function renderAgentDrawerContent(agentName){
 
   // ── Today's status ──
   h+=`<div class="agent-drawer-section">`;
-  h+=`<div class="ads-hd">Today's Status <span style="font-size:11px;padding:2px 7px;border-radius:8px;background:${statusDef.col}18;color:${statusDef.col};font-weight:600">${statusDef.icon} ${statusDef.label}</span></div>`;
+  h+=`<div class="ads-hd">Today's Status <span style="font-size:11px;padding:2px 7px;border-radius:8px;background:${cssAlpha(statusDef.col,10)};color:${statusDef.col};font-weight:600">${statusDef.icon} ${statusDef.label}</span></div>`;
   h+=`<div class="agent-status-grid">`;
   const quickStatuses=[
     {k:"present",l:"Present",i:"✓"},
@@ -24775,7 +24863,7 @@ function renderAgentDrawerContent(agentName){
   ];
   quickStatuses.forEach(s=>{
     const isCur=status===s.k;
-    h+=`<button class="agent-status-btn${isCur?" asb-"+s.k:""}" onclick="setAgentStatusQuick('${XJ(agentName)}','${isCur?"unknown":s.k}')">${s.i}<br>${s.l}</button>`;
+    h+=`<button class="agent-status-btn${isCur?" asb-"+s.k:""}" onclick="setAgentStatusQuick('${XJS(agentName)}','${isCur?"unknown":s.k}')">${s.i}<br>${s.l}</button>`;
   });
   h+=`</div>`;
   h+=`</div>`;
@@ -24783,7 +24871,7 @@ function renderAgentDrawerContent(agentName){
   // ── This week's schedule ──
   h+=`<div class="agent-drawer-section">`;
   h+=`<div class="ads-hd">Schedule — this week`;
-  if(leaderName){h+=` <span style="font-size:11px;font-weight:400;color:var(--tm);cursor:pointer" onclick="closeAgentDrawer();navToPerson('${XJ(leaderName)}')" title="Open ${leaderName}'s schedule card">→ ${X(leaderName.split(" ")[0])}</span>`;}
+  if(leaderName){h+=` <span style="font-size:11px;font-weight:400;color:var(--tm);cursor:pointer" onclick="closeAgentDrawer();navToPerson('${XJS(leaderName)}')" title="Open ${XA(leaderName)} schedule card">→ ${X(leaderName.split(" ")[0])}</span>`;}
   h+=`</div>`;
   // Get the week Mon–Sun for today
   const wMon=new Date(today);wMon.setDate(wMon.getDate()-((wMon.getDay()+6)%7));wMon.setHours(0,0,0,0);
@@ -24823,7 +24911,7 @@ function renderAgentDrawerContent(agentName){
   h+=`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">`;
   QUICK_EVENT_TYPES.forEach(t=>{
     const isSel=(qf.agentName===agentName||!qf.agentName)&&qf.type===t.id;
-    h+=`<button class="qef-type-btn${isSel?" sel":""}" onclick="S._quickEventForm.type='${t.id}';S._quickEventForm.agentName='${XJ(agentName)}';renderAgentDrawerContent('${XJ(agentName)}')">${t.icon} ${t.label}</button>`;
+    h+=`<button class="qef-type-btn${isSel?" sel":""}" onclick="S._quickEventForm.type='${t.id}';S._quickEventForm.agentName='${XJS(agentName)}';renderAgentDrawerContent('${XJS(agentName)}')">${t.icon} ${t.label}</button>`;
   });
   h+=`</div>`;
   if(qf.type&&(qf.agentName===agentName||!qf.agentName)){
@@ -24839,8 +24927,8 @@ function renderAgentDrawerContent(agentName){
     h+=`</div>`;
     h+=`<input type="text" value="${X(qf.note||"")}" placeholder="Note (optional)..." onchange="S._quickEventForm.note=this.value" style="width:100%;padding:5px 7px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px">`;
     h+=`<div style="display:flex;gap:6px">`;
-    h+=`<button onclick="S._quickEventForm.agentName='${XJ(agentName)}';submitAgentQuickEvent()" style="flex:1;padding:6px;border:none;border-radius:6px;background:var(--accent);color:#000;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer">✓ Save</button>`;
-    h+=`<button onclick="S._quickEventForm.type=null;renderAgentDrawerContent('${XJ(agentName)}')" style="padding:6px 12px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">Cancel</button>`;
+    h+=`<button onclick="S._quickEventForm.agentName='${XJS(agentName)}';submitAgentQuickEvent()" style="flex:1;padding:6px;border:none;border-radius:6px;background:var(--accent);color:#000;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer">✓ Save</button>`;
+    h+=`<button onclick="S._quickEventForm.type=null;renderAgentDrawerContent('${XJS(agentName)}')" style="padding:6px 12px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">Cancel</button>`;
     h+=`</div></div>`;
   }
   h+=`</div>`;
@@ -24899,7 +24987,7 @@ function renderAgentDrawerContent(agentName){
   h+=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">`;
   // Eligibility badge
   const elCol=otEligible?"var(--early)":"#dc2626";
-  h+=`<span style="font-size:11px;padding:3px 10px;border-radius:8px;background:${elCol}15;border:1px solid ${elCol}30;color:${elCol};font-weight:600">${otEligible?"✓ Eligible":"✕ Ineligible"}</span>`;
+  h+=`<span style="font-size:11px;padding:3px 10px;border-radius:8px;background:${cssAlpha(elCol,8)};border:1px solid ${cssAlpha(elCol,19)};color:${elCol};font-weight:600">${otEligible?"✓ Eligible":"✕ Ineligible"}</span>`;
   // Recent risk flags
   if(recentOtExcs.length>0){
     h+=`<span style="font-size:11px;padding:3px 10px;border-radius:8px;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);color:var(--wknd);font-weight:600">⚠ ${recentOtExcs.length} flag${recentOtExcs.length!==1?"s":""} (14d)</span>`;
@@ -24910,7 +24998,7 @@ function renderAgentDrawerContent(agentName){
   // Eligibility toggle
   h+=`<div style="display:flex;align-items:center;gap:8px">`;
   h+=`<label style="font-size:11px;color:var(--tm);display:flex;align-items:center;gap:6px;cursor:pointer">`;
-  h+=`<input type="checkbox" ${otEligible?"checked":""} onchange="if(S.people['${XJ(agentName)}'])S.people['${XJ(agentName)}'].otEligible=this.checked;else S.people['${XJ(agentName)}']={otEligible:this.checked};savePeople();renderAgentDrawerContent('${XJ(agentName)}')" style="accent-color:var(--accent);width:14px;height:14px;cursor:pointer">`;
+  h+=`<input type="checkbox" ${otEligible?"checked":""} onchange="if(S.people['${XJS(agentName)}'])S.people['${XJS(agentName)}'].otEligible=this.checked;else S.people['${XJS(agentName)}']={otEligible:this.checked};savePeople();renderAgentDrawerContent('${XJS(agentName)}')" style="accent-color:var(--accent);width:14px;height:14px;cursor:pointer">`;
   h+=`Allow on OT plans`;
   h+=`</label>`;
   if(otAppearances.length>0){
@@ -24939,7 +25027,7 @@ function renderAgentDrawerContent(agentName){
   const existingNote=S.agentNotes[agentName]||"";
   h+=`<div class="agent-drawer-section" style="border-bottom:none">`;
   h+=`<div class="ads-hd">Notes</div>`;
-  h+=`<textarea class="agent-note-area" id="agentNoteArea_${domKey(agentName)}" placeholder="Notes about ${X(agentName.split(" ")[0])}…" oninput="S.agentNotes['${XJ(agentName)}']=this.value;saveAgentNotes()">${X(existingNote)}</textarea>`;
+  h+=`<textarea class="agent-note-area" id="agentNoteArea_${domKey(agentName)}" placeholder="Notes about ${X(agentName.split(" ")[0])}…" oninput="S.agentNotes['${XJS(agentName)}']=this.value;saveAgentNotes()">${X(existingNote)}</textarea>`;
   if(person.skills&&person.skills.length){
     h+=`<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:3px">`;
     person.skills.forEach(sk=>{h+=`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:rgba(255,255,255,.05);color:var(--tm)">${X(sk)}</span>`;});
@@ -24962,7 +25050,7 @@ function _ensurePeopleOpsState(){
   if(!S.peopleHomeNotes||typeof S.peopleHomeNotes!=="object")S.peopleHomeNotes={};
   if(!Array.isArray(S.peopleLogbook))S.peopleLogbook=[];
   if(!S.peopleDashView||!["today_ops","week_risk","monthly_review"].includes(S.peopleDashView))S.peopleDashView="today_ops";
-  if(!S.peopleSubTab||!["dashboard","team","agents","logbook"].includes(S.peopleSubTab))S.peopleSubTab="dashboard";
+  if(!S.peopleSubTab||!["dashboard","team","agents","logbook","events"].includes(S.peopleSubTab))S.peopleSubTab="dashboard";
   if(!S._peopleView||!["cards","table"].includes(S._peopleView))S._peopleView="cards";
   if(!S._peopleLogFilter)S._peopleLogFilter="all";
 }
@@ -25001,7 +25089,7 @@ function loadPeopleOps(){
     const view=localStorage.getItem("sc_people_view");
     if(view){
       const v=JSON.parse(view);
-      if(v.peopleSubTab&&["dashboard","team","agents","logbook"].includes(v.peopleSubTab))S.peopleSubTab=v.peopleSubTab;
+      if(v.peopleSubTab&&["dashboard","team","agents","logbook","events"].includes(v.peopleSubTab))S.peopleSubTab=v.peopleSubTab;
       if(v.peopleDashView&&["today_ops","week_risk","monthly_review"].includes(v.peopleDashView))S.peopleDashView=v.peopleDashView;
       if(v.peopleView&&["cards","table"].includes(v.peopleView))S._peopleView=v.peopleView;
       if(v.peopleLogFilter&&["all","note","followup","summary","event"].includes(v.peopleLogFilter))S._peopleLogFilter=v.peopleLogFilter;
@@ -25230,7 +25318,7 @@ function rPeopleScheduleView(el){
   const tlList=leaders.length?leaders.map(l=>l.name):names;
   tlList.forEach(n=>{
     const isSel=n===tlName;
-    h+=`<button onclick="S.selectedTL='${XJ(n)}';rPeople($('ca'))" style="padding:3px 10px;border:1px solid ${isSel?'var(--accent)':'var(--bdr)'};border-radius:12px;background:${isSel?'var(--al)':'none'};color:${isSel?'var(--accent)':'var(--tm)'};font-family:inherit;font-size:11px;cursor:pointer;font-weight:${isSel?'700':'400'}">${X(n.split(' ')[0])}</button>`;
+    h+=`<button onclick="S.selectedTL='${XJS(n)}';rPeople($('ca'))" style="padding:3px 10px;border:1px solid ${isSel?'var(--accent)':'var(--bdr)'};border-radius:12px;background:${isSel?'var(--al)':'none'};color:${isSel?'var(--accent)':'var(--tm)'};font-family:inherit;font-size:11px;cursor:pointer;font-weight:${isSel?'700':'400'}">${X(n.split(' ')[0])}</button>`;
   });
   h+=`</div>`;
   h+=`<div id="peopleSchedHost" style="flex:1;overflow-y:auto;padding:12px 14px">`;
@@ -25872,7 +25960,7 @@ function _renderCardsZipPicker(){
   h+=`<div style="padding:8px 10px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between"><span style="font-size:11px;font-weight:700;color:var(--accent)">Leaders (${cat.leaders.length})</span><span style="display:flex;gap:4px"><button class="pl-btn" style="font-size:10px;padding:2px 6px" onclick="_cardsZipSetLeaders('all')">All</button><button class="pl-btn" style="font-size:10px;padding:2px 6px" onclick="_cardsZipSetLeaders('current')">Current</button><button class="pl-btn" style="font-size:10px;padding:2px 6px" onclick="_cardsZipSetLeaders('none')">None</button></span></div>`;
   h+=`<div style="max-height:300px;overflow:auto;padding:8px 10px;display:flex;flex-direction:column;gap:4px">`;
   cat.leaders.forEach(n=>{
-    h+=`<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text);cursor:pointer"><input type="checkbox" ${selectedLeaderSet.has(n)?"checked":""} onchange="_cardsZipToggleLeader('${XJ(n)}')" style="accent-color:var(--accent)"> ${X(n)}</label>`;
+    h+=`<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text);cursor:pointer"><input type="checkbox" ${selectedLeaderSet.has(n)?"checked":""} onchange="_cardsZipToggleLeader('${XJS(n)}')" style="accent-color:var(--accent)"> ${X(n)}</label>`;
   });
   h+=`</div></div>`;
   h+=`<div style="border:1px solid var(--bdr);border-radius:10px;overflow:hidden">`;
@@ -26129,7 +26217,7 @@ async function _captureBatchCardBlob(sourceEl,bgColor,isMonthCard,themeSpec,expo
         const _xAcc=snapVars['--accent']||'';
         const _xSh=snapVars['--sl']||'0 12px 40px rgba(0,0,0,.5)';
         const s=doc.createElement('style');
-        s.textContent=`*{transition:none!important;animation:none!important}body::before,body::after{display:none!important}.et{table-layout:auto;width:100%}.et td,.et th{white-space:nowrap;text-align:center!important;padding-left:12px!important;padding-right:12px!important}.et td:first-child,.et th:first-child{text-align:left!important;padding-left:16px!important}.mc-table{table-layout:auto;width:100%}.mc-table td,.mc-table th{white-space:nowrap}.ec,.mc{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}.ec{border-radius:20px!important;background:linear-gradient(180deg,${_xTop} 0%,rgba(0,0,0,0) 42%),${_xBg}!important;border:1px solid ${_xAcc}80!important;border-top:2px solid ${_xAcc}!important;box-shadow:${_xSh}!important}.ech{padding:16px 18px 0}`;
+        s.textContent=`*{transition:none!important;animation:none!important}body::before,body::after{display:none!important}.et{table-layout:auto;width:100%}.et td,.et th{white-space:nowrap;text-align:center!important;padding-left:12px!important;padding-right:12px!important}.et td:first-child,.et th:first-child{text-align:left!important;padding-left:16px!important}.mc-table{table-layout:auto;width:100%}.mc-table td,.mc-table th{white-space:nowrap}.ec,.mc{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}.ec{border-radius:20px!important;background:linear-gradient(180deg,${_xTop} 0%,rgba(0,0,0,0) 42%),${_xBg}!important;border:1px solid ${cssAlpha(_xAcc,50)}!important;border-top:2px solid ${_xAcc}!important;box-shadow:${_xSh}!important}.ech{padding:16px 18px 0}`;
         doc.head.appendChild(s);
         const cardEl=el.querySelector('.ec')||el;
         cardEl.style.width=capW+'px';
@@ -26322,7 +26410,7 @@ function rPeopleAgentsView(){
   if(S.emp==="all"&&leaders.length>1){
     h+=`<select onchange="S._agentsViewTLFilter=this.value||null;rPeople($('ca'))" style="padding:2px 4px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);color:var(--text);font-size:10px;max-width:80px">`;
     h+=`<option value="">All TLs</option>`;
-    leaders.forEach(l=>{h+=`<option value="${XJ(l)}"${S._agentsViewTLFilter===l?" selected":""}>${X(l.split(" ")[0])}</option>`;});
+    leaders.forEach(l=>{h+=`<option value="${XA(l)}"${S._agentsViewTLFilter===l?" selected":""}>${X(l.split(" ")[0])}</option>`;});
     h+=`</select>`;
   }
   h+=`</div>`;
@@ -26332,7 +26420,7 @@ function rPeopleAgentsView(){
     const status=getAgentStatus(ag.name,now);
     const statusDef=AGENT_STATUS_DEFS[status]||AGENT_STATUS_DEFS.unknown;
     const excCount=(S.exceptions||[]).filter(ex=>ex.agentName===ag.name).length;
-    h+=`<div onclick="S._agentsViewSel='${XJ(ag.name)}';rPeople($('ca'))" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);background:${isSel?"var(--al)":"transparent"};border-left:3px solid ${isSel?"var(--accent)":"transparent"};transition:background .1s">`;
+    h+=`<div onclick="S._agentsViewSel='${XJS(ag.name)}';rPeople($('ca'))" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);background:${isSel?"var(--al)":"transparent"};border-left:3px solid ${isSel?"var(--accent)":"transparent"};transition:background .1s">`;
     h+=`<div style="display:flex;align-items:center;gap:6px">`;
     h+=`<div style="width:24px;height:24px;border-radius:50%;background:${isSel?"var(--accent)":"var(--card)"};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:${isSel?"#000":"var(--tm)"};flex-shrink:0">${X(ag.name.charAt(0))}</div>`;
     h+=`<div style="flex:1;min-width:0">`;
@@ -26340,7 +26428,7 @@ function rPeopleAgentsView(){
     h+=`<div style="font-size:10px;color:var(--tm)">${ag.teamLeader?X(ag.teamLeader.split(" ")[0]):"unassigned"}</div>`;
     h+=`</div>`;
     h+=`<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">`;
-    h+=`<span style="font-size:9px;padding:1px 5px;border-radius:6px;background:${statusDef.col}18;color:${statusDef.col}">${statusDef.icon}</span>`;
+    h+=`<span style="font-size:9px;padding:1px 5px;border-radius:6px;background:${cssAlpha(statusDef.col,10)};color:${statusDef.col}">${statusDef.icon}</span>`;
     if(excCount>0)h+=`<span style="font-size:9px;color:var(--tm)">${excCount} evt</span>`;
     h+=`</div>`;
     h+=`</div></div>`;
@@ -26357,7 +26445,7 @@ function rPeopleAgentsView(){
     if(!S._agentsBulkTL||!addLeaders.includes(S._agentsBulkTL))S._agentsBulkTL=(S.emp!=="all"&&addLeaders.includes(S.emp))?S.emp:(S._agentsViewTLFilter&&addLeaders.includes(S._agentsViewTLFilter)?S._agentsViewTLFilter:addLeaders[0]);
     h+=`<details ${!allAgents.length?"open":""} style="border-bottom:1px solid var(--bdr);padding:8px 18px;background:rgba(255,255,255,.012)">`;
     h+=`<summary style="cursor:pointer;font-size:11px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.08em">Add / paste agents</summary>`;
-    h+=`<div style="display:flex;align-items:center;gap:8px;margin:8px 0 6px"><span style="font-size:10px;color:var(--tm);font-weight:700;text-transform:uppercase">Leader</span><select onchange="S._agentsBulkTL=this.value;rPeople($('ca'))" style="padding:4px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);color:var(--text);font-family:inherit;font-size:11px">${addLeaders.map(l=>`<option value="${XJ(l)}"${S._agentsBulkTL===l?" selected":""}>${X(l)}</option>`).join("")}</select></div>`;
+    h+=`<div style="display:flex;align-items:center;gap:8px;margin:8px 0 6px"><span style="font-size:10px;color:var(--tm);font-weight:700;text-transform:uppercase">Leader</span><select onchange="S._agentsBulkTL=this.value;rPeople($('ca'))" style="padding:4px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);color:var(--text);font-family:inherit;font-size:11px">${addLeaders.map(l=>`<option value="${XJS(l)}"${S._agentsBulkTL===l?" selected":""}>${X(l)}</option>`).join("")}</select></div>`;
     h+=renderPeopleAgentAddBox(S._agentsBulkTL,"agents");
     h+=`</details>`;
   }
@@ -26376,13 +26464,13 @@ function rPeopleAgentsView(){
     h+=`<div style="font-size:16px;font-weight:700">${X(sel)}</div>`;
     h+=`<div style="font-size:12px;color:var(--tm)">${leaderName?"TL: "+X(leaderName):""}</div>`;
     h+=`</div>`;
-    h+=`<span style="padding:4px 12px;border-radius:8px;background:${statusDef.col}18;color:${statusDef.col};font-size:12px;font-weight:600">${statusDef.icon} ${statusDef.label}</span>`;
-    h+=`<button onclick="peopleRemoveAgent('${XJ(sel)}')" style="padding:5px 9px;border:1px solid rgba(220,38,38,.32);border-radius:6px;background:rgba(220,38,38,.06);color:#dc2626;font-family:inherit;font-size:11px;cursor:pointer">Remove</button>`;
+    h+=`<span style="padding:4px 12px;border-radius:8px;background:${cssAlpha(statusDef.col,10)};color:${statusDef.col};font-size:12px;font-weight:600">${statusDef.icon} ${statusDef.label}</span>`;
+    h+=`<button onclick="peopleRemoveAgent('${XJS(sel)}')" style="padding:5px 9px;border:1px solid rgba(220,38,38,.32);border-radius:6px;background:rgba(220,38,38,.06);color:#dc2626;font-family:inherit;font-size:11px;cursor:pointer">Remove</button>`;
     // Quick status buttons
     h+=`<div style="display:flex;gap:3px">`;
     [{k:"present",i:"✓"},{k:"sick",i:"🤒"},{k:"leave",i:"📅"},{k:"halfday",i:"½"},{k:"awol",i:"✕"}].forEach(s=>{
       const isCur=status===s.k;
-      h+=`<button onclick="setAgentStatusQuick('${XJ(sel)}','${isCur?"unknown":s.k}');rPeople($('ca'))" style="width:28px;height:28px;border-radius:6px;border:1px solid ${isCur?statusDef.col+"60":"var(--bdr)"};background:${isCur?statusDef.col+"15":"none"};color:${isCur?statusDef.col:"var(--tm)"};font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center" title="${s.k}">${s.i}</button>`;
+      h+=`<button onclick="setAgentStatusQuick('${XJS(sel)}','${isCur?"unknown":s.k}');rPeople($('ca'))" style="width:28px;height:28px;border-radius:6px;border:1px solid ${isCur?statusDef.col+"60":"var(--bdr)"};background:${isCur?statusDef.col+"15":"none"};color:${isCur?statusDef.col:"var(--tm)"};font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center" title="${s.k}">${s.i}</button>`;
     });
     h+=`</div>`;
     h+=`</div>`;
@@ -26469,7 +26557,7 @@ function rPeopleAgentsView(){
       h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0 8px">`;
       h+=`<div style="display:flex;align-items:center;gap:8px">`;
       h+=`<span style="font-size:14px;font-weight:700">${dayLabel}</span>`;
-      h+=`<span style="font-size:11px;padding:2px 8px;border-radius:6px;background:${dayStatusDef.col}15;color:${dayStatusDef.col};font-weight:600">${dayStatusDef.icon} ${dayStatusDef.label}</span>`;
+      h+=`<span style="font-size:11px;padding:2px 8px;border-radius:6px;background:${cssAlpha(dayStatusDef.col,8)};color:${dayStatusDef.col};font-weight:600">${dayStatusDef.icon} ${dayStatusDef.label}</span>`;
       h+=`<span style="font-size:11px;color:var(--tm);font-family:'JetBrains Mono',monospace">${dayShift}</span>`;
       h+=`</div>`;
       // Day nav arrows
@@ -26504,7 +26592,7 @@ function rPeopleAgentsView(){
       h+=`<div style="font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Quick log</div>`;
       h+=`<div style="display:flex;flex-wrap:wrap;gap:3px">`;
       QUICK_EVENT_TYPES.forEach(t=>{
-        h+=`<button onclick="S._quickEventForm={type:'${t.id}',agentName:'${XJ(sel)}',date:'${dayDate}',time:'',note:'',duration:30};submitAgentQuickEvent();rPeople($('ca'))" style="padding:3px 8px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:10px;cursor:pointer;transition:all .1s" onmouseover="this.style.background='var(--al)';this.style.color='var(--accent)'" onmouseout="this.style.background='none';this.style.color='var(--tm)'">${t.icon} ${t.label}</button>`;
+        h+=`<button onclick="S._quickEventForm={type:'${t.id}',agentName:'${XJS(sel)}',date:'${dayDate}',time:'',note:'',duration:30};submitAgentQuickEvent();rPeople($('ca'))" style="padding:3px 8px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:10px;cursor:pointer;transition:all .1s" onmouseover="this.style.background='var(--al)';this.style.color='var(--accent)'" onmouseout="this.style.background='none';this.style.color='var(--tm)'">${t.icon} ${t.label}</button>`;
       });
       h+=`</div></div>`;
 
@@ -26513,7 +26601,7 @@ function rPeopleAgentsView(){
       h+=`<span style="color:var(--tm)">Set status:</span>`;
       [{k:"present",l:"Present",i:"✓"},{k:"sick",l:"Sick",i:"🤒"},{k:"halfday",l:"Half",i:"½"},{k:"leave",l:"Leave",i:"📅"},{k:"training",l:"Train",i:"📚"},{k:"awol",l:"AWOL",i:"✕"}].forEach(s=>{
         const isCur=dayStatus===s.k;
-        h+=`<button onclick="setAgentStatusQuick('${XJ(sel)}','${isCur?"unknown":s.k}',new Date('${dayDate}'));rPeople($('ca'))" style="padding:2px 7px;border:1px solid ${isCur?dayStatusDef.col+"50":"var(--bdr)"};border-radius:4px;background:${isCur?dayStatusDef.col+"15":"none"};color:${isCur?dayStatusDef.col:"var(--tm)"};font-size:10px;font-family:inherit;cursor:pointer">${s.i} ${s.l}</button>`;
+        h+=`<button onclick="setAgentStatusQuick('${XJS(sel)}','${isCur?"unknown":s.k}',new Date('${dayDate}'));rPeople($('ca'))" style="padding:2px 7px;border:1px solid ${isCur?dayStatusDef.col+"50":"var(--bdr)"};border-radius:4px;background:${isCur?dayStatusDef.col+"15":"none"};color:${isCur?dayStatusDef.col:"var(--tm)"};font-size:10px;font-family:inherit;cursor:pointer">${s.i} ${s.l}</button>`;
       });
       h+=`</div>`;
       h+=`</div>`;
@@ -26522,7 +26610,7 @@ function rPeopleAgentsView(){
     // ── Notes section ──
     h+=`<div style="padding:12px 18px;border-top:1px solid var(--bdr)">`;
     h+=`<div style="font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Agent Notes</div>`;
-    h+=`<textarea onchange="S.agentNotes['${XJ(sel)}']=this.value;saveAgentNotes()" placeholder="Notes about ${X(sel.split(' ')[0])}…" style="width:100%;min-height:48px;padding:8px 10px;border:1px solid var(--bdr);border-radius:8px;background:var(--card);color:var(--text);font-family:inherit;font-size:12px;resize:vertical;box-sizing:border-box">${X(agentNote)}</textarea>`;
+    h+=`<textarea onchange="S.agentNotes['${XJS(sel)}']=this.value;saveAgentNotes()" placeholder="Notes about ${X(sel.split(' ')[0])}…" style="width:100%;min-height:48px;padding:8px 10px;border:1px solid var(--bdr);border-radius:8px;background:var(--card);color:var(--text);font-family:inherit;font-size:12px;resize:vertical;box-sizing:border-box">${X(agentNote)}</textarea>`;
     h+=`</div>`;
 
     // ── All events history (scrollable) ──
@@ -26630,7 +26718,8 @@ function rPeopleDashboardView(){
   h+=`<button class="phq-btn" onclick="S.peopleSubTab='team';rPeople($('ca'))">Open Team</button>`;
   h+=`<button class="phq-btn" onclick="S.peopleSubTab='agents';rPeople($('ca'))">Open Agents</button>`;
   h+=`<button class="phq-btn" onclick="S.peopleSubTab='logbook';rPeople($('ca'))">Open Logbook</button>`;
-  h+=`<button class="phq-btn" onclick="peopleCopyWeeklySummary('${XJ(sel)}')">Copy Weekly Summary</button>`;
+  h+=`<button class="phq-btn" onclick="S.peopleSubTab='events';rPeople($('ca'))">Open Events</button>`;
+  h+=`<button class="phq-btn" onclick="peopleCopyWeeklySummary('${XJS(sel)}')">Copy Weekly Summary</button>`;
   h+=`</div>`;
   h+=`</div>`;
 
@@ -26644,7 +26733,7 @@ function rPeopleDashboardView(){
       h+=`<div class="phq-risk-row">`;
       h+=`<span class="phq-risk-name">${X(r.name)}</span>`;
       h+=`<span class="phq-risk-meta">${r.unplanned} unplanned · ${r.followups} follow-up</span>`;
-      h+=`<span class="phq-risk-badge" style="border-color:${sevCol}55;color:${sevCol}">Score ${r.score}</span>`;
+      h+=`<span class="phq-risk-badge" style="border-color:${cssAlpha(sevCol,33)};color:${sevCol}">Score ${r.score}</span>`;
       h+=`</div>`;
     });
   }
@@ -26656,16 +26745,16 @@ function rPeopleDashboardView(){
   h+=`<div class="phq-hd"><div class="phq-title">TL Home Note</div><div class="phq-sub">${X(sel)}</div></div>`;
   h+=`<textarea id="peopleHomeNoteInput" class="agent-note-area" style="min-height:140px" placeholder="Daily focus, blockers, handover notes, decisions...">${X(tlHomeNote)}</textarea>`;
   h+=`<div class="phq-quick" style="margin-top:8px">`;
-  h+=`<button class="phq-btn" onclick="peopleSaveHomeNoteInput('${XJ(sel)}','peopleHomeNoteInput')">Save Note</button>`;
-  h+=`<button class="phq-btn" onclick="document.getElementById('peopleHomeNoteInput').value='';peopleSetHomeNote('${XJ(sel)}','');toast('Home note cleared','info',1200)">Clear</button>`;
+  h+=`<button class="phq-btn" onclick="peopleSaveHomeNoteInput('${XJS(sel)}','peopleHomeNoteInput')">Save Note</button>`;
+  h+=`<button class="phq-btn" onclick="document.getElementById('peopleHomeNoteInput').value='';peopleSetHomeNote('${XJS(sel)}','');toast('Home note cleared','info',1200)">Clear</button>`;
   h+=`</div>`;
   h+=`</div>`;
   h+=`<div class="phq-card">`;
   h+=`<div class="phq-hd"><div class="phq-title">Weekly Summary Draft</div><div class="phq-sub">${X(sel)} · ${fDF(wk.start)} to ${fDF(wk.end)}</div></div>`;
   h+=`<textarea id="peopleWeekSummaryText" class="agent-note-area" style="min-height:170px">${X(summaryDraft)}</textarea>`;
   h+=`<div class="phq-quick" style="margin-top:8px">`;
-  h+=`<button class="phq-btn" onclick="peopleCopySummaryFromField('peopleWeekSummaryText','${XJ(sel)}')">Copy + Save To Logbook</button>`;
-  h+=`<button class="phq-btn" onclick="document.getElementById('peopleWeekSummaryText').value=peopleBuildWeeklySummary('${XJ(sel)}')">Refresh</button>`;
+  h+=`<button class="phq-btn" onclick="peopleCopySummaryFromField('peopleWeekSummaryText','${XJS(sel)}')">Copy + Save To Logbook</button>`;
+  h+=`<button class="phq-btn" onclick="document.getElementById('peopleWeekSummaryText').value=peopleBuildWeeklySummary('${XJS(sel)}')">Refresh</button>`;
   h+=`</div>`;
   h+=`</div>`;
   h+=`</div>`;
@@ -26745,8 +26834,8 @@ function rPeopleLogbookView(){
   h+=`<div style="padding:10px 14px;border-bottom:1px solid var(--bdr);background:rgba(255,255,255,.01)">`;
   h+=`<div style="display:grid;grid-template-columns:120px 170px 150px 130px 130px 1fr;gap:6px;align-items:end">`;
   h+=`<div><div class="phq-title">Type</div><select id="plgKind" style="width:100%;padding:5px 7px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);color:var(--text);font-family:inherit;font-size:11px"><option value="note">Note</option><option value="followup">Follow-up</option><option value="summary">Summary</option></select></div>`;
-  h+=`<div><div class="phq-title">Leader</div><select id="plgLeader" style="width:100%;padding:5px 7px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);color:var(--text);font-family:inherit;font-size:11px"><option value="">Team-wide</option>${leaders.map(n=>`<option value="${XJ(n)}"${selectedLeader===n?" selected":""}>${X(n)}</option>`).join("")}</select></div>`;
-  h+=`<div><div class="phq-title">Agent (optional)</div><input id="plgAgent" list="plgAgentList" type="text" placeholder="Agent name" style="width:100%;padding:5px 7px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);color:var(--text);font-family:inherit;font-size:11px;box-sizing:border-box"><datalist id="plgAgentList">${scopeAgentNames.map(n=>`<option value="${XJ(n)}"></option>`).join("")}</datalist></div>`;
+  h+=`<div><div class="phq-title">Leader</div><select id="plgLeader" style="width:100%;padding:5px 7px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);color:var(--text);font-family:inherit;font-size:11px"><option value="">Team-wide</option>${leaders.map(n=>`<option value="${XA(n)}"${selectedLeader===n?" selected":""}>${X(n)}</option>`).join("")}</select></div>`;
+  h+=`<div><div class="phq-title">Agent (optional)</div><input id="plgAgent" list="plgAgentList" type="text" placeholder="Agent name" style="width:100%;padding:5px 7px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);color:var(--text);font-family:inherit;font-size:11px;box-sizing:border-box"><datalist id="plgAgentList">${scopeAgentNames.map(n=>`<option value="${XA(n)}"></option>`).join("")}</datalist></div>`;
   h+=`<div><div class="phq-title">Date</div><input id="plgDate" type="date" value="${todayISO}" style="width:100%;padding:5px 7px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);color:var(--text);font-family:inherit;font-size:11px;box-sizing:border-box"></div>`;
   h+=`<div><div class="phq-title">Due (follow-up)</div><input id="plgDue" type="date" style="width:100%;padding:5px 7px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);color:var(--text);font-family:inherit;font-size:11px;box-sizing:border-box"></div>`;
   h+=`<div><div class="phq-title">Title</div><input id="plgTitle" type="text" placeholder="Short title" style="width:100%;padding:5px 7px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);color:var(--text);font-family:inherit;font-size:11px;box-sizing:border-box"></div>`;
@@ -26756,7 +26845,7 @@ function rPeopleLogbookView(){
   h+=`<div style="width:220px"><div class="phq-title">Tags (comma separated)</div><input id="plgTags" type="text" placeholder="risk,coach,followup" style="width:100%;padding:5px 7px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);color:var(--text);font-family:inherit;font-size:11px;box-sizing:border-box"></div>`;
   h+=`<div style="display:flex;flex-direction:column;gap:6px">`;
   h+=`<button class="phq-btn a" onclick="peopleSubmitLogbookEntry()">Add Entry</button>`;
-  h+=`<button class="phq-btn" onclick="peopleCopyWeeklySummary('${XJ(selectedLeader)}')">Weekly Summary</button>`;
+  h+=`<button class="phq-btn" onclick="peopleCopyWeeklySummary('${XJS(selectedLeader)}')">Weekly Summary</button>`;
   h+=`</div>`;
   h+=`</div>`;
   h+=`</div>`;
@@ -26770,18 +26859,18 @@ function rPeopleLogbookView(){
       const kindCol=item.kind==="followup"?(item.status==="done"?"var(--early)":"#dc2626"):item.kind==="summary"?"var(--accent)":item.kind==="event"?"var(--wknd)":"var(--tm)";
       h+=`<div class="plg-card">`;
       h+=`<div class="plg-card-hd">`;
-      h+=`<span class="plg-kind" style="color:${kindCol};border:1px solid ${kindCol}55;background:${kindCol}10">${item.kind==="followup"&&item.status==="done"?"Follow-up ✓":X(item.kind)}</span>`;
+      h+=`<span class="plg-kind" style="color:${kindCol};border:1px solid ${cssAlpha(kindCol,33)};background:${cssAlpha(kindCol,6)}">${item.kind==="followup"&&item.status==="done"?"Follow-up ✓":X(item.kind)}</span>`;
       h+=`<span class="plg-date">${X(item.date||"—")}</span>`;
       if(item.leader)h+=`<span class="ctx-pill" style="font-size:10px;padding:1px 6px">${X(item.leader.split(" ")[0])}</span>`;
       if(item.agent)h+=`<span class="ctx-pill" style="font-size:10px;padding:1px 6px">${X(item.agent.split(" ")[0])}</span>`;
       h+=`<div class="plg-actions">`;
       if(item.kind==="followup"&&item._source==="logbook"){
-        h+=`<button class="phq-btn" style="padding:2px 7px" onclick="peopleToggleFollowup('${XJ(item.id)}')">${item.status==="done"?"Reopen":"Mark done"}</button>`;
+        h+=`<button class="phq-btn" style="padding:2px 7px" onclick="peopleToggleFollowup('${XJS(item.id)}')">${item.status==="done"?"Reopen":"Mark done"}</button>`;
       }
       if(item._source==="logbook"){
-        h+=`<button class="phq-btn" style="padding:2px 7px" onclick="peopleRemoveLogbookEntry('${XJ(item.id)}')">Delete</button>`;
+        h+=`<button class="phq-btn" style="padding:2px 7px" onclick="peopleRemoveLogbookEntry('${XJS(item.id)}')">Delete</button>`;
       } else if(item._source==="exceptions"){
-        h+=`<button class="phq-btn" style="padding:2px 7px" onclick="removeException('${XJ(item._eventId)}');rPeople($('ca'))">Delete event</button>`;
+        h+=`<button class="phq-btn" style="padding:2px 7px" onclick="removeException('${XJS(item._eventId)}');rPeople($('ca'))">Delete event</button>`;
       }
       h+=`</div>`;
       h+=`</div>`;
@@ -26815,8 +26904,7 @@ function rPeopleLogbookView(){
 function rPeople(el){
   _ensurePeopleOpsState();
   if(S.peopleSubTab==="cards")S.peopleSubTab="team";
-  if(S.peopleSubTab==="events")S.peopleSubTab="logbook";
-  if(!["dashboard","team","agents","logbook"].includes(S.peopleSubTab))S.peopleSubTab="dashboard";
+  if(!["dashboard","team","agents","logbook","events"].includes(S.peopleSubTab))S.peopleSubTab="dashboard";
   const scopeLeaders=_peopleScopeLeaders();
   if(scopeLeaders.length&&(!S.selectedTL||!scopeLeaders.includes(S.selectedTL)))S.selectedTL=scopeLeaders[0];
   savePeopleOps();
@@ -26827,7 +26915,8 @@ function rPeople(el){
     {id:"dashboard",l:"Dashboard"},
     {id:"team",l:"Team"},
     {id:"agents",l:"Agents"},
-    {id:"logbook",l:"Logbook"}
+    {id:"logbook",l:"Logbook"},
+    {id:"events",l:"Events"}
   ];
   subtabs.forEach(t=>{
     h+=`<button class="pst-btn${t.id===S.peopleSubTab?" a":""}" onclick="S.peopleSubTab='${t.id}';rPeople($('ca'))">${t.l}</button>`;
@@ -26846,7 +26935,7 @@ function rPeople(el){
   h+=`<span class="ctx-label">Focus</span>`;
   h+=`<select onchange="S.emp=this.value;S.selectedTL=this.value==='all'?null:this.value;rPeople($('ca'))" style="padding:3px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);color:var(--text);font-family:inherit;font-size:11px;max-width:240px">`;
   h+=`<option value="all"${S.emp==="all"?" selected":""}>All leaders</option>`;
-  scopeLeaders.forEach(n=>{h+=`<option value="${XJ(n)}"${S.emp===n?" selected":""}>${X(n)}</option>`;});
+  scopeLeaders.forEach(n=>{h+=`<option value="${XA(n)}"${S.emp===n?" selected":""}>${X(n)}</option>`;});
   h+=`</select>`;
   h+=`</div>`;
   // Today's events alert banner
@@ -26869,6 +26958,8 @@ function rPeople(el){
     h+=rPeopleAgentsView();
   } else if(S.peopleSubTab==="logbook"){
     h+=rPeopleLogbookView();
+  } else if(S.peopleSubTab==="events"){
+    h+=rPeopleEventsView();
   } else {
     h+=rPeopleDashboardView();
   }
@@ -26909,7 +27000,7 @@ function rPeopleTeamView(){
     // Count today's flags
     const todayExcs=(S.exceptions||[]).filter(ex=>ex.date===todayISO&&(ex.person===ldr.name||ex.agentName)&&(S.people[ex.agentName||ex.person]||{}).teamLeader===ldr.name);
     const hasTodayFlags=todayExcs.length>0;
-    h+=`<div class="team-tl-item${isSel?" sel":""}" onclick="S.selectedTL='${XJ(ldr.name)}';rPeople($('ca'))">`;
+    h+=`<div class="team-tl-item${isSel?" sel":""}" onclick="S.selectedTL='${XJS(ldr.name)}';rPeople($('ca'))">`;
     h+=`<div class="tti-av">${X(ldr.name.charAt(0))}</div>`;
     h+=`<div style="flex:1;min-width:0">`;
     h+=`<div class="tti-name">${X(ldr.name)}</div>`;
@@ -26924,7 +27015,7 @@ function rPeopleTeamView(){
   const peopleNames=new Set(Object.keys(S.people));
   names.filter(n=>!peopleNames.has(n)).forEach(n=>{
     const isSel=n===sel;
-    h+=`<div class="team-tl-item${isSel?" sel":""}" onclick="S.selectedTL='${XJ(n)}';rPeople($('ca'))">`;
+    h+=`<div class="team-tl-item${isSel?" sel":""}" onclick="S.selectedTL='${XJS(n)}';rPeople($('ca'))">`;
     h+=`<div class="tti-av">${X(n.charAt(0))}</div>`;
     h+=`<div class="tti-name">${X(n)}</div>`;
     h+=`<div class="tti-count" style="opacity:.4">—</div>`;
@@ -26939,9 +27030,9 @@ function rPeopleTeamView(){
       h+=`<div style="padding:5px 14px;display:flex;align-items:center;gap:6px;font-size:11px">`;
       h+=`<div class="tti-av" style="width:22px;height:22px;font-size:10px;flex-shrink:0">${X(ag.name.charAt(0))}</div>`;
       h+=`<span style="flex:1;color:var(--tm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(ag.name)}</span>`;
-      h+=`<select onchange="(function(tl){S.people['${XJ(ag.name)}'].teamLeader=tl;savePeople();rPeople($('ca'));})(this.value)" style="padding:2px 4px;border:1px solid var(--bdr);border-radius:4px;background:var(--card);color:var(--text);font-family:inherit;font-size:10px;max-width:80px">`;
+      h+=`<select onchange="(function(tl){S.people['${XJS(ag.name)}'].teamLeader=tl;savePeople();rPeople($('ca'));})(this.value)" style="padding:2px 4px;border:1px solid var(--bdr);border-radius:4px;background:var(--card);color:var(--text);font-family:inherit;font-size:10px;max-width:80px">`;
       h+=`<option value="">— assign —</option>`;
-      leaderNames2.forEach(ln=>{h+=`<option value="${XJ(ln)}">${X(ln.split(' ')[0])}</option>`;});
+      leaderNames2.forEach(ln=>{h+=`<option value="${XA(ln)}">${X(ln.split(' ')[0])}</option>`;});
       h+=`</select>`;
       h+=`</div>`;
     });
@@ -26988,7 +27079,7 @@ function _renderTLDetailPanel(tlName,todayISO,today){
   h+=`<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">`;
   if(hs)h+=healthScoreBadge(hs,false);
   h+=`<div style="font-size:11px;color:var(--tm)">${soc.ratio}</div>`;
-  h+=`<button onclick="closeAgentDrawer();navToPerson('${XJ(tlName)}')" style="padding:3px 9px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer">Schedule →</button>`;
+  h+=`<button onclick="closeAgentDrawer();navToPerson('${XJS(tlName)}')" style="padding:3px 9px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer">Schedule →</button>`;
   h+=`</div></div>`;
 
   // Today's HC strip
@@ -27021,7 +27112,7 @@ function _renderTLDetailPanel(tlName,todayISO,today){
     h+=`<div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">`;
     h+=`<span>Agents (${agentCnt})</span>`;
     h+=`<div style="display:flex;gap:4px">`;
-    h+=`<button onclick="S._addAgentTL=S._addAgentTL==='${XJ(tlName)}'?null:'${XJ(tlName)}';rPeople($('ca'))" style="padding:3px 9px;border:1px solid var(--bdr);border-radius:5px;background:${_showAddAgent?'var(--al)':'none'};color:${_showAddAgent?'var(--accent)':'var(--tm)'};font-family:inherit;font-size:11px;cursor:pointer">+ Agent</button>`;
+    h+=`<button onclick="S._addAgentTL=S._addAgentTL==='${XJS(tlName)}'?null:'${XJS(tlName)}';rPeople($('ca'))" style="padding:3px 9px;border:1px solid var(--bdr);border-radius:5px;background:${_showAddAgent?'var(--al)':'none'};color:${_showAddAgent?'var(--accent)':'var(--tm)'};font-family:inherit;font-size:11px;cursor:pointer">+ Agent</button>`;
     h+=`<button onclick="(function(){const ag=prompt('Log event for which agent?','');if(!ag)return;S._quickEventForm={type:'sick',agentName:ag,date:'${todayISO}',time:'',note:'',duration:30};submitAgentQuickEvent();})()" style="padding:3px 9px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">+ Event</button>`;
     h+=`</div>`;
     h+=`</div>`;
@@ -27034,7 +27125,7 @@ function _renderTLDetailPanel(tlName,todayISO,today){
       const status=getAgentStatus(agent.name,today);
       const statusDef=AGENT_STATUS_DEFS[status]||AGENT_STATUS_DEFS.unknown;
       const recentExc=(S.exceptions||[]).filter(ex=>(ex.agentName===agent.name)&&ex.date===todayISO).slice(-1)[0];
-      h+=`<div class="agent-list-item" onclick="openAgentDrawer('${XJ(agent.name)}')">`;
+      h+=`<div class="agent-list-item" onclick="openAgentDrawer('${XJS(agent.name)}')">`;
       h+=`<div class="ali-avatar">${X(agent.name.charAt(0))}</div>`;
       h+=`<div style="flex:1;min-width:0">`;
       h+=`<div class="ali-name">${X(agent.name)}</div>`;
@@ -27045,13 +27136,13 @@ function _renderTLDetailPanel(tlName,todayISO,today){
         h+=`<div class="ali-meta">${agent.skills.slice(0,2).join(", ")}</div>`;
       }
       h+=`</div>`;
-      h+=`<span class="ali-status ${statusDef.cls}" style="background:${statusDef.col}18;color:${statusDef.col}">${statusDef.icon} ${statusDef.label}</span>`;
+      h+=`<span class="ali-status ${statusDef.cls}" style="background:${cssAlpha(statusDef.col,10)};color:${statusDef.col}">${statusDef.icon} ${statusDef.label}</span>`;
       // Source badge
       if(agent.source&&agent.source!=='roster'){
         const srcCol=agent.source==='manual'?'var(--accent)':'var(--wknd)';
-        h+=`<span style="font-size:9px;padding:1px 5px;border-radius:4px;border:1px solid ${srcCol}30;color:${srcCol};opacity:.7;margin-left:2px">${agent.source}</span>`;
+        h+=`<span style="font-size:9px;padding:1px 5px;border-radius:4px;border:1px solid ${cssAlpha(srcCol,19)};color:${srcCol};opacity:.7;margin-left:2px">${agent.source}</span>`;
       }
-      h+=`<button onclick="event.stopPropagation();peopleRemoveAgent('${XJ(agent.name)}')" style="background:none;border:none;color:var(--tm);cursor:pointer;font-size:11px;padding:2px 4px;margin-left:2px;opacity:.35;flex-shrink:0" onmouseover="this.style.opacity=1;this.style.color='#dc2626'" onmouseout="this.style.opacity=.35;this.style.color='var(--tm)'" title="Remove agent">✕</button>`;
+      h+=`<button onclick="event.stopPropagation();peopleRemoveAgent('${XJS(agent.name)}')" style="background:none;border:none;color:var(--tm);cursor:pointer;font-size:11px;padding:2px 4px;margin-left:2px;opacity:.35;flex-shrink:0" onmouseover="this.style.opacity=1;this.style.color='#dc2626'" onmouseout="this.style.opacity=.35;this.style.color='var(--tm)'" title="Remove agent">✕</button>`;
       h+=`</div>`;
     });
     h+=`</div></div>`;
@@ -27063,7 +27154,7 @@ function _renderTLDetailPanel(tlName,todayISO,today){
     h+=`<div style="font-size:12px;font-weight:500;margin-bottom:4px">No agents linked</div>`;
     h+=`<div style="font-size:11px;margin-bottom:8px;color:var(--tm)">Add agents manually or upload a roster file.</div>`;
     h+=`<div style="display:flex;gap:6px;justify-content:center">`;
-    h+=`<button onclick="S._addAgentTL=S._addAgentTL==='${XJ(tlName)}'?null:'${XJ(tlName)}';rPeople($('ca'))" style="padding:5px 12px;border:1px solid var(--accent);border-radius:6px;background:${_showAddEmpty?'var(--accent)':'var(--al)'};color:${_showAddEmpty?'#000':'var(--accent)'};font-family:inherit;font-size:11px;cursor:pointer">+ Add Agent</button>`;
+    h+=`<button onclick="S._addAgentTL=S._addAgentTL==='${XJS(tlName)}'?null:'${XJS(tlName)}';rPeople($('ca'))" style="padding:5px 12px;border:1px solid var(--accent);border-radius:6px;background:${_showAddEmpty?'var(--accent)':'var(--al)'};color:${_showAddEmpty?'#000':'var(--accent)'};font-family:inherit;font-size:11px;cursor:pointer">+ Add Agent</button>`;
     h+=`<button onclick="triggerRosterUpload()" style="padding:5px 12px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">↑ Upload Roster</button>`;
     h+=`</div></div>`;
     if(_showAddEmpty){
@@ -27076,7 +27167,7 @@ function _renderTLDetailPanel(tlName,todayISO,today){
   const tlNote=S.agentNotes[tlName]||"";
   h+=`<div>`;
   h+=`<div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Team Notes</div>`;
-  h+=`<textarea class="agent-note-area" placeholder="Notes about this team or today's events…" oninput="S.agentNotes['${XJ(tlName)}']=this.value;saveAgentNotes()">${X(tlNote)}</textarea>`;
+  h+=`<textarea class="agent-note-area" placeholder="Notes about this team or today's events…" oninput="S.agentNotes['${XJS(tlName)}']=this.value;saveAgentNotes()">${X(tlNote)}</textarea>`;
   h+=`</div>`;
   return h;
 }
@@ -27138,7 +27229,7 @@ function rPeopleEventsView(){
   // Leader filter
   h+=`<select onchange="S._eventsLeaderFilter=this.value;S._eventsRenderCap=260;rPeople($('ca'))" style="padding:3px 7px;border:1px solid var(--bdr);border-radius:5px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px">`;
   h+=`<option value="all">All leaders</option>`;
-  names.forEach(n=>{h+=`<option value="${XJ(n)}"${S._eventsLeaderFilter===n?" selected":""}>${X(n.split(" ")[0])}</option>`;});
+  names.forEach(n=>{h+=`<option value="${XA(n)}"${S._eventsLeaderFilter===n?" selected":""}>${X(n.split(" ")[0])}</option>`;});
   h+=`</select>`;
   // Type filter
   h+=`<select onchange="S._eventsTypeFilter=this.value;S._eventsRenderCap=260;rPeople($('ca'))" style="padding:3px 7px;border:1px solid var(--bdr);border-radius:5px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px">`;
@@ -27164,9 +27255,9 @@ function rPeopleEventsView(){
     h+=`<select id="qlAgent" style="padding:5px 7px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:inherit;font-size:11px">`;
     h+=`<option value="">— select —</option>`;
     if(allAgents.length){
-      allAgents.forEach(a=>{h+=`<option value="${XJ(a.name)}">${X(a.name)} (${X(a.teamLeader?a.teamLeader.split(" ")[0]:"")})</option>`;});
+      allAgents.forEach(a=>{h+=`<option value="${XA(a.name)}">${X(a.name)} (${X(a.teamLeader?a.teamLeader.split(" ")[0]:"")})</option>`;});
     } else {
-      names.forEach(n=>{h+=`<option value="${XJ(n)}">${X(n)}</option>`;});
+      names.forEach(n=>{h+=`<option value="${XA(n)}">${X(n)}</option>`;});
     }
     h+=`</select></div>`;
     h+=`<div style="display:flex;flex-direction:column;gap:2px">`;
@@ -27212,7 +27303,7 @@ function rPeopleEventsView(){
       h+=`<div class="elr-icon">${t.icon}</div>`;
       h+=`<div class="elr-body">`;
       const displayName=ex.agentName||ex.person;
-      h+=`<div class="elr-who" style="cursor:pointer" onclick="openAgentDrawer('${XJ(displayName)}')">${X(displayName)}`;
+      h+=`<div class="elr-who" style="cursor:pointer" onclick="openAgentDrawer('${XJS(displayName)}')">${X(displayName)}`;
       if(ex.agentName&&ex.person&&ex.agentName!==ex.person)h+=` <span style="font-size:10px;color:var(--tm)">via ${X(ex.person.split(" ")[0])}</span>`;
       h+=`</div>`;
       h+=`<div class="elr-detail">${t.label||ex.type} · ${ex.severity}</div>`;
@@ -27281,7 +27372,8 @@ function copyEOD(){
   const dateISO=excKey(targetDate);
   const names=S.selectedTL?[S.selectedTL]:gN();
   const dayEntries=S.entries.filter(e=>e.date&&excKey(e.date)===dateISO&&names.includes(e.name));
-  const dayExcs=(S.exceptions||[]).filter(ex=>ex.date===dateISO&&names.includes(ex.person));
+  const nameSet=new Set(names);
+  const dayExcs=(S.exceptions||[]).filter(ex=>ex.date===dateISO&&(nameSet.has(ex.person)||(ex.agentName&&nameSet.has(((S.people||{})[ex.agentName]||{}).teamLeader))));
   const working=dayEntries.filter(e=>!e.isOff).sort((a,b)=>((a.ukS||'99')>(b.ukS||'99')?1:-1));
   const off=dayEntries.filter(e=>e.isOff);
   const totalLost=dayExcs.reduce((s,x)=>s+(x.hoursLost||0),0);
@@ -27351,8 +27443,9 @@ async function expTLDayPack(){
   const targetDate=S.calDay||new Date();
   const dateISO=excKey(targetDate);
   const names=S.selectedTL?[S.selectedTL]:gN();
-  const dayEntries=S.entries.filter(e=>e.date&&excKey(e.date)===dateISO);
-  const dayExcs=(S.exceptions||[]).filter(ex=>ex.date===dateISO);
+  const nameSet=new Set(names);
+  const dayEntries=S.entries.filter(e=>e.date&&excKey(e.date)===dateISO&&nameSet.has(e.name));
+  const dayExcs=(S.exceptions||[]).filter(ex=>ex.date===dateISO&&(nameSet.has(ex.person)||(ex.agentName&&nameSet.has(((S.people||{})[ex.agentName]||{}).teamLeader))));
   const working=dayEntries.filter(e=>!e.isOff).sort((a,b)=>((a.ukS||"99")>(b.ukS||"99")?1:-1));
   const off=dayEntries.filter(e=>e.isOff);
   const totalLost=dayExcs.reduce((s,x)=>s+(x.hoursLost||0),0);
