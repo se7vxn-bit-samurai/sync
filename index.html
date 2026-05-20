@@ -2507,7 +2507,7 @@ function _rebuildMonthsFromEntries(){
   const now=new Date();
   const nowKey=now.getFullYear()+"-"+P(now.getMonth());
   const ms=new Set();
-  (S.entries||[]).forEach(e=>{if(e&&e.date)ms.add(e.date.getFullYear()+"-"+P(e.date.getMonth()));});
+  (S.entries||[]).forEach(e=>{const mk=e&&e.date?stateMonthKeyFromDate(e.date):"";if(mk)ms.add(mk);});
   S.months=[...ms].sort();
   if(prev&&S.months.includes(prev))S.month=prev;
   else if(S.months.includes(nowKey))S.month=nowKey;
@@ -2663,7 +2663,7 @@ function getDataIndexes(opts){
     const iso=excKey(e.date);
     if(!byDate[iso])byDate[iso]=[];
     byDate[iso].push(e);
-    const mk=e.date.getFullYear()+"-"+P(e.date.getMonth());
+    const mk=stateMonthKeyFromDate(e.date);
     if(!byMonth[mk])byMonth[mk]=[];
     byMonth[mk].push(e);
     const mtk=mk+"|"+tm;
@@ -2718,7 +2718,7 @@ function getMonthMeta(){
   const months={};
   S.entries.forEach(e=>{
     if(!e.date)return;
-    const mk=e.date.getFullYear()+"-"+P(e.date.getMonth());
+    const mk=stateMonthKeyFromDate(e.date);
     if(!months[mk])months[mk]={count:0,names:new Set()};
     months[mk].count++;
     months[mk].names.add(e.name);
@@ -3950,6 +3950,7 @@ const CSS_ALPHA_EARLY_10=cssAlpha("var(--early)",10);
 const CSS_ALPHA_EARLY_13=cssAlpha("var(--early)",13);
 const CSS_ALPHA_ACCENT_13=cssAlpha("var(--accent)",13);
 function P(n){return String(n).padStart(2,"0");}
+function stateMonthKeyFromDate(date){return date&&!isNaN(date)?date.getFullYear()+"-"+P(date.getMonth()):"";}
 function fD(d){return P(d.getDate())+"-"+MO[d.getMonth()];}
 function fDF(d){return P(d.getDate())+" "+MO[d.getMonth()]+" "+d.getFullYear();}
 // Safe date for ExcelJS — noon UTC prevents timezone offset from shifting to previous day
@@ -8899,11 +8900,8 @@ function restoreFromSaveFile(wb,filename){
       }catch(e){console.warn("Exception sheet parse failed:",e);}
     }
 
-    // Rebuild months from entries if not in snap
-    if(!S.months||!S.months.length){
-      const ms=new Set();S.entries.forEach(e=>{if(e.date)ms.add(e.date.getFullYear()+"-"+P(e.date.getMonth()));});
-      S.months=[...ms].sort();S.mIdx=0;S.month=S.months[0]||null;
-    }
+    // Rebuild month state from entries to repair legacy generated Save+ files with unpadded month keys.
+    _rebuildMonthsFromEntries();
 
     // Set dept info
     S.activeDept=snap.dept||detectDeptName(filename,[]);
@@ -9643,7 +9641,7 @@ function buildInfoBarHTML(){
   const all=gD();
   const ec=[...new Set(all.map(e=>e.name))].length;
   // Hours: show current month only if one is selected, else total
-  const monthAll=S.month?all.filter(e=>e.date&&e.date.getFullYear()+"-"+e.date.getMonth()===S.month):all;
+  const monthAll=S.month?all.filter(e=>e.date&&stateMonthKeyFromDate(e.date)===S.month):all;
   const tHrs=monthAll.reduce((s,e)=>s+(e.isOff?0:calcHrs(S.tz&&e.saS?e.saS:e.ukS,S.tz&&e.saE?e.saE:e.ukE)),0);
   const hrsLabel=S.month&&S.months&&S.months.length>1?`${Math.round(tHrs)}h <span style="font-size:10px;color:var(--tm)">this month</span>`:`${Math.round(tHrs)}h`;
   // Core badges
@@ -13817,7 +13815,7 @@ function executeBuildGenerate(){
   S.entries=entries;S.fn=cfg.deptName||"New Schedule";S.shs=["Generated"];S.sh="__all__";
   S.team="all";S.emp="all";S.month=null;S.months=[];S.mIdx=0;S.calDay=null;S.collapsed={};
   S.shiftFilter="";S.dayFilter="";S.parseInfo=[{sheet:"Generated",parser:"BuildWizard",confidence:"high",count:entries.length,warnings:[]}];
-  const ms=new Set();entries.forEach(e=>{if(e.date)ms.add(e.date.getFullYear()+"-"+e.date.getMonth());});
+  const ms=new Set();entries.forEach(e=>{const mk=stateMonthKeyFromDate(e.date);if(mk)ms.add(mk);});
   S.months=[...ms].sort();if(S.months.length)S.month=S.months[0];S.mIdx=0;
   const dk=cfg.deptName||"Generated";S.activeDept=dk;
   S.plBlueprints[dk]={cycleLen:cfg.cycleLen,weeks:{},confirmed:true};
@@ -19825,14 +19823,14 @@ function savePlannedToSchedule(){
   S.entriesVer=(S.entriesVer||0)+1;invalidateDerivedCache();
   // Rebuild months list
   const monthSet=new Set();
-  S.entries.forEach(e=>{if(e.date)monthSet.add(e.date.getFullYear()+"-"+e.date.getMonth());});
+  S.entries.forEach(e=>{const mk=stateMonthKeyFromDate(e.date);if(mk)monthSet.add(mk);});
   S.months=[...monthSet].sort();
   // Track saved month so Remove button appears
   if(!S.savedMonths)S.savedMonths={};
   if(!S.savedMonths[dk])S.savedMonths[dk]={};
   S.savedMonths[dk][`${targetYear}-${targetMonth}`]=true;
   // Navigate to the saved month
-  const mKey=targetYear+"-"+targetMonth;
+  const mKey=targetYear+"-"+P(targetMonth);
   const mIdx=S.months.indexOf(mKey);
   if(mIdx>=0){S.mIdx=mIdx;S.month=mKey;}
   toast(genData.length+" entries saved to "+MOFULL[targetMonth]+" "+targetYear+" — switch tabs to explore","ok");
@@ -19858,7 +19856,7 @@ function removeSavedMonth(dk,savedKey){
   S.entriesVer=(S.entriesVer||0)+1;invalidateDerivedCache();
   // Rebuild months
   const monthSet=new Set();
-  S.entries.forEach(e=>{if(e.date)monthSet.add(e.date.getFullYear()+"-"+e.date.getMonth());});
+  S.entries.forEach(e=>{const mk=stateMonthKeyFromDate(e.date);if(mk)monthSet.add(mk);});
   S.months=[...monthSet].sort();
   if(S.savedMonths&&S.savedMonths[dk])delete S.savedMonths[dk][savedKey];
   toast(MOFULL[targetMonth]+" "+targetYear+" removed from schedule","ok");
@@ -21458,7 +21456,7 @@ function computePatterns(){
     for(let i=1;i<personEnt.length;i++){
       const diff=Math.round((personEnt[i].date-personEnt[i-1].date)/864e5);
       if(diff>1&&diff<8&&!personEnt[i-1].isOff&&!personEnt[i].isOff){
-        const mk=personEnt[i].date.getFullYear()+"-"+personEnt[i].date.getMonth();
+        const mk=stateMonthKeyFromDate(personEnt[i].date);
         if(!gapMonths[mk])gapMonths[mk]=[];
         gapMonths[mk].push({from:fD(personEnt[i-1].date),to:fD(personEnt[i].date),days:diff-1});
       }
