@@ -1289,7 +1289,7 @@ body[data-theme="tide"]:is([data-variant="seafoam-day"],[data-variant="ice-sheet
 .toast-action{padding:3px 7px;font-size:11px;font-weight:700}.toast-close{width:22px;height:22px;padding:0;line-height:20px;font-size:14px}
 .toast-action:hover,.toast-close:hover{background:rgba(255,255,255,.18)}
 /* ── Notification tray ── */
-.notif-icon{position:relative;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:rgba(255,255,255,.06);border:none;color:var(--ht);cursor:pointer;font-size:14px;margin-left:6px}
+.notif-icon{position:relative;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:rgba(255,255,255,.06);border:none;color:var(--ink2,var(--ht));cursor:pointer;font-size:14px;margin-left:6px}
 .notif-icon:hover{background:rgba(255,255,255,.12)}
 .notif-badge{position:absolute;top:-3px;right:-3px;min-width:14px;height:14px;border-radius:7px;background:#dc2626;color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px}
 .notif-tray{position:absolute;top:100%;right:0;margin-top:6px;width:320px;max-height:400px;overflow-y:auto;background:rgba(10,14,26,.97);border:1px solid var(--bdr);border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.5);z-index:500;backdrop-filter:blur(20px);padding:6px}
@@ -2478,7 +2478,9 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
 @media(max-width:1100px){.sdw-grid{grid-template-columns:repeat(6,minmax(0,1fr))}.sdw-widget.size-compact{grid-column:span 2}.sdw-widget.size-medium{grid-column:span 3}.sdw-widget.size-wide{grid-column:span 6}.sdw-widget.size-full{grid-column:span 6}.drawer-open .sdw-grid,.drawer-open .sdw-core{margin-right:0}.sdw-drawer{right:4px;width:min(332px,calc(100% - 8px))}}
 @media(max-width:1180px),(hover:none) and (pointer:coarse){.ct.dashboard-fixed{overflow-y:auto;padding:8px}.sync-dashboard-workspace{height:auto;min-height:100%;overflow:visible}.sdw-grid{flex:0 0 auto;grid-template-rows:none;grid-auto-rows:minmax(142px,auto);overflow:visible}.sdw-widget{min-height:142px}.sdw-widget-body{overflow:visible}.sdw-list,.sdw-scroll{overflow:visible}}
 @media(max-width:768px){.ct.dashboard-fixed{padding:8px}.sdw-core{grid-template-columns:repeat(2,minmax(0,1fr))}.sdw-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.sdw-widget.size-compact,.sdw-widget.size-medium{grid-column:span 1}.sdw-widget.size-wide,.sdw-widget.size-full{grid-column:span 2}.sdw-widget-head{min-height:30px;padding:5px 7px}.sdw-widget-body{padding:6px 7px}.sdw-toolbar{min-height:30px}.sdw-title small{display:none}.sdw-core-item{padding:6px 7px}.sdw-row{padding:4px 5px}.sdw-widget .sdw-row:nth-child(n+3){display:none}}
+@media(max-width:768px){.sdw-widget[data-widget-id="today"]{min-height:220px}.sdw-widget[data-widget-id="today"] .sdw-list{max-height:154px;overflow-y:auto}.sdw-widget[data-widget-id="today"] .sdw-row:nth-child(n){display:flex}.sdw-widget[data-widget-id="blueprint"]{min-height:205px}.sdw-widget[data-widget-id="blueprint"] .sdw-blueprint{overflow-x:auto;padding-bottom:3px}.sdw-widget[data-widget-id="blueprint"] .sdw-bp-head,.sdw-widget[data-widget-id="blueprint"] .sdw-bp-row{min-width:370px;grid-template-columns:30px repeat(7,minmax(44px,1fr))}.sdw-widget[data-widget-id="blueprint"] .sdw-bp-row b,.sdw-widget[data-widget-id="blueprint"] .sdw-bp-cell{height:25px;font-size:10px}.bp-editor{overflow-x:auto;padding-bottom:6px}.bp-grid{min-width:540px}.rot-grid{min-width:540px}.pl-section{border-radius:8px}.pl-hd{padding:10px}.pl-controls{width:100%}.pl-controls select{max-width:100%}.bp-actions{flex-wrap:wrap}.pl-save-bar{align-items:flex-start;flex-wrap:wrap;padding:10px}.pl-save-bar .ps-info{flex-basis:100%}}
 @media(max-width:820px),(hover:none) and (pointer:coarse){html,body{height:auto;min-height:100dvh;overflow-x:hidden}body{overscroll-behavior-y:auto}.app{min-height:100dvh;width:100%;max-width:100vw}.ct,.uz{overflow-y:auto!important;-webkit-overflow-scrolling:touch}.mf-masthead{height:auto;min-height:40px;padding:5px 8px;gap:5px;flex-wrap:wrap}.mf-mh-brand{font-size:15px}.mf-mh-dept{max-width:38vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mf-mh-stat,.mf-mh-ticker{font-size:9px}.mf-subbar{position:sticky;top:40px;z-index:92;gap:6px;padding:7px 8px;overflow-x:auto;scrollbar-width:none}.mf-subbar::-webkit-scrollbar,.tabs::-webkit-scrollbar,.rail::-webkit-scrollbar{display:none}.tabs{overflow-x:auto;white-space:nowrap;padding-bottom:2px;scrollbar-width:none}.tab{flex:0 0 auto}.rail{max-width:70vw;overflow:auto;-webkit-overflow-scrolling:touch}table{max-width:100%}.et,.data-table,.schedule-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}#parsePreviewOverlay,#wfmPreviewOverlay,#rosterPreviewOverlay{align-items:stretch!important;justify-content:flex-start!important;padding:8px!important;overflow:auto!important}#parsePreviewOverlay>div,#wfmPreviewOverlay>div,#rosterPreviewOverlay>div{width:100%!important;max-width:none!important;max-height:none!important;min-height:calc(100dvh - 16px)!important;border-radius:10px!important}#parsePreviewOverlay [style*="grid-template-columns:repeat(6"],#wfmPreviewOverlay [style*="grid-template-columns:repeat(6"]{grid-template-columns:repeat(3,minmax(0,1fr))!important}#parsePreviewOverlay [style*="grid-template-columns:minmax(0,1.15fr)"],#wfmPreviewOverlay [style*="grid-template-columns:minmax"]{grid-template-columns:1fr!important}#parsePreviewOverlay [style*="border-right:1px solid var(--bdr)"],#wfmPreviewOverlay [style*="border-right:1px solid var(--bdr)"]{border-right:0!important;border-bottom:1px solid var(--bdr)!important}#parsePreviewOverlay [style*="padding:14px 16px"],#wfmPreviewOverlay [style*="padding:14px 16px"],#rosterPreviewOverlay [style*="padding:14px 16px"]{padding:10px!important}#parsePreviewOverlay button,#wfmPreviewOverlay button,#rosterPreviewOverlay button{min-height:34px}#notifTray{position:fixed!important;top:46px!important;right:8px!important;left:8px!important;width:auto!important;max-height:70dvh!important;overflow:auto!important}}
+@media(max-width:820px),(hover:none) and (pointer:coarse){#parsePreviewOverlay>div{display:grid!important;grid-template-rows:auto auto minmax(0,1fr) auto auto!important;overflow:hidden!important}#parsePreviewOverlay>div>div:nth-child(1){padding:8px 10px!important;gap:6px!important;align-items:flex-start!important;flex-wrap:wrap!important}#parsePreviewOverlay>div>div:nth-child(1)>div{flex-basis:100%!important}#parsePreviewOverlay>div>div:nth-child(1) [style*="border-radius:5px"]{font-size:10px!important;padding:2px 7px!important}#parsePreviewOverlay>div>div:nth-child(2) [style*="padding:12px 8px"]{padding:8px 6px!important}#parsePreviewOverlay>div>div:nth-child(2) [style*="font-size:20px"]{font-size:18px!important}#parsePreviewOverlay>div>div:nth-child(3){overflow:auto!important;min-height:0!important}#parseLoadHint{padding:8px 10px 0!important;text-align:left!important;line-height:1.35!important;position:static!important}#parseLoadHint+div{position:static!important;display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;justify-content:stretch!important;align-items:stretch!important;padding:8px 10px 10px!important;background:var(--bg)!important;border-top:1px solid var(--bdr)!important;box-shadow:0 -8px 16px rgba(0,0,0,.08)!important}#parseLoadHint+div button{width:100%!important;min-width:0!important;white-space:normal!important;padding:8px 10px!important}#parseLoadBtn{grid-column:1/-1!important}}
 @media(max-width:520px){.sdw-core,.sdw-kpis,.sdw-grid{grid-template-columns:1fr!important}.sdw-widget.size-compact,.sdw-widget.size-medium,.sdw-widget.size-wide,.sdw-widget.size-full,.sdw-add-tile{grid-column:span 1!important}.sync-dashboard .sd-title,.sdw-hero h1{font-size:24px}.sdw-hero{grid-template-columns:1fr;min-height:auto}.sdw-hero-ledger{border-left:0;border-top:1px solid var(--rule,var(--bdr))}}
 @container (max-width:1100px){.sdw-hero{grid-template-columns:1fr;min-height:0}.sdw-hero-ledger{border-left:0;border-top:1px solid var(--rule,var(--bdr));display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding:10px}.sdw-grid{grid-template-columns:repeat(6,minmax(0,1fr))}.sdw-widget[data-cols="3"]{grid-column:span 2}.sdw-widget[data-cols="4"]{grid-column:span 3}.sdw-widget[data-cols="6"],.sdw-widget[data-cols="8"],.sdw-widget[data-cols="12"]{grid-column:span 6}.sdw-add-tile{grid-column:span 3}}
 @container (max-width:720px){.sdw-hero-copy{padding:14px}.sdw-hero h1{font-size:25px}.sdw-hero-ledger{grid-template-columns:1fr}.sdw-core,.sdw-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.sdw-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.sdw-widget[data-cols="3"],.sdw-widget[data-cols="4"]{grid-column:span 1}.sdw-widget[data-cols="6"],.sdw-widget[data-cols="8"],.sdw-widget[data-cols="12"]{grid-column:span 2}.sdw-add-tile{grid-column:span 1}.sdw-widget-head{min-height:30px;padding:5px 7px}.sdw-widget-body{padding:6px 7px}.sdw-row{padding:4px 5px}}
@@ -2676,7 +2678,7 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
 </div>
 <!-- Build wizard overlay -->
 <div id="buildWizard" style="display:none;position:fixed;inset:0;z-index:900;background:var(--bg);overflow-y:auto"></div>
-<div id="mv" class="hid" style="flex:1;display:flex;flex-direction:column"><div class="mf-masthead" id="mfMasthead"><div class="mf-mh-left"><span class="mf-mh-brand">7OS Sync</span><span class="mf-mh-sep" id="mhDeptSep" style="display:none"></span><span class="mf-mh-dept" id="fl" style="display:none"></span><span class="mf-mh-stat" id="mhLeaderCount"></span><span class="mf-mh-sep"></span><span class="mf-mh-stat" id="mhHealth"></span></div><div class="mf-mh-center" id="mfMastheadMonthNav" style="display:none"></div><div class="mf-mh-right" id="ha" style="display:none"><div class="mf-mh-ticker" id="mhTicker"></div></div></div><div class="mf-body"><div class="mf-rail" id="mfRail"><button class="mf-nav-toggle" id="mfNavToggle" data-testid="rail-toggle" title="Toggle sidebar" aria-label="Toggle sidebar"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="2" width="5" height="12" rx="1.5" fill="currentColor" opacity=".5"/><line x1="8.5" y1="5" x2="15" y2="5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="8.5" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="8.5" y1="11" x2="15" y2="11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button><div class="mf-rail-nav" id="mfRailNav"></div><div class="mf-rail-bottom" id="mfRailBottom"></div></div><div class="mf-content-col"><div class="mf-subbar" id="mfSubbar"></div><div id="contBar"></div><div class="ct" id="ca"></div></div></div></div>
+<div id="mv" class="hid" style="flex:1;display:flex;flex-direction:column"><div class="mf-masthead" id="mfMasthead"><div class="mf-mh-left"><span class="mf-mh-brand">7OS Sync</span><span class="mf-mh-sep" id="mhDeptSep" style="display:none"></span><span class="mf-mh-dept" id="fl" style="display:none"></span><span class="mf-mh-stat" id="mhLeaderCount"></span><span class="mf-mh-sep"></span><span class="mf-mh-stat" id="mhHealth"></span><span style="position:relative;display:flex;align-items:center"><button id="notifBtn" class="notif-icon" type="button" onclick="toggleNotifTray()" title="Notifications" aria-label="Notifications">&#128276;<span id="notifBadge" class="notif-badge" style="display:none">0</span></button><div id="notifTray" class="notif-tray" style="display:none"><div class="notif-tray-hd"><span>Notifications</span><button class="sdw-open" type="button" onclick="clearNotifs()">Clear</button></div><div id="notifList"></div></div></span></div><div class="mf-mh-center" id="mfMastheadMonthNav" style="display:none"></div><div class="mf-mh-right" id="ha" style="display:none"><div class="mf-mh-ticker" id="mhTicker"></div></div></div><div class="mf-body"><div class="mf-rail" id="mfRail"><button class="mf-nav-toggle" id="mfNavToggle" data-testid="rail-toggle" title="Toggle sidebar" aria-label="Toggle sidebar"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="2" width="5" height="12" rx="1.5" fill="currentColor" opacity=".5"/><line x1="8.5" y1="5" x2="15" y2="5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="8.5" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="8.5" y1="11" x2="15" y2="11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button><div class="mf-rail-nav" id="mfRailNav"></div><div class="mf-rail-bottom" id="mfRailBottom"></div></div><div class="mf-content-col"><div class="mf-subbar" id="mfSubbar"></div><div id="contBar"></div><div class="ct" id="ca"></div></div></div></div>
 <!-- WFM View Panel — v59 integration -->
 <div id="wfmv" style="flex:1;flex-direction:column;min-height:0">
   <!-- WFM Masthead -->
@@ -2787,7 +2789,7 @@ let S={wb:null,fn:"",shs:[],sh:"",raw:[],entries:[],team:"all",emp:"all",tz:true
   forecast:null,// Phase E: {slots:[{time,required}], source, loadedAt, rawRows}
   coachQuality:{},// name → {sessions:[{date,duration,windowQuality,outcome,notes,actions}], scores:{}}
   buildConfig:null,buildStep:0,buildMode:false,_filtersOpen:false,_settingsOpen:false,
-  coachBudgetHrs:{},coachManualSessions:[],swaps:[],_swapFormDay:null,_bpDragWeek:null,_bpDropTarget:null,_bpDropDir:null,_sumShowIntel:true,_sumHealthOpen:false,_bpDraft:null,_bpEditMode:false,savedMonths:{},savedViews:[],lastImportReview:null,sourceManifest:[],currentSource:null,pinnedPeople:[],inlineNotes:{},exportPresets:[],changeHistory:[],changeIntelligence:{schema:"mirrorflow.roster-change-intelligence",version:1,history:[],activity:[]},issueInboxState:{records:{},filters:{status:"open",severity:"all",type:"all",person:"all"},history:[]},qolState:null,dashboardLayout:null,plCellOverrides:{},leaveRequests:[],otThresholds:{sick:3,absence:3,capacity:3,gap:-2},exceptions:[],dayClosed:{},anView:"dashboard",dayIntelName:"",dayIntelDate:"",dayIntelSource:"",sumMode:"month",anScope:"month",_alertRailFocus:"all",_helpOpen:false,
+  coachBudgetHrs:{},coachManualSessions:[],swaps:[],_swapFormDay:null,_bpDragWeek:null,_bpDropTarget:null,_bpDropDir:null,_sumShowIntel:true,_sumHealthOpen:false,_bpDraft:null,_bpEditMode:false,savedMonths:{},savedViews:[],lastImportReview:null,sourceManifest:[],currentSource:null,pinnedPeople:[],inlineNotes:{},exportPresets:[],changeHistory:[],changeIntelligence:{schema:"mirrorflow.roster-change-intelligence",version:1,history:[],activity:[]},issueInboxState:{records:{},filters:{status:"open",severity:"all",type:"all",person:"all"},history:[]},qolState:null,dashboardLayout:null,dashboardShortcuts:null,plCellOverrides:{},leaveRequests:[],otThresholds:{sick:3,absence:3,capacity:3,gap:-2},exceptions:[],dayClosed:{},anView:"dashboard",dayIntelName:"",dayIntelDate:"",dayIntelSource:"",sumMode:"month",anScope:"month",_alertRailFocus:"all",_helpOpen:false,
   plCoachOpen:true,coachDuration:30,coachBlackouts:{},coachPlan:{},coachHistory:[],plSubTab:"schedule",coachTargetDaily:1,coachTargetMonthly:0,targetHours:0,ratePerHour:0,cache:{},entriesVer:0,exceptionsVer:0,_schemaVersion:1,
   exportSelection:{overview:true,leaders:true,analytics:true,scheduleData:true,notes:true,blueprint:true,positions:true,exceptions:true,coaching:true,people:true,changeLog:true},
   // Phase A — People ops surface
@@ -3894,6 +3896,19 @@ function dashboardSaveLayout(label){
   _recordQoLChange(label||"Dashboard layout updated");
   schedulePersist(true);
 }
+function dashboardShortcuts(){S.dashboardShortcuts=_normalizeDashboardShortcuts(S.dashboardShortcuts);return S.dashboardShortcuts;}
+function setDashboardShortcut(slot,id){
+  const shortcuts=dashboardShortcuts();
+  if(!DASHBOARD_SHORTCUTS.some(x=>x.id===id))return;
+  shortcuts[slot]=id;S.dashboardShortcuts=_normalizeDashboardShortcuts(shortcuts);
+  dashboardSaveLayout("Dashboard shortcuts updated");rerenderCurrentSurface();
+}
+function openDashboardShortcutEditor(){
+  const values=dashboardShortcuts();
+  const options=selected=>DASHBOARD_SHORTCUTS.map(item=>'<option value="'+item.id+'" '+(item.id===selected?'selected':'')+'>'+X(item.label)+'</option>').join('');
+  const rows=[0,1,2].map(i=>'<label style="display:grid;grid-template-columns:80px minmax(0,1fr);align-items:center;gap:8px;font-size:12px"><span style="color:var(--tm)">Shortcut '+(i+1)+'</span><select onchange="setDashboardShortcut('+i+',this.value);document.getElementById(\'dashboardShortcutEditor\')?.remove()" style="padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);color:var(--text);font:inherit">'+options(values[i])+'</select></label>').join('');
+  _qolModal("dashboardShortcutEditor","Dashboard shortcuts","Choose your three go-to destinations",'<div style="display:flex;flex-direction:column;gap:9px">'+rows+'</div>');
+}
 function addDashboardWidget(id){
   const layout=dashboardLayout();
   if(!DASHBOARD_WIDGET_IDS.includes(id)||layout.widgets.some(w=>w.id===id))return;
@@ -3998,7 +4013,7 @@ function _sdwWidget(widget,title,meta,body,openAction){
   const edit=S._dashboardEditing?"<div class=\"sdw-edit\"><button onclick=\"resizeDashboardWidget('"+widget.id+"','compact')\">S</button><button onclick=\"resizeDashboardWidget('"+widget.id+"','medium')\">M</button><button onclick=\"resizeDashboardWidget('"+widget.id+"','wide')\">L</button><button class=\"remove\" onclick=\"removeDashboardWidget('"+widget.id+"')\">Remove</button></div>":"";
   const cols=widget.cols||_dashboardColsForSize(widget.size),rows=widget.rows||1;
   const handle=S._dashboardEditing?"<div class=\"sdw-resize-handle\" title=\"Drag to resize\" onpointerdown=\"beginDashboardWidgetResize(event,'"+widget.id+"')\"></div>":"";
-  return '<section class="sdw-widget size-'+widget.size+'" data-cols="'+cols+'" data-rows="'+rows+'"><div class="sdw-widget-head"><h3>'+X(title)+'</h3><span>'+X(meta||"")+'</span>'+open+'</div><div class="sdw-widget-body">'+body+'</div>'+edit+handle+'</section>';
+  return '<section class="sdw-widget size-'+widget.size+'" data-widget-id="'+X(widget.id)+'" data-cols="'+cols+'" data-rows="'+rows+'"><div class="sdw-widget-head"><h3>'+X(title)+'</h3><span>'+X(meta||"")+'</span>'+open+'</div><div class="sdw-widget-body">'+body+'</div>'+edit+handle+'</section>';
 }
 function _sdwWidgetBody(id,ctx){
   const all=ctx.all,working=ctx.working,off=ctx.off,people=ctx.people;
@@ -4199,6 +4214,11 @@ function rSyncDashboard(el){
   const addTile=layout.widgets.length<8?'<button class="sdw-add-tile" onclick="toggleDashboardWidgetDrawer()">+ Add a widget</button>':"";
   const edit=S._dashboardEditing?"Done":"Edit";
   el.innerHTML='<div class="sync-dashboard-workspace" data-testid="dashboard-workspace"><div class="sdw-toolbar"><div class="sdw-title">Sync Dashboard <small>'+X(monthLabel())+' · fixed workspace</small></div><div class="sdw-actions"><button class="sdw-btn" onclick="openTodayHandoff()">Handoff</button><button class="sdw-btn" onclick="toggleDashboardWidgetDrawer()">Widgets</button><button class="sdw-btn primary" onclick="toggleDashboardEdit()">'+edit+'</button></div></div>'+hero+'<div class="sdw-core">'+coreHtml+'</div><div class="sdw-kpis">'+kpisHtml+'</div><div class="sdw-grid">'+widgets+addTile+'</div>'+_sdwDrawer(layout)+'</div>';
+  const heroActions=el.querySelector(".sdw-hero-actions");
+  if(heroActions){
+    const shortcuts=dashboardShortcuts().map(id=>DASHBOARD_SHORTCUTS.find(item=>item.id===id)).filter(Boolean);
+    heroActions.innerHTML=shortcuts.map(item=>'<button onclick="'+item.action+'">'+X(item.label)+'</button>').join("")+'<button class="sdw-open" onclick="openDashboardShortcutEditor()" title="Edit shortcuts" aria-label="Edit dashboard shortcuts">Edit</button>';
+  }
   if(S._dashboardWidgetDrawer)el.querySelector(".sync-dashboard-workspace")?.classList.add("drawer-open");
   ensureDashboardPersonalTicker();
 }
@@ -4332,10 +4352,23 @@ const DASHBOARD_WIDGET_IDS=["today","timeline","clock","pulse","handoff","queue"
 function _dashboardColsForSize(size){return{compact:3,medium:4,wide:6,full:12}[size]||4;}
 function _dashboardSizeForCols(cols){return cols>=12?"full":cols>=6?"wide":cols>=4?"medium":"compact";}
 function _defaultDashboardLayout(){
-  return{schema:"mirrorflow.dashboard-layout",version:1,widgets:[
-    {id:"today",size:"wide",cols:6,rows:1},{id:"issues",size:"compact",cols:3,rows:1},{id:"roster",size:"compact",cols:3,rows:1},
-    {id:"coverage",size:"medium",cols:4,rows:1},{id:"import",size:"medium",cols:4,rows:1},{id:"people",size:"medium",cols:4,rows:1}
+  return{schema:"mirrorflow.dashboard-layout",version:2,widgets:[
+    {id:"today",size:"wide",cols:6,rows:1},{id:"coverage",size:"medium",cols:4,rows:1},{id:"calendarMini",size:"medium",cols:4,rows:1},
+    {id:"blueprint",size:"wide",cols:6,rows:1},{id:"clock",size:"medium",cols:4,rows:1}
   ]};
+}
+const DASHBOARD_SHORTCUTS=[
+  {id:"calendar",label:"Calendar",action:"railNavToday()"},{id:"people",label:"People",action:"railNavPeople('dashboard')"},
+  {id:"analytics",label:"Analytics",action:"railNavAnalytics('dashboard')"},{id:"blueprint",label:"Blueprint",action:"railNavAnalytics('blueprint')"},
+  {id:"coverage",label:"Coverage",action:"railNavAnalytics('coverage')"},{id:"alerts",label:"Alerts",action:"railNavAnalytics('alerts')"},
+  {id:"planner",label:"Planner",action:"railNavCalendar('planner')"}
+];
+function _defaultDashboardShortcuts(){return["calendar","people","analytics"];}
+function _normalizeDashboardShortcuts(raw){
+  const valid=new Set(DASHBOARD_SHORTCUTS.map(x=>x.id)),out=[];
+  (Array.isArray(raw)?raw:[]).forEach(id=>{if(valid.has(id)&&!out.includes(id)&&out.length<3)out.push(id);});
+  _defaultDashboardShortcuts().forEach(id=>{if(out.length<3&&!out.includes(id))out.push(id);});
+  return out;
 }
 function _normalizeDashboardLayout(raw){
   const src=raw&&typeof raw==="object"?raw:{};
@@ -4349,7 +4382,9 @@ function _normalizeDashboardLayout(raw){
     const rows=[1,2].includes(Number(w&&w.rows))?Number(w.rows):1;
     widgets.push({id,size:_dashboardSizeForCols(cols),cols,rows});
   });
-  return{schema:"mirrorflow.dashboard-layout",version:1,widgets:(widgets.length?widgets:_defaultDashboardLayout().widgets).slice(0,8)};
+  const legacyIds=["today","issues","roster","coverage","import","people"];
+  const isLegacyDefault=Number(src.version||1)<2&&widgets.length===legacyIds.length&&widgets.every((w,i)=>w.id===legacyIds[i]);
+  return{schema:"mirrorflow.dashboard-layout",version:2,widgets:(isLegacyDefault?_defaultDashboardLayout().widgets:(widgets.length?widgets:_defaultDashboardLayout().widgets)).slice(0,8)};
 }
 function _qolHash(value){
   let h=2166136261,s=String(value||"");
@@ -4396,7 +4431,8 @@ function normalizeSharedQoLState(raw){
     changeHistory:Array.isArray(src.changeHistory)?src.changeHistory.filter(Boolean).slice(0,120):[],
     changeIntelligence:_normalizeChangeIntelligence(src.changeIntelligence||src.rosterChanges||{}),
     dashboardCards:Array.isArray(src.dashboardCards)?src.dashboardCards.filter(Boolean):[],
-    dashboardLayout:_normalizeDashboardLayout(src.dashboardLayout||src.dashboard||{})
+    dashboardLayout:_normalizeDashboardLayout(src.dashboardLayout||src.dashboard||{}),
+    dashboardShortcuts:_normalizeDashboardShortcuts(src.dashboardShortcuts||src.shortcuts||[])
   };
 }
 function buildSharedQoLState(){
@@ -4414,6 +4450,7 @@ function buildSharedQoLState(){
     changeHistory:S.changeHistory||[],
     changeIntelligence:S.changeIntelligence||{},
     dashboardLayout:S.dashboardLayout||_defaultDashboardLayout(),
+    dashboardShortcuts:S.dashboardShortcuts||_defaultDashboardShortcuts(),
     dashboardCards:[
       {id:"today",label:"Today",target:"calendar.day"},
       {id:"issues",label:"Issue Inbox",target:"analytics.alerts"},
@@ -4435,6 +4472,7 @@ function applySharedQoLState(raw,opts){
   S.changeHistory=q.changeHistory;
   S.changeIntelligence=q.changeIntelligence;
   S.dashboardLayout=q.dashboardLayout;
+  S.dashboardShortcuts=q.dashboardShortcuts;
   S.qolState=q;
   if(opts.persist)saveQoLState();
   return q;
@@ -4472,12 +4510,13 @@ function sharedQoLRows(raw){
   q.changeIntelligence.history.forEach((r,i)=>add("RosterChange",r.id||"roster_change_"+i,r.summary||"Roster change",r.status||"open",r,r.generatedAt));
   q.changeIntelligence.activity.forEach((a,i)=>add("RosterChangeActivity",a.id||"roster_activity_"+i,a.label||"Roster change action",a.status||"",a,a.at));
   add("DashboardLayout","layout","Dashboard widget layout","active",q.dashboardLayout);
+  add("DashboardShortcuts","shortcuts","Dashboard shortcuts","active",q.dashboardShortcuts);
   q.dashboardCards.forEach((c,i)=>add("DashboardCard",c.id||"card_"+i,c.label||"Dashboard card","active",c));
   return rows;
 }
 function sharedQoLFromRows(rows){
   const q=normalizeSharedQoLState({});
-  q.pinnedPeople=[];q.savedViews=[];q.inlineNotes={};q.exportPresets=[];q.issueInbox=_normalizeIssueInboxState({});q.changeHistory=[];q.changeIntelligence=_normalizeChangeIntelligence({});q.dashboardLayout=_defaultDashboardLayout();q.dashboardCards=[];
+  q.pinnedPeople=[];q.savedViews=[];q.inlineNotes={};q.exportPresets=[];q.issueInbox=_normalizeIssueInboxState({});q.changeHistory=[];q.changeIntelligence=_normalizeChangeIntelligence({});q.dashboardLayout=_defaultDashboardLayout();q.dashboardShortcuts=_defaultDashboardShortcuts();q.dashboardCards=[];
   (rows||[]).forEach(row=>{
     const category=String(row.category||row.Category||"");
     const id=String(row.id||row.ID||"");
@@ -4496,6 +4535,7 @@ function sharedQoLFromRows(rows){
     else if(category==="RosterChange"&&value)q.changeIntelligence.history.push(value);
     else if(category==="RosterChangeActivity"&&value)q.changeIntelligence.activity.push(value);
     else if(category==="DashboardLayout"&&value)q.dashboardLayout=value;
+    else if(category==="DashboardShortcuts"&&value)q.dashboardShortcuts=value;
     else if(category==="DashboardCard"&&value)q.dashboardCards.push(value);
   });
   return normalizeSharedQoLState(q);
@@ -4660,7 +4700,8 @@ function buildImportReviewRecord(sourceName,scan,loaded){
   const duplicates=(scan.dupes&&scan.dupes.length?scan.dupes:detectDuplicateNames(names)).slice(0,30);
   const confidence=scan.confidence||parseInfo.reduce((best,p)=>({low:1,medium:2,high:3}[p.confidence]||0)>({low:1,medium:2,high:3}[best]||0)?p.confidence:best,"");
   const qualityBase={high:96,medium:78,low:58}[confidence]||70;
-  const qualityScore=Math.max(0,Math.min(100,qualityBase-warnings.length*3-duplicates.length*4-(scan.ghostAgents||[]).length*2-(scan.fingerprints||[]).length*2));
+  const parserAudit=buildParserAudit({entries:liveEntries,names,expectedNames:scan.expectedNames||names,missingExpectedNames:scan.missingExpectedNames||[],provenance:scan.provenance||{}});
+  const qualityScore=Math.max(0,Math.min(100,qualityBase-warnings.length*3-duplicates.length*4-(scan.ghostAgents||[]).length*2-(scan.fingerprints||[]).length*2-parserAudit.missing.length*12));
   let flags=0;
   if(loaded!==false){try{flags=computeFlags().filter(f=>f.category!=="info").length;}catch(e){flags=0;}}
   return{
@@ -4668,8 +4709,8 @@ function buildImportReviewRecord(sourceName,scan,loaded){
     entries:scan.total!=null?scan.total:liveEntries.length,people:names.length,sheets:scan.sheets!=null?scan.sheets:(S.shs||[]).length,months,
     work:scan.work!=null?scan.work:liveEntries.filter(e=>!e.isOff).length,off:scan.off!=null?scan.off:liveEntries.filter(e=>e.isOff).length,
     confidence,qualityScore,warnings,duplicates,flags,parserBreakdown:parseInfo,sheetNames:(scan.sheetNames||[]).slice(0,80),scheduleStart:scheduleDates[0]||"",scheduleEnd:scheduleDates[scheduleDates.length-1]||"",
-    crossSheetNames:(scan.crossSheetNames||[]).slice(0,40),ghostAgents:(scan.ghostAgents||[]).slice(0,40),mergeCandidates:(scan.autoMergeCandidates||[]).slice(0,40),
-    fingerprints:(scan.fingerprints||[]).slice(0,40).map(f=>typeof f==="string"?{msg:f}:{...f}),preview:loaded===false,
+    crossSheetNames:(scan.crossSheetNames||[]).slice(0,40),ghostAgents:(scan.ghostAgents||[]).slice(0,40),mergeCandidates:(scan.autoMergeCandidates||[]).slice(0,40),mergedRosterRisks:(scan.mergedRosterRisks||[]).slice(0,40),
+    fingerprints:(scan.fingerprints||[]).slice(0,40).map(f=>typeof f==="string"?{msg:f}:{...f}),parserAudit,preview:loaded===false,
     changePreview:scan.changePreview||(loaded!==false?S.changeLog:null)||null
   };
 }
@@ -5818,6 +5859,7 @@ function classifyOff(v){
   if(/\bmaternity\b|\bpaternity\b|\bbereavement\b/i.test(s))return"LEAVE";
   return null;// not an off-type
 }
+const OFF_CODE_RE=/^(OFF|AL|PH|RDO|PTO|TOIL|WFH|SL|SICK|LEAVE|HOL|HOLIDAY|TBC|TBD|N\/A|NA|ABS|AWOL)$/;
 // v48.3: also recognise bare integers 1–15 as week labels (e.g. Claims file stores 4, not "Week 4")
 function isWk(v){const s=String(v||"").trim();if(/^week\s*\d+$/i.test(s))return true;if(/^\d+$/.test(s)){const n=+s;return n>=1&&n<=15;}return false;}
 function getWk(v){const s=String(v||"").trim();const m=s.match(/^week\s*(\d+)$/i);if(m)return m[1];if(/^\d+$/.test(s)&&+s>=1&&+s<=15)return s;return null;}
@@ -5887,7 +5929,7 @@ function classifyCell(raw){
   // Header / structural label
   if(isHeaderRow(s))return{type:"header",value:null,label:s,cat:""};
   // If it's a short uppercase string that doesn't match anything, likely a code
-  if(s.length<=5&&/^[A-Z\/]+$/.test(s))return{type:"off",value:"OFF",label:s,cat:"OFF"};
+  if(OFF_CODE_RE.test(s))return{type:"off",value:"OFF",label:s,cat:classifyOff(s)||"OFF"};
   // Otherwise: probably a name or unknown text
   return{type:"unknown",value:s,label:s,cat:""};
 }
@@ -5933,7 +5975,7 @@ function _isVisualOffCandidateValue(v){
   if(!s||s==="·")return false;
   if(pDt(v)||nD(s)||isWk(s)||isHeaderRow(s)||isMonthLabel(s))return false;
   if(pTm(s)||classifyOff(s))return true;
-  return s.length<=5&&/^[A-Z\/]+$/i.test(s);
+  return OFF_CODE_RE.test(s);
 }
 function sheetToRosterAOA(ws,opts){
   const data=XLSX.utils.sheet_to_json(ws,Object.assign({header:1,defval:""},opts||{}));
@@ -7088,7 +7130,7 @@ function parseWideHoriz(data){
 
     // Check this row actually has shift-like data (at least a few parseable times or off values)
     let shiftHits=0;
-    for(let j=0;j<Math.min(dateCols.length,30);j++){
+    for(let j=0;j<dateCols.length;j++){
       const cv=String(row[dateCols[j].col]||"").trim();
       if(cv&&(pTm(cv)||isOf(cv)))shiftHits++;
     }
@@ -7175,7 +7217,7 @@ function isPersonNoiseLabel(v){
 }
 function extractRowPeopleNames(row,maxColExclusive){
   const out=[];
-  const stop=Math.max(1,Math.min(maxColExclusive||1,(row||[]).length));
+  const stop=Math.max(1,Math.min((maxColExclusive||1)+1,(row||[]).length));
   for(let c=0;c<stop;c++){
     const raw=String((row||[])[c]||"").trim();
     if(isPersonNoiseLabel(raw))continue;
@@ -7184,6 +7226,62 @@ function extractRowPeopleNames(row,maxColExclusive){
     if(!out.includes(nm))out.push(nm);
   }
   return out;
+}
+function collectParserAuditEvidence(wb,parsedNames){
+  const parsed=new Set(parsedNames||[]),evidence={},nameRows={};
+  if(!wb||!wb.Sheets)return{expectedNames:[],missing:[],provenance:{},nameRows:{}};
+  (wb.SheetNames||[]).forEach(sheet=>{
+    if(String(sheet).toLowerCase()==="out time")return;
+    const ws=wb.Sheets[sheet];if(!ws)return;
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:"",raw:true});
+    rows.forEach((row,rowIndex)=>{
+      let firstDate=(row||[]).length;
+      (row||[]).forEach((value,col)=>{if(pDt(value)&&col<firstDate)firstDate=col;});
+      const scanTo=Math.min((row||[]).length,firstDate<(row||[]).length?firstDate+1:4);
+      extractRowPeopleNames(row,scanTo).forEach(name=>{
+        if(!evidence[name])evidence[name]=new Set();
+        evidence[name].add(sheet);
+        if(!nameRows[name])nameRows[name]=[];
+        nameRows[name].push({sheet,row:rowIndex+1});
+      });
+    });
+  });
+  const expectedNames=Object.keys(evidence).filter(name=>{
+    const sheets=[...evidence[name]],overview=sheets.some(sheet=>/overview/i.test(sheet));
+    // Overview-only two/three-letter codes are usually legend labels. A short real name is
+    // still protected when it appears in a rota sheet, while longer overview roster names qualify.
+    return parsed.has(name)||sheets.length>=2||(overview&&(name.length>=4||/\s/.test(name)));
+  }).sort();
+  const provenance={};expectedNames.forEach(name=>{provenance[name]={sheets:[...evidence[name]],rows:nameRows[name]||[]};});
+  return{expectedNames,missing:expectedNames.filter(name=>!parsed.has(name)),provenance,nameRows};
+}
+function detectMergedRosterRisks(wb){
+  const risks=[];
+  if(!wb||!wb.Sheets)return risks;
+  (wb.SheetNames||[]).forEach(sheet=>{
+    const ws=wb.Sheets[sheet],merges=ws&&ws['!merges'];if(!Array.isArray(merges))return;
+    merges.forEach(range=>{
+      if(!range||!range.s||!range.e)return;
+      const width=range.e.c-range.s.c+1,height=range.e.r-range.s.r+1;
+      // A merge that begins in the likely name area and reaches into the rota grid can hide a roster cell.
+      if(range.s.c<=3&&range.e.c>=2&&(width>=2||height>=2))risks.push({sheet,range:XLSX.utils.encode_range(range),width,height});
+    });
+  });
+  return risks.slice(0,30);
+}
+function buildParserAudit(scan){
+  const counts={};(scan.entries||[]).forEach(entry=>{if(entry&&entry.name)counts[entry.name]=(counts[entry.name]||0)+1;});
+  const values=Object.values(counts).sort((a,b)=>a-b),median=values.length?values[Math.floor(values.length/2)]:0;
+  const lowVolume=Object.entries(counts).filter(([,count])=>median>=5&&count<Math.max(2,Math.floor(median*.35))).map(([name,count])=>({name,count}));
+  const expected=scan.expectedNames||[],missing=scan.missingExpectedNames||[];
+  return{expected,parsed:(scan.names||[]).length,missing,counts,median,lowVolume,provenance:scan.provenance||{},hasSchedule:(scan.names||[]).filter(name=>(counts[name]||0)>0),status:missing.length?"review":"ready"};
+}
+function copyParserAudit(){
+  const audit=(S.lastImportReview&&S.lastImportReview.parserAudit)||null;
+  if(!audit){toast("No parser audit is available yet","warn");return;}
+  const lines=["Sync parser audit",`Expected people: ${audit.expected.length}`,`Parsed people: ${audit.parsed}`,`Missing: ${audit.missing.length?audit.missing.join(", "):"none"}`,`Median rows per person: ${audit.median||0}`];
+  Object.keys(audit.counts||{}).sort().forEach(name=>{const p=(audit.provenance||{})[name]||{};lines.push(`${name}: ${audit.counts[name]} rows${p.sheets&&p.sheets.length?" | "+p.sheets.join(", "):""}`);});
+  navigator.clipboard.writeText(lines.join("\n")).then(()=>toast("Parser audit copied","ok")).catch(()=>toast("Could not copy parser audit","warn"));
 }
 function isHorizSheetName(name){
   const s=String(name||"").toLowerCase();
@@ -9595,10 +9693,17 @@ function scanFileQuick(wb,filename,manualOverride){
     const crossSheetNames=Object.entries(nameSheetMap).filter(([n,s])=>s.size>1).map(([n,s])=>({name:n,sheets:[...s]}));
     // Auto-merge candidates: abbreviated/incomplete names that likely match a full name
     const autoMergeCandidates=_findAutoMergeCandidates(names);
+    // Independent roster pass reads the raw workbook cells, then reconciles them with parsed rows.
+    // It deliberately does not create schedule entries: it surfaces missed people for review instead.
+    const rosterEvidence=collectParserAuditEvidence(wb,names);
+    const missingExpectedNames=rosterEvidence.missing;
+    if(missingExpectedNames.length)warnings.push(`Roster reconciliation: ${missingExpectedNames.length} expected person${missingExpectedNames.length===1?"":"s"} missing (${missingExpectedNames.join(", ")})`);
+    const mergedRosterRisks=detectMergedRosterRisks(wb);
+    if(mergedRosterRisks.length)warnings.push(`Merged-cell diagnostic: ${mergedRosterRisks.length} roster-area merge${mergedRosterRisks.length===1?"":"s"} inspected`);
 
     return{entries,names,months,work:work.length,off:off.length,total:entries.length,
       sheets:shs.length,sheetNames:shs.slice(),deptName,confidence:bestConf,parsers,parseInfo,warnings,dupes,fingerprints,ghostAgents,
-      crossSheetNames,autoMergeCandidates};
+      crossSheetNames,autoMergeCandidates,expectedNames:rosterEvidence.expectedNames,missingExpectedNames,provenance:rosterEvidence.provenance,mergedRosterRisks};
   }finally{
     _parseYearHint=_prevHint;
   }
@@ -10497,6 +10602,12 @@ function showParsePreview(wb,filename,manualOverride,sourceMeta,opts){
   }
 
   // ── Cross-sheet merge info ──
+  const audit=buildParserAudit(scan);
+  h+=`<div style="margin-bottom:12px;padding:10px;border-radius:8px;background:${audit.missing.length?'rgba(220,38,38,.06)':'rgba(16,185,129,.06)'};border:1px solid ${audit.missing.length?'rgba(220,38,38,.25)':'rgba(16,185,129,.22)'}">`;
+  h+=`<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span style="font-size:11px;font-weight:700;color:${audit.missing.length?'#dc2626':'#10b981'}">Roster reconciliation</span><span style="font:10px var(--mono);color:var(--tm)">${audit.parsed}/${audit.expected.length||audit.parsed} expected people parsed</span></div>`;
+  if(audit.missing.length)h+=`<div style="font-size:11px;color:#dc2626;margin-top:5px">Missing: ${X(audit.missing.join(', '))}</div>`;
+  else h+=`<div style="font-size:10px;color:var(--tm);margin-top:4px">Every person found in the roster evidence has schedule rows.</div>`;
+  h+=`</div>`;
   if(scan.crossSheetNames&&scan.crossSheetNames.length){
     h+=`<div style="margin-bottom:12px;padding:8px;border-radius:8px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2)">`;
     h+=`<div style="font-size:11px;font-weight:700;color:#10b981;margin-bottom:4px;display:flex;align-items:center;gap:5px"><span>🔗</span><span>${scan.crossSheetNames.length} people merged across sheets</span></div>`;
@@ -17499,6 +17610,7 @@ function _rRawDataContent(y,m,monthEnt){
     {k:'people',l:'People',c:()=>Object.keys(S.people||{}).length},
     {k:'coaching',l:'Coaching',c:()=>(S.coachHistory||[]).length},
     {k:'notes',l:'Notes',c:()=>Object.keys(S.notes||{}).length+Object.keys(S.agentNotes||{}).length},
+    {k:'parserAudit',l:'Parser Audit',c:()=>{const a=S.lastImportReview&&S.lastImportReview.parserAudit;return a?a.missing.length:0;}},
     {k:'raw',l:'Raw Sheets',c:()=>(S.shs||[]).length},
   ];
   let h=`<div style="display:flex;flex-direction:column;height:100%;min-height:0">`;
@@ -17524,6 +17636,7 @@ function _rRawDataContent(y,m,monthEnt){
   else if(sub==='people') h+=_rdPeople(q);
   else if(sub==='coaching') h+=_rdCoaching(q);
   else if(sub==='notes') h+=_rdNotes(q);
+  else if(sub==='parserAudit') h+=_rdParserAudit(q);
   else if(sub==='raw') h+=_rdRaw(q);
   h+=`</div></div>`;
   return h;
@@ -17539,6 +17652,18 @@ function _rdTD(vals){
   return h+`</tr>`;
 }
 function _rdEmpty(msg){return `<div style="padding:30px 16px;text-align:center;color:var(--tm);font-size:12px">${msg}</div>`;}
+function _rdParserAudit(q){
+  const audit=S.lastImportReview&&S.lastImportReview.parserAudit;
+  if(!audit)return _rdEmpty('No parser audit stored. Load a schedule file to create one.');
+  const expected=audit.expected||[],missing=new Set(audit.missing||[]),counts=audit.counts||{},provenance=audit.provenance||{};
+  const rows=expected.map(name=>({name,count:counts[name]||0,missing:missing.has(name),source:(provenance[name]&&provenance[name].sheets||[]).join(', '),trace:(provenance[name]&&provenance[name].rows||[]).map(r=>r.sheet+' row '+r.row).join('; ')})).filter(row=>!q||[row.name,row.source,row.trace].join(' ').toLowerCase().includes(q));
+  let h=`<div style="padding:12px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--bdr)"><b style="font-size:12px">Roster reconciliation</b><span style="font:11px var(--mono);color:${missing.size?'#dc2626':'var(--ok)'}">${audit.parsed}/${expected.length||audit.parsed} parsed</span><span style="font-size:11px;color:var(--tm)">${audit.median||0} median rows/person</span><button class="sdw-btn" style="margin-left:auto" onclick="copyParserAudit()">Copy audit</button></div>`;
+  if(audit.lowVolume&&audit.lowVolume.length)h+=`<div style="padding:7px 14px;color:var(--wknd);font-size:11px;border-bottom:1px solid var(--bdr)">Low-volume schedules: ${X(audit.lowVolume.map(x=>x.name+' ('+x.count+')').join(', '))}</div>`;
+  if(!rows.length)return h+_rdEmpty('No roster names match your search');
+  h+=_rdTH(['Person','Schedule rows','Status','Source sheets','Cell evidence']);
+  rows.forEach(row=>{h+=_rdTD([row.name,row.count,row.missing?'Missing':'Loaded',row.source,row.trace]);});
+  return h+'</tbody></table>';
+}
 function _rdEntries(monthEnt,q){
   let rows=monthEnt.slice().sort((a,b)=>(a.date||0)-(b.date||0)||(a.name||'').localeCompare(b.name||''));
   if(q)rows=rows.filter(e=>[e.name,e.team,e.day,e.ukS,e.ukE,e.offL,e.week].join(' ').toLowerCase().includes(q));
@@ -28016,7 +28141,7 @@ async function expSingleCardPNG(name,monthKey){
       );
       const PAD=12;
       host=document.createElement('div');
-      host.style.cssText='position:fixed;left:-99999px;top:0;z-index:-1;pointer-events:none;';
+      host.style.cssText='position:fixed;left:0;top:0;z-index:-1;pointer-events:none;opacity:0;';
       const clone=wrap.cloneNode(true);
       clone.style.cssText='display:block;width:'+capW+'px;max-width:'+capW+'px;min-width:'+capW+'px;height:auto;min-height:0;margin:0;align-self:start;padding:0;box-sizing:border-box;';
       _applyCssVarMap(clone,snapVars);
@@ -28027,7 +28152,7 @@ async function expSingleCardPNG(name,monthKey){
       host.appendChild(padder);
       document.body.appendChild(host);
       await _awaitFontRenderReady(1800);
-      const canvas=await _withHtml2CanvasColorShim(()=>html2canvas(padder,{scale:2,backgroundColor:bgColor,useCORS:true,logging:false,
+      const canvas=await _withHtml2CanvasColorShim(()=>html2canvas(padder,{scale:2,backgroundColor:bgColor,useCORS:true,logging:false,width:capW+(PAD*2),windowWidth:capW+(PAD*2),scrollX:0,scrollY:0,
         onclone:(doc,el)=>{
           doc.body.className=snapClass;
           if(snapTheme===null)doc.body.removeAttribute("data-theme");else doc.body.setAttribute("data-theme",snapTheme);
@@ -28781,7 +28906,7 @@ async function _captureBatchCardBlob(sourceEl,bgColor,isMonthCard,themeSpec,expo
 
   // Render a clone on-screen (opacity:0) so browser fully computes layout and fonts
   const host=document.createElement('div');
-  host.style.cssText='position:fixed;left:-99999px;top:0;z-index:-1;pointer-events:none;';
+  host.style.cssText='position:fixed;left:0;top:0;z-index:-1;pointer-events:none;opacity:0;';
   document.body.appendChild(host);
 
   const PAD=12;
@@ -28805,6 +28930,10 @@ async function _captureBatchCardBlob(sourceEl,bgColor,isMonthCard,themeSpec,expo
       backgroundColor:useBg,
       useCORS:true,
       logging:false,
+      width:capW+(PAD*2),
+      windowWidth:capW+(PAD*2),
+      scrollX:0,
+      scrollY:0,
       onclone:(doc,el)=>{
         doc.body.className=snapClass;
         if(snapTheme===null)doc.body.removeAttribute("data-theme");else doc.body.setAttribute("data-theme",snapTheme);
