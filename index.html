@@ -1297,19 +1297,20 @@ body[data-theme="tide"]:is([data-variant="seafoam-day"],[data-variant="ice-sheet
 .sb-icon-btn.notif-icon{margin-left:0;background:transparent;border:0;color:inherit}
 .notif-icon:hover{background:rgba(255,255,255,.12)}
 .notif-badge{position:absolute;top:-3px;right:-3px;min-width:14px;height:14px;border-radius:7px;background:#dc2626;color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px}
-.notif-tray{position:absolute;top:100%;right:0;margin-top:6px;width:320px;max-height:400px;overflow-y:auto;background:rgba(10,14,26,.97);border:1px solid var(--bdr);border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.5);z-index:500;backdrop-filter:blur(20px);padding:6px}
-.notif-tray-hd{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;font-size:12px;font-weight:600;color:var(--text);border-bottom:1px solid var(--bdr);margin-bottom:4px}
+.notif-tray{position:absolute;top:100%;right:0;margin-top:6px;width:320px;max-height:400px;overflow-y:auto;background:#101827;border:1px solid #334155;border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,.5);z-index:500;backdrop-filter:blur(20px);padding:6px;color:#e6edf7}
+.notif-tray-hd{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;font-size:12px;font-weight:600;color:#f8fbff;border-bottom:1px solid #334155;margin-bottom:4px}
+.notif-tray-hd button,.notif-tray .btn{color:#f8fbff!important;background:#1e293b!important;border-color:#475569!important}
 .notif-item{padding:7px 10px;border-radius:6px;font-size:12px;line-height:1.4;display:flex;gap:8px;align-items:flex-start;transition:background .1s;cursor:default}
-.notif-item:hover{background:rgba(255,255,255,.04)}
+.notif-item:hover{background:#1e293b}
 .notif-item .ni-icon{font-size:13px;flex-shrink:0;margin-top:1px}
 .notif-item .ni-body{flex:1;min-width:0}
-.notif-item .ni-msg{color:var(--text)}
-.notif-item .ni-time{font-size:9px;color:var(--tm);margin-top:2px;font-family:'JetBrains Mono',monospace}
+.notif-item .ni-msg{color:#e6edf7}
+.notif-item .ni-time{font-size:9px;color:#aab9ce;margin-top:2px;font-family:'JetBrains Mono',monospace}
 .notif-item.ni-ok .ni-icon{color:var(--early)}
 .notif-item.ni-err .ni-icon{color:#dc2626}
 .notif-item.ni-info .ni-icon{color:var(--accent)}
 .notif-item.ni-warn .ni-icon{color:var(--wknd)}
-.notif-empty{padding:20px;text-align:center;color:var(--tm);font-size:12px}
+.notif-empty{padding:20px;text-align:center;color:#aab9ce;font-size:12px}
 .toast.t-ok{background:rgba(34,197,94,.9);border:1px solid rgba(34,197,94,.3)}
 .toast.t-err{background:rgba(220,38,38,.9);border:1px solid rgba(220,38,38,.3)}
 .toast.t-info{background:rgba(99,102,241,.9);border:1px solid rgba(99,102,241,.3)}
@@ -4737,7 +4738,7 @@ function buildImportReviewRecord(sourceName,scan,loaded){
     entries:scan.total!=null?scan.total:liveEntries.length,people:names.length,sheets:scan.sheets!=null?scan.sheets:(S.shs||[]).length,months,
     work:scan.work!=null?scan.work:liveEntries.filter(e=>!e.isOff).length,off:scan.off!=null?scan.off:liveEntries.filter(e=>e.isOff).length,
     confidence,qualityScore,warnings,duplicates,flags,parserBreakdown:parseInfo,sheetNames:(scan.sheetNames||[]).slice(0,80),scheduleStart:scheduleDates[0]||"",scheduleEnd:scheduleDates[scheduleDates.length-1]||"",
-    crossSheetNames:(scan.crossSheetNames||[]).slice(0,40),ghostAgents:(scan.ghostAgents||[]).slice(0,40),mergeCandidates:(scan.autoMergeCandidates||[]).slice(0,40),mergedRosterRisks:(scan.mergedRosterRisks||[]).slice(0,40),
+    crossSheetNames:(scan.crossSheetNames||[]).slice(0,40),ghostAgents:(scan.ghostAgents||[]).slice(0,40),mergeCandidates:(scan.autoMergeCandidates||[]).slice(0,40),rosterAliases:(scan.rosterAliases||[]).slice(0,40),mergedRosterRisks:(scan.mergedRosterRisks||[]).slice(0,40),
     fingerprints:(scan.fingerprints||[]).slice(0,40).map(f=>typeof f==="string"?{msg:f}:{...f}),parserAudit,preview:loaded===false,
     changePreview:scan.changePreview||(loaded!==false?S.changeLog:null)||null
   };
@@ -4751,6 +4752,19 @@ function openPendingImportReview(){
   if(!_pendingLoad||!_pendingLoad.scan){toast("No import preview is open","info");return;}
   openImportReview(buildImportReviewRecord(_pendingLoad.filename,Object.assign({},_pendingLoad.scan,{changePreview:_pendingLoad.changePreview||null}),false),{pending:true});
 }
+function _pendingReviewDecisionHtml(r,opts){
+  const audit=r.parserAudit||{expected:[],missing:[],parsed:r.people,lowVolume:[]};
+  const missing=audit.missing||[],aliases=r.rosterAliases||[];
+  let h=`<section class="an-card" style="margin-bottom:12px"><div class="an-card-hd"><h4>Roster Reconciliation</h4><span style="color:${missing.length?'#dc2626':'var(--ok)'}">${audit.parsed}/${(audit.expected||[]).length||audit.parsed} parsed</span></div><div class="an-card-body"><div class="sd-list"><div class="sd-list-row"><span class="name">Missing schedule people</span><span class="meta">${missing.length?X(missing.join(', ')):'none'}</span></div><div class="sd-list-row"><span class="name">Roster spelling aliases</span><span class="meta">${aliases.length?X(aliases.map(a=>a.from+' -> '+a.to).join(', ')):'none'}</span></div><div class="sd-list-row"><span class="name">Low-volume schedules</span><span class="meta">${(audit.lowVolume||[]).length}</span></div><div class="sd-list-row"><span class="name">Roster-area merges inspected</span><span class="meta">${(r.mergedRosterRisks||[]).length}</span></div></div><button class="qol-row-btn" style="margin-top:8px" onclick="copyParserAudit()">Copy audit</button></div></section>`;
+  if(!(opts&&opts.pending))return h;
+  const ghosts=r.ghostAgents||[],merges=r.mergeCandidates||[];
+  if(!ghosts.length&&!merges.length)return h;
+  const ghostNames=ghosts.map(g=>g.name);
+  const ghostButtons=ghosts.map(g=>`<button id="ghost_${g.name.replace(/[^a-zA-Z0-9]/g,'_')}" onclick="_toggleGhost('${XJS(g.name)}')" class="qol-row-btn">${X(g.name)}</button>`).join("");
+  const mergeButtons=merges.map(m=>`<button id="merge_${m.from.replace(/[^a-zA-Z0-9]/g,'_')}" onclick="_toggleMerge('${XJS(m.from)}','${XJS(m.to)}')" class="qol-row-btn">${X(m.from)} -> ${X(m.to)}</button>`).join("");
+  h+=`<section class="an-card" style="margin-bottom:12px"><div class="an-card-hd"><h4>Optional Import Decisions</h4><span id="ghostCounter">none selected</span></div><div class="an-card-body"><div style="font-size:10px;color:var(--tm);margin-bottom:7px">Only apply placeholders or merges when the source evidence confirms them.</div>${ghosts.length?`<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px"><button onclick="_toggleAllGhosts('${XJS(JSON.stringify(ghostNames))}')" class="qol-row-btn">Select all placeholders</button>${ghostButtons}</div>`:''}${mergeButtons?`<div style="display:flex;gap:5px;flex-wrap:wrap">${mergeButtons}</div>`:''}</div></section>`;
+  return h;
+}
 function openImportReview(review,opts){
   const r=review||S.lastImportReview;
   if(!r){_qolModal("qolImportReview","Smart Import Review","No import review stored yet",`<div class="qol-empty">Load a schedule file to generate the first import review.</div>`);return;}
@@ -4762,7 +4776,8 @@ function openImportReview(review,opts){
   const importedAt=Number.isFinite(Date.parse(r.loadedAt||""))?new Date(r.loadedAt).toLocaleString():"Unknown";
   const scheduleWindow=r.scheduleStart&&r.scheduleEnd?r.scheduleStart+" to "+r.scheduleEnd:"No dated schedule window";
   const changePreview=r.changePreview||null;
-  const pendingEditor=opts&&opts.pending?`<section class="an-card" style="margin-bottom:12px"><div class="an-card-hd"><h4>Department workspace</h4><span>opens as its own tab</span></div><div class="an-card-body"><label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--tm)">Department name <input value="${XA((_pendingLoad&&_pendingLoad.departmentName)||r.dept||"")}" oninput="setPendingDeptName(this.value)" style="min-width:0;flex:1;padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);color:var(--text);font:inherit"></label></div></section>`:"";
+  let pendingEditor=opts&&opts.pending?`<section class="an-card" style="margin-bottom:12px"><div class="an-card-hd"><h4>Department workspace</h4><span>opens as its own tab</span></div><div class="an-card-body"><label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--tm)">Department name <input value="${XA((_pendingLoad&&_pendingLoad.departmentName)||r.dept||"")}" oninput="setPendingDeptName(this.value)" style="min-width:0;flex:1;padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);color:var(--text);font:inherit"></label></div></section>`:"";
+  pendingEditor+=_pendingReviewDecisionHtml(r,opts);
   const changeHtml=changePreview?'<section class="an-card" style="margin-top:12px"><div class="an-card-hd"><h4>Roster Change Preview</h4><span style="color:'+(changePreview.risk==="high"?"#dc2626":changePreview.risk==="medium"?"#f59e0b":"var(--ok)")+'">'+X(changePreview.risk||"none")+'</span></div><div class="an-card-body"><div class="sd-list"><div class="sd-list-row"><span class="name">'+(changePreview.total||0)+' changes against browser baseline</span><span class="meta">'+(changePreview.high||0)+' high · '+((changePreview.coverageImpact||[]).filter(x=>x.newGap).length)+' new cover gaps</span></div><div class="sd-list-row"><span class="name">Comparison window</span><span class="meta">'+X(changePreview.overlapStart||"n/a")+' -> '+X(changePreview.overlapEnd||"n/a")+'</span></div></div></div></section>':'';
   const body=`${pendingEditor}<div class="qol-kpi-grid"><div class="sd-kpi"><div class="n">${r.people}</div><div class="l">People</div></div><div class="sd-kpi"><div class="n">${r.entries}</div><div class="l">Rows</div></div><div class="sd-kpi"><div class="n">${r.months.length}</div><div class="l">Months</div></div><div class="sd-kpi"><div class="n">${r.sheets}</div><div class="l">Sheets</div></div><div class="sd-kpi"><div class="n">${r.qualityScore==null?"--":r.qualityScore+"%"}</div><div class="l">Quality</div></div></div><div class="qol-two-col"><section class="an-card"><div class="an-card-hd"><h4>Parser Breakdown</h4><span>${X(r.confidence||"")}</span></div><div class="an-card-body">${parserRows}</div></section><section class="an-card"><div class="an-card-hd"><h4>Parser Warnings</h4><span>${(r.warnings||[]).length}</span></div><div class="an-card-body"><div class="sd-list">${warnRows}</div></div></section><section class="an-card"><div class="an-card-hd"><h4>Name Review</h4><span>${(r.duplicates||[]).length}</span></div><div class="an-card-body"><div class="sd-list">${dupRows}</div></div></section><section class="an-card"><div class="an-card-hd"><h4>Merge Signals</h4><span>${mergeCount}</span></div><div class="an-card-body"><div class="sd-list"><div class="sd-list-row"><span class="name">Cross-sheet people</span><span class="meta">${(r.crossSheetNames||[]).length}</span></div><div class="sd-list-row"><span class="name">Suggested merges</span><span class="meta">${(r.mergeCandidates||[]).length}</span></div><div class="sd-list-row"><span class="name">Ghost people</span><span class="meta">${(r.ghostAgents||[]).length}</span></div><div class="sd-list-row"><span class="name">Shift fingerprints</span><span class="meta">${(r.fingerprints||[]).length}</span></div></div></div></section><section class="an-card"><div class="an-card-hd"><h4>Source Provenance</h4><span style="color:${freshness.color}">${X(freshness.label)}</span></div><div class="an-card-body"><div class="sd-list"><div class="sd-list-row"><span class="name">Source</span><span class="meta">${X(r.source||"Unknown")}</span></div><div class="sd-list-row"><span class="name">Source ID</span><span class="meta">${X(r.sourceId||"legacy / pending")}</span></div><div class="sd-list-row"><span class="name">Authority</span><span class="meta">${X((r.sourceKind||"unknown")+" · rank "+(r.authorityRank||0))}</span></div><div class="sd-list-row"><span class="name">Imported</span><span class="meta">${X(importedAt)}</span></div><div class="sd-list-row"><span class="name">Freshness</span><span class="meta">${X(freshness.ageLabel)}</span></div><div class="sd-list-row"><span class="name">Schedule window</span><span class="meta">${X(scheduleWindow)}</span></div></div></div></section></div>`;
   const actions=r.preview?"":`<button class="qol-row-btn" onclick="document.getElementById('qolImportReview')?.remove();railNavAnalytics('data')">Open Data</button><button class="qol-row-btn primary" onclick="document.getElementById('qolImportReview')?.remove();openIssueInbox()">Issue Inbox</button>`;
@@ -5887,7 +5902,10 @@ function classifyOff(v){
   if(/\bmaternity\b|\bpaternity\b|\bbereavement\b/i.test(s))return"LEAVE";
   return null;// not an off-type
 }
-const OFF_CODE_RE=/^(OFF|AL|PH|RDO|PTO|TOIL|WFH|SL|SICK|LEAVE|HOL|HOLIDAY|TBC|TBD|N\/A|NA|ABS|AWOL)$/;
+// Compact rota exports frequently encode an off day as a single marker (for
+// example E, X, or a dash). Those codes are only promoted from a styled cell
+// during worksheet normalisation, but are also safe schedule-cell off labels.
+const OFF_CODE_RE=/^(OFF|AL|PH|RDO|PTO|TOIL|WFH|SL|SICK|LEAVE|HOL|HOLIDAY|TBC|TBD|N\/A|NA|ABS|AWOL|E|X|[-–—])$/i;
 // v48.3: also recognise bare integers 1–15 as week labels (e.g. Claims file stores 4, not "Week 4")
 function isWk(v){const s=String(v||"").trim();if(/^week\s*\d+$/i.test(s))return true;if(/^\d+$/.test(s)){const n=+s;return n>=1&&n<=15;}return false;}
 function getWk(v){const s=String(v||"").trim();const m=s.match(/^week\s*(\d+)$/i);if(m)return m[1];if(/^\d+$/.test(s)&&+s>=1&&+s<=15)return s;return null;}
@@ -6003,8 +6021,13 @@ function _isVisualOffCandidateValue(v){
   const s=String(v===null||v===undefined?"":v).trim();
   if(!s||s==="·")return false;
   if(pDt(v)||nD(s)||isWk(s)||isHeaderRow(s)||isMonthLabel(s))return false;
-  if(pTm(s)||classifyOff(s))return true;
-  return OFF_CODE_RE.test(s);
+  // A displayed shift is authoritative. Rota work cells are often colour coded,
+  // including dark or grey fills, so visual style must never erase a valid time.
+  if(pTm(s))return false;
+  if(classifyOff(s))return true;
+  // Compact visual markers are supported without allowing short leader names
+  // in a styled header to be mistaken for an off code.
+  return /^[EX]$/i.test(s);
 }
 function sheetToRosterAOA(ws,opts){
   // Keep true date values so recurring day/month labels retain their year. SheetJS
@@ -6016,14 +6039,28 @@ function sheetToRosterAOA(ws,opts){
     else if(typeof value==="string"&&/^invalid date$/i.test(value.trim()))row[index]="";
   });});
   if(!ws||!data||typeof XLSX==="undefined"||!XLSX.utils)return data;
+  const usedRange=ws["!ref"]?XLSX.utils.decode_range(ws["!ref"]):{s:{r:0,c:0},e:{r:0,c:0}};
   Object.keys(ws).forEach(addr=>{
     if(addr[0]==="!")return;
     const cell=ws[addr];
-    if(!cell||!_isVisualOffStyle(cell.s))return;
+    if(!cell)return;
     const pos=XLSX.utils.decode_cell(addr);
-    const row=data[pos.r]||(data[pos.r]=[]);
-    const raw=row[pos.c]!==undefined?row[pos.c]:(cell.w!==undefined?cell.w:cell.v);
-    if(_isVisualOffCandidateValue(raw))row[pos.c]="OFF";
+    // sheet_to_json compacts arrays to the used-range origin. Keep every repair
+    // in that same coordinate space or B1/B2-origin sheets are shifted.
+    const rr=pos.r-usedRange.s.r,cc=pos.c-usedRange.s.c;
+    if(rr<0||cc<0)return;
+    const row=data[rr]||(data[rr]=[]);
+    const raw=row[cc]!==undefined?row[cc]:(cell.w!==undefined?cell.w:cell.v);
+    // SheetJS 0.20+ can expose time-like numeric rota cells as Date objects
+    // (often 1970-01-01) while cell.w still holds the real shift text. Prefer
+    // that displayed shift whenever it parses as a time range; real date cells
+    // never satisfy pTm and keep their Date value.
+    if(cell.w!==undefined&&pTm(String(cell.w))&&!pTm(String(raw))){
+      row[cc]=String(cell.w);
+      return;
+    }
+    if(!_isVisualOffStyle(cell.s))return;
+    if(_isVisualOffCandidateValue(raw))row[cc]="OFF";
   });
   return data;
 }
@@ -6042,13 +6079,14 @@ function mkE(name,date,day,raw,team,weekLabel){
     off=false;ukS=cl.value.s;ukE=cl.value.e;offL="";
     note=cl.note||"";
   } else {
-    // Fallback: check original isOf/pTm logic for backward compat
+    // This is a known person/date schedule cell. If it is not a shift, keep it
+    // as non-working with its raw marker so it cannot inflate coverage.
     const origOff=/^(off|rest|leave|al|sick|ph|holiday|vacation|pto|absent|n\/a|rdo|day off)$/i.test(cs);
     const origTm=origOff?null:pTm(cs);
-    off=origOff||(!origTm&&(!cs||cs==="·"));
+    off=origOff||!origTm;
     ukS=origTm?origTm.s:null;ukE=origTm?origTm.e:null;
     offL=off?normalizeOffCategory(cs||"OFF"):"";
-    note="";
+    note=off&&cs?"Unrecognised rota marker retained as non-working: "+cs:"";
   }
   return{name,date,day,ukS,ukE,isOff:off,offL,raw:cs,team:team||"Main",week:weekLabel||"",_fileWeek:weekLabel||"",note:note||""};
 }
@@ -7244,6 +7282,7 @@ function isMonthLabel(v){
 }
 function isPersonNoiseLabel(v){
   const s=String(v||"").trim();
+  if(/^invalid date$/i.test(s))return true;
   if(!s||s==="·")return true;
   if(isHeaderRow(s)||isWk(s)||nD(s)||pDt(s)||pTm(s)||classifyOff(s)||isMonthLabel(s))return true;
    if(isRotaMetaLabel(s))return true;
@@ -7262,6 +7301,27 @@ function extractRowPeopleNames(row,maxColExclusive){
     if(!out.includes(nm))out.push(nm);
   }
   return out;
+}
+function _nameEditDistance(a,b){
+  a=String(a||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+  b=String(b||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+  if(a===b)return 0;
+  if(!a.length)return b.length;if(!b.length)return a.length;
+  let prev=Array.from({length:b.length+1},(_,i)=>i);
+  for(let i=1;i<=a.length;i++){
+    const cur=[i];
+    for(let j=1;j<=b.length;j++)cur[j]=Math.min(cur[j-1]+1,prev[j]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1));
+    prev=cur;
+  }
+  return prev[b.length];
+}
+function _uniqueRosterAlias(name,parsedNames){
+  const raw=String(name||"").trim(),compact=raw.toLowerCase().replace(/[^a-z0-9]/g,"");
+  if(compact.length<4)return null;
+  const candidates=(parsedNames||[]).map(match=>({match,distance:_nameEditDistance(raw,match)}))
+    .filter(x=>x.distance<=1&&String(x.match||"").trim().toLowerCase()[0]===raw.toLowerCase()[0])
+    .sort((a,b)=>a.distance-b.distance||a.match.localeCompare(b.match));
+  return candidates.length===1?candidates[0]:null;
 }
 function collectParserAuditEvidence(wb,parsedNames){
   const parsed=new Set(parsedNames||[]),evidence={},nameRows={};
@@ -7282,14 +7342,27 @@ function collectParserAuditEvidence(wb,parsedNames){
       });
     });
   });
-  const expectedNames=Object.keys(evidence).filter(name=>{
+  const rawExpectedNames=Object.keys(evidence).filter(name=>{
     const sheets=[...evidence[name]],overview=sheets.some(sheet=>/overview/i.test(sheet));
     // Overview-only two/three-letter codes are usually legend labels. A short real name is
     // still protected when it appears in a rota sheet, while longer overview roster names qualify.
     return parsed.has(name)||sheets.length>=2||(overview&&(name.length>=4||/\s/.test(name)));
   }).sort();
-  const provenance={};expectedNames.forEach(name=>{provenance[name]={sheets:[...evidence[name]],rows:nameRows[name]||[]};});
-  return{expectedNames,missing:expectedNames.filter(name=>!parsed.has(name)),provenance,nameRows};
+  const aliases=[],provenance={};
+  const expectedNames=[...new Set(rawExpectedNames.map(name=>{
+    if(parsed.has(name))return name;
+    const alias=_uniqueRosterAlias(name,parsedNames);
+    if(alias){aliases.push({from:name,to:alias.match,distance:alias.distance,reason:"unique one-character roster spelling variant"});return alias.match;}
+    return name;
+  }))].sort();
+  rawExpectedNames.forEach(name=>{
+    const alias=aliases.find(x=>x.from===name),canonical=alias?alias.to:name;
+    const p=provenance[canonical]||(provenance[canonical]={sheets:[],rows:[],aliases:[]});
+    [...evidence[name]].forEach(sheet=>{if(!p.sheets.includes(sheet))p.sheets.push(sheet);});
+    (nameRows[name]||[]).forEach(row=>p.rows.push(row));
+    if(alias&&!p.aliases.includes(name))p.aliases.push(name);
+  });
+  return{expectedNames,missing:expectedNames.filter(name=>!parsed.has(name)),provenance,nameRows,aliases};
 }
 function detectMergedRosterRisks(wb){
   const risks=[];
@@ -7752,7 +7825,7 @@ function parsePerson(data,sheetName){
   return Object.values(byDate).sort((a,b)=>(a.date||0)-(b.date||0));
 }
 
-function autoParse(data,sn){
+function autoParseLegacy(data,sn){
   if(!data||data.length<2)return[];const s=sn.toLowerCase();
   function logParse(parser,confidence,reason,entries,warnings){
     S.parseInfo.push({sheet:sn,parser,confidence,reason,count:entries.length,warnings:warnings||[]});
@@ -7826,6 +7899,122 @@ function autoParse(data,sn){
 /* ═══════════════════════════════════════════════════════════════
    FILE HANDLING
    ═══════════════════════════════════════════════════════════════ */
+function _sheetParserFeatures(data,sheetName){
+  const rows=(data||[]).length;
+  const cols=Math.max(0,...(data||[]).map(row=>(row||[]).length));
+  let maxDatesInRow=0,dayHeaderRows=0,firstColDays=0,firstColDates=0,alternatingRows=0;
+  for(let r=0;r<Math.min(rows,80);r++){
+    const row=data[r]||[];let dates=0,days=0,shifts=0;
+    for(let c=0;c<Math.min(row.length,Math.max(cols,40));c++){
+      if(pDt(row[c]))dates++;
+      if(nD(row[c]))days++;
+      if(pTm(row[c])||classifyOff(row[c]))shifts++;
+    }
+    maxDatesInRow=Math.max(maxDatesInRow,dates);
+    if(days>=5)dayHeaderRows++;
+    if(nD(row[0]))firstColDays++;
+    if(pDt(row[0]))firstColDates++;
+    if(r>0&&(dates>=3||shifts>=3))alternatingRows++;
+  }
+  const orientation=cols>=Math.max(12,rows*2)?"horizontal":rows>=Math.max(12,cols*2)?"vertical":"";
+  return{rows,cols,maxDatesInRow,dayHeaderRows,firstColDays,firstColDates,alternatingRows,orientation,
+    nameHoriz:isHorizSheetName(sheetName),nameVert:isVertSheetName(sheetName)};
+}
+function _entrySetQuality(entries){
+  const list=(entries||[]).filter(Boolean),seen=new Set(),names=new Set(),dates=new Set(),counts={};
+  let complete=0,duplicates=0,implausible=0;
+  list.forEach(e=>{
+    const name=String(e&&e.name||"").trim(),d=e&&e.date?new Date(e.date):null;
+    const hasDate=!!(d&&!isNaN(d)),hasShift=!!(e&&!e.isOff&&e.ukS&&e.ukE),resolved=!!(e&&e.isOff||hasShift);
+    if(name&&hasDate&&resolved)complete++;
+    if(name)names.add(name);
+    if(hasDate)dates.add(d.getFullYear()+"-"+P(d.getMonth()+1)+"-"+P(d.getDate()));
+    if(name)counts[name]=(counts[name]||0)+1;
+    const key=_parserEntryKey(e);if(key){if(seen.has(key))duplicates++;else seen.add(key);}
+    if(hasShift){const hrs=calcHrs(e.ukS,e.ukE);if(hrs<1||hrs>16)implausible++;}
+  });
+  const values=Object.values(counts).sort((a,b)=>a-b),median=values.length?values[Math.floor(values.length/2)]:0;
+  const balance=values.length&&median?Math.min(1,values[0]/median):0;
+  const total=Math.max(1,list.length),completeRatio=complete/total,duplicateRatio=duplicates/total,plausibleRatio=1-implausible/total;
+  const score=completeRatio*35+(1-duplicateRatio)*10+balance*10+(names.size?5:0)+Math.min(5,dates.size/7*5)+Math.min(5,Math.log10(list.length+1)*2)+plausibleRatio*5;
+  return{score:Math.round(score*10)/10,total:list.length,complete,completeRatio,duplicates,duplicateRatio,names:names.size,dates:dates.size,balance,implausible};
+}
+function _parserAffinity(parser,features){
+  const f=features||{};let score=0;
+  if(parser==="parseWideHoriz"){
+    if(f.orientation==="horizontal")score+=12;
+    if(f.maxDatesInRow>=10)score+=15;
+    if(f.cols>=45&&f.rows<=220)score+=3;
+  }else if(parser==="parseHoriz"){
+    if(f.orientation==="horizontal")score+=16;
+    if(f.maxDatesInRow>=5)score+=9;
+    if(f.nameHoriz)score+=5;
+  }else if(parser==="parseVert"){
+    if(f.orientation==="vertical")score+=16;
+    if(f.firstColDays>=5||f.firstColDates>=5)score+=9;
+    if(f.nameVert)score+=5;
+  }else if(parser==="parseBlocks"){
+    if(f.dayHeaderRows>=2)score+=25;
+    if(f.orientation!=="vertical")score+=3;
+  }else if(parser==="parsePerson"){
+    if(f.alternatingRows>=4)score+=22;
+    if(f.rows>=14)score+=3;
+  }
+  return Math.min(30,score);
+}
+function _runParserCandidate(parser,data,sheetName,features){
+  try{
+    let entries=[],detail="";
+    if(parser==="parseWideHoriz"){
+      const result=parseWideHoriz(data);entries=result&&result.entries||[];detail=result&&result.reason||"";
+    }else if(parser==="parseHoriz")entries=parseHoriz(data);
+    else if(parser==="parseVert")entries=parseVert(data);
+    else if(parser==="parseBlocks")entries=parseBlocks(data);
+    else if(parser==="parsePerson")entries=parsePerson(data,sheetName);
+    const quality=_entrySetQuality(entries),affinity=_parserAffinity(parser,features);
+    return{parser,entries,quality,affinity,score:Math.round((quality.score+affinity)*10)/10,detail,error:""};
+  }catch(err){return{parser,entries:[],quality:_entrySetQuality([]),affinity:0,score:0,detail:"",error:String(err&&err.message||err)};}
+}
+function _candidateEquivalent(a,b){
+  if(!a||!b||a.entries.length!==b.entries.length||a.quality.names!==b.quality.names||a.quality.dates!==b.quality.dates)return false;
+  const map=new Map(a.entries.map(e=>[_parserEntryKey(e),_parserEntrySignature(e)]).filter(([key])=>key));
+  if(map.size!==b.entries.length)return false;
+  return b.entries.every(e=>map.get(_parserEntryKey(e))===_parserEntrySignature(e));
+}
+function _parserTiePriority(parser,features){
+  if(features.nameHoriz&&parser==="parseHoriz")return 5;
+  if(features.nameVert&&parser==="parseVert")return 5;
+  if(features.maxDatesInRow>=10&&parser==="parseWideHoriz")return 4;
+  if(features.dayHeaderRows>=2&&parser==="parseBlocks")return 3;
+  if(features.alternatingRows>=4&&parser==="parsePerson")return 2;
+  return 0;
+}
+function autoParse(data,sn){
+  if(!data||data.length<2)return[];
+  const features=_sheetParserFeatures(data,sn);
+  const allParsers=["parseWideHoriz","parseHoriz","parseVert","parseBlocks","parsePerson"];
+  let parserNames=allParsers.filter(parser=>_parserAffinity(parser,features)>=8);
+  if(!parserNames.length)parserNames=allParsers;
+  const candidates=parserNames
+    .map(parser=>_runParserCandidate(parser,data,sn,features))
+    .filter(candidate=>candidate.entries.length)
+    .sort((a,b)=>b.score-a.score||_parserTiePriority(b.parser,features)-_parserTiePriority(a.parser,features)||b.quality.complete-a.quality.complete||b.entries.length-a.entries.length);
+  if(!candidates.length){
+    S.parseInfo.push({sheet:sn,parser:"none",confidence:"low",reason:"No parser produced canonical schedule rows",count:0,warnings:["No schedule structure could be verified on this sheet"],alternatives:[]});
+    return[];
+  }
+  const best=candidates[0],runner=candidates.find((candidate,index)=>index>0&&!_candidateEquivalent(best,candidate)),margin=runner?best.score-runner.score:best.score;
+  const confidence=best.score>=82&&margin>=4?"high":best.score>=62?"medium":"low";
+  const warnings=[];
+  if(best.score<52)warnings.push("Parser confidence is below the automatic-load threshold");
+  if(runner&&margin<4)warnings.push(`Ambiguous structure: ${best.parser} and ${runner.parser} scored within ${Math.round(margin*10)/10} points`);
+  if(best.quality.completeRatio<1)warnings.push(`${best.quality.total-best.quality.complete} rows failed canonical schedule validation`);
+  const alternatives=candidates.slice(0,5).map(c=>({parser:c.parser,score:c.score,count:c.entries.length,complete:c.quality.complete,affinity:c.affinity}));
+  S.parseInfo.push({sheet:sn,parser:best.parser,confidence,reason:`Scored parser selection ${best.score}/100; ${best.quality.names} people, ${best.quality.dates} dates, ${Math.round(best.quality.completeRatio*100)}% canonical rows${best.detail?"; "+best.detail:""}`,count:best.entries.length,warnings,score:best.score,alternatives,features});
+  if(best.score<52)return[];
+  return best.entries.map(entry=>Object.assign(entry,{_parserSheet:sn,_parserEngine:best.parser,_parserScore:best.score,_parserConfidence:confidence}));
+}
+
 let _excelParserStatus={ready:false,error:""};
 function isExcelParserReady(){
   return !!(window.XLSX&&XLSX.read&&XLSX.utils&&XLSX.utils.sheet_to_json);
@@ -7928,6 +8117,7 @@ function setLCMode(mode){
 function routeFile(f,opts){
   if(!requireExcelParserReady())return;
   if(!f){toast('No file selected','warn');return;}
+  if(/^~\$/i.test(String(f.name||""))){toast('This is an Excel temporary lock file. Select the actual workbook instead.','warn',5000);return;}
   if(_lcMode==='wfm') procWFM(f,opts);
   else proc(f,opts);
 }
@@ -9668,6 +9858,96 @@ function parseManualHoriz(data,headerRowIdx){
   }
   return{entries,dateCols:dateCols.length};
 }
+function _parserEntryKey(e){
+  if(!e||!e.name||!e.date||isNaN(new Date(e.date)))return"";
+  const d=new Date(e.date);
+  return String(e.name).trim().toLowerCase()+"|"+d.getFullYear()+"-"+P(d.getMonth()+1)+"-"+P(d.getDate());
+}
+function _parserEntrySignature(e){return(e&&e.isOff?"OFF":((e&&e.ukS)||"")+"-"+((e&&e.ukE)||""));}
+function _validateCanonicalScheduleEntries(source,context){
+  const entries=[],seen=new Map(),stats={input:(source||[]).length,output:0,dropped:0,repaired:0,duplicates:0,conflicts:0};
+  (source||[]).forEach((original,index)=>{
+    if(!original||typeof original!=="object"){stats.dropped++;return;}
+    const e={...original};
+    e.name=cleanPersonName(String(e.name||"").trim());
+    const parsedDate=e.date instanceof Date?new Date(e.date):new Date(e.date||"");
+    if(!e.name||isPersonNoiseLabel(e.name)||isNaN(parsedDate)){stats.dropped++;return;}
+    e.date=new Date(parsedDate.getFullYear(),parsedDate.getMonth(),parsedDate.getDate());
+    e.day=DOW[e.date.getDay()]||e.day||"";
+    e.ukS=String(e.ukS||"").trim()||null;e.ukE=String(e.ukE||"").trim()||null;
+    e.isOff=e.isOff===true||parseBoolLoose(e.isOff);
+    if(e.isOff){
+      if(e.ukS||e.ukE)stats.repaired++;
+      e.ukS=null;e.ukE=null;e.saS=null;e.saE=null;e.offL=normalizeOffCategory(e.offL||classifyOff(e.raw)||"OFF");
+    }else if(e.ukS&&e.ukE){
+      e.offL="";
+      if(!e.saS)e.saS=u2s(e.ukS,e.date);
+      if(!e.saE)e.saE=u2s(e.ukE,e.date);
+    }else{
+      // A person/date cell without a complete time range is non-working. This
+      // prevents partial or unfamiliar markers from inflating floor coverage.
+      stats.repaired++;
+      e.isOff=true;e.ukS=null;e.ukE=null;e.saS=null;e.saE=null;e.offL=normalizeOffCategory(classifyOff(e.raw)||e.offL||"OFF");
+      if(!e.note)e.note="Incomplete schedule marker retained as non-working";
+    }
+    const key=_parserEntryKey(e);
+    if(!key){stats.dropped++;return;}
+    const priorIndex=seen.get(key);
+    if(priorIndex!==undefined){
+      stats.duplicates++;
+      const prior=entries[priorIndex];
+      if(_parserEntrySignature(prior)!==_parserEntrySignature(e)){
+        stats.conflicts++;
+        const priorRank=Number(prior.authority_rank||0),nextRank=Number(e.authority_rank||0);
+        if(nextRank>priorRank)entries[priorIndex]=e;
+      }
+      return;
+    }
+    seen.set(key,entries.length);entries.push(e);
+  });
+  stats.output=entries.length;
+  const issues=[];
+  if(stats.dropped)issues.push(`${stats.dropped} invalid person/date row${stats.dropped===1?'':'s'} removed`);
+  if(stats.repaired)issues.push(`${stats.repaired} incomplete or contradictory row${stats.repaired===1?'':'s'} normalised`);
+  if(stats.duplicates)issues.push(`${stats.duplicates} duplicate person/date row${stats.duplicates===1?'':'s'} reconciled${stats.conflicts?` (${stats.conflicts} conflicting)`:''}`);
+  return{entries,stats,issues,context:context||"schedule"};
+}
+function _gridOrientation(data,sheetName){
+  const rows=(data||[]).length;
+  const cols=Math.max(0,...(data||[]).map(row=>(row||[]).length));
+  // Layout shape is a stronger signal than a tab name. Names only help with
+  // near-square or unusually cropped grids where the shape is inconclusive.
+  if(cols>=Math.max(12,rows*2))return"horizontal";
+  if(rows>=Math.max(12,cols*2))return"vertical";
+  if(isHorizSheetName(sheetName))return"horizontal";
+  if(isVertSheetName(sheetName))return"vertical";
+  return"";
+}
+function _planParsedSheetOrder(parsedSheets){
+  const list=(parsedSheets||[]).slice();
+  const horizontals=list.filter(x=>_gridOrientation(x.data,x.sheet)==="horizontal");
+  const verticals=list.filter(x=>_gridOrientation(x.data,x.sheet)==="vertical");
+  const notes=[];
+  if(!horizontals.length||!verticals.length)return{ordered:list,notes};
+  const score=x=>Number(x&&x.score)||Number(x&&x.entries&&x.entries[0]&&x.entries[0]._parserScore)||_entrySetQuality(x&&x.entries||[]).score;
+  const horizontal=[...horizontals].sort((a,b)=>score(b)-score(a))[0];
+  const vertical=[...verticals].sort((a,b)=>score(b)-score(a))[0];
+  const hMap=new Map((horizontal.entries||[]).map(e=>[_parserEntryKey(e),e]).filter(([k])=>k));
+  const vMap=new Map((vertical.entries||[]).map(e=>[_parserEntryKey(e),e]).filter(([k])=>k));
+  let shared=0,conflicts=0;
+  hMap.forEach((entry,key)=>{const other=vMap.get(key);if(!other)return;if(String(entry.name).trim().toLowerCase()!==String(other.name).trim().toLowerCase())return;shared++;if(_parserEntrySignature(entry)!==_parserEntrySignature(other))conflicts++;});
+  if(shared){
+    const rate=Math.round(conflicts/shared*1000)/10;
+    const primary=score(vertical)>score(horizontal)?vertical:horizontal;
+    const secondary=primary===horizontal?vertical:horizontal;
+    const tied=Math.abs(score(primary)-score(secondary))<4;
+    notes.push({sheet:"reconciliation",parser:"pairedGrid",confidence:conflicts?"medium":"high",reason:conflicts?`Paired grid check: ${conflicts}/${shared} differing schedule cells (${rate}%); ${primary.sheet} retained by parser quality score and ${secondary.sheet} adds only missing people/dates`:`Paired grid check: ${shared} shared schedule cells agree`,count:shared,warnings:conflicts?[`Paired sheets disagree on ${conflicts} schedule cells${tied?" and have near-equal parser scores":""}; review the source authority before finalising`]:[]});
+  }
+  const primary=score(vertical)>score(horizontal)?vertical:horizontal;
+  const secondary=primary===horizontal?vertical:horizontal;
+  const ordered=[primary,...list.filter(x=>x!==primary&&x!==secondary),secondary];
+  return{ordered,notes};
+}
 function scanFileQuick(wb,filename,manualOverride){
   const _prevHint=_parseYearHint;
   _parseYearHint=_deriveParseYearHint(filename,wb&&wb.SheetNames?wb.SheetNames:[]);
@@ -9678,13 +9958,18 @@ function scanFileQuick(wb,filename,manualOverride){
     if(manualOverride&&manualOverride.sheetName&&!shs.includes(manualOverride.sheetName))shs=shs.concat([manualOverride.sheetName]);
     // Quick parse — collect entries without committing state
     const _savedInfo=S.parseInfo;S.parseInfo=[];
-    const seen={};const entries=[];const nameSheetMap={};
+    const seen={};const entries=[];const nameSheetMap={};const parsedSheets=[];
     shs.forEach(shName=>{
       const ws=wb.Sheets[shName];if(!ws)return;
       const data=sheetToRosterAOA(ws);
       const manualHere=manualOverride&&manualOverride.sheetName===shName;
       const rawEntries=manualHere?parseManualHoriz(data,manualOverride.headerRowIdx).entries:autoParse(data,shName);
       if(manualHere)S.parseInfo.push({sheet:shName,parser:"manualHoriz",confidence:"medium",reason:"Manually mapped from row "+(manualOverride.headerRowIdx+1),count:rawEntries.length,warnings:[]});
+      parsedSheets.push({sheet:shName,data,entries:rawEntries,score:Number(rawEntries&&rawEntries[0]&&rawEntries[0]._parserScore)||0});
+    });
+    const parsePlan=_planParsedSheetOrder(parsedSheets);
+    parsePlan.notes.forEach(note=>S.parseInfo.push(note));
+    parsePlan.ordered.forEach(({sheet:shName,entries:rawEntries})=>{
       rawEntries.forEach(e=>{
         const k=e.name+"|"+(e.date?e.date.getFullYear()+"-"+P(e.date.getMonth())+"-"+P(e.date.getDate()):"");
         if(!seen[k]){seen[k]=true;entries.push(e);}
@@ -9698,6 +9983,9 @@ function scanFileQuick(wb,filename,manualOverride){
       dateClean.entries.forEach(e=>entries.push(e));
       S.parseInfo.push({sheet:"date-sanity",parser:"dateSanity",confidence:"high",reason:`Ignored ${dateClean.removed} out-of-range date entries; workbook contains clear ${dateClean.minY}–${dateClean.maxY} schedule dates`,count:entries.length,warnings:[]});
     }
+    const canonical=_validateCanonicalScheduleEntries(entries,filename);
+    entries.length=0;canonical.entries.forEach(e=>entries.push(e));
+    if(canonical.issues.length)S.parseInfo.push({sheet:"canonical-validation",parser:"canonicalValidator",confidence:canonical.stats.conflicts?"medium":"high",reason:`Validated ${canonical.stats.input} parsed rows into ${canonical.stats.output} canonical schedule rows`,count:entries.length,warnings:canonical.issues});
     const parseInfo=[...S.parseInfo];
     S.parseInfo=_savedInfo;// restore — don't pollute current state
 
@@ -9723,7 +10011,7 @@ function scanFileQuick(wb,filename,manualOverride){
     const fingerprints=detectShiftFingerprints(entries,names);
 
     // Ghost agents: names found in unparsed sheets but absent from parsed entries
-    const ghostAgents=detectGhostAgents(wb,names);
+    let ghostAgents=detectGhostAgents(wb,names);
 
     // Cross-sheet overlap: names found in 2+ parsed sheets (data auto-merged)
     const crossSheetNames=Object.entries(nameSheetMap).filter(([n,s])=>s.size>1).map(([n,s])=>({name:n,sheets:[...s]}));
@@ -9732,14 +10020,14 @@ function scanFileQuick(wb,filename,manualOverride){
     // Independent roster pass reads the raw workbook cells, then reconciles them with parsed rows.
     // It deliberately does not create schedule entries: it surfaces missed people for review instead.
     const rosterEvidence=collectParserAuditEvidence(wb,names);
+    if(rosterEvidence.aliases&&rosterEvidence.aliases.length){const resolvedAliases=new Set(rosterEvidence.aliases.map(alias=>alias.from));ghostAgents=ghostAgents.filter(agent=>!resolvedAliases.has(agent.name));}
     const missingExpectedNames=rosterEvidence.missing;
     if(missingExpectedNames.length)warnings.push(`Roster reconciliation: ${missingExpectedNames.length} expected person${missingExpectedNames.length===1?"":"s"} missing (${missingExpectedNames.join(", ")})`);
     const mergedRosterRisks=detectMergedRosterRisks(wb);
-    if(mergedRosterRisks.length)warnings.push(`Merged-cell diagnostic: ${mergedRosterRisks.length} roster-area merge${mergedRosterRisks.length===1?"":"s"} inspected`);
 
     return{entries,names,months,work:work.length,off:off.length,total:entries.length,
       sheets:shs.length,sheetNames:shs.slice(),deptName,confidence:bestConf,parsers,parseInfo,warnings,dupes,fingerprints,ghostAgents,
-      crossSheetNames,autoMergeCandidates,expectedNames:rosterEvidence.expectedNames,missingExpectedNames,provenance:rosterEvidence.provenance,mergedRosterRisks};
+      crossSheetNames,autoMergeCandidates,expectedNames:rosterEvidence.expectedNames,missingExpectedNames,provenance:rosterEvidence.provenance,rosterAliases:rosterEvidence.aliases||[],mergedRosterRisks};
   }finally{
     _parseYearHint=_prevHint;
   }
@@ -10617,6 +10905,9 @@ function showParsePreview(wb,filename,manualOverride,sourceMeta,opts){
   h+=`</div>`;
   // Right: flags + actions
   h+=`<div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0">`;
+  const previewDiagnosticsInSmartReview=true;
+  h+=`<div style="padding:12px;border-radius:8px;background:var(--al);border:1px solid var(--bdr)"><div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">Ready to load</div><div style="font-size:10px;color:var(--tm);line-height:1.5">Detailed checks and source diagnostics are available from Smart Review.</div></div>`;
+  if(!previewDiagnosticsInSmartReview){
 
   // (right col contents below — injected into right column div opened above)
   // ── Per-sheet breakdown (collapsible) ──
@@ -10704,6 +10995,7 @@ function showParsePreview(wb,filename,manualOverride,sourceMeta,opts){
     h+=`</div>`;
   }
 
+  }
   // Range sanity guard
   if(rangeGuard){
     h+=`<div style="margin-bottom:12px;padding:10px;border-radius:8px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3)">`;
@@ -11014,7 +11306,7 @@ function restoreFromSaveFile(wb,filename,sourceMeta,opts){
     const sdWs=wb.Sheets["Schedule_Data"];
     if(!sdWs)throw new Error("No Schedule_Data sheet");
     const sdData=XLSX.utils.sheet_to_json(sdWs,{defval:"",raw:false});
-    const entries=sdData.map(r=>{
+    const restoredRows=sdData.map(r=>{
       const d=r.date?new Date(r.date):null;
       // Fix timezone: if date string doesn't include time, parsing is safe.
       // If it does, ensure we get the local date.
@@ -11022,7 +11314,7 @@ function restoreFromSaveFile(wb,filename,sourceMeta,opts){
       if(d&&!isNaN(d)){
         date=new Date(d.getFullYear(),d.getMonth(),d.getDate());
       }
-      const isOff=String(r.is_off)==="TRUE"||String(r.is_off)==="true"||r.is_off===true;
+      const isOff=parseBoolLoose(r.is_off);
       return{
         name:r.leader_name||"",
         date:date,
@@ -11044,7 +11336,9 @@ function restoreFromSaveFile(wb,filename,sourceMeta,opts){
         authority_rank:Number(r.authority_rank)||sourceMeta&&sourceMeta.authority_rank||_syncSourceAuthorityRank("allmonths"),
         source_type:r.source_type||"direct"
       };
-    }).filter(e=>e.name&&e.date);
+    });
+    const restoredValidation=_validateCanonicalScheduleEntries(restoredRows,filename+" Schedule_Data");
+    const entries=restoredValidation.entries;
     S.entries=entries;
     S.entriesVer=(S.entriesVer||0)+1;invalidateDerivedCache();
 
@@ -11057,6 +11351,8 @@ function restoreFromSaveFile(wb,filename,sourceMeta,opts){
       "allMonths","parseInfo","anDay","anMode","shiftFilter","sumMode","anView","cardShow","flagSettings",
       "agentStatuses","agentNotes","peopleSubTab","peopleDashView","peopleHomeNotes","peopleLogbook","leaderPlanner","anScope","otPlan"];
     restoreKeys.forEach(k=>{if(snap[k]!==undefined)S[k]=snap[k];});
+    if(!Array.isArray(S.parseInfo))S.parseInfo=[];
+    if(restoredValidation.issues.length)S.parseInfo.push({sheet:"Schedule_Data",parser:"canonicalValidator",confidence:restoredValidation.stats.conflicts?"medium":"high",reason:`Validated ${restoredValidation.stats.input} saved rows into ${restoredValidation.stats.output} canonical schedule rows`,count:entries.length,warnings:restoredValidation.issues});
     if(!Array.isArray(S.sourceManifest))S.sourceManifest=[];
     if(sourceMeta){const wrapper=Object.assign({},sourceMeta,{department:snap.dept||detectDeptName(filename,[]),unit:snap.dept||detectDeptName(filename,[]),source_rows:entries.length,review_status:"ready"});if(!S.sourceManifest.some(x=>x.fingerprint&&x.fingerprint===wrapper.fingerprint))S.sourceManifest.push(wrapper);S.currentSource=wrapper;}
     if(snap.qolState)applySharedQoLState(snap.qolState);
@@ -25077,8 +25373,20 @@ function rRaw(el){
 
 /* ═══ EXPORTS ═══ */
 function hExp(){const m=$("exm");if(m)m.style.display="none";}
-function expXL(){const all=gD().map(e=>({Name:e.name,Team:e.team,Date:e.date?fDF(e.date):"",Day:e.day||"","UK Time":uD(e),"SA Time":sAD(e),Hours:e.isOff?0:calcHrs(S.tz&&e.saS?e.saS:e.ukS,S.tz&&e.saE?e.saE:e.ukE),Week:e.week}));const ws=XLSX.utils.json_to_sheet(all);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Schedule");XLSX.writeFile(wb,`schedule_${monthLabel().replace(/ /g,"_")}.xlsx`);hExp();}
-function expPP(){const em=gE();const wb=XLSX.utils.book_new();for(const[n,ent]of Object.entries(em)){const rows=ent.map(e=>({Date:e.date?fDF(e.date):"",Day:e.day||"","UK Time":uD(e),"SA Time":sAD(e),Hours:e.isOff?0:calcHrs(S.tz&&e.saS?e.saS:e.ukS,S.tz&&e.saE?e.saE:e.ukE)}));XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),n.replace(/[\\\/\?\*\[\]:]/g,"_").substring(0,31));}XLSX.writeFile(wb,`per_person_${monthLabel().replace(/ /g,"_")}.xlsx`);hExp();}
+function _quickScheduleExportRow(e,includeName){
+  const row={};
+  if(includeName)row.Name=e.name||"";
+  row.Team=e.team||"Main";row.Date=e.date?safeExcelDate(e.date):"";row.Day=e.day||"";row.Week=e.week||"";
+  row["UK Start"]=e.isOff?"":e.ukS||"";row["UK End"]=e.isOff?"":e.ukE||"";row["UK Time"]=e.isOff?"OFF":uD(e);
+  row["SA Start"]=e.isOff?"":e.saS||"";row["SA End"]=e.isOff?"":e.saE||"";row["SA Time"]=e.isOff?"OFF":sAD(e);
+  row.Hours=e.isOff?0:calcHrs(S.tz&&e.saS?e.saS:e.ukS,S.tz&&e.saE?e.saE:e.ukE);
+  row["Is Working"]=!e.isOff;row["Is Off"]=!!e.isOff;row["Off Type"]=e.isOff?(e.offL||"OFF"):"";
+  row["Raw Value"]=e.raw||"";row["Source File"]=e.source_file||S.fn||"";
+  return row;
+}
+function _quickScheduleSheet(rows){const ws=XLSX.utils.json_to_sheet(rows,{cellDates:true});ws["!cols"]=[{wch:24},{wch:14},{wch:12},{wch:10},{wch:8},{wch:10},{wch:10},{wch:18},{wch:10},{wch:10},{wch:18},{wch:9},{wch:11},{wch:8},{wch:14},{wch:20},{wch:28}];return ws;}
+function expXL(){const wb=XLSX.utils.book_new(),rows=gD().map(e=>_quickScheduleExportRow(e,true));XLSX.utils.book_append_sheet(wb,_quickScheduleSheet(rows),"Schedule");XLSX.writeFile(wb,`schedule_${monthLabel().replace(/ /g,"_")}.xlsx`,{cellDates:true});hExp();}
+function expPP(){const em=gE(),wb=XLSX.utils.book_new();for(const[n,ent]of Object.entries(em))XLSX.utils.book_append_sheet(wb,_quickScheduleSheet(ent.map(e=>_quickScheduleExportRow(e,false))),n.replace(/[\\\/\?\*\[\]:]/g,"_").substring(0,31));XLSX.writeFile(wb,`per_person_${monthLabel().replace(/ /g,"_")}.xlsx`,{cellDates:true});hExp();}
 function cpTbl(){const all=gD();const rows=[["Name","Date","Day","UK Time","SA Time","Hours"]];all.forEach(e=>rows.push([e.name,e.date?fDF(e.date):"",e.day||"",uD(e),sAD(e),e.isOff?0:calcHrs(S.tz&&e.saS?e.saS:e.ukS,S.tz&&e.saE?e.saE:e.ukE)]));navigator.clipboard.writeText(rows.map(r=>r.join("\t")).join("\n")).then(()=>toast("Table copied to clipboard","ok"));hExp();}
 
 // ═══ CLEAN REFORMAT — outputs messy data in the clean per-person Claims format ═══
