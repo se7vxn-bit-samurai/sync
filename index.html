@@ -1353,17 +1353,17 @@ body[data-theme="tide"]:is([data-variant="seafoam-day"],[data-variant="ice-sheet
 .kpi-tile .kpi-l{font-size:10px;color:var(--tm);text-transform:uppercase;letter-spacing:.5px}
 .kpi-tile .kpi-sub{font-size:11px;color:var(--tm);margin-top:2px}
 /* Sync dashboard */
-.sync-dashboard{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:14px;padding:16px;min-height:100%;align-content:start}
-.sync-dashboard .sd-hero{min-height:250px;background:linear-gradient(90deg,color-mix(in srgb,var(--card) 92%,transparent),var(--card));border:1px solid var(--card-border);border-radius:12px;box-shadow:var(--sh);display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,420px);overflow:hidden}
-.sync-dashboard .sd-hero-copy{padding:34px 30px;display:flex;flex-direction:column;justify-content:center;gap:14px}
+.sync-dashboard{display:grid;grid-template-columns:minmax(760px,1fr) minmax(280px,342px);gap:10px;padding:10px 12px 14px;min-height:100%;align-content:start}
+.sync-dashboard .sd-hero{min-height:252px;background:linear-gradient(90deg,color-mix(in srgb,var(--card) 92%,transparent),var(--card));border:1px solid var(--card-border);border-radius:8px;box-shadow:var(--sh);display:grid;grid-template-columns:minmax(0,1.02fr) minmax(300px,.98fr);overflow:hidden}
+.sync-dashboard .sd-hero-copy{padding:28px 30px;display:flex;flex-direction:column;justify-content:center;gap:11px}
 .sync-dashboard .sd-eyebrow{font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--tm)}
 .sync-dashboard .sd-title{font-family:'Playfair Display',Georgia,serif;font-size:42px;line-height:.98;color:var(--text);font-weight:800}
 .sync-dashboard .sd-sub{font-size:14px;line-height:1.45;color:var(--ink2,var(--text));font-style:italic;max-width:520px}
 .sync-dashboard .sd-actions{display:flex;flex-wrap:wrap;gap:8px}
 .sync-dashboard .sd-btn{border:1px solid var(--bdr);border-radius:7px;background:var(--bg);color:var(--text);font-family:inherit;font-size:12px;padding:8px 12px;cursor:pointer}
 .sync-dashboard .sd-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--al)}
-.sync-dashboard .sd-ledger{padding:34px 22px;display:flex;flex-direction:column;justify-content:center;gap:9px;border-left:1px solid var(--rule,var(--bdr));background:color-mix(in srgb,var(--bg2) 72%,transparent)}
-.sync-dashboard .sd-ledger-row{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--bdr);border-radius:7px;padding:8px 10px;background:color-mix(in srgb,var(--bg) 78%,transparent);font-size:12px}
+.sync-dashboard .sd-ledger{padding:26px 22px;display:flex;flex-direction:column;justify-content:center;gap:8px;border-left:1px solid var(--rule,var(--bdr));background:color-mix(in srgb,var(--bg2) 72%,transparent)}
+.sync-dashboard .sd-ledger-row{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--bdr);border-radius:6px;padding:7px 9px;background:color-mix(in srgb,var(--bg) 78%,transparent);font-size:11px}
 .sync-dashboard .sd-ledger-row b{color:var(--text)}
 .sync-dashboard .sd-ledger-row span{font-family:'DM Mono',monospace;color:var(--accent)}
 .sync-dashboard .sd-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:14px}
@@ -1371,25 +1371,62 @@ body[data-theme="tide"]:is([data-variant="seafoam-day"],[data-variant="ice-sheet
 .sync-dashboard .sd-kpi .n{font-family:'JetBrains Mono','DM Mono',monospace;font-size:26px;font-weight:800;color:var(--accent);line-height:1}
 .sync-dashboard .sd-kpi .l{margin-top:6px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--tm)}
 .sync-dashboard .sd-kpi .s{margin-top:5px;font-size:11px;color:var(--ink3,var(--tm))}
-.sync-dashboard .sd-side,.sync-dashboard .sd-main{display:flex;flex-direction:column;gap:14px}
-.sync-dashboard .sd-list{display:flex;flex-direction:column;gap:7px}
-.sync-dashboard .sd-list-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--bdr);border-radius:7px;background:color-mix(in srgb,var(--bg) 78%,transparent);padding:8px 10px;font-size:12px}
+.sync-dashboard .sd-side,.sync-dashboard .sd-main{display:flex;flex-direction:column;gap:10px}
+.sync-dashboard .an-card{border-radius:8px}
+.sync-dashboard .an-card-hd{min-height:34px;padding:10px 14px}
+.sync-dashboard .an-card-body{padding:10px 14px}
+.sync-dashboard .sd-list{display:flex;flex-direction:column;gap:6px}
+.sync-dashboard .sd-list-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--bdr);border-radius:6px;background:color-mix(in srgb,var(--bg) 78%,transparent);padding:7px 9px;font-size:11px}
 .sync-dashboard .sd-list-row .name{font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sync-dashboard .sd-list-row .meta{font-family:'DM Mono',monospace;color:var(--accent);white-space:nowrap}
-.sync-dashboard .sd-cover{display:flex;flex-direction:column;gap:8px}
-.sync-dashboard .sd-cover-row{display:grid;grid-template-columns:36px 1fr auto;gap:8px;align-items:center;font-size:12px}
-.sync-dashboard .sd-bar{height:6px;border-radius:6px;background:var(--bg3);overflow:hidden}
+.sync-dashboard .sd-cover{display:flex;flex-direction:column;gap:7px}
+.sync-dashboard .sd-cover-row{display:grid;grid-template-columns:34px 1fr auto;gap:8px;align-items:center;font-size:11px}
+.sync-dashboard .sd-bar{height:5px;border-radius:6px;background:var(--bg3);overflow:hidden}
 .sync-dashboard .sd-bar i{display:block;height:100%;border-radius:6px;background:var(--ok)}
 .sync-dashboard .sd-quick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .sync-dashboard .sd-quick button{border:1px solid var(--bdr);border-radius:8px;background:var(--bg);color:var(--text);font-family:inherit;font-size:12px;padding:11px 10px;cursor:pointer;text-align:left}
 .sync-dashboard .sd-quick button:hover{border-color:var(--accent);color:var(--accent);background:var(--al)}
+.sync-dashboard .sd-focus-grid{display:grid;grid-template-columns:1fr 1fr 1.25fr;gap:10px;min-height:126px}
+.sync-dashboard .sd-focus-card{border:1px solid var(--card-border);border-radius:8px;background:var(--card);box-shadow:var(--sh);padding:12px 14px;display:flex;flex-direction:column;justify-content:space-between;gap:8px;cursor:pointer;min-height:126px}
+.sync-dashboard .sd-focus-card:hover{border-color:var(--accent);background:color-mix(in srgb,var(--card) 88%,var(--al))}
+.sync-dashboard .sd-focus-card h3{margin:0;font-size:15px;color:var(--text)}
+.sync-dashboard .sd-focus-card p{display:none}
+.sync-dashboard .sd-focus-card .sd-focus-kpi{display:flex;align-items:end;justify-content:space-between;gap:12px}
+.sync-dashboard .sd-focus-card .sd-focus-kpi b{font-family:'JetBrains Mono','DM Mono',monospace;font-size:24px;line-height:1;color:var(--accent)}
+.sync-dashboard .sd-focus-card .sd-focus-kpi span{font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--tm);text-align:right}
+.sync-dashboard .sd-focus-card.blueprint{min-height:126px}
+.sync-dashboard .sd-focus-card .sd-mini-list{display:flex;flex-direction:column;gap:6px}
+.sync-dashboard .sd-focus-card .sd-mini-list .sd-list-row{padding:6px 8px}
+.sync-dashboard .sd-command-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:10px}
+.sync-dashboard .sd-panel{border:1px solid var(--card-border);border-radius:8px;background:var(--card);box-shadow:var(--sh);overflow:hidden;min-height:116px}
+.sync-dashboard .sd-panel.span-3{grid-column:span 3}.sync-dashboard .sd-panel.span-4{grid-column:span 4}.sync-dashboard .sd-panel.span-5{grid-column:span 5}.sync-dashboard .sd-panel.span-6{grid-column:span 6}.sync-dashboard .sd-panel.span-7{grid-column:span 7}.sync-dashboard .sd-panel.span-8{grid-column:span 8}.sync-dashboard .sd-panel.span-12{grid-column:span 12}
+.sync-dashboard .sd-panel-head{min-height:34px;padding:9px 13px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sync-dashboard .sd-panel-head h4{font-size:13px;font-weight:800;color:var(--text);margin:0}.sync-dashboard .sd-panel-head span{font-size:10px;color:var(--tm);white-space:nowrap}
+.sync-dashboard .sd-panel-body{padding:10px 13px}
+.sync-dashboard .sd-jump-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:8px}
+.sync-dashboard .sd-jump-grid button{min-width:0;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);color:var(--text);font-family:inherit;font-size:11px;padding:8px 7px;cursor:pointer;text-align:left}
+.sync-dashboard .sd-jump-grid button:hover{border-color:var(--accent);background:var(--al);color:var(--accent)}
+.sync-dashboard .sd-mini-cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.sync-dashboard .sd-cal-h{font-size:9px;font-weight:800;color:var(--tm);text-align:center}
+.sync-dashboard .sd-cal-d{height:24px;border:1px solid var(--bdr);border-radius:5px;background:color-mix(in srgb,var(--bg) 78%,transparent);color:var(--text);font-family:'DM Mono',monospace;font-size:10px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.sync-dashboard .sd-cal-d.work{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 42%,var(--bdr))}
+.sync-dashboard .sd-cal-d.today{background:var(--al);box-shadow:inset 0 0 0 1px var(--accent)}
+.sync-dashboard .sd-cal-d.off:after{content:"";position:absolute;left:5px;right:5px;bottom:3px;height:2px;border-radius:2px;background:var(--warn)}
+.sync-dashboard .sd-clock-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.sync-dashboard .sd-clock{border:1px solid var(--bdr);border-radius:7px;background:color-mix(in srgb,var(--bg) 78%,transparent);padding:9px 10px}
+.sync-dashboard .sd-clock b{display:block;font-family:'JetBrains Mono','DM Mono',monospace;font-size:19px;color:var(--accent);line-height:1}.sync-dashboard .sd-clock span{display:block;margin-top:5px;font-size:10px;text-transform:uppercase;color:var(--tm)}
+.sync-dashboard .sd-signal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.sync-dashboard .sd-signal{border:1px solid var(--bdr);border-radius:6px;background:color-mix(in srgb,var(--bg) 78%,transparent);padding:8px 9px;min-width:0}
+.sync-dashboard .sd-signal b{display:block;font-family:'JetBrains Mono','DM Mono',monospace;font-size:18px;color:var(--accent);line-height:1}.sync-dashboard .sd-signal span{display:block;margin-top:4px;font-size:10px;color:var(--tm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(min-width:769px) and (max-width:1100px){
-  .sync-dashboard{grid-template-columns:minmax(0,1fr) 320px;gap:10px;padding:12px}
+  .sync-dashboard{grid-template-columns:minmax(0,1fr);gap:10px;padding:12px}
   .sync-dashboard .sd-hero{grid-template-columns:1fr;min-height:0}
   .sync-dashboard .sd-hero-copy{padding:24px 22px}
   .sync-dashboard .sd-title{font-size:36px}
   .sync-dashboard .sd-ledger{border-left:0;border-top:1px solid var(--rule,var(--bdr));padding:18px 20px}
-  .sync-dashboard .sd-kpis,.sd-health-strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sync-dashboard .sd-kpis,.sd-health-strip,.sync-dashboard .sd-focus-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sync-dashboard .sd-focus-card.blueprint{grid-column:span 2}
+  .sync-dashboard .sd-panel.span-3,.sync-dashboard .sd-panel.span-4,.sync-dashboard .sd-panel.span-5,.sync-dashboard .sd-panel.span-6,.sync-dashboard .sd-panel.span-7,.sync-dashboard .sd-panel.span-8{grid-column:span 6}
 }
 .qol-modal-overlay{position:fixed;inset:0;z-index:990;display:flex;align-items:flex-start;justify-content:center;padding:58px 18px 18px}
 .qol-modal-backdrop,.cmd-palette-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.58);backdrop-filter:blur(5px)}
@@ -2386,6 +2423,11 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
   .sync-dashboard .sd-title{font-size:34px}
   .sync-dashboard .sd-ledger{border-left:0;border-top:1px solid var(--rule,var(--bdr));padding:16px}
   .sync-dashboard .sd-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .sync-dashboard .sd-focus-grid{grid-template-columns:1fr;gap:8px}
+  .sync-dashboard .sd-focus-card,.sync-dashboard .sd-focus-card.blueprint{min-height:126px;grid-column:auto}
+  .sync-dashboard .sd-command-grid{grid-template-columns:1fr;gap:8px}
+  .sync-dashboard .sd-panel.span-3,.sync-dashboard .sd-panel.span-4,.sync-dashboard .sd-panel.span-5,.sync-dashboard .sd-panel.span-6,.sync-dashboard .sd-panel.span-7,.sync-dashboard .sd-panel.span-8,.sync-dashboard .sd-panel.span-12{grid-column:1}
+  .sync-dashboard .sd-jump-grid,.sync-dashboard .sd-signal-grid,.sync-dashboard .sd-clock-grid{grid-template-columns:1fr 1fr}
   .sync-dashboard .sd-quick{grid-template-columns:1fr}
   .sd-health-strip{grid-template-columns:repeat(2,minmax(0,1fr))}
   .qol-modal-overlay{padding:8px;align-items:stretch}
@@ -3826,7 +3868,7 @@ function rerenderAnalyticsSurface(mode){
   _queueRenderTask("analytics",()=>_rerenderAnalyticsSurfaceNow(m));
   return true;
 }
-function rSyncDashboard(el){
+function rSyncDashboardLegacy(el){
   const all=gD();
   const today=new Date();today.setHours(0,0,0,0);
   const todayKey=excKey(today);
@@ -4212,7 +4254,7 @@ function _sdwDrawer(layout){
   }).join("");
   return '<aside class="sdw-drawer"><div class="sdw-drawer-head"><b>Dashboard Widgets</b><span><button class="sdw-btn" onclick="resetDashboardLayout()">Reset</button> <button class="sdw-btn" onclick="toggleDashboardWidgetDrawer()">Close</button></span></div><div class="sdw-library">'+rows+'</div></aside>';
 }
-function rSyncDashboard(el){
+function rSyncDashboardWorkspace(el){
   el.classList.add("dashboard-fixed");
   const all=gD(),today=new Date();today.setHours(0,0,0,0);
   const todayKey=excKey(today),todayRows=all.filter(e=>e.date&&excKey(e.date)===todayKey);
@@ -4250,6 +4292,60 @@ function rSyncDashboard(el){
   }
   if(S._dashboardWidgetDrawer)el.querySelector(".sync-dashboard-workspace")?.classList.add("drawer-open");
   ensureDashboardPersonalTicker();
+}
+function rSyncDashboard(el){
+  el.classList.add("dashboard-fixed");
+  const all=gD(),today=new Date();today.setHours(0,0,0,0);
+  const todayKey=excKey(today),todayRows=all.filter(e=>e.date&&excKey(e.date)===todayKey);
+  const working=todayRows.filter(e=>!e.isOff),off=todayRows.filter(e=>e.isOff);
+  const people=[...new Set(all.map(e=>e.name).filter(Boolean))];
+  const leaders=typeof _peopleScopeLeaders==="function"?_peopleScopeLeaders():[...new Set(all.map(e=>e.name).filter(Boolean))];
+  const issueOpen=buildIssueInboxItems().filter(x=>x.status==="open").length;
+  const attention=getPeopleAttentionCount();
+  const health=S.month?computeTeamHealthScore(S.month):null;
+  const todayHours=Math.round(working.reduce((sum,e)=>sum+calcHrs(e.saS||e.ukS,e.saE||e.ukE),0)*10)/10;
+  const saNow=new Date().toLocaleTimeString("en-ZA",{timeZone:"Africa/Johannesburg",hour:"2-digit",minute:"2-digit",hour12:false});
+  const ukNow=new Date().toLocaleTimeString("en-GB",{timeZone:"Europe/London",hour:"2-digit",minute:"2-digit",hour12:false});
+  const weekStart=new Date(today);weekStart.setDate(weekStart.getDate()-((weekStart.getDay()+6)%7));
+  const weekRows=[];
+  for(let i=0;i<7;i++){
+    const d=new Date(weekStart);d.setDate(weekStart.getDate()+i);
+    const dk=excKey(d),rows=all.filter(e=>e.date&&excKey(e.date)===dk),work=rows.filter(e=>!e.isOff).length,total=Math.max(1,rows.length||people.length||1),pct=Math.min(100,Math.round(work/total*100));
+    weekRows.push('<div class="sd-cover-row"><b>'+["Mon","Tue","Wed","Thu","Fri","Sat","Sun"][i]+'</b><div class="sd-bar"><i style="width:'+pct+'%"></i></div><span>'+work+'/'+total+'</span></div>');
+  }
+  const workingHtml=working.length?working.slice(0,9).map(e=>'<div class="sd-list-row"><span class="name">'+X(e.name)+'</span><span class="meta">'+X((S.tz&&e.saS?e.saS:e.ukS)||"")+'-'+X((S.tz&&e.saE?e.saE:e.ukE)||"")+'</span></div>').join(""):'<div class="sd-list-row"><span class="name">No one scheduled today</span><span class="meta">--</span></div>';
+  const issueHtml=issueOpen?'<div class="sd-list-row"><span class="name">Open issues</span><span class="meta">'+issueOpen+'</span></div>':'<div class="sd-list-row"><span class="name">Clean queue</span><span class="meta">0</span></div>';
+  const blueprintHtml=S.month?'<div class="sd-list-row"><span class="name">'+X(monthLabel())+'</span><span class="meta">'+(health?X(health.grade+" "+health.avg):"--")+'</span></div>':'<div class="sd-list-row"><span class="name">No month selected</span><span class="meta">--</span></div>';
+  const sharedHtml='<div class="sd-list-row"><span class="name">Pins / notes</span><span class="meta">'+((S.pinnedPeople||[]).length)+' / '+Object.keys(S.inlineNotes||{}).length+'</span></div><div class="sd-list-row"><span class="name">Open issues</span><span class="meta">'+issueOpen+'</span></div>';
+  const peopleIntel=typeof peopleOpsIntel==="function"?peopleOpsIntel(leaders):null;
+  const peopleLine=peopleIntel?peopleIntel.ready+' OT ready - '+peopleIntel.issues.length+' structure':'people signals '+attention;
+  const calendarLine=working.length+' working - '+off.length+' off - '+todayHours+'h';
+  const blueprintLine=health?'Health '+health.grade+' '+health.avg:'No month score';
+  const calendarMini='<div class="sd-list-row"><span class="name">Today</span><span class="meta">'+working.length+' / '+people.length+'</span></div><div class="sd-list-row"><span class="name">Window</span><span class="meta">'+X((S.tz?"SA":"UK")+' floor')+'</span></div>';
+  const peopleMini='<div class="sd-list-row"><span class="name">People</span><span class="meta">'+people.length+'</span></div><div class="sd-list-row"><span class="name">OT readiness</span><span class="meta">'+(peopleIntel?peopleIntel.ready+' ready':'--')+'</span></div>';
+  const monthBase=S.month?new Date(S.month+"-01T12:00:00"):new Date(today);
+  const calY=monthBase.getFullYear(),calM=monthBase.getMonth(),first=new Date(calY,calM,1),daysInMonth=new Date(calY,calM+1,0).getDate(),lead=(first.getDay()+6)%7;
+  const monthStats={};
+  all.forEach(e=>{if(!e.date)return;const d=new Date(e.date);if(d.getFullYear()!==calY||d.getMonth()!==calM)return;const day=d.getDate();monthStats[day]=monthStats[day]||{work:0,off:0};if(e.isOff)monthStats[day].off++;else monthStats[day].work++;});
+  const calCells=["M","T","W","T","F","S","S"].map(d=>'<div class="sd-cal-h">'+d+'</div>');
+  for(let i=0;i<lead;i++)calCells.push('<div></div>');
+  for(let d=1;d<=daysInMonth;d++){
+    const stat=monthStats[d]||{work:0,off:0},isToday=today.getFullYear()===calY&&today.getMonth()===calM&&today.getDate()===d;
+    calCells.push('<div class="sd-cal-d '+(stat.work?'work ':'')+(stat.off?'off ':'')+(isToday?'today':'')+'" title="'+stat.work+' working, '+stat.off+' off">'+d+'</div>');
+  }
+  const miniCalendarHtml=calCells.join("");
+  const peoplePanelHtml='<div class="sd-signal-grid"><div class="sd-signal"><b>'+people.length+'</b><span>active people</span></div><div class="sd-signal"><b>'+(peopleIntel?peopleIntel.ready:0)+'</b><span>OT ready</span></div><div class="sd-signal"><b>'+(peopleIntel?peopleIntel.yat:0)+'</b><span>YAT signals</span></div><div class="sd-signal"><b>'+(peopleIntel?peopleIntel.acting:0)+'</b><span>acting signals</span></div></div>';
+  const blueprintPanelHtml='<div class="sd-signal-grid"><div class="sd-signal"><b>'+(health?X(health.grade):"--")+'</b><span>health grade</span></div><div class="sd-signal"><b>'+(health?X(String(health.avg)):"--")+'</b><span>score</span></div><div class="sd-signal"><b>'+issueOpen+'</b><span>open issues</span></div><div class="sd-signal"><b>'+(S.shs||[]).length+'</b><span>source sheets</span></div></div>';
+  const clockHtml='<div class="sd-clock-grid"><div class="sd-clock"><b>'+saNow+'</b><span>South Africa</span></div><div class="sd-clock"><b>'+ukNow+'</b><span>United Kingdom</span></div></div>';
+  const gotoHtml='<div class="sd-jump-grid"><button onclick="railNavToday()">Today</button><button onclick="railNavCalendar(&quot;cards&quot;)">Cards</button><button onclick="railNavCalendar(&quot;overtime&quot;)">OT</button><button onclick="railNavPeople(&quot;dashboard&quot;)">People</button><button onclick="railNavAnalytics(&quot;blueprint&quot;)">Blueprint</button><button onclick="railNavAnalytics(&quot;data&quot;)">Data</button></div>';
+  el.innerHTML='<div class="sync-dashboard" data-testid="dashboard-workspace">'+
+    '<div class="sd-main">'+
+      '<section class="sd-hero"><div class="sd-hero-copy"><div class="sd-eyebrow">7OS Sync - Operations Suite</div><div class="sd-title">Sync<br>Dashboard</div><div class="sd-sub">Your operation at a glance - parsed, mapped, and ready before the day starts.</div><div class="sd-actions"><button class="sd-btn" onclick="browseScheduleFile()">Drop / browse files</button><button class="sd-btn" onclick="railNavAnalytics(&quot;blueprint&quot;)">New blueprint</button><button class="sd-btn" onclick="railNavAnalytics(&quot;data&quot;)">Sources</button></div></div><div class="sd-ledger"><div class="sd-ledger-row"><b>On floor</b><span>'+working.length+' / '+people.length+'</span></div><div class="sd-ledger-row"><b>Off / leave</b><span>'+off.length+' / '+people.length+'</span></div><div class="sd-ledger-row"><b>Alerts</b><span>'+issueOpen+' open</span></div><div class="sd-ledger-row"><b>Scope</b><span>'+people.length+' people - '+leaders.length+' leaders</span></div><div class="sd-ledger-row"><b>Sources</b><span>'+(S.shs||[]).length+' sheets - '+(S.raw?S.raw.length:all.length)+' rows</span></div></div></section>'+
+      '<div class="sd-focus-grid"><section class="sd-focus-card" onclick="railNavToday()"><div><h3>Calendar</h3></div><div class="sd-mini-list">'+calendarMini+'</div><div class="sd-focus-kpi"><b>'+working.length+'</b><span>'+X(calendarLine)+'</span></div></section><section class="sd-focus-card" onclick="railNavPeople(&quot;dashboard&quot;)"><div><h3>People</h3></div><div class="sd-mini-list">'+peopleMini+'</div><div class="sd-focus-kpi"><b>'+people.length+'</b><span>'+X(peopleLine)+'</span></div></section><section class="sd-focus-card blueprint" onclick="railNavAnalytics(&quot;blueprint&quot;)"><div><h3>Blueprint</h3></div><div class="sd-mini-list">'+blueprintHtml+issueHtml+'</div><div class="sd-focus-kpi"><b>'+(health?X(health.grade):"--")+'</b><span>'+X(blueprintLine)+'</span></div></section></div>'+
+      '<div class="sd-command-grid"><section class="sd-panel span-4"><div class="sd-panel-head"><h4>Mini Calendar</h4><span>'+X(monthLabel())+'</span></div><div class="sd-panel-body"><div class="sd-mini-cal">'+miniCalendarHtml+'</div>'+gotoHtml+'</div></section><section class="sd-panel span-4"><div class="sd-panel-head"><h4>People</h4><span>live signals</span></div><div class="sd-panel-body">'+peoplePanelHtml+'</div></section><section class="sd-panel span-4"><div class="sd-panel-head"><h4>Blueprint</h4><span>'+X(blueprintLine)+'</span></div><div class="sd-panel-body">'+blueprintPanelHtml+'</div></section><section class="sd-panel span-3"><div class="sd-panel-head"><h4>Clock</h4><span>SA / UK</span></div><div class="sd-panel-body">'+clockHtml+'</div></section><section class="sd-panel span-5"><div class="sd-panel-head"><h4>Working Today</h4><span>'+X(fDF(today))+'</span></div><div class="sd-panel-body"><div class="sd-list">'+workingHtml+'</div></div></section><section class="sd-panel span-4"><div class="sd-panel-head"><h4>This Week</h4><span>'+people.length+' people</span></div><div class="sd-panel-body"><div class="sd-cover">'+weekRows.join("")+'</div></div></section></div>'+
+    '</div>'+
+    '<aside class="sd-side"><section class="an-card"><div class="an-card-hd"><h4>Working Today</h4><span>'+X(fDF(today))+'</span></div><div class="an-card-body"><div class="sd-list">'+workingHtml+'</div></div></section><section class="an-card"><div class="an-card-hd"><h4>This Week</h4><span>'+people.length+' people</span></div><div class="an-card-body"><div class="sd-cover">'+weekRows.join("")+'</div></div></section><section class="an-card"><div class="an-card-hd"><h4>Shared Sync State</h4><span>'+((S.pinnedPeople||[]).length+Object.keys(S.inlineNotes||{}).length)+'</span></div><div class="an-card-body"><div class="sd-list">'+sharedHtml+'</div></div></section></aside>'+
+  '</div>';
 }
 function _rerenderCurrentSurfaceNow(){
   normalizeTabState();
@@ -28151,6 +28247,31 @@ function renderAgentDrawerContent(agentName){
   h+=`</div>`;
 
   // ── Agent note ──
+  const drawerOTIntel=peopleOTReadinessFor(agentName,(S.otPlan&&S.otPlan.targetDate)||todayISO);
+  const drawerSources=peopleSourceList(agentName);
+  const drawerSignals=[];
+  if(peopleIsYAT(agentName))drawerSignals.push({label:"YAT pool",col:"var(--accent)"});
+  if(peopleIsActing(agentName))drawerSignals.push({label:"Acting role",col:"var(--wknd)"});
+  if(!leaderName&&person.role==="agent")drawerSignals.push({label:"Missing TL",col:"#dc2626"});
+  const drawerOTCol=drawerOTIntel.state==="ready"?"var(--early)":drawerOTIntel.state==="excluded"?"#dc2626":"var(--wknd)";
+  h+=`<div class="agent-drawer-section">`;
+  h+=`<div class="ads-hd">Structure Signals</div>`;
+  h+=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">`;
+  h+=`<span style="font-size:11px;padding:3px 10px;border-radius:8px;background:${cssAlpha(drawerOTCol,8)};border:1px solid ${cssAlpha(drawerOTCol,22)};color:${drawerOTCol};font-weight:600">OT ${drawerOTIntel.state}</span>`;
+  drawerSignals.forEach(f=>{h+=`<span style="font-size:11px;padding:3px 10px;border-radius:8px;background:${cssAlpha(f.col,8)};border:1px solid ${cssAlpha(f.col,22)};color:${f.col};font-weight:600">${f.label}</span>`;});
+  if(drawerSources.length)h+=`<span style="font-size:11px;padding:3px 10px;border-radius:8px;background:rgba(255,255,255,.03);color:var(--tm)">Sources ${drawerSources.length}</span>`;
+  h+=`</div>`;
+  if(drawerOTIntel.reasons.length){
+    drawerOTIntel.reasons.slice(0,4).forEach(r=>{
+      const col=r.severity==="high"?"#dc2626":r.severity==="medium"?"var(--wknd)":"var(--tm)";
+      h+=`<div style="display:flex;gap:6px;align-items:flex-start;font-size:11px;color:${col};padding:1px 0"><span>•</span><span>${X(r.text||r.rule)}</span></div>`;
+    });
+  }else{
+    h+=`<div style="font-size:11px;color:var(--tm)">No active OT blockers for ${X(drawerOTIntel.date)}.</div>`;
+  }
+  if(drawerSources.length)h+=`<div style="font-size:10px;color:var(--tm);margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${XA(drawerSources.join(" | "))}">Sources: ${X(drawerSources.slice(0,3).join(" | "))}${drawerSources.length>3?" ...":""}</div>`;
+  h+=`</div>`;
+
   const existingNote=S.agentNotes[agentName]||"";
   h+=`<div class="agent-drawer-section" style="border-bottom:none">`;
   h+=`<div class="ads-hd">Notes</div>`;
@@ -28425,6 +28546,92 @@ function peopleSetDashView(viewId){
   S.peopleDashView=viewId;
   savePeopleOps();
   if(S.tab==="people")rPeople($("ca"));
+}
+
+function _peopleFlagText(p){
+  return String([p&&p.flag,p&&p.flags,p&&p.specialTag,p&&p.status,p&&p.notes,p&&p.source].flat().filter(Boolean).join(" ")).toLowerCase();
+}
+function peopleIsYAT(name){
+  const p=(S.people||{})[name]||{};
+  const txt=_peopleFlagText(p);
+  return p.yat===true||p.isYAT===true||txt.includes("yat")||txt.includes("young aspiring");
+}
+function peopleIsActing(name){
+  const p=(S.people||{})[name]||{};
+  const txt=_peopleFlagText(p);
+  return p.acting===true||p.actingTL===true||String(p.role||"").toLowerCase().includes("acting")||txt.includes("acting");
+}
+function peopleSourceList(name){
+  const p=(S.people||{})[name]||{};
+  const out=[];
+  [p.source,p.sourceFile,p.rosterSource,p.orgSource,p.importSource].forEach(v=>{if(v)out.push(String(v));});
+  (S.entries||[]).filter(e=>e.name===name).slice(0,20).forEach(e=>{if(e.src||e.source)out.push(String(e.src||e.source));});
+  return [...new Set(out.filter(Boolean))];
+}
+function peopleStructureIssues(leaders){
+  const leaderSet=new Set(leaders||_peopleScopeLeaders());
+  const people=Object.values(S.people||{});
+  const issues=[];
+  people.forEach(p=>{
+    if(p.role==="agent"){
+      if(!p.teamLeader)issues.push({level:"high",person:p.name,title:"Missing team leader",detail:"Agent is not linked to a TL"});
+      else if(leaderSet.size&&leaderSet.has(p.teamLeader)&&!S.people[p.teamLeader]&&!gN().includes(p.teamLeader))issues.push({level:"medium",person:p.name,title:"Unknown team leader",detail:p.teamLeader});
+    }
+    if((p.alias||p.aliases)&&!peopleSourceList(p.name).length)issues.push({level:"low",person:p.name,title:"Alias lacks source",detail:String(p.alias||p.aliases)});
+  });
+  const byName={};
+  people.forEach(p=>{const k=String(p.name||"").trim().toLowerCase();if(k)(byName[k]=byName[k]||[]).push(p);});
+  Object.values(byName).filter(rows=>rows.length>1).forEach(rows=>issues.push({level:"medium",person:rows[0].name,title:"Duplicate identity",detail:rows.map(r=>r.source||r.role||"record").join(", ")}));
+  return issues;
+}
+function peopleOTReadinessFor(name,targetDate){
+  ensureOTPlanDefaults();
+  const date=targetDate||S.otPlan.targetDate||excKey(new Date());
+  const result=computeOTExclusions(name,date,S.otPlan.exclusionRules,S.otPlan.lookbackDays);
+  const selected=!!(S.otPlan.selections&&S.otPlan.selections[name]&&S.otPlan.selections[name].selected);
+  const high=result.reasons.filter(r=>r.severity==="high").length;
+  const medium=result.reasons.filter(r=>r.severity==="medium").length;
+  const state=result.excluded?"excluded":high||medium?"review":"ready";
+  return{date,state,selected,reasons:result.reasons,high,medium,recentOT:getRecentOTCount(name,date,30)};
+}
+function peopleOpsIntel(leaders){
+  const scopedAgents=_peopleScopeAgents(leaders);
+  const leaderSet=new Set(leaders||[]);
+  const yat=scopedAgents.filter(a=>peopleIsYAT(a.name));
+  const acting=Object.values(S.people||{}).filter(p=>peopleIsActing(p.name)&&(leaderSet.has(p.teamLeader)||leaderSet.has(p.name)));
+  const issues=peopleStructureIssues(leaders);
+  const target=(S.otPlan&&S.otPlan.targetDate)||excKey(new Date());
+  const readiness=scopedAgents.map(a=>peopleOTReadinessFor(a.name,target));
+  return{target,yat,acting,issues,ready:readiness.filter(r=>r.state==="ready").length,review:readiness.filter(r=>r.state==="review").length,excluded:readiness.filter(r=>r.state==="excluded").length,selected:readiness.filter(r=>r.selected).length};
+}
+function renderPeopleIntelCard(leaders){
+  const intel=peopleOpsIntel(leaders);
+  const issueTop=intel.issues.slice(0,4);
+  let h=`<div class="phq-card">`;
+  h+=`<div class="phq-hd"><div class="phq-title">People Intelligence</div><div class="phq-sub">Structure + OT readiness</div></div>`;
+  h+=`<div class="phq-metrics" style="grid-template-columns:repeat(4,1fr);margin-bottom:8px">`;
+  h+=`<div class="phq-metric"><div class="k">${intel.yat.length}</div><div class="l">YAT</div></div>`;
+  h+=`<div class="phq-metric"><div class="k">${intel.acting.length}</div><div class="l">Acting</div></div>`;
+  h+=`<div class="phq-metric"><div class="k">${intel.issues.length}</div><div class="l">Structure</div></div>`;
+  h+=`<div class="phq-metric"><div class="k">${intel.ready}</div><div class="l">OT Ready</div></div>`;
+  h+=`</div>`;
+  h+=`<div class="phq-risk-row"><span class="phq-risk-name">OT ${X(intel.target)}</span><span class="phq-risk-meta">${intel.ready} ready · ${intel.review} review · ${intel.excluded} excluded · ${intel.selected} selected</span><button class="phq-btn" style="padding:2px 7px" onclick="_navPush();S.tab='calendar';S.calSubTab='overtime';S.plSubTab='overtime';ren()">Open</button></div>`;
+  if(issueTop.length){
+    issueTop.forEach(it=>{
+      const col=it.level==="high"?"#dc2626":it.level==="medium"?"var(--wknd)":"var(--tm)";
+      h+=`<div class="phq-risk-row"><span class="phq-risk-name">${X(it.title)}</span><span class="phq-risk-meta">${X(it.person)}${it.detail?" · "+X(it.detail):""}</span><span class="phq-risk-badge" style="border-color:${cssAlpha(col,28)};color:${col}">${X(it.level)}</span></div>`;
+    });
+  }else h+=`<div class="phq-sub">No structure issues in the current People scope.</div>`;
+  h+=`</div>`;
+  return h;
+}
+function renderPeopleBadges(name,mode){
+  const bits=[];
+  if(peopleIsYAT(name))bits.push({label:"YAT",col:"var(--accent)"});
+  if(peopleIsActing(name))bits.push({label:"Acting",col:"var(--wknd)"});
+  const ot=peopleOTReadinessFor(name,(S.otPlan&&S.otPlan.targetDate)||excKey(new Date()));
+  if(mode==="agent"&&ot.state!=="ready")bits.push({label:ot.state==="excluded"?"OT Block":"OT Review",col:ot.state==="excluded"?"#dc2626":"var(--wknd)"});
+  return bits.map(b=>`<span style="font-size:9px;padding:1px 5px;border-radius:4px;border:1px solid ${cssAlpha(b.col,24)};color:${b.col};background:${cssAlpha(b.col,7)};white-space:nowrap">${b.label}</span>`).join("");
 }
 
 // ── Quick event log — agent-level exception ──
@@ -29873,6 +30080,7 @@ function rPeopleDashboardView(){
     });
   }
   h+=`</div>`;
+  h+=renderPeopleIntelCard(leaders);
   h+=`</div>`;
 
   h+=`<div style="display:flex;flex-direction:column;gap:12px">`;
@@ -30265,7 +30473,7 @@ function _renderTLDetailPanel(tlName,todayISO,today){
       h+=`<div class="agent-list-item" onclick="openAgentDrawer('${XJS(agent.name)}')">`;
       h+=`<div class="ali-avatar">${X(agent.name.charAt(0))}</div>`;
       h+=`<div style="flex:1;min-width:0">`;
-      h+=`<div class="ali-name">${X(agent.name)}</div>`;
+      h+=`<div class="ali-name" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">${X(agent.name)}${renderPeopleBadges(agent.name,"agent")}</div>`;
       if(recentExc){
         const rt=EXC_TYPES.find(t=>t.id===recentExc.type);
         h+=`<div class="ali-meta">${rt?rt.icon+" "+rt.label:recentExc.type} · ${recentExc.hoursLost}h</div>`;
