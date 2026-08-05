@@ -1376,6 +1376,7 @@ body[data-theme="tide"]:is([data-variant="seafoam-day"],[data-variant="ice-sheet
 .sync-dashboard .an-card-hd{min-height:34px;padding:10px 14px}
 .sync-dashboard .an-card-body{padding:10px 14px}
 .sync-dashboard .sd-list{display:flex;flex-direction:column;gap:6px}
+.sync-dashboard .sd-list.scroll{max-height:174px;overflow-y:auto;padding-right:3px}
 .sync-dashboard .sd-list-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--bdr);border-radius:6px;background:color-mix(in srgb,var(--bg) 78%,transparent);padding:7px 9px;font-size:11px}
 .sync-dashboard .sd-list-row .name{font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sync-dashboard .sd-list-row .meta{font-family:'DM Mono',monospace;color:var(--accent);white-space:nowrap}
@@ -1386,22 +1387,22 @@ body[data-theme="tide"]:is([data-variant="seafoam-day"],[data-variant="ice-sheet
 .sync-dashboard .sd-quick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .sync-dashboard .sd-quick button{border:1px solid var(--bdr);border-radius:8px;background:var(--bg);color:var(--text);font-family:inherit;font-size:12px;padding:11px 10px;cursor:pointer;text-align:left}
 .sync-dashboard .sd-quick button:hover{border-color:var(--accent);color:var(--accent);background:var(--al)}
-.sync-dashboard .sd-focus-grid{display:grid;grid-template-columns:1fr 1fr 1.25fr;gap:10px;min-height:126px}
-.sync-dashboard .sd-focus-card{border:1px solid var(--card-border);border-radius:8px;background:var(--card);box-shadow:var(--sh);padding:12px 14px;display:flex;flex-direction:column;justify-content:space-between;gap:8px;cursor:pointer;min-height:126px}
+.sync-dashboard .sd-focus-grid{display:grid;grid-template-columns:1fr 1fr 1.25fr;gap:10px;min-height:108px}
+.sync-dashboard .sd-focus-card{border:1px solid var(--card-border);border-radius:8px;background:var(--card);box-shadow:var(--sh);padding:10px 13px;display:flex;flex-direction:column;justify-content:space-between;gap:7px;cursor:pointer;min-height:108px}
 .sync-dashboard .sd-focus-card:hover{border-color:var(--accent);background:color-mix(in srgb,var(--card) 88%,var(--al))}
 .sync-dashboard .sd-focus-card h3{margin:0;font-size:15px;color:var(--text)}
 .sync-dashboard .sd-focus-card p{display:none}
 .sync-dashboard .sd-focus-card .sd-focus-kpi{display:flex;align-items:end;justify-content:space-between;gap:12px}
 .sync-dashboard .sd-focus-card .sd-focus-kpi b{font-family:'JetBrains Mono','DM Mono',monospace;font-size:24px;line-height:1;color:var(--accent)}
 .sync-dashboard .sd-focus-card .sd-focus-kpi span{font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--tm);text-align:right}
-.sync-dashboard .sd-focus-card.blueprint{min-height:126px}
+.sync-dashboard .sd-focus-card.blueprint{min-height:108px}
 .sync-dashboard .sd-focus-card .sd-mini-list{display:flex;flex-direction:column;gap:6px}
 .sync-dashboard .sd-focus-card .sd-mini-list .sd-list-row{padding:6px 8px}
 .sync-dashboard .sd-command-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:10px}
 .sync-dashboard .sd-panel{border:1px solid var(--card-border);border-radius:8px;background:var(--card);box-shadow:var(--sh);overflow:hidden;min-height:116px}
 .sync-dashboard .sd-panel.span-3{grid-column:span 3}.sync-dashboard .sd-panel.span-4{grid-column:span 4}.sync-dashboard .sd-panel.span-5{grid-column:span 5}.sync-dashboard .sd-panel.span-6{grid-column:span 6}.sync-dashboard .sd-panel.span-7{grid-column:span 7}.sync-dashboard .sd-panel.span-8{grid-column:span 8}.sync-dashboard .sd-panel.span-12{grid-column:span 12}
 .sync-dashboard .sd-panel-head{min-height:34px;padding:9px 13px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;gap:10px}
-.sync-dashboard .sd-panel-head h4{font-size:13px;font-weight:800;color:var(--text);margin:0}.sync-dashboard .sd-panel-head span{font-size:10px;color:var(--tm);white-space:nowrap}
+.sync-dashboard .sd-panel-head h4{font-size:13px;font-weight:800;color:var(--text);margin:0}.sync-dashboard .sd-panel-head h4 small{margin-left:7px;font-family:'DM Mono',monospace;font-size:10px;font-weight:600;color:var(--tm);white-space:nowrap}.sync-dashboard .sd-panel-head span{font-size:10px;color:var(--tm);white-space:nowrap}
 .sync-dashboard .sd-panel-body{padding:10px 13px}
 .sync-dashboard .sd-jump-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:8px}
 .sync-dashboard .sd-jump-grid button{min-width:0;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);color:var(--text);font-family:inherit;font-size:11px;padding:8px 7px;cursor:pointer;text-align:left}
@@ -1415,6 +1416,37 @@ body[data-theme="tide"]:is([data-variant="seafoam-day"],[data-variant="ice-sheet
 .sync-dashboard .sd-clock-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .sync-dashboard .sd-clock{border:1px solid var(--bdr);border-radius:7px;background:color-mix(in srgb,var(--bg) 78%,transparent);padding:9px 10px}
 .sync-dashboard .sd-clock b{display:block;font-family:'JetBrains Mono','DM Mono',monospace;font-size:19px;color:var(--accent);line-height:1}.sync-dashboard .sd-clock span{display:block;margin-top:5px;font-size:10px;text-transform:uppercase;color:var(--tm)}
+.sync-dashboard .sd-clock-panel{display:flex;flex-direction:column;gap:10px}
+.sync-dashboard .sd-colorway-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.sync-dashboard .sd-colorway{height:44px;border:1px solid color-mix(in srgb,var(--bdr) 70%,var(--swatch-b));border-radius:8px;background:linear-gradient(145deg,color-mix(in srgb,var(--card) 88%,var(--swatch-a)),color-mix(in srgb,var(--bg) 82%,var(--swatch-b)));background-size:160% 160%;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:4px;position:relative;overflow:hidden;transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease}
+.sync-dashboard .sd-colorway:before{content:"";position:absolute;inset:-40%;background:linear-gradient(115deg,transparent 38%,color-mix(in srgb,var(--swatch-c) 35%,transparent) 48%,transparent 58%);opacity:.72;transform:translateX(-35%) rotate(8deg);transition:transform .6s ease}
+.sync-dashboard .sd-colorway:hover:before,.sync-dashboard .sd-colorway.active:before{transform:translateX(35%) rotate(8deg)}
+.sync-dashboard .sd-colorway:hover,.sync-dashboard .sd-colorway.active{border-color:var(--swatch-b);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--swatch-b) 58%,transparent),0 0 18px color-mix(in srgb,var(--swatch-b) 16%,transparent);transform:translateY(-1px)}
+.sync-dashboard .sd-colorway.active{animation:sd-colorway-breathe 2.6s ease-in-out infinite}
+.sync-dashboard .sd-colorway.active:after{content:"";position:absolute;inset:3px;border-radius:6px;border:1px solid color-mix(in srgb,var(--swatch-c) 55%,transparent);pointer-events:none}
+.sync-dashboard .sd-colorway i{position:relative;z-index:1;width:24px;height:15px;border-radius:999px;background:linear-gradient(90deg,var(--swatch-a) 0 33%,var(--swatch-b) 33% 66%,var(--swatch-c) 66%);background-size:180% 100%;box-shadow:0 0 0 1px color-mix(in srgb,var(--swatch-c) 45%,transparent),0 5px 14px color-mix(in srgb,var(--swatch-b) 20%,transparent);animation:sd-colorway-flow 4.5s linear infinite}
+.sync-dashboard .sd-colorway i:before,.sync-dashboard .sd-colorway i:after{content:"";position:absolute;top:4px;width:7px;height:7px;border-radius:50%;background:color-mix(in srgb,#fff 80%,var(--swatch-c));box-shadow:0 0 0 1px color-mix(in srgb,var(--bg) 55%,transparent)}
+.sync-dashboard .sd-colorway i:before{left:4px}.sync-dashboard .sd-colorway i:after{right:4px}
+.sync-dashboard .sd-colorway span{position:relative;z-index:1;font-size:8px;font-weight:900;color:var(--swatch-label);text-transform:uppercase;line-height:1;text-shadow:0 1px 7px color-mix(in srgb,var(--bg) 65%,transparent)}
+.sync-dashboard .sd-clock-extras{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.sync-dashboard .sd-clock-extra{border:1px solid var(--bdr);border-radius:7px;background:color-mix(in srgb,var(--bg) 78%,transparent);padding:7px 8px;min-height:42px;text-align:left;color:var(--text)}
+button.sd-clock-extra{cursor:pointer;font-family:inherit}
+button.sd-clock-extra:hover{border-color:var(--accent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 38%,transparent)}
+.sync-dashboard .sd-clock-extra b{display:block;font-family:'JetBrains Mono','DM Mono',monospace;font-size:13px;color:var(--text);line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sync-dashboard .sd-clock-extra span{display:block;margin-top:5px;font-size:9px;text-transform:uppercase;color:var(--tm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sync-dashboard .sd-dice-icon{display:inline-grid!important;grid-template-columns:repeat(3,4px);grid-template-rows:repeat(3,4px);gap:2px;width:24px;height:24px;border:1px solid var(--bdr);border-radius:6px;background:linear-gradient(145deg,var(--bg2),var(--bg));place-content:center;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 16%,transparent);transform-origin:50% 68%}
+.sync-dashboard .sd-dice-icon i{width:4px;height:4px;border-radius:50%;background:var(--accent);opacity:.95}.sync-dashboard .sd-dice-icon i:nth-child(1){grid-column:1;grid-row:1}.sync-dashboard .sd-dice-icon i:nth-child(2){grid-column:3;grid-row:1}.sync-dashboard .sd-dice-icon i:nth-child(3){grid-column:2;grid-row:2}.sync-dashboard .sd-dice-icon i:nth-child(4){grid-column:1;grid-row:3}.sync-dashboard .sd-dice-icon i:nth-child(5){grid-column:3;grid-row:3}
+.sync-dashboard .sd-clock-extra.shuffle{position:relative;overflow:hidden}.sync-dashboard .sd-clock-extra.shuffle:before{content:"";position:absolute;inset:auto -15px 6px;height:8px;border-radius:50%;background:color-mix(in srgb,var(--accent) 25%,transparent);filter:blur(4px);opacity:0;transform:scaleX(.4);pointer-events:none}.sync-dashboard .sd-clock-extra.shuffle.rolling:before{animation:sd-dice-shadow .7s ease-in-out}.sync-dashboard .sd-clock-extra.shuffle.rolling .sd-dice-icon{animation:sd-dice-throw .7s cubic-bezier(.2,.76,.26,1)}.sync-dashboard .sd-clock-extra.shuffle.rolling .sd-dice-icon i{animation:sd-dice-pips .18s steps(2,end) 4}.sync-dashboard .sd-clock-extra.shuffle.rolling span{color:var(--accent)}
+@keyframes sd-colorway-flow{to{background-position:180% 0}}@keyframes sd-colorway-breathe{50%{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--swatch-b) 75%,transparent),0 0 23px color-mix(in srgb,var(--swatch-b) 28%,transparent)}}@keyframes sd-dice-throw{0%{transform:translate(0,0) rotate(0)}20%{transform:translate(6px,-8px) rotate(115deg)}48%{transform:translate(-5px,-15px) rotate(285deg)}74%{transform:translate(4px,-5px) rotate(520deg)}100%{transform:translate(0,0) rotate(720deg)}}@keyframes sd-dice-shadow{35%,70%{opacity:.85;transform:scaleX(1.2)}100%{opacity:0;transform:scaleX(.45)}}@keyframes sd-dice-pips{50%{opacity:.22;transform:scale(.55)}}
+.sync-dashboard .sd-week-tools{display:flex;align-items:center;gap:5px}.sync-dashboard .sd-week-tools button{width:24px;height:22px;border:1px solid var(--bdr);border-radius:7px;background:color-mix(in srgb,var(--bg) 78%,transparent);color:var(--accent);font-family:'DM Mono',monospace;cursor:pointer}
+.sync-dashboard .sd-week-tools button:hover{border-color:var(--accent);background:var(--al)}
+.sync-dashboard .sd-blueprint-preview{display:flex;flex-direction:column;gap:7px;min-width:0;overflow-x:auto;padding-bottom:3px}
+.sync-dashboard .sd-blueprint-person{display:flex;justify-content:space-between;gap:8px;border:1px solid var(--bdr);border-radius:6px;background:color-mix(in srgb,var(--bg) 78%,transparent);padding:7px 9px;font-size:11px}
+.sync-dashboard .sd-blueprint-person b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sync-dashboard .sd-blueprint-person span{font-family:'DM Mono',monospace;color:var(--accent);white-space:nowrap}
+.sync-dashboard .sd-blueprint-table{display:grid;grid-template-columns:34px repeat(7,minmax(58px,1fr));gap:3px;font-size:10px;min-width:520px}
+.sync-dashboard .sd-bp-cell{min-height:24px;border:1px solid var(--bdr);border-radius:5px;background:color-mix(in srgb,var(--bg) 78%,transparent);display:flex;align-items:center;justify-content:center;padding:2px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sync-dashboard .sd-bp-cell.h{font-weight:800;color:var(--tm);background:transparent;border-color:transparent}.sync-dashboard .sd-bp-cell.off{color:var(--warn)}.sync-dashboard .sd-bp-cell.work{color:var(--accent)}
+.sync-dashboard .sd-stage{min-height:420px;border:1px dashed color-mix(in srgb,var(--bdr) 70%,transparent);border-radius:8px;background:linear-gradient(180deg,color-mix(in srgb,var(--card) 38%,transparent),transparent);box-shadow:none;opacity:.72}
+.sync-dashboard .sd-stage .stage-mark{height:100%;min-height:420px;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--tm);opacity:.32;text-align:center}
 .sync-dashboard .sd-signal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
 .sync-dashboard .sd-signal{border:1px solid var(--bdr);border-radius:6px;background:color-mix(in srgb,var(--bg) 78%,transparent);padding:8px 9px;min-width:0}
 .sync-dashboard .sd-signal b{display:block;font-family:'JetBrains Mono','DM Mono',monospace;font-size:18px;color:var(--accent);line-height:1}.sync-dashboard .sd-signal span{display:block;margin-top:4px;font-size:10px;color:var(--tm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -4306,46 +4338,165 @@ function rSyncDashboard(el){
   const todayHours=Math.round(working.reduce((sum,e)=>sum+calcHrs(e.saS||e.ukS,e.saE||e.ukE),0)*10)/10;
   const saNow=new Date().toLocaleTimeString("en-ZA",{timeZone:"Africa/Johannesburg",hour:"2-digit",minute:"2-digit",hour12:false});
   const ukNow=new Date().toLocaleTimeString("en-GB",{timeZone:"Europe/London",hour:"2-digit",minute:"2-digit",hour12:false});
-  const weekStart=new Date(today);weekStart.setDate(weekStart.getDate()-((weekStart.getDay()+6)%7));
+  const dashWeekOffset=Number(S.dashWeekOffset)||0;
+  const weekStart=new Date(today);weekStart.setDate(weekStart.getDate()-((weekStart.getDay()+6)%7)+(dashWeekOffset*7));
+  const weekEnd=new Date(weekStart);weekEnd.setDate(weekStart.getDate()+6);
+  const weekTitle=dashWeekOffset===0?"This Week":dashWeekOffset<0?(Math.abs(dashWeekOffset)===1?"1 Week Ago":Math.abs(dashWeekOffset)+" Weeks Ago"):(dashWeekOffset===1?"Next Week":dashWeekOffset+" Weeks Ahead");
+  const weekRange=fDF(weekStart)+" - "+fDF(weekEnd);
   const weekRows=[];
   for(let i=0;i<7;i++){
     const d=new Date(weekStart);d.setDate(weekStart.getDate()+i);
     const dk=excKey(d),rows=all.filter(e=>e.date&&excKey(e.date)===dk),work=rows.filter(e=>!e.isOff).length,total=Math.max(1,rows.length||people.length||1),pct=Math.min(100,Math.round(work/total*100));
     weekRows.push('<div class="sd-cover-row"><b>'+["Mon","Tue","Wed","Thu","Fri","Sat","Sun"][i]+'</b><div class="sd-bar"><i style="width:'+pct+'%"></i></div><span>'+work+'/'+total+'</span></div>');
   }
-  const workingHtml=working.length?working.slice(0,9).map(e=>'<div class="sd-list-row"><span class="name">'+X(e.name)+'</span><span class="meta">'+X((S.tz&&e.saS?e.saS:e.ukS)||"")+'-'+X((S.tz&&e.saE?e.saE:e.ukE)||"")+'</span></div>').join(""):'<div class="sd-list-row"><span class="name">No one scheduled today</span><span class="meta">--</span></div>';
+  const workingHtml=working.length?working.map(e=>'<div class="sd-list-row"><span class="name">'+X(e.name)+'</span><span class="meta">'+X((S.tz&&e.saS?e.saS:e.ukS)||"")+'-'+X((S.tz&&e.saE?e.saE:e.ukE)||"")+'</span></div>').join(""):'<div class="sd-list-row"><span class="name">No one scheduled today</span><span class="meta">--</span></div>';
   const issueHtml=issueOpen?'<div class="sd-list-row"><span class="name">Open issues</span><span class="meta">'+issueOpen+'</span></div>':'<div class="sd-list-row"><span class="name">Clean queue</span><span class="meta">0</span></div>';
   const blueprintHtml=S.month?'<div class="sd-list-row"><span class="name">'+X(monthLabel())+'</span><span class="meta">'+(health?X(health.grade+" "+health.avg):"--")+'</span></div>':'<div class="sd-list-row"><span class="name">No month selected</span><span class="meta">--</span></div>';
-  const sharedHtml='<div class="sd-list-row"><span class="name">Pins / notes</span><span class="meta">'+((S.pinnedPeople||[]).length)+' / '+Object.keys(S.inlineNotes||{}).length+'</span></div><div class="sd-list-row"><span class="name">Open issues</span><span class="meta">'+issueOpen+'</span></div>';
   const peopleIntel=typeof peopleOpsIntel==="function"?peopleOpsIntel(leaders):null;
   const peopleLine=peopleIntel?peopleIntel.ready+' OT ready - '+peopleIntel.issues.length+' structure':'people signals '+attention;
   const calendarLine=working.length+' working - '+off.length+' off - '+todayHours+'h';
   const blueprintLine=health?'Health '+health.grade+' '+health.avg:'No month score';
   const calendarMini='<div class="sd-list-row"><span class="name">Today</span><span class="meta">'+working.length+' / '+people.length+'</span></div><div class="sd-list-row"><span class="name">Window</span><span class="meta">'+X((S.tz?"SA":"UK")+' floor')+'</span></div>';
   const peopleMini='<div class="sd-list-row"><span class="name">People</span><span class="meta">'+people.length+'</span></div><div class="sd-list-row"><span class="name">OT readiness</span><span class="meta">'+(peopleIntel?peopleIntel.ready+' ready':'--')+'</span></div>';
-  const monthBase=S.month?new Date(S.month+"-01T12:00:00"):new Date(today);
-  const calY=monthBase.getFullYear(),calM=monthBase.getMonth(),first=new Date(calY,calM,1),daysInMonth=new Date(calY,calM+1,0).getDate(),lead=(first.getDay()+6)%7;
+  const monthParts=S.month?S.month.split("-").map(Number):[today.getFullYear(),today.getMonth()];
+  const calY=Number.isFinite(monthParts[0])?monthParts[0]:today.getFullYear(),calM=Number.isFinite(monthParts[1])?monthParts[1]:today.getMonth(),first=new Date(calY,calM,1),daysInMonth=new Date(calY,calM+1,0).getDate(),lead=(first.getDay()+6)%7;
+  const selectedDay=S.calDay&&S.calDay.getFullYear()===calY&&S.calDay.getMonth()===calM?S.calDay:null;
   const monthStats={};
   all.forEach(e=>{if(!e.date)return;const d=new Date(e.date);if(d.getFullYear()!==calY||d.getMonth()!==calM)return;const day=d.getDate();monthStats[day]=monthStats[day]||{work:0,off:0};if(e.isOff)monthStats[day].off++;else monthStats[day].work++;});
   const calCells=["M","T","W","T","F","S","S"].map(d=>'<div class="sd-cal-h">'+d+'</div>');
   for(let i=0;i<lead;i++)calCells.push('<div></div>');
   for(let d=1;d<=daysInMonth;d++){
-    const stat=monthStats[d]||{work:0,off:0},isToday=today.getFullYear()===calY&&today.getMonth()===calM&&today.getDate()===d;
-    calCells.push('<div class="sd-cal-d '+(stat.work?'work ':'')+(stat.off?'off ':'')+(isToday?'today':'')+'" title="'+stat.work+' working, '+stat.off+' off">'+d+'</div>');
+    const stat=monthStats[d]||{work:0,off:0},isToday=today.getFullYear()===calY&&today.getMonth()===calM&&today.getDate()===d,isSelected=selectedDay&&selectedDay.getDate()===d;
+    calCells.push('<div class="sd-cal-d '+(stat.work?'work ':'')+(stat.off?'off ':'')+((isToday||isSelected)?'today':'')+'" onclick="setCalendarDay('+calY+','+calM+','+d+')" title="'+stat.work+' working, '+stat.off+' off">'+d+'</div>');
   }
   const miniCalendarHtml=calCells.join("");
-  const peoplePanelHtml='<div class="sd-signal-grid"><div class="sd-signal"><b>'+people.length+'</b><span>active people</span></div><div class="sd-signal"><b>'+(peopleIntel?peopleIntel.ready:0)+'</b><span>OT ready</span></div><div class="sd-signal"><b>'+(peopleIntel?peopleIntel.yat:0)+'</b><span>YAT signals</span></div><div class="sd-signal"><b>'+(peopleIntel?peopleIntel.acting:0)+'</b><span>acting signals</span></div></div>';
-  const blueprintPanelHtml='<div class="sd-signal-grid"><div class="sd-signal"><b>'+(health?X(health.grade):"--")+'</b><span>health grade</span></div><div class="sd-signal"><b>'+(health?X(String(health.avg)):"--")+'</b><span>score</span></div><div class="sd-signal"><b>'+issueOpen+'</b><span>open issues</span></div><div class="sd-signal"><b>'+(S.shs||[]).length+'</b><span>source sheets</span></div></div>';
-  const clockHtml='<div class="sd-clock-grid"><div class="sd-clock"><b>'+saNow+'</b><span>South Africa</span></div><div class="sd-clock"><b>'+ukNow+'</b><span>United Kingdom</span></div></div>';
+  const swatches=[
+    {k:"surge",l:"Surge",a:"#10121c",b:"#c349ee",c:"#6ab7ff",fg:"#eef6ff"},
+    {k:"tide",l:"Tide",a:"#0b1620",b:"#4db8c8",c:"#7fcf93",fg:"#e9fbff"},
+    {k:"press",l:"Press",a:"#f3d9bd",b:"#8a6337",c:"#2d2015",fg:"#fff4df"},
+    {k:"newsprint",l:"News",a:"#fff5c7",b:"#9381ff",c:"#ff8fab",fg:"#fff8fe"}
+  ];
+  const liveThemeColors=typeof getComputedStyle==="function"?getComputedStyle(document.body):null;
+  const liveColor=(name,fallback)=>liveThemeColors?(liveThemeColors.getPropertyValue(name).trim()||fallback):fallback;
+  const colorwayHtml='<div class="sd-colorway-grid">'+swatches.map(s=>{
+    const active=S.th===s.k;
+    const a=active?liveColor("--bg2",s.a):s.a,b=active?liveColor("--accent",s.b):s.b,c=active?liveColor("--mid-col",s.c):s.c,fg=active?liveColor("--text",s.fg):s.fg;
+    return '<button class="sd-colorway '+(active?'active':'')+'" style="--swatch-a:'+a+';--swatch-b:'+b+';--swatch-c:'+c+';--swatch-label:'+fg+'" onclick="setThemeColorway(&quot;'+s.k+'&quot;)" title="'+X(s.l)+(active?' · active variant':'')+' colourway"><i></i><span>'+X(s.l)+'</span></button>';
+  }).join("")+'</div>';
+  const floorStart=working.map(e=>S.tz?e.saS:e.ukS).filter(Boolean).sort()[0]||"--";
+  const floorEnd=working.map(e=>S.tz?e.saE:e.ukE).filter(Boolean).sort().pop()||"--";
+  const themeName=(TH[S.th]&&TH[S.th].n)||S.th||"Theme";
+  const variantName=typeof _themeVariantName==="function"?_themeVariantName(S.th||"surge",S.thVariant||0):"";
+  const variantLabel=typeof _themeVariantLabel==="function"?_themeVariantLabel(variantName):X(variantName||"Core");
+  const clockExtras='<div class="sd-clock-extras"><div class="sd-clock-extra"><b>'+X(floorStart+'-'+floorEnd)+'</b><span>Floor window</span></div><button class="sd-clock-extra" onclick="openSettings()" title="Open settings"><b>Settings</b><span>Open panel</span></button><div class="sd-clock-extra"><b>'+X(themeName)+'</b><span>'+X(variantLabel)+'</span></div><button class="sd-clock-extra shuffle" onclick="shuffleDashboardColorway(this)" title="Throw dice and shuffle colourway"><b class="sd-dice-icon" aria-label="Shuffle colourway"><i></i><i></i><i></i><i></i><i></i></b><span>Shuffle colourway</span></button></div>';
+  const clockHtml='<div class="sd-clock-panel"><div class="sd-clock-grid"><div class="sd-clock"><b>'+saNow+'</b><span>South Africa</span></div><div class="sd-clock"><b>'+ukNow+'</b><span>United Kingdom</span></div></div>'+colorwayHtml+clockExtras+'</div>';
   const gotoHtml='<div class="sd-jump-grid"><button onclick="railNavToday()">Today</button><button onclick="railNavCalendar(&quot;cards&quot;)">Cards</button><button onclick="railNavCalendar(&quot;overtime&quot;)">OT</button><button onclick="railNavPeople(&quot;dashboard&quot;)">People</button><button onclick="railNavAnalytics(&quot;blueprint&quot;)">Blueprint</button><button onclick="railNavAnalytics(&quot;data&quot;)">Data</button></div>';
+  const dept=S.activeDept||"default";
+  if(typeof normalizeBlueprintStore==="function")normalizeBlueprintStore();
+  if(S.plBlueprints&&S.plBlueprints[dept]&&S.plBlueprints[dept].groups&&typeof syncBlueprintRootFromGroup==="function")syncBlueprintRootFromGroup(dept);
+  const bpRoot=(S.plBlueprints||{})[dept]||null;
+  const bpPositions=(S.plPositions||{})[dept]||{};
+  const positionedNames=Object.keys(bpPositions);
+  const bpName=positionedNames.find(n=>leaders.includes(n)||people.includes(n))||positionedNames[0]||(leaders&&leaders.length?leaders[0]:people[0])||"Blueprint";
+  const personBp=typeof getBlueprintForName==="function"?getBlueprintForName(dept,bpName,bpRoot):(bpRoot?{id:null,cycleLen:bpRoot.cycleLen||5,weeks:bpRoot.weeks||{},confirmed:!!bpRoot.confirmed}:null);
+  const bpWeeksObj=(personBp&&personBp.weeks)||{};
+  const bpWeekKeys=Object.keys(bpWeeksObj).map(k=>parseInt(k,10)).filter(Number.isFinite).sort((a,b)=>a-b);
+  const confirmedWeek=parseInt((bpPositions[bpName]&&bpPositions[bpName].confirmedWeek)||"",10);
+  const bpWeekNum=(Number.isFinite(confirmedWeek)&&bpWeeksObj[confirmedWeek])?confirmedWeek:(bpWeekKeys[0]||1);
+  const bpWeek="W"+bpWeekNum;
+  const bpDayHeads=["M","T","W","T","F","S","S"].map(d=>'<div class="sd-bp-cell h">'+d+'</div>');
+  const bpRows=(bpWeekKeys.length?bpWeekKeys:[]).map(w=>{
+    const row=bpWeeksObj[w]||{};
+    const cells=[];
+    for(let i=0;i<7;i++){
+      const rawVal=row[i]||row[String(i)]||"--";
+      const val=String(rawVal||"--").replace(/\s+-\s+/g,"-");
+      const isOff=/^(OFF|O)$/i.test(val);
+      cells.push('<div class="sd-bp-cell '+(isOff?'off':val!=="--"?'work':'')+'" title="'+X(val)+'">'+X(val)+'</div>');
+    }
+    return '<div class="sd-bp-cell h">W'+w+'</div>'+cells.join("");
+  }).join("");
+  const bpCycle=personBp&&personBp.cycleLen?personBp.cycleLen:bpWeekKeys.length;
+  const blueprintScheduleHtml=(personBp&&bpWeekKeys.length)?'<div class="sd-blueprint-preview"><div class="sd-blueprint-person"><b>Rotation blueprint</b><span>'+X(bpCycle+'w · '+(personBp.confirmed?'confirmed':'review')+' · '+(health?health.grade+" "+health.avg:""))+'</span></div><div class="sd-blueprint-table"><div class="sd-bp-cell h"></div>'+bpDayHeads.join("")+bpRows+'</div></div>':'<div class="sd-blueprint-preview"><div class="sd-blueprint-person"><b>No blueprint loaded</b><span>Planner</span></div><div class="sd-list-row"><span class="name">Open Analytics Blueprint</span><span class="meta">Review</span></div></div>';
   el.innerHTML='<div class="sync-dashboard" data-testid="dashboard-workspace">'+
     '<div class="sd-main">'+
-      '<section class="sd-hero"><div class="sd-hero-copy"><div class="sd-eyebrow">7OS Sync - Operations Suite</div><div class="sd-title">Sync<br>Dashboard</div><div class="sd-sub">Your operation at a glance - parsed, mapped, and ready before the day starts.</div><div class="sd-actions"><button class="sd-btn" onclick="browseScheduleFile()">Drop / browse files</button><button class="sd-btn" onclick="railNavAnalytics(&quot;blueprint&quot;)">New blueprint</button><button class="sd-btn" onclick="railNavAnalytics(&quot;data&quot;)">Sources</button></div></div><div class="sd-ledger"><div class="sd-ledger-row"><b>On floor</b><span>'+working.length+' / '+people.length+'</span></div><div class="sd-ledger-row"><b>Off / leave</b><span>'+off.length+' / '+people.length+'</span></div><div class="sd-ledger-row"><b>Alerts</b><span>'+issueOpen+' open</span></div><div class="sd-ledger-row"><b>Scope</b><span>'+people.length+' people - '+leaders.length+' leaders</span></div><div class="sd-ledger-row"><b>Sources</b><span>'+(S.shs||[]).length+' sheets - '+(S.raw?S.raw.length:all.length)+' rows</span></div></div></section>'+
+      '<section class="sd-hero"><div class="sd-hero-copy"><div class="sd-eyebrow">7OS Sync - Operations Suite</div><div class="sd-title">Sync<br>Dashboard</div><div class="sd-sub">Your operation at a glance - parsed, mapped, and ready before the day starts.</div><div class="sd-actions"><button class="sd-btn" onclick="browseScheduleFile()">Drop / browse files</button><button class="sd-btn" onclick="railNavToday()">Calendar</button><button class="sd-btn" onclick="railNavPeople(&quot;dashboard&quot;)">People</button></div></div><div class="sd-ledger"><div class="sd-ledger-row"><b>On floor</b><span>'+working.length+' / '+people.length+'</span></div><div class="sd-ledger-row"><b>Off / leave</b><span>'+off.length+' / '+people.length+'</span></div><div class="sd-ledger-row"><b>Alerts</b><span>'+issueOpen+' open</span></div><div class="sd-ledger-row"><b>Scope</b><span>'+people.length+' people - '+leaders.length+' leaders</span></div><div class="sd-ledger-row"><b>Sources</b><span>'+(S.shs||[]).length+' sheets - '+(S.raw?S.raw.length:all.length)+' rows</span></div></div></section>'+
+      '<div class="sd-command-grid"><section class="sd-panel span-6"><div class="sd-panel-head"><h4>Working Today</h4><span>'+X(fDF(today))+'</span></div><div class="sd-panel-body"><div class="sd-list scroll">'+workingHtml+'</div></div></section><section class="sd-panel span-6"><div class="sd-panel-head"><h4>'+X(weekTitle)+'<small>'+X(weekRange)+'</small></h4><div class="sd-week-tools"><button onclick="S.dashWeekOffset=(Number(S.dashWeekOffset)||0)-1;rSyncDashboard($(\'ca\'))">‹</button><span>'+people.length+' people</span><button onclick="S.dashWeekOffset=(Number(S.dashWeekOffset)||0)+1;rSyncDashboard($(\'ca\'))">›</button></div></div><div class="sd-panel-body"><div class="sd-cover">'+weekRows.join("")+'</div></div></section><section class="sd-panel span-4"><div class="sd-panel-head"><h4>Mini Calendar</h4><span>'+X(monthLabel())+'</span></div><div class="sd-panel-body"><div class="sd-mini-cal">'+miniCalendarHtml+'</div>'+gotoHtml+'</div></section><section class="sd-panel span-3"><div class="sd-panel-head"><h4>General</h4><span>SA / UK</span></div><div class="sd-panel-body">'+clockHtml+'</div></section><section class="sd-panel span-5"><div class="sd-panel-head"><h4>Blueprint</h4><span>'+X(blueprintLine)+'</span></div><div class="sd-panel-body">'+blueprintScheduleHtml+'</div></section></div>'+
       '<div class="sd-focus-grid"><section class="sd-focus-card" onclick="railNavToday()"><div><h3>Calendar</h3></div><div class="sd-mini-list">'+calendarMini+'</div><div class="sd-focus-kpi"><b>'+working.length+'</b><span>'+X(calendarLine)+'</span></div></section><section class="sd-focus-card" onclick="railNavPeople(&quot;dashboard&quot;)"><div><h3>People</h3></div><div class="sd-mini-list">'+peopleMini+'</div><div class="sd-focus-kpi"><b>'+people.length+'</b><span>'+X(peopleLine)+'</span></div></section><section class="sd-focus-card blueprint" onclick="railNavAnalytics(&quot;blueprint&quot;)"><div><h3>Blueprint</h3></div><div class="sd-mini-list">'+blueprintHtml+issueHtml+'</div><div class="sd-focus-kpi"><b>'+(health?X(health.grade):"--")+'</b><span>'+X(blueprintLine)+'</span></div></section></div>'+
-      '<div class="sd-command-grid"><section class="sd-panel span-4"><div class="sd-panel-head"><h4>Mini Calendar</h4><span>'+X(monthLabel())+'</span></div><div class="sd-panel-body"><div class="sd-mini-cal">'+miniCalendarHtml+'</div>'+gotoHtml+'</div></section><section class="sd-panel span-4"><div class="sd-panel-head"><h4>People</h4><span>live signals</span></div><div class="sd-panel-body">'+peoplePanelHtml+'</div></section><section class="sd-panel span-4"><div class="sd-panel-head"><h4>Blueprint</h4><span>'+X(blueprintLine)+'</span></div><div class="sd-panel-body">'+blueprintPanelHtml+'</div></section><section class="sd-panel span-3"><div class="sd-panel-head"><h4>Clock</h4><span>SA / UK</span></div><div class="sd-panel-body">'+clockHtml+'</div></section><section class="sd-panel span-5"><div class="sd-panel-head"><h4>Working Today</h4><span>'+X(fDF(today))+'</span></div><div class="sd-panel-body"><div class="sd-list">'+workingHtml+'</div></div></section><section class="sd-panel span-4"><div class="sd-panel-head"><h4>This Week</h4><span>'+people.length+' people</span></div><div class="sd-panel-body"><div class="sd-cover">'+weekRows.join("")+'</div></div></section></div>'+
     '</div>'+
-    '<aside class="sd-side"><section class="an-card"><div class="an-card-hd"><h4>Working Today</h4><span>'+X(fDF(today))+'</span></div><div class="an-card-body"><div class="sd-list">'+workingHtml+'</div></div></section><section class="an-card"><div class="an-card-hd"><h4>This Week</h4><span>'+people.length+' people</span></div><div class="an-card-body"><div class="sd-cover">'+weekRows.join("")+'</div></div></section><section class="an-card"><div class="an-card-hd"><h4>Shared Sync State</h4><span>'+((S.pinnedPeople||[]).length+Object.keys(S.inlineNotes||{}).length)+'</span></div><div class="an-card-body"><div class="sd-list">'+sharedHtml+'</div></div></section></aside>'+
+    '<aside class="sd-side"><section class="sd-stage"><div class="stage-mark">Motion / focus stage</div></section></aside>'+
   '</div>';
+}
+function _opsScope(){
+  const all=gD(),today=new Date();today.setHours(0,0,0,0);
+  const todayKey=excKey(today),todayRows=all.filter(e=>e.date&&excKey(e.date)===todayKey);
+  const people=[...new Set(all.map(e=>e.name).filter(Boolean))];
+  const leaders=typeof _peopleScopeLeaders==="function"?_peopleScopeLeaders():people;
+  const flags=computeFlags().filter(f=>f.category==="operational"||f.category==="blueprint");
+  const issues=buildIssueInboxItems().filter(x=>x.status==="open");
+  const health=S.month?computeTeamHealthScore(S.month):null;
+  const intel=typeof peopleOpsIntel==="function"?peopleOpsIntel(leaders):null;
+  return{all,today,todayKey,todayRows,working:todayRows.filter(e=>!e.isOff),off:todayRows.filter(e=>e.isOff),people,leaders,flags,issues,health,intel};
+}
+function _opsSubtabNav(active){
+  const tabs=[
+    ["overview","Overview"],["decisions","Decisions"],["sources","Sources"],["logbook","Logbook"],["events","Events"],["handoff","Handoff"]
+  ];
+  return '<div class="people-subtab-nav">'+tabs.map(t=>'<button class="pst-btn'+(active===t[0]?' a':'')+'" onclick="S.opsView=&quot;'+t[0]+'&quot;;rOps($(\'ca\'))">'+t[1]+'</button>').join("")+'</div>';
+}
+function _opsMetric(label,value,sub,cls){
+  return '<div class="sd-kpi '+(cls||'')+'"><div class="n">'+X(String(value))+'</div><div class="l">'+X(label)+'</div><div class="s">'+X(sub||'')+'</div></div>';
+}
+function _opsIssueRows(limit){
+  const items=buildIssueInboxItems().filter(x=>x.status==="open");
+  if(!items.length)return '<div class="qol-empty compact">No open operational decisions.</div>';
+  return items.slice(0,limit||12).map(x=>'<div class="qol-issue-row" style="grid-template-columns:90px minmax(0,1fr) auto"><span class="qol-severity '+X(x.severity||'')+'">'+X(x.severity||"open")+'</span><div class="qol-issue-copy"><div class="qol-issue-title">'+X(x.title||x.label||"Decision")+'</div><div class="qol-issue-detail">'+X(x.detail||x.reason||x.category||"Needs owner review")+'</div></div><button class="qol-row-btn" onclick="openIssueInbox()">Open</button></div>').join("");
+}
+function _opsSourceRows(){
+  const sheets=(S.shs||[]).map((s,i)=>({name:s.name||s.sheetName||("Sheet "+(i+1)),rows:s.rows||s.data?.length||0,type:"sheet"}));
+  if(!sheets.length&&S.raw)sheets.push({name:"Parsed schedule rows",rows:S.raw.length,type:"parsed"});
+  return sheets;
+}
+function _opsSourceCards(){
+  const rows=_opsSourceRows();
+  if(!rows.length)return '<div class="qol-empty compact">No loaded sources yet. Drop a roster or schedule file to populate the source hub.</div>';
+  return rows.map(r=>'<div class="sd-list-row"><span class="name">'+X(r.name)+'</span><span class="meta">'+X(String(r.rows))+' rows</span></div>').join("");
+}
+function _opsLogbookRows(limit){
+  const rows=(S.peopleLogbook||[]).slice().sort((a,b)=>String(b.createdAt||b.date||"").localeCompare(String(a.createdAt||a.date||"")));
+  if(!rows.length)return '<div class="qol-empty compact">No logbook entries yet. People > Logbook can add notes, follow-ups, and summaries.</div>';
+  return rows.slice(0,limit||14).map(r=>'<div class="qol-history-row"><span class="qol-history-cat">'+X(r.kind||"note")+'</span><div><div class="qol-row-title">'+X(r.title||r.body||"Logbook entry")+'</div><div class="qol-row-sub">'+X([r.date,r.leader,r.agent].filter(Boolean).join(" - ")||"Ops log")+'</div></div><button class="qol-row-btn" onclick="railNavPeople(&quot;logbook&quot;)">People</button></div>').join("");
+}
+function _opsEventRows(limit){
+  const events=typeof _peopleScopeEvents==="function"?_peopleScopeEvents(null,null):[];
+  if(!events.length)return '<div class="qol-empty compact">No people or coverage events detected in the current scope.</div>';
+  return events.slice(0,limit||18).map(e=>'<div class="qol-history-row"><span class="qol-history-cat">'+X(e.type||"event")+'</span><div><div class="qol-row-title">'+X(e.person||e.agentName||"Event")+'</div><div class="qol-row-sub">'+X([e.date,e.leader,e.note||e.label].filter(Boolean).join(" - "))+'</div></div><button class="qol-row-btn" onclick="railNavPeople(&quot;events&quot;)">Open</button></div>').join("");
+}
+function rOps(el){
+  const view=S.opsView||"overview",ctx=_opsScope();
+  const handoff=typeof buildTodayHandoffText==="function"?buildTodayHandoffText():"No handoff builder available.";
+  const blueprint=ctx.health?ctx.health.grade+" "+ctx.health.avg:"--";
+  const ready=ctx.intel?ctx.intel.ready:0,structure=ctx.intel?ctx.intel.issues.length:0;
+  let body="";
+  if(view==="overview"){
+    body='<div class="sd-kpis" style="margin:0">'+
+      _opsMetric("On floor",ctx.working.length+" / "+ctx.people.length,ctx.off.length+" off / leave")+
+      _opsMetric("Decision queue",ctx.issues.length,ctx.flags.length+" ops/blueprint flags",ctx.issues.length?"warn":"")+
+      _opsMetric("People readiness",ready+" ready",structure+" structure signals")+
+      _opsMetric("Blueprint",blueprint,(S.shs||[]).length+" sources")+
+    '</div><div class="qol-two-col" style="margin-top:12px"><section class="an-card"><div class="an-card-hd"><h4>Decision Queue</h4><span>Ops Hub port</span></div><div class="an-card-body">'+_opsIssueRows(5)+'</div></section><section class="an-card"><div class="an-card-hd"><h4>Sources Hub</h4><span>'+_opsSourceRows().length+' sources</span></div><div class="an-card-body"><div class="sd-list">'+_opsSourceCards()+'</div></div></section><section class="an-card"><div class="an-card-hd"><h4>Logbook</h4><span>people memory</span></div><div class="an-card-body">'+_opsLogbookRows(5)+'</div></section><section class="an-card"><div class="an-card-hd"><h4>Events</h4><span>current scope</span></div><div class="an-card-body">'+_opsEventRows(5)+'</div></section></div>';
+  }else if(view==="decisions"){
+    body='<section class="an-card"><div class="an-card-hd"><h4>Decision Queue</h4><span>'+ctx.issues.length+' open</span></div><div class="an-card-body"><div class="qol-filterbar"><span style="font-size:11px;color:var(--tm)">Ops Hub pattern: every signal should have owner, evidence, status, and next action.</span><button class="qol-row-btn primary" style="margin-left:auto" onclick="openIssueInbox()">Open Issue Inbox</button></div>'+_opsIssueRows(80)+'</div></section>';
+  }else if(view==="sources"){
+    body='<section class="an-card"><div class="an-card-hd"><h4>Sources Hub</h4><span>'+_opsSourceRows().length+' loaded</span></div><div class="an-card-body"><div class="qol-filterbar"><span style="font-size:11px;color:var(--tm)">Port target: confidence, authority, row count, date range, and conflict status for every file.</span><button class="qol-row-btn primary" style="margin-left:auto" onclick="openImportReview()">Import Review</button></div><div class="sd-list">'+_opsSourceCards()+'</div></div></section>';
+  }else if(view==="logbook"){
+    body='<section class="an-card"><div class="an-card-hd"><h4>Operational Logbook</h4><span>'+(S.peopleLogbook||[]).length+' entries</span></div><div class="an-card-body"><div class="qol-filterbar"><span style="font-size:11px;color:var(--tm)">Aggregates People notes, follow-ups, summaries, and future Ops actions.</span><button class="qol-row-btn primary" style="margin-left:auto" onclick="railNavPeople(&quot;logbook&quot;)">Add Entry</button></div>'+_opsLogbookRows(120)+'</div></section>';
+  }else if(view==="events"){
+    body='<section class="an-card"><div class="an-card-hd"><h4>Events Stream</h4><span>absence / OT / acting / coaching</span></div><div class="an-card-body"><div class="qol-filterbar"><span style="font-size:11px;color:var(--tm)">Ops Hub pattern: upcoming operational moments in one sortable stream.</span><button class="qol-row-btn primary" style="margin-left:auto" onclick="railNavPeople(&quot;events&quot;)">People Events</button></div>'+_opsEventRows(140)+'</div></section>';
+  }else{
+    body='<section class="an-card"><div class="an-card-hd"><h4>Today Handoff</h4><span>'+X(fDF(ctx.today))+'</span></div><div class="an-card-body"><div class="qol-filterbar"><button class="qol-row-btn primary" onclick="copyTodayHandoff()">Copy Handoff</button><button class="qol-row-btn" onclick="openTodayHandoff()">Open Handoff</button><button class="qol-row-btn" onclick="openExportPresets()">Export Presets</button></div><textarea class="agent-note-area" readonly style="min-height:360px">'+X(handoff)+'</textarea></div></section>';
+  }
+  el.innerHTML='<div class="people-hq ops-hq">'+_opsSubtabNav(view)+'<div class="people-context"><span class="ctx-label">Ops scope</span><span class="ctx-pill">'+X(S.activeDept||"Current department")+'</span><span class="ctx-label">Month</span><span class="ctx-pill">'+X(monthLabel()||"--")+'</span><span class="ctx-label">Port map</span><span class="ctx-pill">Decision Queue - Sources Hub - Logbook - Events - Handoff</span></div><div style="flex:1;overflow:auto;padding:12px">'+body+'</div></div>';
 }
 function _rerenderCurrentSurfaceNow(){
   normalizeTabState();
@@ -4355,6 +4506,7 @@ function _rerenderCurrentSurfaceNow(){
   if(S.tab==="dashboard")rSyncDashboard(host);
   else if(S.tab==="calendar")rCal(host);
   else if(S.tab==="people")rPeople(host);
+  else if(S.tab==="ops")rOps(host);
   else if(S.tab==="table")rTbl(host);
   else if(S.tab==="analytics")rAnalytics(host);
   else if(S.tab==="cards")rCards(host);
@@ -12348,6 +12500,7 @@ function toggleRailGroup(group){
       S._mobileRailGroup=null;
       if(group==="calendar")railNavCalendar("day");
       else if(group==="people")railNavPeople("dashboard");
+      else if(group==="ops")railNavOps("overview");
       else railNavAnalytics("dashboard");
       return;
     }
@@ -12395,6 +12548,13 @@ function railNavAnalytics(view){
   S.anView=view==="data"?"rawdata":(view||"dashboard");
   ren();
 }
+function railNavOps(view){
+  _navPush();
+  _railSetActiveGroup("ops");
+  S.tab="ops";
+  S.opsView=view||"overview";
+  ren();
+}
 function renderTabs(){
   // v50D: Render tabs as rail nav items
   normalizeTabState();
@@ -12430,6 +12590,14 @@ function renderTabs(){
       {id:"absence",label:"Absence",active:S.tab==="analytics"&&activeAnView==="absence",action:"railNavAnalytics('absence')"},
       {id:"alerts",label:"Alerts",badge:alertsBadge,active:S.tab==="analytics"&&activeAnView==="alerts",action:"railNavAnalytics('alerts')"},
       {id:"data",label:"Data",active:S.tab==="analytics"&&activeAnView==="rawdata",action:"railNavAnalytics('data')"}
+    ]},
+    {id:"ops",label:"Ops",badge:alertsBadge,active:S.tab==="ops",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.2v11.6M2.2 4.2h9.6M2.2 9.8h9.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="4.2" cy="4.2" r="1.2" stroke="currentColor" stroke-width="1.1"/><circle cx="9.8" cy="9.8" r="1.2" stroke="currentColor" stroke-width="1.1"/></svg>`,children:[
+      {id:"overview",label:"Overview",active:S.tab==="ops"&&(S.opsView||"overview")==="overview",action:"railNavOps('overview')"},
+      {id:"decisions",label:"Decisions",badge:alertsBadge,active:S.tab==="ops"&&S.opsView==="decisions",action:"railNavOps('decisions')"},
+      {id:"sources",label:"Sources",active:S.tab==="ops"&&S.opsView==="sources",action:"railNavOps('sources')"},
+      {id:"logbook",label:"Logbook",active:S.tab==="ops"&&S.opsView==="logbook",action:"railNavOps('logbook')"},
+      {id:"events",label:"Events",active:S.tab==="ops"&&S.opsView==="events",action:"railNavOps('events')"},
+      {id:"handoff",label:"Handoff",active:S.tab==="ops"&&S.opsView==="handoff",action:"railNavOps('handoff')"}
     ]}
   ];
   groups.forEach(group=>{if(group.active)g[group.id]=true;});
@@ -12501,6 +12669,14 @@ function shuffleThemeColorway(){
   setTh(k,{skipCycle:true});
   if(S.entries&&S.entries.length){rerenderChromeOnly();rerenderCurrentSurface();}
   else{renderToolbar();renderInfoBar();}
+}
+function shuffleDashboardColorway(button){
+  if(!button||button.dataset.rolling==='1')return;
+  button.dataset.rolling='1';
+  button.disabled=true;
+  button.classList.add('rolling');
+  // Let the throw finish before the dashboard redraws in the newly selected colourway.
+  window.setTimeout(()=>shuffleThemeColorway(),700);
 }
 function _buildMastheadThemeControls(){
   const swatches=[
@@ -12635,10 +12811,11 @@ function buildContinuityHTML(){
 function renderContinuityBar(){if($("contBar"))$("contBar").innerHTML=buildContinuityHTML();}
 function renderActiveTab(){
   normalizeTabState();
+  if(typeof applySavedNameRemaps==="function")applySavedNameRemaps();
   const a=$("ca");
-  if(!S.entries.length&&S.tab!=="dashboard"){a.innerHTML='<div class="es-empty"><h3>No data</h3><p>Try a different sheet.</p></div>';if($("contBar"))$("contBar").innerHTML="";return;}
+  if(!S.entries.length&&!["dashboard","ops"].includes(S.tab)){a.innerHTML='<div class="es-empty"><h3>No data</h3><p>Try a different sheet.</p></div>';if($("contBar"))$("contBar").innerHTML="";return;}
   // v48: Legacy tab routing — table routes to cards, raw still works as diagnostic
-  const tabMap={dashboard:rSyncDashboard,calendar:rCal,cards:rCards,table:rCards,people:rPeople,analytics:rAnalytics,planner:rPlanner,summary:rSum,raw:rRaw};
+  const tabMap={dashboard:rSyncDashboard,calendar:rCal,cards:rCards,table:rCards,people:rPeople,analytics:rAnalytics,ops:rOps,planner:rPlanner,summary:rSum,raw:rRaw};
   (tabMap[S.tab]||rCal)(a);
 }
 function renderMonthNav(){
@@ -28302,6 +28479,67 @@ function _ensurePeopleOpsState(){
   if(!S._peopleView||!["cards","table"].includes(S._peopleView))S._peopleView="cards";
   if(!S._peopleLogFilter)S._peopleLogFilter="all";
 }
+function _ensureNameRemaps(){
+  if(S._nameRemapsLoaded)return;
+  S._nameRemapsLoaded=true;
+  if(!S.nameRemaps)S.nameRemaps={leaders:{},agents:{}};
+  try{const raw=localStorage.getItem("sc_name_remaps");if(raw){const parsed=JSON.parse(raw);S.nameRemaps={leaders:parsed.leaders||{},agents:parsed.agents||{}};}}catch(e){}
+}
+function saveNameRemaps(){_ensureNameRemaps();try{_persistSet("sc_name_remaps",JSON.stringify(S.nameRemaps));}catch(e){}}
+function _moveObjectKey(obj,from,to,merge){
+  if(!obj||!from||!to||from===to||!(from in obj))return;
+  if(to in obj&&merge&&typeof obj[to]==="object"&&obj[to]&&typeof obj[from]==="object"&&obj[from])obj[to]=Object.assign({},obj[from],obj[to],{name:to});
+  else obj[to]=obj[from];
+  if(obj[to]&&typeof obj[to]==="object"&&obj[to].name)obj[to].name=to;
+  delete obj[from];
+}
+function applyNameRemap(type,from,to,opts){
+  _ensureNameRemaps();
+  from=String(from||"").trim();to=String(to||"").trim();
+  if(!from||!to||from===to){if(!(opts&&opts.silent))toast("Choose a different replacement name","warn");return false;}
+  if(!(opts&&opts.silent)&&typeof _registerUndoState==="function")_registerUndoState("name remap "+from+" to "+to,{localStorageKeys:["sc_people","sc_agentnotes","sc_people_logbook","sc_name_remaps"]});
+  let changed=0;
+  if(type==="leader"){
+    (S.entries||[]).forEach(e=>{if(e.name===from){e.name=to;changed++;}});
+    _moveObjectKey(S.people,from,to,true);
+    Object.values(S.people||{}).forEach(p=>{if(p&&p.teamLeader===from){p.teamLeader=to;changed++;}});
+    (S.exceptions||[]).forEach(ex=>{if(ex.person===from){ex.person=to;changed++;}});
+    (S.peopleLogbook||[]).forEach(x=>{if(x.leader===from){x.leader=to;changed++;}});
+    if(S.selectedTL===from)S.selectedTL=to;
+    if(S.emp===from)S.emp=to;
+    S.nameRemaps.leaders[from]=to;
+  }else{
+    _moveObjectKey(S.people,from,to,true);
+    _moveObjectKey(S.agentStatuses,from,to,true);
+    (S.exceptions||[]).forEach(ex=>{if(ex.agentName===from){ex.agentName=to;changed++;}});
+    (S.peopleLogbook||[]).forEach(x=>{if(x.agent===from){x.agent=to;changed++;}});
+    if(S.otPlan&&Array.isArray(S.otPlan.agents))S.otPlan.agents.forEach(a=>{if((a.name||a)===from){if(typeof a==="object")a.name=to;changed++;}});
+    (S.otPlanHistory||[]).forEach(plan=>{(plan.agents||[]).forEach(a=>{if((a.name||a)===from){if(typeof a==="object")a.name=to;changed++;}});});
+    if(S._agentsViewSel===from)S._agentsViewSel=to;
+    S.nameRemaps.agents[from]=to;
+  }
+  _moveObjectKey(S.agentNotes,from,to,true);
+  if(Array.isArray(S.pinnedPeople))S.pinnedPeople=S.pinnedPeople.map(n=>n===from?to:n);
+  S.entriesVer=(S.entriesVer||0)+1;S.exceptionsVer=(S.exceptionsVer||0)+1;
+  saveNameRemaps();savePeople();saveAgentNotes();savePeopleOps();saveSettings();invalidateDerivedCache();
+  if(opts&&opts.silent)return true;
+  toast((type==="leader"?"Team leader":"Agent")+" renamed: "+from+" to "+to+" ("+changed+" links)","ok");
+  ren();
+  return true;
+}
+function applySavedNameRemaps(){
+  _ensureNameRemaps();
+  Object.entries((S.nameRemaps||{}).leaders||{}).forEach(([from,to])=>{if(from&&to&&from!==to&&((S.entries||[]).some(e=>e.name===from)||Object.values(S.people||{}).some(p=>p&&p.teamLeader===from)))applyNameRemap("leader",from,to,{silent:true});});
+  Object.entries((S.nameRemaps||{}).agents||{}).forEach(([from,to])=>{if(from&&to&&from!==to&&((S.people||{})[from]||(S.exceptions||[]).some(e=>e.agentName===from)))applyNameRemap("agent",from,to,{silent:true});});
+}
+function openNameRemapModal(){
+  _ensurePeopleOpsState();_ensureNameRemaps();
+  const leaders=gN().sort(),agents=Object.values(S.people||{}).filter(p=>p&&p.role==="agent").map(p=>p.name).filter(Boolean).sort();
+  const leaderOptions=leaders.map(n=>`<option value="${XA(n)}"></option>`).join("");
+  const agentOptions=agents.map(n=>`<option value="${XA(n)}"></option>`).join("");
+  const body=`<div class="qol-filterbar"><span style="font-size:11px;color:var(--tm)">Rename a TL or agent in Sync without touching the source workbook. This remaps schedule rows, team links, events, notes, and logbook references.</span></div><div class="qol-two-col"><section class="an-card"><div class="an-card-hd"><h4>Team Leader</h4><span>${leaders.length} names</span></div><div class="an-card-body"><div class="sd-list"><div><div class="phq-title">Current name</div><input id="remapLeaderFrom" list="remapLeaderList" class="qol-action-input" style="width:100%" placeholder="Existing TL"><datalist id="remapLeaderList">${leaderOptions}</datalist></div><div><div class="phq-title">New name</div><input id="remapLeaderTo" class="qol-action-input" style="width:100%" placeholder="Replacement TL"></div><button class="qol-row-btn primary" onclick="applyNameRemap('leader',(remapLeaderFrom||{}).value,(remapLeaderTo||{}).value);document.getElementById('qolNameRemap')?.remove()">Rename TL</button></div></div></section><section class="an-card"><div class="an-card-hd"><h4>Agent</h4><span>${agents.length} names</span></div><div class="an-card-body"><div class="sd-list"><div><div class="phq-title">Current name</div><input id="remapAgentFrom" list="remapAgentList" class="qol-action-input" style="width:100%" placeholder="Existing agent"><datalist id="remapAgentList">${agentOptions}</datalist></div><div><div class="phq-title">New name</div><input id="remapAgentTo" class="qol-action-input" style="width:100%" placeholder="Replacement agent"></div><button class="qol-row-btn primary" onclick="applyNameRemap('agent',(remapAgentFrom||{}).value,(remapAgentTo||{}).value);document.getElementById('qolNameRemap')?.remove()">Rename Agent</button></div></div></section></div>`;
+  _qolModal("qolNameRemap","Edit Team / Agent Names","Reshuffle names in app",body);
+}
 function savePeopleOps(){
   _ensurePeopleOpsState();
   try{
@@ -30267,6 +30505,7 @@ function rPeople(el){
   // Roster upload button in sub-tab bar
   const hasRoster=hasRosterData();
   h+=`<div style="margin-left:auto;display:flex;align-items:center;padding:0 4px;gap:6px">`;
+  h+=`<button onclick="openNameRemapModal()" style="padding:4px 10px;border:1px solid var(--bdr);border-radius:5px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">Edit Names</button>`;
   h+=`<button onclick="triggerRosterUpload()" style="padding:4px 10px;border:1px solid ${hasRoster?"var(--early)":"var(--bdr)"};border-radius:5px;background:${hasRoster?"rgba(52,211,153,.08)":"none"};color:${hasRoster?"var(--early)":"var(--tm)"};font-family:inherit;font-size:11px;cursor:pointer">${hasRoster?"✓ Roster":"+ Roster"}</button>`;
   h+=`</div>`;
   h+=`</div>`;
