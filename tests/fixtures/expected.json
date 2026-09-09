@@ -1,0 +1,180 @@
+{
+  "r_20x31": {
+    "parser": "parsePerson",
+    "people": 1,
+    "entries": 31,
+    "confidence": "high",
+    "months": [
+      "2026-09",
+      "2026-10"
+    ]
+  },
+  "r_40x31": {
+    "parser": "parsePerson",
+    "people": 1,
+    "entries": 31,
+    "confidence": "high",
+    "months": [
+      "2026-09",
+      "2026-10"
+    ]
+  },
+  "r_40x90": {
+    "parser": "parseWideHoriz",
+    "people": 40,
+    "entries": 3600,
+    "confidence": "high",
+    "months": [
+      "2026-09",
+      "2026-10",
+      "2026-11"
+    ]
+  },
+  "r_80x31": {
+    "parser": "parsePerson",
+    "people": 1,
+    "entries": 31,
+    "confidence": "high",
+    "months": [
+      "2026-09",
+      "2026-10"
+    ]
+  },
+  "r_80x90": {
+    "parser": "parsePerson",
+    "people": 1,
+    "entries": 59,
+    "confidence": "high",
+    "months": [
+      "2026-09",
+      "2026-10"
+    ]
+  },
+  "roster": {
+    "parser": "parseHoriz",
+    "people": 8,
+    "entries": 224,
+    "confidence": "high",
+    "months": [
+      "2026-01",
+      "2026-02",
+      "2026-03",
+      "2026-04",
+      "2026-05",
+      "2026-06",
+      "2026-07",
+      "2026-08",
+      "2026-09",
+      "2026-10",
+      "2026-11",
+      "2026-12"
+    ]
+  },
+  "roster_big": {
+    "parser": "parsePerson",
+    "people": 1,
+    "entries": 59,
+    "confidence": "high",
+    "months": [
+      "2026-09",
+      "2026-10"
+    ]
+  },
+  "roster_iso": {
+    "parser": "parseWideHoriz",
+    "people": 12,
+    "entries": 360,
+    "confidence": "high",
+    "months": [
+      "2026-09"
+    ]
+  },
+  "roster_xss": {
+    "parser": "parseBlocks",
+    "people": 5,
+    "entries": 70,
+    "confidence": "high",
+    "months": [
+      "2026-09"
+    ]
+  },
+  "t_12": {
+    "parser": "parseWideHoriz",
+    "people": 12,
+    "entries": 372,
+    "confidence": "high",
+    "months": [
+      "2026-09",
+      "2026-10"
+    ]
+  },
+  "t_13": {
+    "parser": "parseWideHoriz",
+    "people": 13,
+    "entries": 403,
+    "confidence": "high",
+    "months": [
+      "2026-09",
+      "2026-10"
+    ]
+  },
+  "t_14": {
+    "parser": "parsePerson",
+    "people": 1,
+    "entries": 31,
+    "confidence": "high",
+    "months": [
+      "2026-09",
+      "2026-10"
+    ]
+  },
+  "t_15": {
+    "parser": "parsePerson",
+    "people": 1,
+    "entries": 31,
+    "confidence": "high",
+    "months": [
+      "2026-09",
+      "2026-10"
+    ]
+  },
+  "t_16": {
+    "parser": "parsePerson",
+    "people": 1,
+    "entries": 31,
+    "confidence": "high",
+    "months": [
+      "2026-09",
+      "2026-10"
+    ]
+  },
+  "t_20": {
+    "parser": "parsePerson",
+    "people": 1,
+    "entries": 31,
+    "confidence": "high",
+    "months": [
+      "2026-09",
+      "2026-10"
+    ]
+  },
+  "x_12x30": {
+    "parser": "parseWideHoriz",
+    "people": 12,
+    "entries": 360,
+    "confidence": "high",
+    "months": [
+      "2026-09"
+    ]
+  },
+  "x_80x31": {
+    "parser": "parsePerson",
+    "people": 1,
+    "entries": 31,
+    "confidence": "high",
+    "months": [
+      "2026-09",
+      "2026-10"
+    ]
+  }
+}

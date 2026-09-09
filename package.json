@@ -1,0 +1,12 @@
+{
+  "name": "mirrorflow-sync",
+  "version": "0.0.0",
+  "private": true,
+  "description": "MirrorFlow Sync — local-first schedule intelligence, shipped as a single self-contained index.html",
+  "scripts": {
+    "test": "node tests/parser.test.js && node tests/smoke.test.js",
+    "test:parser": "node tests/parser.test.js",
+    "test:smoke": "node tests/smoke.test.js",
+    "parse-report": "node tests/parse-report.js"
+  }
+}
