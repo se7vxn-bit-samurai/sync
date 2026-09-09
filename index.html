@@ -8417,8 +8417,16 @@ function autoParse(data,sn){
     return[];
   }
   const best=candidates[0],runner=candidates.find((candidate,index)=>index>0&&!_candidateEquivalent(best,candidate)),margin=runner?best.score-runner.score:best.score;
-  const confidence=best.score>=82&&margin>=4?"high":best.score>=62?"medium":"low";
+  // Backstop against the failure this scoring layer has already had once: a
+  // parse that reads a fraction of the people another parser found must never
+  // be presented as trustworthy, whatever it scored. Scoring changes can
+  // reintroduce that silently; this cannot.
+  const richest=candidates.reduce((a,b)=>b.quality.names>a.quality.names?b:a,best);
+  const lossy=richest!==best&&best.quality.names*2<=richest.quality.names;
+  let confidence=best.score>=82&&margin>=4?"high":best.score>=62?"medium":"low";
+  if(lossy)confidence="low";
   const warnings=[];
+  if(lossy)warnings.push(`${best.parser} read ${best.quality.names} ${best.quality.names===1?"person":"people"} but ${richest.parser} found ${richest.quality.names} on this sheet — most of the roster may be missing`);
   if(best.score<52)warnings.push("Parser confidence is below the automatic-load threshold");
   if(runner&&margin<4)warnings.push(`Ambiguous structure: ${best.parser} and ${runner.parser} scored within ${Math.round(margin*10)/10} points`);
   if(best.quality.completeRatio<1)warnings.push(`${best.quality.total-best.quality.complete} rows failed canonical schedule validation`);
@@ -10417,6 +10425,10 @@ function scanFileQuick(wb,filename,manualOverride){
     }
     const canonical=_validateCanonicalScheduleEntries(entries,filename);
     entries.length=0;canonical.entries.forEach(e=>entries.push(e));
+    // Rows refused by canonical validation were being discarded without a word,
+    // so a sheet of six people could present as a clean import of four. If we
+    // drop someone's rows the preview has to say so before anything is loaded.
+    if(canonical.stats.dropped>0)S.parseInfo.push({sheet:"canonical-validation",parser:"canonicalValidator",confidence:"medium",reason:`${canonical.stats.dropped} of ${canonical.stats.input} parsed rows failed validation`,count:canonical.stats.output,warnings:[`${canonical.stats.dropped} row${canonical.stats.dropped===1?"":"s"} could not be read as a schedule entry and ${canonical.stats.dropped===1?"was":"were"} not loaded`],alternatives:[]});
     if(canonical.issues.length)S.parseInfo.push({sheet:"canonical-validation",parser:"canonicalValidator",confidence:canonical.stats.conflicts?"medium":"high",reason:`Validated ${canonical.stats.input} parsed rows into ${canonical.stats.output} canonical schedule rows`,count:entries.length,warnings:canonical.issues});
     const parseInfo=[...S.parseInfo];
     S.parseInfo=_savedInfo;// restore — don't pollute current state

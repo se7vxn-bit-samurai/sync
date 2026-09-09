@@ -76,6 +76,49 @@ function compare(name, want, got) {
     }
   }
 
+  // The lossy-parse guard is a backstop: with scoring correct, no fixture
+  // reaches it. Force the condition by making affinity favour the parser that
+  // reads one person, and assert the guard refuses to call that result trusted.
+  if (!UPDATE) {
+    await page.evaluate(csv => { window.__guardCsv = csv; },
+      fs.readFileSync(H.fixturePath('r_80x31'), 'utf8'));
+    const guard = await page.evaluate(() => {
+      const realAffinity = _parserAffinity;
+      // Keep rivals above autoParse's affinity>=8 eligibility filter, or they
+      // never run and there is nothing for the guard to compare against.
+      _parserAffinity = (parser, f) => parser === 'parsePerson' ? 30 : 8;
+      try {
+        S.parseInfo = [];
+        const wb = XLSX.read(new Uint8Array(new TextEncoder().encode(window.__guardCsv).buffer),
+          XLSX_STANDARD_READ_OPTS);
+        const grid = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],
+          { header: 1, defval: '' });
+        const entries = autoParse(grid, 'guard') || [];
+        const info = S.parseInfo[0] || {};
+        return {
+          parser: info.parser,
+          confidence: info.confidence,
+          warnings: info.warnings || [],
+          people: new Set(entries.map(e => e.name).filter(Boolean)).size
+        };
+      } finally { _parserAffinity = realAffinity; }
+    });
+
+    const guardOk = guard.parser === 'parsePerson' &&
+      guard.people === 1 &&
+      guard.confidence === 'low' &&
+      guard.warnings.some(w => /most of the roster may be missing/.test(w));
+    if (guardOk) {
+      pass++;
+      console.log('ok   [guard]      lossy parse forced to low confidence + warned');
+    } else {
+      failed.push('[guard]');
+      console.log('FAIL [guard] lossy-parse guard did not fire');
+      console.log('  got ' + JSON.stringify(guard));
+    }
+    names.push('[guard]');
+  }
+
   await browser.close();
 
   if (UPDATE) {
