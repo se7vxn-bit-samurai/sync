@@ -6370,6 +6370,24 @@ function classifyCell(raw){
 }
 
 const XLSX_STANDARD_READ_OPTS={type:"array",cellDates:true,cellStyles:true,sheetStubs:true};
+// CSV has no cell types — every value is text — so cellDates:true makes SheetJS
+// guess, and it guesses American. "01/09/2026" through "12/09/2026" came back as
+// January..December the 9th, scattering one September rota across twelve months.
+// pDt() already reads day-first correctly, but only ever sees a string: it
+// short-circuits on `v instanceof Date` and trusts whatever SheetJS decided.
+// So for CSV we keep the cells as text and let pDt own the interpretation.
+// .xlsx is unaffected — its dates are real serials, not text to be guessed at.
+// raw:true is the setting that matters here: cellDates:false alone is not
+// enough, because SheetJS's CSV reader still hands back Date objects.
+function _isCsvFile(f){
+  if(!f)return false;
+  const name=String(f.name||f||"");
+  if(/\.csv$/i.test(name))return true;
+  return /^text\/csv$/i.test(String(f.type||""));
+}
+function _readOptsForFile(f){
+  return _isCsvFile(f)?Object.assign({},XLSX_STANDARD_READ_OPTS,{cellDates:false,raw:true}):XLSX_STANDARD_READ_OPTS;
+}
 function _styleColorHex(c){
   if(!c)return"";
   if(c.rgb){
@@ -10245,7 +10263,7 @@ function proc(f,opts){
   r.onload=async function(e){
     try{const identity=await _syncFingerprintBuffer(e.target.result);
     if(S.currentSource&&S.currentSource.fingerprint&&S.currentSource.fingerprint===identity.fingerprint&&S.entries&&S.entries.length){_recordQoLChange("Duplicate schedule source skipped");toast("This exact workbook is already active — no rows were reloaded","info",3600);return;}
-    const wb=XLSX.read(new Uint8Array(e.target.result),XLSX_STANDARD_READ_OPTS),sourceMeta=_syncSourceRecord(f,wb,identity);
+    const wb=XLSX.read(new Uint8Array(e.target.result),_readOptsForFile(f)),sourceMeta=_syncSourceRecord(f,wb,identity);
     if(isSaveFile(wb)){
       // Save+ files restore immediately — they ARE the user's saved state
       restoreFromSaveFile(wb,f.name,sourceMeta,opts);

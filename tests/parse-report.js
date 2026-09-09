@@ -46,12 +46,17 @@ const ENGINES = ['parseWideHoriz', 'parseHoriz', 'parseVert', 'parseBlocks', 'pa
     ? Array.from(fs.readFileSync(target))
     : fs.readFileSync(target, 'utf8');
 
+  await page.evaluate(n => { window.__reportFilename = n; }, path.basename(target));
+
   const out = await page.evaluate(({ payload, xlsx, engines, sheetArg, gridRows }) => {
     S.parseInfo = [];
     const bytes = xlsx
       ? new Uint8Array(payload)
       : new Uint8Array(new TextEncoder().encode(payload).buffer);
-    const wb = XLSX.read(bytes, XLSX_STANDARD_READ_OPTS);
+    const opts = typeof _readOptsForFile === 'function'
+      ? _readOptsForFile({ name: window.__reportFilename })
+      : XLSX_STANDARD_READ_OPTS;
+    const wb = XLSX.read(bytes, opts);
     const sheetNames = wb.SheetNames;
     const sheetName = sheetNames[Math.max(0, sheetArg - 1)] || sheetNames[0];
     const grid = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, defval: '' });

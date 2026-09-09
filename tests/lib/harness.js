@@ -76,12 +76,19 @@ async function parseFixture(page, name) {
     ? Array.from(fs.readFileSync(p))
     : fs.readFileSync(p, 'utf8');
 
-  return page.evaluate(({ payload, xlsx }) => {
+  const filename = path.basename(p);
+
+  return page.evaluate(({ payload, xlsx, filename }) => {
     S.parseInfo = [];
     const bytes = xlsx
       ? new Uint8Array(payload)
       : new Uint8Array(new TextEncoder().encode(payload).buffer);
-    const wb = XLSX.read(bytes, XLSX_STANDARD_READ_OPTS);
+    // Go through the app's own option selection so the CSV/xlsx date handling
+    // under test is the same code the import path uses.
+    const opts = typeof _readOptsForFile === 'function'
+      ? _readOptsForFile({ name: filename })
+      : XLSX_STANDARD_READ_OPTS;
+    const wb = XLSX.read(bytes, opts);
     const sheet = wb.Sheets[wb.SheetNames[0]];
     const grid = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
 
@@ -101,7 +108,7 @@ async function parseFixture(page, name) {
       warnings: info.warnings || [],
       months
     };
-  }, { payload, xlsx });
+  }, { payload, xlsx, filename });
 }
 
 /** Drive a fixture through the real UI: file input -> preview -> Load. */
