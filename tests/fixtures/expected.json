@@ -1,8 +1,8 @@
 {
   "r_20x31": {
-    "parser": "parsePerson",
-    "people": 1,
-    "entries": 31,
+    "parser": "parseWideHoriz",
+    "people": 20,
+    "entries": 620,
     "confidence": "high",
     "months": [
       "2026-09",
@@ -10,9 +10,9 @@
     ]
   },
   "r_40x31": {
-    "parser": "parsePerson",
-    "people": 1,
-    "entries": 31,
+    "parser": "parseWideHoriz",
+    "people": 40,
+    "entries": 1240,
     "confidence": "high",
     "months": [
       "2026-09",
@@ -31,9 +31,9 @@
     ]
   },
   "r_80x31": {
-    "parser": "parsePerson",
-    "people": 1,
-    "entries": 31,
+    "parser": "parseWideHoriz",
+    "people": 80,
+    "entries": 2480,
     "confidence": "high",
     "months": [
       "2026-09",
@@ -41,13 +41,14 @@
     ]
   },
   "r_80x90": {
-    "parser": "parsePerson",
-    "people": 1,
-    "entries": 59,
+    "parser": "parseWideHoriz",
+    "people": 80,
+    "entries": 7200,
     "confidence": "high",
     "months": [
       "2026-09",
-      "2026-10"
+      "2026-10",
+      "2026-11"
     ]
   },
   "roster": {
@@ -71,13 +72,14 @@
     ]
   },
   "roster_big": {
-    "parser": "parsePerson",
-    "people": 1,
-    "entries": 59,
+    "parser": "parseWideHoriz",
+    "people": 150,
+    "entries": 13500,
     "confidence": "high",
     "months": [
       "2026-09",
-      "2026-10"
+      "2026-10",
+      "2026-11"
     ]
   },
   "roster_iso": {
@@ -119,9 +121,9 @@
     ]
   },
   "t_14": {
-    "parser": "parsePerson",
-    "people": 1,
-    "entries": 31,
+    "parser": "parseWideHoriz",
+    "people": 14,
+    "entries": 434,
     "confidence": "high",
     "months": [
       "2026-09",
@@ -129,9 +131,9 @@
     ]
   },
   "t_15": {
-    "parser": "parsePerson",
-    "people": 1,
-    "entries": 31,
+    "parser": "parseWideHoriz",
+    "people": 15,
+    "entries": 465,
     "confidence": "high",
     "months": [
       "2026-09",
@@ -139,9 +141,9 @@
     ]
   },
   "t_16": {
-    "parser": "parsePerson",
-    "people": 1,
-    "entries": 31,
+    "parser": "parseWideHoriz",
+    "people": 16,
+    "entries": 496,
     "confidence": "high",
     "months": [
       "2026-09",
@@ -149,9 +151,9 @@
     ]
   },
   "t_20": {
-    "parser": "parsePerson",
-    "people": 1,
-    "entries": 31,
+    "parser": "parseWideHoriz",
+    "people": 20,
+    "entries": 620,
     "confidence": "high",
     "months": [
       "2026-09",
@@ -168,9 +170,9 @@
     ]
   },
   "x_80x31": {
-    "parser": "parsePerson",
-    "people": 1,
-    "entries": 31,
+    "parser": "parseWideHoriz",
+    "people": 80,
+    "entries": 2480,
     "confidence": "high",
     "months": [
       "2026-09",
