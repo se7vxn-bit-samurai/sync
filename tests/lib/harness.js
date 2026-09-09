@@ -24,7 +24,12 @@ function chromium() {
 }
 
 async function launch() {
-  return chromium().launch({ executablePath: CHROMIUM, args: ['--no-sandbox'] });
+  // This image ships Chromium at a fixed path; CI installs it into Playwright's
+  // own cache, where Playwright finds it unaided. Only pin the path if it is
+  // actually there.
+  const opts = { args: ['--no-sandbox'] };
+  if (fs.existsSync(CHROMIUM)) opts.executablePath = CHROMIUM;
+  return chromium().launch(opts);
 }
 
 /**

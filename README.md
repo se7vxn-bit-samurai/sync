@@ -11,10 +11,22 @@ on.
 
 ## How it is built
 
-The whole product is one self-contained `index.html` at the repo root, served
-directly by GitHub Pages. Vendored SheetJS, ExcelJS, JSZip and html2canvas are
-inlined alongside the app, so the file works offline and can be handed to
-someone as a single attachment.
+Sync ships as one self-contained `index.html`, served directly by GitHub Pages.
+Vendored SheetJS, ExcelJS, JSZip and html2canvas are inlined alongside the app,
+so the file works offline and can be handed to someone as a single attachment.
+
+That file is a **build output**. The sources live in `src/` as ~85 modules, and
+`build/build.js` concatenates them:
+
+```
+npm run build      assemble src/ into index.html
+npm run check      verify index.html matches src/
+npm test           check + parser suite + smoke suite
+```
+
+Edit `src/`, never `index.html`. The build is a plain concatenation — it does
+not minify, rename or wrap anything, and it must not start to; see
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for why.
 
 ## The workflow it is built around
 
@@ -29,7 +41,7 @@ month.
 
 ## Running it
 
-Open `index.html` in a browser. There is no build step and no server.
+Open `index.html` in a browser. No server, no install.
 
 ## Tests
 
@@ -72,8 +84,21 @@ suite is green.
 ## Repository
 
 ```
-index.html    the application
-tests/        parser and smoke suites, fixtures, parse-report CLI
-CHANGELOG.md  what changed and why
-CNAME         custom domain for GitHub Pages
+index.html      the built application — generated, committed, served by Pages
+src/            the sources
+build/          the concatenator and its manifest
+tests/          parser and smoke suites, fixtures, parse-report CLI
+docs/           architecture, parsers, persistence, build
+CHANGELOG.md    what changed and why
+CONTRIBUTING.md the working loop and the three things that will bite you
+CNAME           custom domain for GitHub Pages
 ```
+
+## Documentation
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — how it is put together, and why
+  the build is a concatenation rather than a bundle
+- [docs/PARSERS.md](docs/PARSERS.md) — the parse pipeline, and how to teach Sync
+  a roster layout it does not yet read
+- [docs/PERSISTENCE.md](docs/PERSISTENCE.md) — storage, session resume, Save+
+- [docs/BUILD.md](docs/BUILD.md) — building, checking, adding a module

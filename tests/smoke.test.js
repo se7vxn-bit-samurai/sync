@@ -135,6 +135,32 @@ function check(name, ok, detail) {
     await page.context().close();
   }
 
+  // ---- 4b. the analytics Worker still builds from function source ----
+  // _buildAnalyticsWorkerSource() stringifies computeFlags,
+  // computeTeamHealthScore and _signalRankMeta into a Blob Worker. Any build
+  // step that renames or wraps those breaks it at runtime with no build error,
+  // which is why the build is a plain concatenation. Assert the source is
+  // still reachable and intact.
+  {
+    const { page } = await H.openApp(browser);
+    const w = await page.evaluate(() => {
+      if (typeof _buildAnalyticsWorkerSource !== 'function') return { built: false };
+      const src = _buildAnalyticsWorkerSource();
+      return {
+        built: true,
+        length: src.length,
+        hasFlags: /function computeFlags\s*\(/.test(src),
+        hasHealth: /function computeTeamHealthScore\s*\(/.test(src),
+        hasRank: /function _signalRankMeta\s*\(/.test(src),
+        native: /\[native code\]/.test(src)
+      };
+    });
+    check('worker: analytics worker source builds with all three functions intact',
+      w.built && w.hasFlags && w.hasHealth && w.hasRank && !w.native,
+      JSON.stringify(w));
+    await page.context().close();
+  }
+
   // ---- 5. does a loaded schedule survive a reload? ----
   {
     const context = await browser.newContext({ viewport: { width: 1600, height: 1000 } });
