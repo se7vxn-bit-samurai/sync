@@ -3253,7 +3253,15 @@ function _pushUndoEntry(label,payload){
   const id="undo_"+at.toString(36)+"_"+Math.random().toString(36).slice(2,7);
   const category=_historyCategory(label,"undo-point");
   _undoStack.push({id,label:String(label||"change"),category,payload,at});
-  while(_undoStack.length>_UNDO_MAX)_undoStack.shift();
+  // Each restore point deep-clones the whole of S, entries included, so on a
+  // large roster twenty of them is twenty copies of the schedule held in
+  // memory. That was only reachable after an import; now that a session
+  // resumes on load it is reachable from the moment the page opens. Keep fewer
+  // restore points once the schedule is big — depth matters less than the tab
+  // surviving.
+  const entryCount=(S.entries&&S.entries.length)||0;
+  const cap=entryCount>20000?3:entryCount>8000?5:entryCount>3000?10:_UNDO_MAX;
+  while(_undoStack.length>cap)_undoStack.shift();
   try{
     S.changeHistory=S.changeHistory||[];
     S.changeHistory.unshift({id,label:String(label||"change"),category,at:new Date(at).toISOString(),type:"restore-point",restorable:true});
@@ -11643,7 +11651,7 @@ function _buildAppStateSnapshot(){
     coachManualSessions:S.coachManualSessions||[],coachBudgetHrs:S.coachBudgetHrs||{},
     coachTargetDaily:S.coachTargetDaily||1,plSubTab:S.plSubTab||'schedule',
     tab:S.tab,th:S.th,thVariant:S.thVariant||0,tz:S.tz,hlToday:S.hlToday,covMin:S.covMin,hrsMax:S.hrsMax,cbMode:S.cbMode,density:S.density,
-    targetHours:S.targetHours||0,ratePerHour:S.ratePerHour||0,showCardWk:S.showCardWk!==false,
+    targetHours:S.targetHours||0,ratePerHour:S.ratePerHour||0,showCardWk:S.showCardWk!==false,resumeSession:S.resumeSession!==false,
     collapsed:S.collapsed,team:S.team,emp:S.emp,dayFilter:S.dayFilter,
     allMonths:S.allMonths,parseInfo:S.parseInfo,anDay:S.anDay,anMode:S.anMode,anScope:S.anScope||'month',
     anView:S.anView,shiftFilter:S.shiftFilter,sumMode:S.sumMode||'month',cardShow:S.cardShow||{},flagSettings:S.flagSettings||{},exportSelection:S.exportSelection||{},
@@ -25877,6 +25885,12 @@ function rSum(el){
 
 /* ═══ RAW DATA (with sheet tabs) ═══ */
 function rRaw(el){
+  // A resumed session has entries but no workbook behind them, so there are no
+  // sheets to show and nothing here can be read.
+  if(!S.wb||!S.shs||!S.shs.length){
+    el.innerHTML=`<div class="empty">Raw sheet data is only available for a schedule loaded from a file in this session. Re-import the workbook to inspect its sheets.</div>`;
+    return;
+  }
   // Sheet tabs for raw data
   let h=`<div class="raw-tabs">`;
   (S.sh==="__all__"?S.shs:[S.sh,...S.shs.filter(s=>s!==S.sh)]).forEach(sn=>{
@@ -27551,7 +27565,7 @@ function saveSettings(){
     _schemaVersion:S._schemaVersion,
     th:S.th,thVariant:S.thVariant||0,thVar:S.thVariant||0,tz:S.tz,hlToday:S.hlToday,covMin:S.covMin,hrsMax:S.hrsMax,cbMode:S.cbMode,density:S.density,tab:S.tab,
     peopleSubTab:S.peopleSubTab||"dashboard",peopleDashView:S.peopleDashView||"today_ops",peopleView:S._peopleView||"cards",peopleLogFilter:S._peopleLogFilter||"all",
-    targetHours:S.targetHours||0,ratePerHour:S.ratePerHour||0,showCardWk:S.showCardWk!==false,
+    targetHours:S.targetHours||0,ratePerHour:S.ratePerHour||0,showCardWk:S.showCardWk!==false,resumeSession:S.resumeSession!==false,
     sumMode:S.sumMode||"month",anView:S.anView||"coverage",
     flagSettings:S.flagSettings||{},
     cardShow:S.cardShow||{},
@@ -27620,6 +27634,7 @@ function loadSettings(){
       if(typeof s.targetHours==="number")S.targetHours=s.targetHours;
       if(typeof s.ratePerHour==="number")S.ratePerHour=s.ratePerHour;
       if(typeof s.showCardWk==="boolean")S.showCardWk=s.showCardWk;
+      if(typeof s.resumeSession==="boolean")S.resumeSession=s.resumeSession;
       if(s.cardShow&&typeof s.cardShow==="object")S.cardShow=s.cardShow;
       if(typeof s.cbMode==="boolean"){S.cbMode=s.cbMode;document.body.classList.toggle("cb-mode",S.cbMode);}
       if(s.density&&["compact","comfortable","spacious"].includes(s.density)){S.density=s.density;document.body.classList.remove("density-compact","density-spacious");if(s.density==="compact")document.body.classList.add("density-compact");else if(s.density==="spacious")document.body.classList.add("density-spacious");}
@@ -31588,18 +31603,52 @@ function nsQueueDatabaseWrite(model){
   clearTimeout(NS.dbWriteTimer);
   NS.dbWriteTimer=setTimeout(()=>{
     const current=nsCanonical(),snapshot=typeof structuredClone==="function"?structuredClone(current):JSON.parse(JSON.stringify(current));
+    // Never let a boot-time write erase a stored schedule before we have read
+    // it back. The model is seeded from localStorage, which always holds
+    // `schedule:[]` to stay inside quota, and the block's own startup calls
+    // nsPersist() — so without this the first write after every reload replaced
+    // the database's schedule with nothing, milliseconds before hydration
+    // would have restored it. A model that actually carries rows always writes.
+    if(!NS.hydrated&&!(snapshot.schedule||[]).length)return;
     nsDatabaseWrite(snapshot).catch(()=>{NS.persistence="localStorage fallback";});
   },180);
 }
+// The write above is debounced, so a tab closed or hidden in the moment after
+// an import would lose the schedule it was about to store. Flush on the way out.
+function nsFlushDatabaseWrite(){
+  if(!NS.dbWriteTimer)return;
+  clearTimeout(NS.dbWriteTimer);NS.dbWriteTimer=null;
+  try{
+    const current=nsCanonical(),snapshot=typeof structuredClone==="function"?structuredClone(current):JSON.parse(JSON.stringify(current));
+    if(!NS.hydrated&&!(snapshot.schedule||[]).length)return;
+    nsDatabaseWrite(snapshot).catch(()=>{});
+  }catch(err){}
+}
+window.addEventListener("pagehide",nsFlushDatabaseWrite);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")nsFlushDatabaseWrite();});
 
 async function nsHydrateDatabase(){
   NS.hydrating=true;
   try{
     const db=await nsOpenDatabase(),stored=await new Promise((resolve,reject)=>{const tx=db.transaction(NS_DB_STORE,"readonly"),request=tx.objectStore(NS_DB_STORE).get(NS_DB_KEY);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});db.close();
-    if(stored&&String(stored.updated_at||"")>String(nsCanonical().updated_at||"")){S.nsCanonical=nsNormalizeCanonical(stored);nsSanitizeCanonicalIdentities();nsSyncPeopleToRuntime();}
+    // The two copies are written together by nsPersist, so they normally carry
+    // the SAME updated_at — and a strictly-newer test then never adopts the
+    // database copy. That matters because the localStorage copy deliberately
+    // stores `schedule:[]` to stay inside quota, so the schedule only ever
+    // exists in IndexedDB. Also adopt when the stored copy is the only one that
+    // still has the schedule rows.
+    const current=nsCanonical();
+    const storedNewer=stored&&String(stored.updated_at||"")>String(current.updated_at||"");
+    // The in-memory model is seeded from localStorage, which never carries the
+    // schedule, and startup bumps its updated_at — so a strictly-newer test
+    // alone can never adopt the database copy, and the schedule stayed
+    // unreachable. If the stored copy has the rows and this one does not, it is
+    // better regardless of timestamps.
+    const storedHasScheduleWeLack=stored&&(stored.schedule||[]).length&&!(current.schedule||[]).length;
+    if(storedNewer||storedHasScheduleWeLack){S.nsCanonical=nsNormalizeCanonical(stored);nsSanitizeCanonicalIdentities();nsSyncPeopleToRuntime();}
     NS.persistence="indexeddb";return true;
   }catch(err){NS.persistence="localStorage fallback";return false;}
-  finally{NS.hydrating=false;}
+  finally{NS.hydrating=false;NS.hydrated=true;}
 }
 
 function nsSheetName(wb,wanted){
@@ -32228,6 +32277,52 @@ function nsOpenCanonicalWorkspace(result,pending){
   }else ren();
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   RESUME LAST SESSION
+   Every import already commits the schedule to IndexedDB through
+   nsCommitWorkbook / nsCommitRuntimeSchedule -> nsPersist. On reload
+   nsHydrateDatabase read that model straight back and then kept only the
+   people, dropping the schedule on the floor — so the workspace returned
+   empty and the landing card came back, while a month of coaching, planner,
+   OT and logbook entries all survived in localStorage with nothing left to
+   hang off. This restores the schedule from the model we already hold.
+
+   Deliberately mirrors nsOpenCanonicalWorkspace's entry mapping and month
+   rebuild rather than inventing a second one.
+   ═══════════════════════════════════════════════════════════════ */
+function nsResumeLastSession(){
+  if(S.resumeSession===false)return false;
+  if(S.entries&&S.entries.length)return false;      // an import is already live
+  const model=nsCanonical();
+  const rows=(model&&model.schedule)||[];
+  if(!rows.length)return false;
+
+  const entries=rows.map(nsRuntimeEntry).filter(row=>row&&row.name&&row.date&&!isNaN(row.date));
+  if(!entries.length)return false;
+
+  S.entries=entries;
+  const months=[...new Set(S.entries.map(entry=>entry.date&&entry.date.getFullYear()+"-"+entry.date.getMonth()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+  const today=new Date(),current=today.getFullYear()+"-"+today.getMonth();
+  S.months=months.length?months:[current];
+  S.month=S.months.includes(current)?current:S.months[0];
+  S.mIdx=Math.max(0,S.months.indexOf(S.month));
+  // There is no workbook behind a resumed session — it came from the database,
+  // not a file. Sheet-backed views read S.wb.Sheets[...] before checking the
+  // result, so hand them an empty workbook rather than null.
+  S.wb=S.wb||{SheetNames:[],Sheets:{}};
+  S.shs=[];S.sh="__all__";S.raw=[];S.parseInfo=[];
+  S.loadedAt=Date.now();
+  S.resumedAt=Date.now();
+  if(!S.activeDept){
+    const homed=(model.people||[]).find(person=>person.home_department);
+    S.activeDept=(homed&&homed.home_department)||S.activeDept||"Workspace";
+  }
+  if(!S.fn){
+    const source=(model.sources||[]).slice(-1)[0];
+    S.fn=(source&&(source.source_file||source.source_id))||"Resumed session";
+  }
+  return true;
+}
 function nsRecordImportPerformance(pending,result){
   const model=nsCanonical(),kind=result.detection.primary,budget=NS_PERFORMANCE_BUDGETS[kind]||NS_PERFORMANCE_BUDGETS.default,timing=pending.timing||{};
   const scheduleRows=Number(result.summary.schedule||result.detection.counts.schedule||0),assertions={
@@ -33012,7 +33107,20 @@ function nsBrandSweep(){
 }
 document.addEventListener("DOMContentLoaded",nsBrandSweep);setTimeout(nsBrandSweep,0);
 let nsLagExpected=performance.now()+1000;setInterval(()=>{const now=performance.now();NS.eventLoopLag=Math.max(0,now-nsLagExpected);nsLagExpected=now+1000;},1000);
-(()=>{const hydrate=()=>nsHydrateDatabase().then(hydrated=>{if(hydrated&&document.getElementById("ca")&&!document.getElementById("mv")?.classList.contains("hid"))try{ren();}catch(err){}});if("requestIdleCallback" in window)requestIdleCallback(hydrate,{timeout:1200});else setTimeout(hydrate,80);})();
+(()=>{const hydrate=()=>nsHydrateDatabase().then(hydrated=>{
+  // Bring the schedule back before deciding what to draw, so a reload lands in
+  // the workspace the user left rather than on the landing card.
+  let resumed=false;
+  try{resumed=nsResumeLastSession();}catch(err){console.error("Resume failed",err);}
+  if(resumed){
+    try{_restoreViewportFromState();}catch(err){}
+    try{updateDeptStrip();}catch(err){}
+    try{ren();}catch(err){}
+    try{toast("Resumed your last schedule — "+S.entries.length+" entries","info",3200);}catch(err){}
+    return;
+  }
+  if(hydrated&&document.getElementById("ca")&&!document.getElementById("mv")?.classList.contains("hid"))try{ren();}catch(err){}
+});if("requestIdleCallback" in window)requestIdleCallback(hydrate,{timeout:1200});else setTimeout(hydrate,80);})();
 
 function nsWaitForVisualPaint(){return new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));}
 window.routeFile=async function(f,opts){

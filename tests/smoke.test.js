@@ -142,6 +142,10 @@ function check(name, ok, detail) {
     await page.goto(H.APP_URL, { waitUntil: 'load' });
     await page.waitForFunction(() => typeof window.autoParse === 'function', null, { timeout: 30000 });
     await H.loadFixtureThroughUI(page, 'roster_iso');
+    // The schedule is written to IndexedDB on a short debounce, so give it a
+    // moment to land before reloading — otherwise this measures the race, not
+    // the feature.
+    await page.waitForTimeout(2500);
     const before = await page.evaluate(() => S.entries.length);
     await page.reload({ waitUntil: 'load' });
     await page.waitForTimeout(6000);
