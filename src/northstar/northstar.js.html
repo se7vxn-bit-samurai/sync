@@ -1550,7 +1550,23 @@ function nsRenderScheduleWindow(el){
 }
 
 function nsCsv(rows){const keys=[...new Set(rows.flatMap(row=>Object.keys(row||{})))],quote=value=>'"'+String(value??"").replace(/"/g,'""')+'"';return[keys.map(quote).join(","),...rows.map(row=>keys.map(key=>quote(row[key])).join(","))].join("\r\n");}
-function nsExportCsv(kind){let rows=[],name="Export";if(kind==="schedule"){rows=nsRuntimeScheduleRows();name="Schedule";}if(kind==="people"){rows=nsAllPeople();name="People";}if(kind==="person"){rows=nsRuntimeScheduleRows().filter(row=>row.name===S.nsSchedulePerson);name=(S.nsSchedulePerson||"Person")+"_Schedule";}nsDownloadBlob(new Blob([nsCsv(rows)],{type:"text/csv;charset=utf-8"}),"Sync_"+name.replace(/[^a-z0-9_-]+/gi,"_")+"_"+new Date().toISOString().slice(0,10)+".csv");}
+function nsExportCsv(kind){
+  let rows=[],name="Export";
+  if(kind==="schedule"){rows=nsRuntimeScheduleRows();name="Schedule";}
+  if(kind==="people"){rows=nsAllPeople();name="People";}
+  if(kind==="person"){rows=nsRuntimeScheduleRows().filter(row=>row.name===S.nsSchedulePerson);name=(S.nsSchedulePerson||"Person")+"_Schedule";}
+  // nsCsv([]) is an empty string, so without this the person export handed over a
+  // 0-byte file — no header, no rows, no warning — whenever no person was
+  // selected. Say why nothing was exported rather than shipping an empty file
+  // and reporting success.
+  if(!rows.length){
+    toast(kind==="person"&&!S.nsSchedulePerson
+      ?"Choose a person on the Schedule Window first — nothing to export yet."
+      :"Nothing to export for "+name.replace(/_/g," ")+".","info",4200);
+    return;
+  }
+  nsDownloadBlob(new Blob([nsCsv(rows)],{type:"text/csv;charset=utf-8"}),"Sync_"+name.replace(/[^a-z0-9_-]+/gi,"_")+"_"+new Date().toISOString().slice(0,10)+".csv");
+}
 function nsRenderExportCentre(el){
   nsMergeRuntimePeopleDirectory();const model=nsCanonical(),people=nsAllPeople(),teams=nsScopedRows("teams"),schedule=nsRuntimeScheduleRows(),publish=nsScopedRows("publishQueue"),sources=nsScopedRows("sources"),leaders=people.filter(person=>/lead|supervisor|manager/i.test(person.role_type||"")),agents=people.length-leaders.length,body=`<div class="ns-export-sections">
     <section class="ns-export-hero"><div><small>MICROSOFT-FIRST PACK BUILDER</small><h2>Publish a pristine SyncSheets v3.1 pack</h2><p>Every workbook uses the Save+ visual system, immutable IDs and value-backed links that reconcile through Sync.</p><button class="ns-btn primary" onclick="nsOpenV31PackBuilder()">Build complete pack ZIP</button></div><div class="ns-export-readiness"><b>${people.length}<span>people</span></b><b>${agents}<span>agents</span></b><b>${teams.length}<span>teams</span></b><b>${schedule.length}<span>schedule rows</span></b></div></section>

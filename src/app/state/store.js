@@ -90,14 +90,14 @@ const APP_PRODUCT="Sync";
 const APP_INTERNAL_ENGINE="NorthStar";
 const APP_LEGACY_NAME="MirrorFlow Sync";
 const APP_NAME=APP_PRODUCT;
-const APP_VERSION="v65";
+const APP_VERSION="v66";
 function applySyncVisibleBrand(){
   document.title="Sync";
   document.querySelectorAll(".mf-mh-brand,.lc-title").forEach(el=>{el.textContent="Sync";});
   document.querySelectorAll(".wv-brand").forEach(el=>{el.textContent="Sync · WFM";});
 }
 setTimeout(applySyncVisibleBrand,0);
-const APP_BUILD_LABEL="NorthStar universal workflow intelligence · parser integrity + session resume";
+const APP_BUILD_LABEL="NorthStar universal workflow intelligence · roster-derived absence";
 const APP_BUILD=APP_VERSION+" · "+APP_BUILD_LABEL;
 const SETTINGS_SCHEMA_VERSION=1;
 const CRITICAL_STATE_SCHEMA_VERSION=1;

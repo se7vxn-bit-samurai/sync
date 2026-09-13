@@ -161,6 +161,33 @@ function check(name, ok, detail) {
     await page.context().close();
   }
 
+  // ---- 4c. absence surfaces the absences that are already in the roster ----
+  // The parser classifies SICK / LEAVE / TRAINING off-days straight from the
+  // schedule. rAbsenceBreakdown used to read only manually logged exceptions, so
+  // a roster full of sick days reported "0 events". Assert the derived events
+  // reach the view, or that regression returns silently.
+  {
+    const { page } = await H.openApp(browser);
+    await H.loadFixtureThroughUI(page, 'r_80x31');
+    await page.waitForTimeout(1200);
+    const a = await page.evaluate(() => {
+      const inRoster = (S.entries || []).filter(e =>
+        e.isOff && /^(SICK|LEAVE|TRAINING)$/.test(String(e.offL || ''))).length;
+      try { railNavAnalytics('absence'); } catch (e) {}
+      return { inRoster };
+    });
+    await page.waitForTimeout(900);
+    const shown = await page.evaluate(() => {
+      const txt = document.getElementById('ca')?.innerText || '';
+      const m = txt.match(/·\s*([\d,]+)\s+events/);
+      return { events: m ? parseInt(m[1].replace(/,/g, ''), 10) : null, txt: txt.slice(0, 120) };
+    });
+    check('absence: roster absences reach the Absence view',
+      a.inRoster > 0 && shown.events !== null && shown.events > 0,
+      `${a.inRoster} SICK/LEAVE in roster, view reports ${shown.events} events`);
+    await page.context().close();
+  }
+
   // ---- 5. does a loaded schedule survive a reload? ----
   {
     const context = await browser.newContext({ viewport: { width: 1600, height: 1000 } });

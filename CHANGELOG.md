@@ -1,5 +1,55 @@
 # Changelog
 
+## v66 — Operations audit: absence and export integrity
+
+An audit of the Operations tab, looking for controls that claim to have done
+something they did not. Full findings in `docs/OPERATIONS-AUDIT.md`.
+
+The headline: **the Operations surface is not decorative.** Every destination
+renders real content for an ordinary roster, Export Centre produces genuine
+files from 8 of 9 handlers, and the Issue Inbox records decisions that survive a
+reload. Two defects were found, both of the same shape as v65's — the app
+reporting success while losing data.
+
+### Absence ignored every absence in the roster
+
+`rAbsenceBreakdown` built its whole view from manually logged exceptions and
+**never used its `monthEnt` parameter**, which holds the month's entries. On an
+80-person roster carrying 305 SICK and 324 LEAVE days, the Absence tool reported
+"0 events · 0h lost" and told the user to log them by hand via Calendar → + Flag.
+
+The parser already classifies every off-day it reads. Those classifications now
+reach the view: `SICK → sick`, `LEAVE → annual_leave`, `TRAINING → training`,
+mapped onto the existing exception types and merged with anything logged
+manually. `OFF` is a scheduled rest day and `PH`/`WFH` are not absences, so
+none of those carry over.
+
+A manually logged exception wins over a derived one for the same person and day
+— it has the real duration and any note — so nothing is double-counted. Hours
+lost for a derived event is the median length of the shifts that person actually
+works, rather than zero. The header states provenance: "614 events · 5219h lost
+· 614 read from the schedule".
+
+### The person CSV export handed over an empty file
+
+With no person selected, the Export Centre control still downloaded
+`Sync_Person_Schedule_<date>.csv` containing zero bytes — not even a header —
+and raised no warning. It now declines with a message naming what to do, the way
+the publish-packet export already did for its empty case.
+
+### Still open
+
+Alerts renders without bound: 26,829 DOM nodes, 6,485 buttons and 2.65s at 150
+people, growing linearly, where Cards has virtualisation and Alerts has none.
+Left as a design decision rather than folded into a bug-fix pass; measurements
+and two recommended approaches are in the audit document.
+
+### Added
+
+- `docs/OPERATIONS-AUDIT.md` — per-surface findings, control counts, evidence
+- Smoke check asserting roster absences reach the Absence view, so this cannot
+  regress silently
+
 ## v65 — Parser integrity and session resume
 
 The first release with a test suite. Three defects fixed, each of which lost

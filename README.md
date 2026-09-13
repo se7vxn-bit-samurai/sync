@@ -102,3 +102,5 @@ CNAME           custom domain for GitHub Pages
   a roster layout it does not yet read
 - [docs/PERSISTENCE.md](docs/PERSISTENCE.md) — storage, session resume, Save+
 - [docs/BUILD.md](docs/BUILD.md) — building, checking, adding a module
+- [docs/OPERATIONS-AUDIT.md](docs/OPERATIONS-AUDIT.md) — what each Operations
+  tool actually does, with control counts and evidence
