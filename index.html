@@ -2985,14 +2985,14 @@ const APP_PRODUCT="Sync";
 const APP_INTERNAL_ENGINE="NorthStar";
 const APP_LEGACY_NAME="MirrorFlow Sync";
 const APP_NAME=APP_PRODUCT;
-const APP_VERSION="v64";
+const APP_VERSION="v66";
 function applySyncVisibleBrand(){
   document.title="Sync";
   document.querySelectorAll(".mf-mh-brand,.lc-title").forEach(el=>{el.textContent="Sync";});
   document.querySelectorAll(".wv-brand").forEach(el=>{el.textContent="Sync · WFM";});
 }
 setTimeout(applySyncVisibleBrand,0);
-const APP_BUILD_LABEL="NorthStar universal workflow intelligence";
+const APP_BUILD_LABEL="NorthStar universal workflow intelligence · roster-derived absence";
 const APP_BUILD=APP_VERSION+" · "+APP_BUILD_LABEL;
 const SETTINGS_SCHEMA_VERSION=1;
 const CRITICAL_STATE_SCHEMA_VERSION=1;
@@ -3253,7 +3253,15 @@ function _pushUndoEntry(label,payload){
   const id="undo_"+at.toString(36)+"_"+Math.random().toString(36).slice(2,7);
   const category=_historyCategory(label,"undo-point");
   _undoStack.push({id,label:String(label||"change"),category,payload,at});
-  while(_undoStack.length>_UNDO_MAX)_undoStack.shift();
+  // Each restore point deep-clones the whole of S, entries included, so on a
+  // large roster twenty of them is twenty copies of the schedule held in
+  // memory. That was only reachable after an import; now that a session
+  // resumes on load it is reachable from the moment the page opens. Keep fewer
+  // restore points once the schedule is big — depth matters less than the tab
+  // surviving.
+  const entryCount=(S.entries&&S.entries.length)||0;
+  const cap=entryCount>20000?3:entryCount>8000?5:entryCount>3000?10:_UNDO_MAX;
+  while(_undoStack.length>cap)_undoStack.shift();
   try{
     S.changeHistory=S.changeHistory||[];
     S.changeHistory.unshift({id,label:String(label||"change"),category,at:new Date(at).toISOString(),type:"restore-point",restorable:true});
@@ -5874,12 +5882,29 @@ const _persistPendingRemove=new Set();
 let _persistFlushTimer=null;
 let _persistIdleHandle=null;
 let _persistCriticalDepth=0;
+// localStorage writes were wrapped in empty catches everywhere, so a full quota
+// lost the write in silence — no toast, no console line, and settings or a
+// month of notes would simply not be there next time. Report it once per
+// session rather than on every key, which would be unusable.
+let _persistQuotaWarned=false;
+function _noteStorageFailure(key,err){
+  const quota=err&&(err.name==="QuotaExceededError"||err.name==="NS_ERROR_DOM_QUOTA_REACHED"||err.code===22);
+  try{console.warn("Could not save \""+key+"\" to local storage:",err);}catch(e){}
+  if(_persistQuotaWarned)return;
+  _persistQuotaWarned=true;
+  try{
+    toast(quota
+      ?"Browser storage is full — recent changes could not be saved. Export a Save+ file to keep this work."
+      :"Local storage is unavailable — recent changes could not be saved. Export a Save+ file to keep this work.",
+      "err",8000);
+  }catch(e){}
+}
 function _persistSet(key,val,opts){
   const k=String(key);
   const v=String(val);
   const critical=opts&&opts.critical;
   if(critical||_persistCriticalDepth>0){
-    try{localStorage.setItem(k,v);}catch(e){}
+    try{localStorage.setItem(k,v);}catch(e){_noteStorageFailure(k,e);}
     return;
   }
   _persistPendingRemove.delete(k);
@@ -5890,7 +5915,7 @@ function _persistRemove(key,opts){
   const k=String(key);
   const critical=opts&&opts.critical;
   if(critical||_persistCriticalDepth>0){
-    try{localStorage.removeItem(k);}catch(e){}
+    try{localStorage.removeItem(k);}catch(e){_noteStorageFailure(k,e);}
     return;
   }
   _persistPendingSet.delete(k);
@@ -5907,8 +5932,8 @@ function _flushPersistQueue(){
   }
   if(_persistFlushTimer){clearTimeout(_persistFlushTimer);_persistFlushTimer=null;}
   if(!_persistPendingSet.size&&!_persistPendingRemove.size)return;
-  _persistPendingSet.forEach((val,key)=>{try{localStorage.setItem(key,val);}catch(e){}});
-  _persistPendingRemove.forEach(key=>{try{localStorage.removeItem(key);}catch(e){}});
+  _persistPendingSet.forEach((val,key)=>{try{localStorage.setItem(key,val);}catch(e){_noteStorageFailure(key,e);}});
+  _persistPendingRemove.forEach(key=>{try{localStorage.removeItem(key);}catch(e){_noteStorageFailure(key,e);}});
   _persistPendingSet.clear();
   _persistPendingRemove.clear();
 }
@@ -6370,6 +6395,24 @@ function classifyCell(raw){
 }
 
 const XLSX_STANDARD_READ_OPTS={type:"array",cellDates:true,cellStyles:true,sheetStubs:true};
+// CSV has no cell types — every value is text — so cellDates:true makes SheetJS
+// guess, and it guesses American. "01/09/2026" through "12/09/2026" came back as
+// January..December the 9th, scattering one September rota across twelve months.
+// pDt() already reads day-first correctly, but only ever sees a string: it
+// short-circuits on `v instanceof Date` and trusts whatever SheetJS decided.
+// So for CSV we keep the cells as text and let pDt own the interpretation.
+// .xlsx is unaffected — its dates are real serials, not text to be guessed at.
+// raw:true is the setting that matters here: cellDates:false alone is not
+// enough, because SheetJS's CSV reader still hands back Date objects.
+function _isCsvFile(f){
+  if(!f)return false;
+  const name=String(f.name||f||"");
+  if(/\.csv$/i.test(name))return true;
+  return /^text\/csv$/i.test(String(f.type||""));
+}
+function _readOptsForFile(f){
+  return _isCsvFile(f)?Object.assign({},XLSX_STANDARD_READ_OPTS,{cellDates:false,raw:true}):XLSX_STANDARD_READ_OPTS;
+}
 function _styleColorHex(c){
   if(!c)return"";
   if(c.rgb){
@@ -8304,11 +8347,28 @@ function _sheetParserFeatures(data,sheetName){
     if(pDt(row[0]))firstColDates++;
     if(r>0&&(dates>=3||shifts>=3))alternatingRows++;
   }
-  const orientation=cols>=Math.max(12,rows*2)?"horizontal":rows>=Math.max(12,cols*2)?"vertical":"";
-  return{rows,cols,maxDatesInRow,dayHeaderRows,firstColDays,firstColDates,alternatingRows,orientation,
+  // Orientation says which axis the dates run along. Deciding that from the
+  // sheet's aspect ratio is wrong: a 31-day month is 32 columns, so a roster of
+  // more than ~13 people is taller than half its width and gets called
+  // "vertical" despite every date sitting in a header row. That misread costs
+  // the horizontal parsers their affinity bonus and hands the file to a parser
+  // that reads one person. Decide from where the dates actually are, and keep
+  // the aspect-ratio rule only for sheets that show no date evidence either way.
+  const horizDateEvidence=maxDatesInRow>=5;
+  const vertDateEvidence=(firstColDates>=5||firstColDays>=5);
+  const orientation=(horizDateEvidence&&!vertDateEvidence)?"horizontal"
+    :(vertDateEvidence&&!horizDateEvidence)?"vertical"
+    :cols>=Math.max(12,rows*2)?"horizontal":rows>=Math.max(12,cols*2)?"vertical":"";
+  // How many rows look like they belong to a person. Used by _entrySetQuality
+  // to tell "parsed the whole roster" apart from "parsed one row of it".
+  let plausibleNameRows=0;
+  for(let r=0;r<Math.min(rows,400);r++){
+    try{if(extractRowPeopleNames(data[r]||[],1).length)plausibleNameRows++;}catch(e){}
+  }
+  return{rows,cols,maxDatesInRow,dayHeaderRows,firstColDays,firstColDates,alternatingRows,orientation,plausibleNameRows,
     nameHoriz:isHorizSheetName(sheetName),nameVert:isVertSheetName(sheetName)};
 }
-function _entrySetQuality(entries){
+function _entrySetQuality(entries,features){
   const list=(entries||[]).filter(Boolean),seen=new Set(),names=new Set(),dates=new Set(),counts={};
   let complete=0,duplicates=0,implausible=0;
   list.forEach(e=>{
@@ -8324,8 +8384,16 @@ function _entrySetQuality(entries){
   const values=Object.values(counts).sort((a,b)=>a-b),median=values.length?values[Math.floor(values.length/2)]:0;
   const balance=values.length&&median?Math.min(1,values[0]/median):0;
   const total=Math.max(1,list.length),completeRatio=complete/total,duplicateRatio=duplicates/total,plausibleRatio=1-implausible/total;
-  const score=completeRatio*35+(1-duplicateRatio)*10+balance*10+(names.size?5:0)+Math.min(5,dates.size/7*5)+Math.min(5,Math.log10(list.length+1)*2)+plausibleRatio*5;
-  return{score:Math.round(score*10)/10,total:list.length,complete,completeRatio,duplicates,duplicateRatio,names:names.size,dates:dates.size,balance,implausible};
+  // Coverage: what share of the sheet's person-rows this parse actually
+  // accounted for. Without it the score is nearly blind to data loss — the only
+  // size term saturates around 316 entries, so extracting 59 rows of a 13,500
+  // row roster scored within 1.4 points of extracting all of them, and a parse
+  // that found one person could outrank one that found a hundred and fifty.
+  // Weight comes out of completeRatio so the ceiling stays 75 and the existing
+  // confidence bands (82 high / 62 medium / 52 reject) stay calibrated.
+  const coverage=(features&&features.plausibleNameRows)?Math.min(1,names.size/features.plausibleNameRows):1;
+  const score=completeRatio*20+coverage*15+(1-duplicateRatio)*10+balance*10+(names.size?5:0)+Math.min(5,dates.size/7*5)+Math.min(5,Math.log10(list.length+1)*2)+plausibleRatio*5;
+  return{score:Math.round(score*10)/10,total:list.length,complete,completeRatio,duplicates,duplicateRatio,names:names.size,dates:dates.size,balance,implausible,coverage};
 }
 function _parserAffinity(parser,features){
   const f=features||{};let score=0;
@@ -8359,7 +8427,7 @@ function _runParserCandidate(parser,data,sheetName,features){
     else if(parser==="parseVert")entries=parseVert(data);
     else if(parser==="parseBlocks")entries=parseBlocks(data);
     else if(parser==="parsePerson")entries=parsePerson(data,sheetName);
-    const quality=_entrySetQuality(entries),affinity=_parserAffinity(parser,features);
+    const quality=_entrySetQuality(entries,features),affinity=_parserAffinity(parser,features);
     return{parser,entries,quality,affinity,score:Math.round((quality.score+affinity)*10)/10,detail,error:""};
   }catch(err){return{parser,entries:[],quality:_entrySetQuality([]),affinity:0,score:0,detail:"",error:String(err&&err.message||err)};}
 }
@@ -8392,8 +8460,16 @@ function autoParse(data,sn){
     return[];
   }
   const best=candidates[0],runner=candidates.find((candidate,index)=>index>0&&!_candidateEquivalent(best,candidate)),margin=runner?best.score-runner.score:best.score;
-  const confidence=best.score>=82&&margin>=4?"high":best.score>=62?"medium":"low";
+  // Backstop against the failure this scoring layer has already had once: a
+  // parse that reads a fraction of the people another parser found must never
+  // be presented as trustworthy, whatever it scored. Scoring changes can
+  // reintroduce that silently; this cannot.
+  const richest=candidates.reduce((a,b)=>b.quality.names>a.quality.names?b:a,best);
+  const lossy=richest!==best&&best.quality.names*2<=richest.quality.names;
+  let confidence=best.score>=82&&margin>=4?"high":best.score>=62?"medium":"low";
+  if(lossy)confidence="low";
   const warnings=[];
+  if(lossy)warnings.push(`${best.parser} read ${best.quality.names} ${best.quality.names===1?"person":"people"} but ${richest.parser} found ${richest.quality.names} on this sheet — most of the roster may be missing`);
   if(best.score<52)warnings.push("Parser confidence is below the automatic-load threshold");
   if(runner&&margin<4)warnings.push(`Ambiguous structure: ${best.parser} and ${runner.parser} scored within ${Math.round(margin*10)/10} points`);
   if(best.quality.completeRatio<1)warnings.push(`${best.quality.total-best.quality.complete} rows failed canonical schedule validation`);
@@ -10212,7 +10288,7 @@ function proc(f,opts){
   r.onload=async function(e){
     try{const identity=await _syncFingerprintBuffer(e.target.result);
     if(S.currentSource&&S.currentSource.fingerprint&&S.currentSource.fingerprint===identity.fingerprint&&S.entries&&S.entries.length){_recordQoLChange("Duplicate schedule source skipped");toast("This exact workbook is already active — no rows were reloaded","info",3600);return;}
-    const wb=XLSX.read(new Uint8Array(e.target.result),XLSX_STANDARD_READ_OPTS),sourceMeta=_syncSourceRecord(f,wb,identity);
+    const wb=XLSX.read(new Uint8Array(e.target.result),_readOptsForFile(f)),sourceMeta=_syncSourceRecord(f,wb,identity);
     if(isSaveFile(wb)){
       // Save+ files restore immediately — they ARE the user's saved state
       restoreFromSaveFile(wb,f.name,sourceMeta,opts);
@@ -10392,6 +10468,10 @@ function scanFileQuick(wb,filename,manualOverride){
     }
     const canonical=_validateCanonicalScheduleEntries(entries,filename);
     entries.length=0;canonical.entries.forEach(e=>entries.push(e));
+    // Rows refused by canonical validation were being discarded without a word,
+    // so a sheet of six people could present as a clean import of four. If we
+    // drop someone's rows the preview has to say so before anything is loaded.
+    if(canonical.stats.dropped>0)S.parseInfo.push({sheet:"canonical-validation",parser:"canonicalValidator",confidence:"medium",reason:`${canonical.stats.dropped} of ${canonical.stats.input} parsed rows failed validation`,count:canonical.stats.output,warnings:[`${canonical.stats.dropped} row${canonical.stats.dropped===1?"":"s"} could not be read as a schedule entry and ${canonical.stats.dropped===1?"was":"were"} not loaded`],alternatives:[]});
     if(canonical.issues.length)S.parseInfo.push({sheet:"canonical-validation",parser:"canonicalValidator",confidence:canonical.stats.conflicts?"medium":"high",reason:`Validated ${canonical.stats.input} parsed rows into ${canonical.stats.output} canonical schedule rows`,count:entries.length,warnings:canonical.issues});
     const parseInfo=[...S.parseInfo];
     S.parseInfo=_savedInfo;// restore — don't pollute current state
@@ -11588,7 +11668,7 @@ function _buildAppStateSnapshot(){
     coachManualSessions:S.coachManualSessions||[],coachBudgetHrs:S.coachBudgetHrs||{},
     coachTargetDaily:S.coachTargetDaily||1,plSubTab:S.plSubTab||'schedule',
     tab:S.tab,th:S.th,thVariant:S.thVariant||0,tz:S.tz,hlToday:S.hlToday,covMin:S.covMin,hrsMax:S.hrsMax,cbMode:S.cbMode,density:S.density,
-    targetHours:S.targetHours||0,ratePerHour:S.ratePerHour||0,showCardWk:S.showCardWk!==false,
+    targetHours:S.targetHours||0,ratePerHour:S.ratePerHour||0,showCardWk:S.showCardWk!==false,resumeSession:S.resumeSession!==false,
     collapsed:S.collapsed,team:S.team,emp:S.emp,dayFilter:S.dayFilter,
     allMonths:S.allMonths,parseInfo:S.parseInfo,anDay:S.anDay,anMode:S.anMode,anScope:S.anScope||'month',
     anView:S.anView,shiftFilter:S.shiftFilter,sumMode:S.sumMode||'month',cardShow:S.cardShow||{},flagSettings:S.flagSettings||{},exportSelection:S.exportSelection||{},
@@ -19911,20 +19991,80 @@ function rHistoryComparison(){
 }
 
 // #10: Analytics — Absence Breakdown view
+// The parser already classifies every off-day it reads — SICK, LEAVE, TRAINING,
+// PH, WFH, OFF — so a roster states plainly who was absent. Only manually logged
+// exceptions used to reach the Absence view, which meant a month with hundreds of
+// sick and leave days reported "0 events" and told the user to type them in by
+// hand. These three categories are genuine absences; OFF is a scheduled rest day
+// and PH/WFH are not absences at all, so none of those carry over.
+const ROSTER_ABSENCE_TYPES={SICK:"sick",LEAVE:"annual_leave",TRAINING:"training"};
+
+// A derived absence has no recorded duration, so charge it the person's usual
+// working day — the median of the shifts they actually work — rather than zero,
+// which would report the events but leave "hours lost" wrong.
+function _typicalShiftHours(name){
+  const cache=ensureCache();
+  cache._typicalHrs=cache._typicalHrs||{};
+  if(cache._typicalHrs[name]!==undefined)return cache._typicalHrs[name];
+  const hrs=(S.entries||[])
+    .filter(e=>e&&e.name===name&&!e.isOff&&e.ukS&&e.ukE)
+    .map(e=>calcHrs(e.ukS,e.ukE))
+    .filter(n=>n>0&&n<=16)
+    .sort((a,b)=>a-b);
+  const val=hrs.length?hrs[Math.floor(hrs.length/2)]:8;
+  cache._typicalHrs[name]=val;
+  return val;
+}
+
+function deriveRosterAbsences(monthEnt){
+  const out=[];
+  (monthEnt||[]).forEach(e=>{
+    if(!e||!e.isOff||!e.date)return;
+    const type=ROSTER_ABSENCE_TYPES[String(e.offL||"").toUpperCase()];
+    if(!type)return;
+    const d=e.date instanceof Date?e.date:new Date(e.date);
+    if(isNaN(d))return;
+    const name=e.name||"";
+    out.push({
+      date:d.getFullYear()+"-"+P(d.getMonth()+1)+"-"+P(d.getDate()),
+      type,person:name,agentName:"",
+      hoursLost:_typicalShiftHours(name),
+      derived:true,
+      note:"Read from the schedule ("+(e.raw||e.offL)+")"
+    });
+  });
+  return out;
+}
+
 function rAbsenceBreakdown(y,m,monthEnt){
   const monthKey=y+'-'+P(m+1);
-  const monthExcs=effExc().filter(x=>{
+  const logged=effExc().filter(x=>{
     if(!x.date)return false;
     return x.date.startsWith(monthKey);
   });
+  // A manually logged exception is the better record of the same absence — it
+  // carries the real duration and any note — so it wins over the derived one for
+  // that person and date instead of both being counted.
+  const claimed=new Set(logged.map(x=>(x.person||"")+"|"+x.date));
+  const derived=deriveRosterAbsences(monthEnt).filter(x=>{
+    const key=x.person+"|"+x.date;
+    if(claimed.has(key))return false;
+    claimed.add(key);
+    return true;
+  });
+  const monthExcs=logged.concat(derived);
+  const derivedCount=derived.length;
   const totalLost=monthExcs.reduce((s,x)=>s+(x.hoursLost||0),0);
 
   let h=`<div style="padding:14px">`;
   h+=`<div style="font-size:15px;font-weight:700;margin-bottom:4px">Absence & Exception Breakdown</div>`;
-  h+=`<div style="font-size:11px;color:var(--tm);margin-bottom:14px">${MOFULL[m]} ${y} · ${monthExcs.length} events · ${Math.round(totalLost*10)/10}h lost</div>`;
+  const provenance=derivedCount
+    ?` · ${derivedCount} read from the schedule${logged.length?", "+logged.length+" logged by hand":""}`
+    :(logged.length?" · all logged by hand":"");
+  h+=`<div style="font-size:11px;color:var(--tm);margin-bottom:14px">${MOFULL[m]} ${y} · ${monthExcs.length} events · ${Math.round(totalLost*10)/10}h lost${provenance}</div>`;
 
   if(!monthExcs.length){
-    h+=`<div style="padding:30px 0;text-align:center;color:var(--tm)">No exceptions logged for this month.<br><span style="font-size:11px;opacity:.6">Log events via Calendar → + Flag to populate this view.</span></div>`;
+    h+=`<div style="padding:30px 0;text-align:center;color:var(--tm)">No absences this month — none in the schedule, none logged.<br><span style="font-size:11px;opacity:.6">Sick, leave and training days are read from the roster automatically. Anything else, log via Calendar → + Flagto populate this view.</span></div>`;
     h+=`</div>`;
     return h;
   }
@@ -25822,6 +25962,12 @@ function rSum(el){
 
 /* ═══ RAW DATA (with sheet tabs) ═══ */
 function rRaw(el){
+  // A resumed session has entries but no workbook behind them, so there are no
+  // sheets to show and nothing here can be read.
+  if(!S.wb||!S.shs||!S.shs.length){
+    el.innerHTML=`<div class="empty">Raw sheet data is only available for a schedule loaded from a file in this session. Re-import the workbook to inspect its sheets.</div>`;
+    return;
+  }
   // Sheet tabs for raw data
   let h=`<div class="raw-tabs">`;
   (S.sh==="__all__"?S.shs:[S.sh,...S.shs.filter(s=>s!==S.sh)]).forEach(sn=>{
@@ -27496,7 +27642,7 @@ function saveSettings(){
     _schemaVersion:S._schemaVersion,
     th:S.th,thVariant:S.thVariant||0,thVar:S.thVariant||0,tz:S.tz,hlToday:S.hlToday,covMin:S.covMin,hrsMax:S.hrsMax,cbMode:S.cbMode,density:S.density,tab:S.tab,
     peopleSubTab:S.peopleSubTab||"dashboard",peopleDashView:S.peopleDashView||"today_ops",peopleView:S._peopleView||"cards",peopleLogFilter:S._peopleLogFilter||"all",
-    targetHours:S.targetHours||0,ratePerHour:S.ratePerHour||0,showCardWk:S.showCardWk!==false,
+    targetHours:S.targetHours||0,ratePerHour:S.ratePerHour||0,showCardWk:S.showCardWk!==false,resumeSession:S.resumeSession!==false,
     sumMode:S.sumMode||"month",anView:S.anView||"coverage",
     flagSettings:S.flagSettings||{},
     cardShow:S.cardShow||{},
@@ -27565,6 +27711,7 @@ function loadSettings(){
       if(typeof s.targetHours==="number")S.targetHours=s.targetHours;
       if(typeof s.ratePerHour==="number")S.ratePerHour=s.ratePerHour;
       if(typeof s.showCardWk==="boolean")S.showCardWk=s.showCardWk;
+      if(typeof s.resumeSession==="boolean")S.resumeSession=s.resumeSession;
       if(s.cardShow&&typeof s.cardShow==="object")S.cardShow=s.cardShow;
       if(typeof s.cbMode==="boolean"){S.cbMode=s.cbMode;document.body.classList.toggle("cb-mode",S.cbMode);}
       if(s.density&&["compact","comfortable","spacious"].includes(s.density)){S.density=s.density;document.body.classList.remove("density-compact","density-spacious");if(s.density==="compact")document.body.classList.add("density-compact");else if(s.density==="spacious")document.body.classList.add("density-spacious");}
@@ -31533,18 +31680,52 @@ function nsQueueDatabaseWrite(model){
   clearTimeout(NS.dbWriteTimer);
   NS.dbWriteTimer=setTimeout(()=>{
     const current=nsCanonical(),snapshot=typeof structuredClone==="function"?structuredClone(current):JSON.parse(JSON.stringify(current));
+    // Never let a boot-time write erase a stored schedule before we have read
+    // it back. The model is seeded from localStorage, which always holds
+    // `schedule:[]` to stay inside quota, and the block's own startup calls
+    // nsPersist() — so without this the first write after every reload replaced
+    // the database's schedule with nothing, milliseconds before hydration
+    // would have restored it. A model that actually carries rows always writes.
+    if(!NS.hydrated&&!(snapshot.schedule||[]).length)return;
     nsDatabaseWrite(snapshot).catch(()=>{NS.persistence="localStorage fallback";});
   },180);
 }
+// The write above is debounced, so a tab closed or hidden in the moment after
+// an import would lose the schedule it was about to store. Flush on the way out.
+function nsFlushDatabaseWrite(){
+  if(!NS.dbWriteTimer)return;
+  clearTimeout(NS.dbWriteTimer);NS.dbWriteTimer=null;
+  try{
+    const current=nsCanonical(),snapshot=typeof structuredClone==="function"?structuredClone(current):JSON.parse(JSON.stringify(current));
+    if(!NS.hydrated&&!(snapshot.schedule||[]).length)return;
+    nsDatabaseWrite(snapshot).catch(()=>{});
+  }catch(err){}
+}
+window.addEventListener("pagehide",nsFlushDatabaseWrite);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")nsFlushDatabaseWrite();});
 
 async function nsHydrateDatabase(){
   NS.hydrating=true;
   try{
     const db=await nsOpenDatabase(),stored=await new Promise((resolve,reject)=>{const tx=db.transaction(NS_DB_STORE,"readonly"),request=tx.objectStore(NS_DB_STORE).get(NS_DB_KEY);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});db.close();
-    if(stored&&String(stored.updated_at||"")>String(nsCanonical().updated_at||"")){S.nsCanonical=nsNormalizeCanonical(stored);nsSanitizeCanonicalIdentities();nsSyncPeopleToRuntime();}
+    // The two copies are written together by nsPersist, so they normally carry
+    // the SAME updated_at — and a strictly-newer test then never adopts the
+    // database copy. That matters because the localStorage copy deliberately
+    // stores `schedule:[]` to stay inside quota, so the schedule only ever
+    // exists in IndexedDB. Also adopt when the stored copy is the only one that
+    // still has the schedule rows.
+    const current=nsCanonical();
+    const storedNewer=stored&&String(stored.updated_at||"")>String(current.updated_at||"");
+    // The in-memory model is seeded from localStorage, which never carries the
+    // schedule, and startup bumps its updated_at — so a strictly-newer test
+    // alone can never adopt the database copy, and the schedule stayed
+    // unreachable. If the stored copy has the rows and this one does not, it is
+    // better regardless of timestamps.
+    const storedHasScheduleWeLack=stored&&(stored.schedule||[]).length&&!(current.schedule||[]).length;
+    if(storedNewer||storedHasScheduleWeLack){S.nsCanonical=nsNormalizeCanonical(stored);nsSanitizeCanonicalIdentities();nsSyncPeopleToRuntime();}
     NS.persistence="indexeddb";return true;
   }catch(err){NS.persistence="localStorage fallback";return false;}
-  finally{NS.hydrating=false;}
+  finally{NS.hydrating=false;NS.hydrated=true;}
 }
 
 function nsSheetName(wb,wanted){
@@ -32173,6 +32354,52 @@ function nsOpenCanonicalWorkspace(result,pending){
   }else ren();
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   RESUME LAST SESSION
+   Every import already commits the schedule to IndexedDB through
+   nsCommitWorkbook / nsCommitRuntimeSchedule -> nsPersist. On reload
+   nsHydrateDatabase read that model straight back and then kept only the
+   people, dropping the schedule on the floor — so the workspace returned
+   empty and the landing card came back, while a month of coaching, planner,
+   OT and logbook entries all survived in localStorage with nothing left to
+   hang off. This restores the schedule from the model we already hold.
+
+   Deliberately mirrors nsOpenCanonicalWorkspace's entry mapping and month
+   rebuild rather than inventing a second one.
+   ═══════════════════════════════════════════════════════════════ */
+function nsResumeLastSession(){
+  if(S.resumeSession===false)return false;
+  if(S.entries&&S.entries.length)return false;      // an import is already live
+  const model=nsCanonical();
+  const rows=(model&&model.schedule)||[];
+  if(!rows.length)return false;
+
+  const entries=rows.map(nsRuntimeEntry).filter(row=>row&&row.name&&row.date&&!isNaN(row.date));
+  if(!entries.length)return false;
+
+  S.entries=entries;
+  const months=[...new Set(S.entries.map(entry=>entry.date&&entry.date.getFullYear()+"-"+entry.date.getMonth()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+  const today=new Date(),current=today.getFullYear()+"-"+today.getMonth();
+  S.months=months.length?months:[current];
+  S.month=S.months.includes(current)?current:S.months[0];
+  S.mIdx=Math.max(0,S.months.indexOf(S.month));
+  // There is no workbook behind a resumed session — it came from the database,
+  // not a file. Sheet-backed views read S.wb.Sheets[...] before checking the
+  // result, so hand them an empty workbook rather than null.
+  S.wb=S.wb||{SheetNames:[],Sheets:{}};
+  S.shs=[];S.sh="__all__";S.raw=[];S.parseInfo=[];
+  S.loadedAt=Date.now();
+  S.resumedAt=Date.now();
+  if(!S.activeDept){
+    const homed=(model.people||[]).find(person=>person.home_department);
+    S.activeDept=(homed&&homed.home_department)||S.activeDept||"Workspace";
+  }
+  if(!S.fn){
+    const source=(model.sources||[]).slice(-1)[0];
+    S.fn=(source&&(source.source_file||source.source_id))||"Resumed session";
+  }
+  return true;
+}
 function nsRecordImportPerformance(pending,result){
   const model=nsCanonical(),kind=result.detection.primary,budget=NS_PERFORMANCE_BUDGETS[kind]||NS_PERFORMANCE_BUDGETS.default,timing=pending.timing||{};
   const scheduleRows=Number(result.summary.schedule||result.detection.counts.schedule||0),assertions={
@@ -32840,7 +33067,23 @@ function nsRenderScheduleWindow(el){
 }
 
 function nsCsv(rows){const keys=[...new Set(rows.flatMap(row=>Object.keys(row||{})))],quote=value=>'"'+String(value??"").replace(/"/g,'""')+'"';return[keys.map(quote).join(","),...rows.map(row=>keys.map(key=>quote(row[key])).join(","))].join("\r\n");}
-function nsExportCsv(kind){let rows=[],name="Export";if(kind==="schedule"){rows=nsRuntimeScheduleRows();name="Schedule";}if(kind==="people"){rows=nsAllPeople();name="People";}if(kind==="person"){rows=nsRuntimeScheduleRows().filter(row=>row.name===S.nsSchedulePerson);name=(S.nsSchedulePerson||"Person")+"_Schedule";}nsDownloadBlob(new Blob([nsCsv(rows)],{type:"text/csv;charset=utf-8"}),"Sync_"+name.replace(/[^a-z0-9_-]+/gi,"_")+"_"+new Date().toISOString().slice(0,10)+".csv");}
+function nsExportCsv(kind){
+  let rows=[],name="Export";
+  if(kind==="schedule"){rows=nsRuntimeScheduleRows();name="Schedule";}
+  if(kind==="people"){rows=nsAllPeople();name="People";}
+  if(kind==="person"){rows=nsRuntimeScheduleRows().filter(row=>row.name===S.nsSchedulePerson);name=(S.nsSchedulePerson||"Person")+"_Schedule";}
+  // nsCsv([]) is an empty string, so without this the person export handed over a
+  // 0-byte file — no header, no rows, no warning — whenever no person was
+  // selected. Say why nothing was exported rather than shipping an empty file
+  // and reporting success.
+  if(!rows.length){
+    toast(kind==="person"&&!S.nsSchedulePerson
+      ?"Choose a person on the Schedule Window first — nothing to export yet."
+      :"Nothing to export for "+name.replace(/_/g," ")+".","info",4200);
+    return;
+  }
+  nsDownloadBlob(new Blob([nsCsv(rows)],{type:"text/csv;charset=utf-8"}),"Sync_"+name.replace(/[^a-z0-9_-]+/gi,"_")+"_"+new Date().toISOString().slice(0,10)+".csv");
+}
 function nsRenderExportCentre(el){
   nsMergeRuntimePeopleDirectory();const model=nsCanonical(),people=nsAllPeople(),teams=nsScopedRows("teams"),schedule=nsRuntimeScheduleRows(),publish=nsScopedRows("publishQueue"),sources=nsScopedRows("sources"),leaders=people.filter(person=>/lead|supervisor|manager/i.test(person.role_type||"")),agents=people.length-leaders.length,body=`<div class="ns-export-sections">
     <section class="ns-export-hero"><div><small>MICROSOFT-FIRST PACK BUILDER</small><h2>Publish a pristine SyncSheets v3.1 pack</h2><p>Every workbook uses the Save+ visual system, immutable IDs and value-backed links that reconcile through Sync.</p><button class="ns-btn primary" onclick="nsOpenV31PackBuilder()">Build complete pack ZIP</button></div><div class="ns-export-readiness"><b>${people.length}<span>people</span></b><b>${agents}<span>agents</span></b><b>${teams.length}<span>teams</span></b><b>${schedule.length}<span>schedule rows</span></b></div></section>
@@ -32957,7 +33200,20 @@ function nsBrandSweep(){
 }
 document.addEventListener("DOMContentLoaded",nsBrandSweep);setTimeout(nsBrandSweep,0);
 let nsLagExpected=performance.now()+1000;setInterval(()=>{const now=performance.now();NS.eventLoopLag=Math.max(0,now-nsLagExpected);nsLagExpected=now+1000;},1000);
-(()=>{const hydrate=()=>nsHydrateDatabase().then(hydrated=>{if(hydrated&&document.getElementById("ca")&&!document.getElementById("mv")?.classList.contains("hid"))try{ren();}catch(err){}});if("requestIdleCallback" in window)requestIdleCallback(hydrate,{timeout:1200});else setTimeout(hydrate,80);})();
+(()=>{const hydrate=()=>nsHydrateDatabase().then(hydrated=>{
+  // Bring the schedule back before deciding what to draw, so a reload lands in
+  // the workspace the user left rather than on the landing card.
+  let resumed=false;
+  try{resumed=nsResumeLastSession();}catch(err){console.error("Resume failed",err);}
+  if(resumed){
+    try{_restoreViewportFromState();}catch(err){}
+    try{updateDeptStrip();}catch(err){}
+    try{ren();}catch(err){}
+    try{toast("Resumed your last schedule — "+S.entries.length+" entries","info",3200);}catch(err){}
+    return;
+  }
+  if(hydrated&&document.getElementById("ca")&&!document.getElementById("mv")?.classList.contains("hid"))try{ren();}catch(err){}
+});if("requestIdleCallback" in window)requestIdleCallback(hydrate,{timeout:1200});else setTimeout(hydrate,80);})();
 
 function nsWaitForVisualPaint(){return new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));}
 window.routeFile=async function(f,opts){

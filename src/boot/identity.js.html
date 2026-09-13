@@ -1,0 +1,28 @@
+<script>
+(function(){
+  const markSvg='<span class="sync-mark sync-mark--masthead" aria-hidden="true"><svg viewBox="0 0 120 120"><path class="sync-frame" d="M28 32 60 14 92 32M28 88l32 18 32-18M28 32v18M92 32v18M28 88V70M92 88V70"></path><path class="sync-link" d="M30 49h22l20-11 21 11M31 72h22l18 11 21-11M52 49v23M72 38v45"></path><path class="sync-link-alt" d="M36 58h26l22 14M84 49 62 58 52 72M60 14v24M60 106V83"></path><path class="sync-spine" d="M82 37H54L41 49l41 24-13 11H39"></path><circle class="sync-node" cx="28" cy="32" r="4.6"></circle><circle class="sync-node" cx="92" cy="32" r="4.6"></circle><circle class="sync-node" cx="28" cy="88" r="4.6"></circle><circle class="sync-node" cx="92" cy="88" r="4.6"></circle><circle class="sync-node-accent" cx="52" cy="49" r="4"></circle><circle class="sync-node-alt" cx="72" cy="38" r="4"></circle><circle class="sync-node-alt" cx="53" cy="72" r="4"></circle><circle class="sync-node-accent" cx="71" cy="83" r="4"></circle><circle class="sync-node" cx="60" cy="60" r="4.7"></circle></svg></span>';
+  function installSyncIdentity(){
+    const brand=document.querySelector('.mf-mh-brand');
+    if(brand&&!brand.previousElementSibling?.classList?.contains('sync-mark')){
+      brand.insertAdjacentHTML('beforebegin',markSvg);
+      const left=brand.closest('.mf-mh-left');
+      if(left)left.style.alignItems='center';
+    }
+  }
+  function finishBoot(){
+    installSyncIdentity();
+    const boot=document.getElementById('syncBoot');
+    if(!boot)return;
+    boot.classList.add('done');
+    setTimeout(()=>boot.remove(),520);
+  }
+  document.addEventListener('DOMContentLoaded',function(){
+    installSyncIdentity();
+    requestAnimationFrame(()=>setTimeout(finishBoot,760));
+  });
+  window.addEventListener('load',()=>setTimeout(finishBoot,280));
+  setTimeout(finishBoot,2800);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,171 @@
+{
+  "r_20x31": {
+    "parser": "parseWideHoriz",
+    "people": 20,
+    "entries": 620,
+    "confidence": "high",
+    "months": [
+      "2026-09",
+      "2026-10"
+    ]
+  },
+  "r_40x31": {
+    "parser": "parseWideHoriz",
+    "people": 40,
+    "entries": 1240,
+    "confidence": "high",
+    "months": [
+      "2026-09",
+      "2026-10"
+    ]
+  },
+  "r_40x90": {
+    "parser": "parseWideHoriz",
+    "people": 40,
+    "entries": 3600,
+    "confidence": "high",
+    "months": [
+      "2026-09",
+      "2026-10",
+      "2026-11"
+    ]
+  },
+  "r_80x31": {
+    "parser": "parseWideHoriz",
+    "people": 80,
+    "entries": 2480,
+    "confidence": "high",
+    "months": [
+      "2026-09",
+      "2026-10"
+    ]
+  },
+  "r_80x90": {
+    "parser": "parseWideHoriz",
+    "people": 80,
+    "entries": 7200,
+    "confidence": "high",
+    "months": [
+      "2026-09",
+      "2026-10",
+      "2026-11"
+    ]
+  },
+  "roster": {
+    "parser": "parseHoriz",
+    "people": 8,
+    "entries": 224,
+    "confidence": "high",
+    "months": [
+      "2026-09"
+    ]
+  },
+  "roster_big": {
+    "parser": "parseWideHoriz",
+    "people": 150,
+    "entries": 13500,
+    "confidence": "high",
+    "months": [
+      "2026-09",
+      "2026-10",
+      "2026-11"
+    ]
+  },
+  "roster_iso": {
+    "parser": "parseWideHoriz",
+    "people": 12,
+    "entries": 360,
+    "confidence": "high",
+    "months": [
+      "2026-09"
+    ]
+  },
+  "roster_xss": {
+    "parser": "parseHoriz",
+    "people": 5,
+    "entries": 70,
+    "confidence": "high",
+    "months": [
+      "2026-09"
+    ]
+  },
+  "t_12": {
+    "parser": "parseWideHoriz",
+    "people": 12,
+    "entries": 372,
+    "confidence": "high",
+    "months": [
+      "2026-09",
+      "2026-10"
+    ]
+  },
+  "t_13": {
+    "parser": "parseWideHoriz",
+    "people": 13,
+    "entries": 403,
+    "confidence": "high",
+    "months": [
+      "2026-09",
+      "2026-10"
+    ]
+  },
+  "t_14": {
+    "parser": "parseWideHoriz",
+    "people": 14,
+    "entries": 434,
+    "confidence": "high",
+    "months": [
+      "2026-09",
+      "2026-10"
+    ]
+  },
+  "t_15": {
+    "parser": "parseWideHoriz",
+    "people": 15,
+    "entries": 465,
+    "confidence": "high",
+    "months": [
+      "2026-09",
+      "2026-10"
+    ]
+  },
+  "t_16": {
+    "parser": "parseWideHoriz",
+    "people": 16,
+    "entries": 496,
+    "confidence": "high",
+    "months": [
+      "2026-09",
+      "2026-10"
+    ]
+  },
+  "t_20": {
+    "parser": "parseWideHoriz",
+    "people": 20,
+    "entries": 620,
+    "confidence": "high",
+    "months": [
+      "2026-09",
+      "2026-10"
+    ]
+  },
+  "x_12x30": {
+    "parser": "parseWideHoriz",
+    "people": 12,
+    "entries": 360,
+    "confidence": "high",
+    "months": [
+      "2026-09"
+    ]
+  },
+  "x_80x31": {
+    "parser": "parseWideHoriz",
+    "people": 80,
+    "entries": 2480,
+    "confidence": "high",
+    "months": [
+      "2026-09",
+      "2026-10"
+    ]
+  }
+}
