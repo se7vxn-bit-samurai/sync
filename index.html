@@ -4551,11 +4551,19 @@ function rSyncDashboard(el){
   const bpCycle=personBp&&personBp.cycleLen?personBp.cycleLen:bpWeekKeys.length;
   const blueprintScheduleHtml=(personBp&&bpWeekKeys.length)?'<div class="sd-blueprint-preview"><div class="sd-blueprint-person"><b>Rotation blueprint</b><span>'+X(bpCycle+'w · '+(personBp.confirmed?'confirmed':'review')+' · '+(health?health.grade+" "+health.avg:""))+'</span></div><div class="sd-blueprint-table"><div class="sd-bp-cell h"></div>'+bpDayHeads.join("")+bpRows+'</div></div>':'<div class="sd-blueprint-preview"><div class="sd-blueprint-person"><b>No blueprint loaded</b><span>Planner</span></div><div class="sd-list-row"><span class="name">Open Ops Blueprint</span><span class="meta">Review</span></div></div>';
   const universalNote=isUniversalWorkspace()?'<div class="sync-universal-note"><b>Universal workspace</b><span>Read-only combined view · department records remain isolated until you deliberately review them together.</span></div>':"";
+  const birthdayList=Object.values(S.people||{}).filter(p=>p&&p.birthday&&/^\d{2}-\d{2}$/.test(p.birthday)).map(p=>{
+    const[mm,dd]=p.birthday.split("-").map(Number);
+    let next=new Date(today.getFullYear(),mm-1,dd);
+    if(next<today)next=new Date(today.getFullYear()+1,mm-1,dd);
+    return{name:p.name,birthday:p.birthday,next,daysAway:Math.round((next-today)/864e5)};
+  }).sort((a,b)=>a.next-b.next).slice(0,8);
+  const birthdayRows=birthdayList.length?birthdayList.map(b=>'<div class="sd-list-row"><span class="name">'+X(b.name)+'</span><span class="meta">'+X(fDF(b.next))+(b.daysAway===0?' · today 🎂':b.daysAway===1?' · tomorrow':' · in '+b.daysAway+'d')+'</span></div>').join(""):'<div class="sd-list-row"><span class="name">No birthdays on file</span><span class="meta">Link people via a directory sheet</span></div>';
+  const birthdayWidgetHtml='<section class="sd-panel span-3"><div class="sd-panel-head"><h4>Upcoming Birthdays</h4><span>'+birthdayList.length+'</span></div><div class="sd-panel-body"><div class="sd-list">'+birthdayRows+'</div></div></section>';
   el.innerHTML='<div class="sync-dashboard" data-testid="dashboard-workspace">'+
     '<div class="sd-main">'+
       universalNote+
       '<section class="sd-hero"><div class="sd-hero-copy"><div class="sd-eyebrow">7OS Sync - Operations Suite</div><div class="sd-title">Sync<br>Dashboard</div><div class="sd-sub">Your operation at a glance - parsed, mapped, and ready before the day starts.</div><div class="sd-actions"><button class="sd-btn" onclick="browseScheduleFile()">Drop / browse files</button><button class="sd-btn" onclick="railNavToday()">Calendar</button><button class="sd-btn" onclick="railNavPeople(&quot;dashboard&quot;)">People</button></div></div><div class="sd-ledger"><div class="sd-ledger-row"><b>On floor</b><span>'+working.length+' / '+people.length+'</span></div><div class="sd-ledger-row"><b>Off / leave</b><span>'+off.length+' / '+people.length+'</span></div><div class="sd-ledger-row"><b>Alerts</b><span>'+issueOpen+' open</span></div><div class="sd-ledger-row"><b>Scope</b><span>'+people.length+' people - '+leaders.length+' leaders</span></div><div class="sd-ledger-row"><b>Sources</b><span>'+(S.shs||[]).length+' sheets - '+(S.raw?S.raw.length:all.length)+' rows</span></div></div></section>'+
-      '<div class="sd-command-grid"><section class="sd-panel span-6"><div class="sd-panel-head"><h4>Working Today</h4><span>'+X(fDF(today))+'</span></div><div class="sd-panel-body"><div class="sd-list scroll">'+workingHtml+'</div></div></section><section class="sd-panel span-6"><div class="sd-panel-head"><h4>'+X(weekTitle)+'<small>'+X(weekRange)+'</small></h4><div class="sd-week-tools"><button onclick="S.dashWeekOffset=(Number(S.dashWeekOffset)||0)-1;rSyncDashboard($(\'ca\'))">‹</button><span>'+people.length+' people</span><button onclick="S.dashWeekOffset=(Number(S.dashWeekOffset)||0)+1;rSyncDashboard($(\'ca\'))">›</button></div></div><div class="sd-panel-body"><div class="sd-cover">'+weekRows.join("")+'</div></div></section><section class="sd-panel span-4"><div class="sd-panel-head"><h4>Mini Calendar</h4><span>'+X(monthLabel())+'</span></div><div class="sd-panel-body"><div class="sd-mini-cal">'+miniCalendarHtml+'</div>'+gotoHtml+'</div></section><section class="sd-panel span-3"><div class="sd-panel-head"><h4>General</h4><span>SA / UK</span></div><div class="sd-panel-body">'+clockHtml+'</div></section><section class="sd-panel span-5"><div class="sd-panel-head"><h4>Blueprint</h4><span>'+X(blueprintLine)+'</span></div><div class="sd-panel-body">'+blueprintScheduleHtml+'</div></section></div>'+
+      '<div class="sd-command-grid"><section class="sd-panel span-6"><div class="sd-panel-head"><h4>Working Today</h4><span>'+X(fDF(today))+'</span></div><div class="sd-panel-body"><div class="sd-list scroll">'+workingHtml+'</div></div></section><section class="sd-panel span-6"><div class="sd-panel-head"><h4>'+X(weekTitle)+'<small>'+X(weekRange)+'</small></h4><div class="sd-week-tools"><button onclick="S.dashWeekOffset=(Number(S.dashWeekOffset)||0)-1;rSyncDashboard($(\'ca\'))">‹</button><span>'+people.length+' people</span><button onclick="S.dashWeekOffset=(Number(S.dashWeekOffset)||0)+1;rSyncDashboard($(\'ca\'))">›</button></div></div><div class="sd-panel-body"><div class="sd-cover">'+weekRows.join("")+'</div></div></section><section class="sd-panel span-4"><div class="sd-panel-head"><h4>Mini Calendar</h4><span>'+X(monthLabel())+'</span></div><div class="sd-panel-body"><div class="sd-mini-cal">'+miniCalendarHtml+'</div>'+gotoHtml+'</div></section><section class="sd-panel span-3"><div class="sd-panel-head"><h4>General</h4><span>SA / UK</span></div><div class="sd-panel-body">'+clockHtml+'</div></section><section class="sd-panel span-5"><div class="sd-panel-head"><h4>Blueprint</h4><span>'+X(blueprintLine)+'</span></div><div class="sd-panel-body">'+blueprintScheduleHtml+'</div></section>'+birthdayWidgetHtml+'</div>'+
       '<div class="sd-focus-grid"><section class="sd-focus-card" onclick="railNavToday()"><div><h3>Calendar</h3></div><div class="sd-mini-list">'+calendarMini+'</div><div class="sd-focus-kpi"><b>'+working.length+'</b><span>'+X(calendarLine)+'</span></div></section><section class="sd-focus-card" onclick="railNavPeople(&quot;dashboard&quot;)"><div><h3>People</h3></div><div class="sd-mini-list">'+peopleMini+'</div><div class="sd-focus-kpi"><b>'+people.length+'</b><span>'+X(peopleLine)+'</span></div></section><section class="sd-focus-card blueprint" onclick="railNavAnalytics(&quot;blueprint&quot;)"><div><h3>Blueprint</h3></div><div class="sd-mini-list">'+blueprintHtml+issueHtml+'</div><div class="sd-focus-kpi"><b>'+(health?X(health.grade):"--")+'</b><span>'+X(blueprintLine)+'</span></div></section></div>'+
     '</div>'+
     '<aside class="sd-side">'+syncAsciiMarkup()+'</aside>'+
@@ -6164,8 +6172,14 @@ function pDt(v){
   if(!v)return null;
   if(v instanceof Date&&!isNaN(v))return v;
   if(typeof v==="number"){
-    const d=new Date((v-25569)*864e5);
-    if(!isNaN(d))return d;
+    // Only treat as an Excel date serial within a plausible range (~1954-2091).
+    // Bare small integers (day-of-month numbers, counts) must NOT resolve to
+    // phantom dates near the 1900 epoch — mirrors the string-path bound below.
+    if(v>=20000&&v<=70000){
+      const d=new Date((v-25569)*864e5);
+      if(!isNaN(d))return d;
+    }
+    return null;
   }
   const s=String(v).trim();
   // Prevent JS Date auto-coercion like "1" -> Jan 2001
@@ -8213,6 +8227,99 @@ function parsePerson(data,sheetName){
   return Object.values(byDate).sort((a,b)=>(a.date||0)-(b.date||0));
 }
 
+// ── Rotating-role calendar (legend block + month-divider calendar + dual timezone panel) ──
+// Shape: a top day-name header row establishes fixed weekday columns for the whole sheet;
+// a 3-ish-week "Week N" legend (pure shift strings, no dates) sits just below it; then the
+// real calendar repeats 2-row [day-numbers row, shift row] micro-blocks, interrupted every
+// ~2 weeks by a bare month-name divider row. A second side-by-side column group is usually
+// just the same schedule redisplayed in another timezone — only the first (leftmost) panel
+// is read. There is normally no name column at all (one implicit role/queue per sheet), so
+// entries are keyed to the sheet name and left for the caller to resolve to a real person.
+function parseRotatingRoleCalendar(data,sheetName){
+  if(!data||data.length<10)return[];
+  const rows=data.length;
+  let headerRowIdx=-1,dayCols=[];
+  for(let r=0;r<Math.min(rows,15);r++){
+    const row=data[r]||[];
+    const found=[];
+    for(let c=0;c<row.length;c++){const d=nD(row[c]);if(d)found.push({col:c,day:d});}
+    if(found.length>=5){headerRowIdx=r;dayCols=found;break;}
+  }
+  if(headerRowIdx<0)return[];
+  // Keep only the first contiguous run of day columns — a second panel further right
+  // (e.g. a duplicate timezone view) is a mirror of the same schedule, not new people.
+  const panelCols=[dayCols[0]];
+  for(let i=1;i<dayCols.length;i++){
+    if(dayCols[i].col-panelCols[panelCols.length-1].col<=3)panelCols.push(dayCols[i]);
+    else break;
+  }
+  if(panelCols.length<5)return[];
+  const firstCol=panelCols[0].col,lastCol=panelCols[panelCols.length-1].col;
+  let weekLabelCol=-1;
+  outer: for(let c=Math.max(0,firstCol-3);c<firstCol;c++){
+    for(let r=headerRowIdx+1;r<Math.min(rows,headerRowIdx+60);r++){
+      if(/^week\s*\d+$/i.test(String((data[r]||[])[c]||"").trim())){weekLabelCol=c;break outer;}
+    }
+  }
+  function monthDividerInfo(row){
+    for(let c=0;c<Math.min((row||[]).length,lastCol+2);c++){
+      const s=String((row||[])[c]||"").trim();
+      const m=s.match(/^(january|february|march|april|may|june|july|august|september|october|november|december)(?:\s+(\d{4}))?$/i);
+      if(m){const idx=MOFULL.findIndex(mn=>mn.toLowerCase()===m[1].toLowerCase());if(idx>=0)return{monthIdx:idx,year:m[2]?+m[2]:null};}
+    }
+    return null;
+  }
+  function isDayNumberCell(v){
+    const s=String(v==null?"":v).trim();
+    if(!/^\d{1,2}$/.test(s))return false;
+    const n=+s;return n>=1&&n<=31;
+  }
+  const entries=[];
+  let curMonth=null,curYear=null,lastMonthIdx=-1;
+  let i=headerRowIdx+1;
+  while(i<rows){
+    const row=data[i]||[];
+    const divider=monthDividerInfo(row);
+    if(divider){
+      if(curYear===null)curYear=divider.year||_parseYearHint||new Date().getFullYear();
+      else if(divider.monthIdx<=lastMonthIdx)curYear++;
+      curMonth=divider.monthIdx;lastMonthIdx=curMonth;
+      i++;continue;
+    }
+    if(curMonth===null){i++;continue;} // still inside the legend block — not dated data
+    let dayHits=0;
+    for(const dc of panelCols){if(isDayNumberCell(row[dc.col]))dayHits++;}
+    if(dayHits<1){i++;continue;}
+    const shiftRow=data[i+1]||[];
+    let shiftHits=0;
+    for(const dc of panelCols){const cv=shiftRow[dc.col];if(cv!=null&&String(cv).trim()!==""&&(pTm(cv)||classifyOff(cv)))shiftHits++;}
+    if(shiftHits<1){i++;continue;}
+    const weekLabel=weekLabelCol>=0?String(row[weekLabelCol]||shiftRow[weekLabelCol]||"").trim():"";
+    // Self-heal single-cell source typos (e.g. "31" where "28" belongs) by requiring the
+    // week's day numbers to be a consecutive run — trust neighbor continuity over a
+    // literal outlier cell, and only accept a drop back to a small number as a genuine
+    // month-end rollover.
+    const resolved=panelCols.map(dc=>{const v=row[dc.col];return isDayNumberCell(v)?+String(v).trim():null;});
+    for(let k=1;k<resolved.length;k++){
+      if(resolved[k]==null||resolved[k-1]==null)continue;
+      const expected=resolved[k-1]<31?resolved[k-1]+1:1;
+      if(resolved[k]!==expected&&resolved[k]!==1)resolved[k]=expected;
+    }
+    let month=curMonth,year=curYear,prevDay=null;
+    panelCols.forEach((dc,idx)=>{
+      const dayNum=resolved[idx];if(dayNum==null)return;
+      if(prevDay!=null&&dayNum<prevDay){month++;if(month>11){month=0;year++;}}
+      prevDay=dayNum;
+      const dt=new Date(year,month,dayNum);
+      const e=mkE(sheetName,dt,dc.day,shiftRow[dc.col],"Main",weekLabel);
+      if(e)entries.push(e);
+    });
+    curMonth=month;curYear=year;lastMonthIdx=month;
+    i+=2;
+  }
+  return entries.sort((a,b)=>(a.date||0)-(b.date||0));
+}
+
 function autoParseLegacy(data,sn){
   if(!data||data.length<2)return[];const s=sn.toLowerCase();
   function logParse(parser,confidence,reason,entries,warnings){
@@ -8290,13 +8397,15 @@ function autoParseLegacy(data,sn){
 function _sheetParserFeatures(data,sheetName){
   const rows=(data||[]).length;
   const cols=Math.max(0,...(data||[]).map(row=>(row||[]).length));
-  let maxDatesInRow=0,dayHeaderRows=0,firstColDays=0,firstColDates=0,alternatingRows=0;
+  let maxDatesInRow=0,dayHeaderRows=0,firstColDays=0,firstColDates=0,alternatingRows=0,monthDividerRows=0;
+  const monthWordRe=/^(january|february|march|april|may|june|july|august|september|october|november|december)(?:\s+\d{4})?$/i;
   for(let r=0;r<Math.min(rows,80);r++){
     const row=data[r]||[];let dates=0,days=0,shifts=0;
     for(let c=0;c<Math.min(row.length,Math.max(cols,40));c++){
       if(pDt(row[c]))dates++;
       if(nD(row[c]))days++;
       if(pTm(row[c])||classifyOff(row[c]))shifts++;
+      if(monthWordRe.test(String(row[c]||"").trim()))monthDividerRows++;
     }
     maxDatesInRow=Math.max(maxDatesInRow,dates);
     if(days>=5)dayHeaderRows++;
@@ -8305,7 +8414,7 @@ function _sheetParserFeatures(data,sheetName){
     if(r>0&&(dates>=3||shifts>=3))alternatingRows++;
   }
   const orientation=cols>=Math.max(12,rows*2)?"horizontal":rows>=Math.max(12,cols*2)?"vertical":"";
-  return{rows,cols,maxDatesInRow,dayHeaderRows,firstColDays,firstColDates,alternatingRows,orientation,
+  return{rows,cols,maxDatesInRow,dayHeaderRows,firstColDays,firstColDates,alternatingRows,monthDividerRows,orientation,
     nameHoriz:isHorizSheetName(sheetName),nameVert:isVertSheetName(sheetName)};
 }
 function _entrySetQuality(entries){
@@ -8347,6 +8456,9 @@ function _parserAffinity(parser,features){
   }else if(parser==="parsePerson"){
     if(f.alternatingRows>=4)score+=22;
     if(f.rows>=14)score+=3;
+  }else if(parser==="parseRotatingRoleCalendar"){
+    if(f.monthDividerRows>=2)score+=25;
+    if(f.dayHeaderRows>=1)score+=5;
   }
   return Math.min(30,score);
 }
@@ -8359,6 +8471,7 @@ function _runParserCandidate(parser,data,sheetName,features){
     else if(parser==="parseVert")entries=parseVert(data);
     else if(parser==="parseBlocks")entries=parseBlocks(data);
     else if(parser==="parsePerson")entries=parsePerson(data,sheetName);
+    else if(parser==="parseRotatingRoleCalendar")entries=parseRotatingRoleCalendar(data,sheetName);
     const quality=_entrySetQuality(entries),affinity=_parserAffinity(parser,features);
     return{parser,entries,quality,affinity,score:Math.round((quality.score+affinity)*10)/10,detail,error:""};
   }catch(err){return{parser,entries:[],quality:_entrySetQuality([]),affinity:0,score:0,detail:"",error:String(err&&err.message||err)};}
@@ -8375,12 +8488,13 @@ function _parserTiePriority(parser,features){
   if(features.maxDatesInRow>=10&&parser==="parseWideHoriz")return 4;
   if(features.dayHeaderRows>=2&&parser==="parseBlocks")return 3;
   if(features.alternatingRows>=4&&parser==="parsePerson")return 2;
+  if(features.monthDividerRows>=2&&parser==="parseRotatingRoleCalendar")return 6;
   return 0;
 }
 function autoParse(data,sn){
   if(!data||data.length<2)return[];
   const features=_sheetParserFeatures(data,sn);
-  const allParsers=["parseWideHoriz","parseHoriz","parseVert","parseBlocks","parsePerson"];
+  const allParsers=["parseWideHoriz","parseHoriz","parseVert","parseBlocks","parsePerson","parseRotatingRoleCalendar"];
   let parserNames=allParsers.filter(parser=>_parserAffinity(parser,features)>=8);
   if(!parserNames.length)parserNames=allParsers;
   const candidates=parserNames
@@ -10365,10 +10479,16 @@ function scanFileQuick(wb,filename,manualOverride){
     if(manualOverride&&manualOverride.sheetName&&!shs.includes(manualOverride.sheetName))shs=shs.concat([manualOverride.sheetName]);
     // Quick parse — collect entries without committing state
     const _savedInfo=S.parseInfo;S.parseInfo=[];
-    const seen={};const entries=[];const nameSheetMap={};const parsedSheets=[];
+    const seen={};const entries=[];const nameSheetMap={};const parsedSheets=[];const birthdayDirectory=[];
     shs.forEach(shName=>{
       const ws=wb.Sheets[shName];if(!ws)return;
       const data=sheetToRosterAOA(ws);
+      if(isBirthdayDirectorySheet(data)){
+        const recs=parseBirthdayDirectory(data);
+        recs.forEach(rec=>birthdayDirectory.push(Object.assign({sheet:shName},rec)));
+        S.parseInfo.push({sheet:shName,parser:"birthdayDirectory",confidence:"high",reason:`Birthday directory: ${recs.length} people found, not a schedule sheet`,count:0,warnings:[]});
+        return;// not a schedule sheet — don't run it through autoParse
+      }
       const manualHere=manualOverride&&manualOverride.sheetName===shName;
       const rawEntries=manualHere?parseManualHoriz(data,manualOverride.headerRowIdx).entries:autoParse(data,shName);
       if(manualHere)S.parseInfo.push({sheet:shName,parser:"manualHoriz",confidence:"medium",reason:"Manually mapped from row "+(manualOverride.headerRowIdx+1),count:rawEntries.length,warnings:[]});
@@ -10432,9 +10552,27 @@ function scanFileQuick(wb,filename,manualOverride){
     if(missingExpectedNames.length)warnings.push(`Roster reconciliation: ${missingExpectedNames.length} expected person${missingExpectedNames.length===1?"":"s"} missing (${missingExpectedNames.join(", ")})`);
     const mergedRosterRisks=detectMergedRosterRisks(wb);
 
+    // Birthday-directory names: dedupe, then split into people already known (schedule or
+    // People registry) vs. unlinked ones needing a role + reports-to decision before load.
+    const birthdayByName=new Map();
+    birthdayDirectory.forEach(b=>{if(!birthdayByName.has(b.name))birthdayByName.set(b.name,b);});
+    const knownPeopleLower=new Set(Object.keys(S.people||{}).map(n=>n.toLowerCase()));
+    const namesLower=new Set(names.map(n=>n.toLowerCase()));
+    const unlinkedPeople=[...birthdayByName.values()].filter(b=>!knownPeopleLower.has(b.name.toLowerCase())&&!namesLower.has(b.name.toLowerCase()));
+    if(unlinkedPeople.length){
+      const unlinkedLower=new Set(unlinkedPeople.map(b=>b.name.toLowerCase()));
+      ghostAgents=ghostAgents.filter(g=>!unlinkedLower.has(g.name.toLowerCase()));
+    }
+    // A schedule sheet parsed by parseRotatingRoleCalendar has no real name column — its
+    // entries are keyed to the sheet name itself. Surface that as an identity to resolve
+    // too, instead of silently keeping the sheet title as a fake person.
+    const roleSheetNames=new Set(parseInfo.filter(p=>p.parser==="parseRotatingRoleCalendar").map(p=>p.sheet));
+    const unresolvedRoleIdentities=names.filter(n=>roleSheetNames.has(n));
+
     return{entries,names,months,work:work.length,off:off.length,total:entries.length,
       sheets:shs.length,sheetNames:shs.slice(),deptName,confidence:bestConf,parsers,parseInfo,warnings,dupes,fingerprints,ghostAgents,
-      crossSheetNames,autoMergeCandidates,expectedNames:rosterEvidence.expectedNames,missingExpectedNames,provenance:rosterEvidence.provenance,rosterAliases:rosterEvidence.aliases||[],mergedRosterRisks};
+      crossSheetNames,autoMergeCandidates,expectedNames:rosterEvidence.expectedNames,missingExpectedNames,provenance:rosterEvidence.provenance,rosterAliases:rosterEvidence.aliases||[],mergedRosterRisks,
+      birthdayDirectory:[...birthdayByName.values()],unlinkedPeople,unresolvedRoleIdentities};
   }finally{
     _parseYearHint=_prevHint;
   }
@@ -10601,6 +10739,54 @@ function detectShiftFingerprints(entries,names){
     });
   });
   return warnings;
+}
+
+// ── Birthday / people-directory sheet: a flat Month|Date|Name (or similar) list that isn't
+// a schedule at all. Common in real workbooks as a reference tab with no role/team-leader
+// info, so it needs cross-referencing against known people rather than being parsed as a
+// rota or silently ignored.
+const BIRTHDAY_MONTH_HEADERS=/^month$/i,BIRTHDAY_DATE_HEADERS=/^(date|day)$/i,BIRTHDAY_NAME_HEADERS=/^(agent|name|person|employee|team\s*member)$/i;
+function _birthdayDirectoryCols(data){
+  const header=(data&&data[0]||[]).map(v=>String(v||"").trim().toLowerCase());
+  const monthCol=header.findIndex(h=>BIRTHDAY_MONTH_HEADERS.test(h));
+  const dateCol=header.findIndex(h=>BIRTHDAY_DATE_HEADERS.test(h));
+  const nameCol=header.findIndex(h=>BIRTHDAY_NAME_HEADERS.test(h));
+  return{monthCol,dateCol,nameCol};
+}
+function isBirthdayDirectorySheet(data){
+  if(!data||data.length<2)return false;
+  const{monthCol,dateCol,nameCol}=_birthdayDirectoryCols(data);
+  if(monthCol<0||dateCol<0||nameCol<0)return false;
+  let lastMonth="",checked=0,hits=0;
+  for(let r=1;r<Math.min(data.length,40);r++){
+    const row=data[r]||[];
+    if(!row.some(v=>String(v||"").trim()))continue;
+    checked++;
+    const mv=String(row[monthCol]||"").trim();if(mv)lastMonth=mv;
+    const dv=String(row[dateCol]||"").trim();
+    const nv=String(row[nameCol]||"").trim();
+    const monthOk=!lastMonth||isMonthLabel(lastMonth);
+    const dayOk=/^\d{1,2}$/.test(dv)&&+dv>=1&&+dv<=31;
+    const nameOk=nv.length>=2&&!/\d/.test(nv)&&!isPersonNoiseLabel(nv);
+    if(monthOk&&dayOk&&nameOk)hits++;
+  }
+  return checked>=2&&hits/checked>=0.6;
+}
+function parseBirthdayDirectory(data){
+  const{monthCol,dateCol,nameCol}=_birthdayDirectoryCols(data);
+  const out=[];let lastMonth="";
+  for(let r=1;r<(data||[]).length;r++){
+    const row=data[r]||[];
+    const mv=String(row[monthCol]||"").trim();if(mv)lastMonth=mv;
+    const dv=String(row[dateCol]||"").trim();
+    const nv=cleanPersonName(String(row[nameCol]||"").trim());
+    if(!nv||!/^\d{1,2}$/.test(dv))continue;
+    const monthIdx=MOFULL.findIndex(mn=>mn.toLowerCase()===lastMonth.toLowerCase());
+    if(monthIdx<0)continue;
+    const day=+dv;if(day<1||day>31)continue;
+    out.push({name:nv,month:monthIdx,day,monthDay:P(monthIdx+1)+"-"+P(day)});
+  }
+  return out;
 }
 
 // ── Ghost agent detection: names present in unparsed sheets but absent from parsed entries ──
@@ -13723,7 +13909,7 @@ function ensurePerson(name,updates){
       contractHours:0,contractType:null,fte:1.0,
       skills:[],platforms:[],restrictions:[],
       otEligible:true,otMaxWeekly:0,
-      startDate:null,endDate:null,
+      startDate:null,endDate:null,birthday:null,
       source:"parsed",addedAt:new Date().toISOString()
     };
   }
@@ -27240,20 +27426,20 @@ function buildSheetPeople(wb){
   ws.mergeCells('A1:H1');sC(ws.getCell('A1'),{bold:true,fontSize:14,color:'FFFFFFFF',fill:ORDO.TITLE});
   ws.getCell('A1').value='People Registry · '+(S.activeDept||'')+(S.rosterFile?' · Roster: '+S.rosterFile.agentCount+' agents':'');ws.getRow(1).height=28;ws.addRow([]);
   // Leaders section
-  ws.addRow(['Leader','Team','Role','Agents','Span','Contract Hrs','Source']).eachCell(c=>{sC(c,{bold:true,color:'FFFFFFFF',fill:ORDO.TITLE,border:ORDO.BORDER});});
+  ws.addRow(['Leader','Team','Role','Agents','Span','Contract Hrs','Source','Birthday']).eachCell(c=>{sC(c,{bold:true,color:'FFFFFFFF',fill:ORDO.TITLE,border:ORDO.BORDER});});
   const leaders=getLeaders();
   leaders.forEach(leader=>{
     const ac=getAgentCount(leader.name);
     const soc=getSpanOfControl(leader.name);
-    ws.addRow([leader.name,leader.team||'',leader.role,ac,soc.ratio,leader.contractHours||'',leader.source||'']).eachCell(c=>{sC(c,{border:ORDO.BORDER});});
+    ws.addRow([leader.name,leader.team||'',leader.role,ac,soc.ratio,leader.contractHours||'',leader.source||'',leader.birthday||'']).eachCell(c=>{sC(c,{border:ORDO.BORDER});});
   });
   ws.addRow([]);ws.addRow([]);
   // Agents section
   const agents=Object.values(S.people).filter(p=>p.role==='agent').sort((a,b)=>(a.teamLeader||'').localeCompare(b.teamLeader||'')||a.name.localeCompare(b.name));
   if(agents.length){
-    ws.addRow(['Agent','Team Leader','Team','Skills','Contract','Hours','FTE','Start Date']).eachCell(c=>{sC(c,{bold:true,color:'FFFFFFFF',fill:ORDO.TITLE,border:ORDO.BORDER});});
+    ws.addRow(['Agent','Team Leader','Team','Skills','Contract','Hours','FTE','Start Date','Birthday']).eachCell(c=>{sC(c,{bold:true,color:'FFFFFFFF',fill:ORDO.TITLE,border:ORDO.BORDER});});
     agents.forEach(agent=>{
-      ws.addRow([agent.name,agent.teamLeader||'',agent.team||'',(agent.skills||[]).join(', '),agent.contractType||'',agent.contractHours||'',agent.fte||1,agent.startDate||'']).eachCell(c=>{sC(c,{border:ORDO.BORDER});});
+      ws.addRow([agent.name,agent.teamLeader||'',agent.team||'',(agent.skills||[]).join(', '),agent.contractType||'',agent.contractHours||'',agent.fte||1,agent.startDate||'',agent.birthday||'']).eachCell(c=>{sC(c,{border:ORDO.BORDER});});
     });
   }
   // Phase A — Agent notes section
@@ -32075,6 +32261,7 @@ function nsInstallStyle(){
     .ns-shared-gate{margin:10px 16px 0;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.07);border-radius:7px;overflow:hidden}.ns-shared-head{padding:9px 11px;border-bottom:1px solid rgba(245,158,11,.22);display:flex;justify-content:space-between;gap:8px}.ns-shared-head b{font-size:11px;color:#d99000}.ns-shared-head span{font:10px var(--mono);color:var(--tm)}.ns-shared-row{display:grid;grid-template-columns:minmax(130px,.7fr) 160px minmax(220px,1fr);gap:8px;align-items:center;padding:8px 11px;border-bottom:1px solid var(--bdr)}.ns-shared-row:last-child{border-bottom:0}.ns-shared-row strong{font-size:11px}.ns-shared-row select,.ns-shared-row input,.ns-field input,.ns-field select,.ns-field textarea{width:100%;min-height:30px;border:1px solid var(--bdr);border-radius:5px;background:var(--card);color:var(--text);font:11px inherit;padding:5px 7px}
     .ns-native-overlay{position:fixed;inset:0;z-index:10020;background:rgba(0,0,0,.74);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px}.ns-native-modal{width:min(850px,96vw);max-height:90vh;overflow:auto;border:1px solid var(--bdr);border-radius:10px;background:var(--bg);box-shadow:var(--sl)}.ns-native-head{display:flex;align-items:center;gap:10px;padding:15px 17px;border-bottom:1px solid var(--bdr)}.ns-native-head h3{font-size:15px;margin:0}.ns-native-head small{display:block;color:var(--tm);font:10px var(--mono);margin-top:3px}.ns-native-body{padding:14px 17px}.ns-native-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--bdr);border-radius:6px;overflow:hidden}.ns-native-stat{padding:12px;border-right:1px solid var(--bdr)}.ns-native-stat:last-child{border-right:0}.ns-native-stat b{display:block;font:800 20px var(--mono);color:var(--accent)}.ns-native-stat span{font-size:9px;text-transform:uppercase;color:var(--tm)}.ns-native-types{display:flex;gap:5px;flex-wrap:wrap;margin:12px 0}.ns-native-type{padding:4px 8px;border:1px solid var(--accent);background:var(--al);color:var(--accent);border-radius:4px;font:10px var(--mono)}.ns-native-actions{display:flex;justify-content:flex-end;gap:8px;padding:12px 17px;border-top:1px solid var(--bdr)}
     .ns-identity-gate{margin:10px 16px 0;padding:10px 12px;border:1px solid rgba(245,158,11,.38);background:rgba(245,158,11,.07);border-radius:7px;display:flex;align-items:center;gap:10px}.ns-identity-gate>div{min-width:0;flex:1}.ns-identity-gate b{display:block;font-size:11px;color:#d99000}.ns-identity-gate span{display:block;margin-top:2px;font:9px var(--mono);color:var(--tm)}.ns-identity-review-overlay{z-index:10040}.ns-identity-review-modal{width:min(940px,96vw);height:min(760px,90vh);display:grid;grid-template-rows:auto minmax(0,1fr) auto;overflow:hidden;border:1px solid var(--bdr);border-radius:10px;background:var(--bg);box-shadow:var(--sl)}.ns-identity-review-body{overflow:auto;padding:12px 16px}.ns-identity-review-section{border:1px solid var(--bdr);border-radius:7px;overflow:hidden;margin-bottom:10px}.ns-identity-review-note{padding:9px 11px;margin-bottom:10px;border-left:3px solid var(--accent);background:var(--al);font-size:10px;color:var(--tm);line-height:1.5}
+    .bd-link-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:9px 11px;border-bottom:1px solid var(--bdr)}.bd-link-row:last-child{border-bottom:0}.bd-link-row strong{font-size:11px;flex:0 0 auto;min-width:110px}.bd-link-row select{min-height:30px;border:1px solid var(--bdr);border-radius:5px;background:var(--card);color:var(--text);font:11px inherit;padding:5px 7px;flex:1 1 160px;min-width:140px}
     .ns-ops{display:flex;flex-direction:column;min-height:100%;background:var(--bg)}.ns-ops-context{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 12px;border-bottom:1px solid var(--bdr);font:10px var(--mono);color:var(--tm)}.ns-ops-main{padding:12px;overflow:auto;flex:1}.ns-toolbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:10px}.ns-toolbar input,.ns-toolbar select{min-height:30px;border:1px solid var(--bdr);border-radius:5px;background:var(--card);color:var(--text);font:11px inherit;padding:5px 8px}.ns-toolbar .grow{flex:1;min-width:180px}.ns-btn{min-height:30px;padding:5px 10px;border:1px solid var(--bdr);border-radius:5px;background:var(--card);color:var(--text);font:10px var(--mono);cursor:pointer}.ns-btn:hover{border-color:var(--accent);color:var(--accent)}.ns-btn.primary{background:var(--accent);border-color:var(--accent);color:#07110f;font-weight:800}.ns-btn.danger{color:#dc2626}.ns-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:10px}.ns-kpi{padding:10px 11px;border:1px solid var(--bdr);border-radius:6px;background:var(--card)}.ns-kpi b{display:block;font:800 20px var(--mono);color:var(--accent)}.ns-kpi span{font-size:9px;color:var(--tm);text-transform:uppercase}.ns-split{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr);gap:10px}.ns-panel{border:1px solid var(--bdr);border-radius:6px;background:var(--card);overflow:hidden}.ns-panel-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:36px;padding:8px 10px;border-bottom:1px solid var(--bdr)}.ns-panel-hd h3{font-size:12px;margin:0}.ns-panel-hd span{font:9px var(--mono);color:var(--tm)}.ns-panel-body{padding:9px 10px}.ns-table-wrap{overflow:auto}.ns-table{width:100%;border-collapse:collapse;font-size:10px}.ns-table th,.ns-table td{padding:7px 8px;border-bottom:1px solid var(--bdr);text-align:left;vertical-align:middle}.ns-table th{position:sticky;top:0;background:var(--bg2);color:var(--tm);font:9px var(--mono);text-transform:uppercase;z-index:1}.ns-table tr:hover td{background:var(--al)}.ns-labels{display:flex;gap:3px;flex-wrap:wrap}.ns-label{padding:2px 5px;border:1px solid var(--bdr);border-radius:4px;font:9px var(--mono);color:var(--tm)}.ns-label.ready{border-color:var(--ok);color:var(--ok);background:color-mix(in srgb,var(--ok) 8%,transparent)}.ns-tree{font-size:10px}.ns-tree-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;padding:6px 7px;border-bottom:1px solid var(--bdr)}.ns-tree-row b{font-size:10px}.ns-tree-row small{display:block;color:var(--tm);margin-top:2px}.ns-field{display:flex;flex-direction:column;gap:4px}.ns-field label{font:9px var(--mono);text-transform:uppercase;color:var(--tm)}.ns-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.ns-field.span-2{grid-column:span 2}.ns-empty{padding:24px 12px;text-align:center;color:var(--tm);font-size:11px}
     .ns-conflict-layout{display:grid;grid-template-columns:minmax(210px,.28fr) minmax(0,.72fr);gap:10px}.ns-conflict-list{border:1px solid var(--bdr);border-radius:6px;background:var(--card);max-height:570px;overflow:auto}.ns-conflict-item{display:block;width:100%;padding:9px 10px;border:0;border-bottom:1px solid var(--bdr);background:transparent;color:var(--text);text-align:left;cursor:pointer}.ns-conflict-item:hover,.ns-conflict-item.active{background:var(--al)}.ns-conflict-item b,.ns-conflict-item span,.ns-conflict-item small{display:block}.ns-conflict-item span{margin-top:3px;font:9px var(--mono);overflow:hidden;text-overflow:ellipsis}.ns-conflict-item small{margin-top:3px;color:var(--tm);font-size:9px}.ns-conflict-table code{display:block;max-width:330px;white-space:pre-wrap;overflow-wrap:anywhere;font:9px var(--mono);color:var(--text)}.ns-conflict-table select{min-height:28px;border:1px solid var(--bdr);border-radius:4px;background:var(--card);color:var(--text);font:10px inherit;padding:3px 5px}
     @media(max-width:900px){.ns-shared-row{grid-template-columns:1fr}.ns-native-stats,.ns-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.ns-split,.ns-conflict-layout{grid-template-columns:1fr}.ns-form-grid{grid-template-columns:1fr}.ns-field.span-2{grid-column:span 1}}
@@ -32442,6 +32629,139 @@ loadIntoWorkspace=function(wb,sourceName,opts){
   if(sharedResult.groups)toast(sharedResult.groups+" shared schedule group"+(sharedResult.groups===1?"":"s")+" resolved | "+sharedResult.derived+" inherited entries","ok",4600);
   if(identityAudit.removedEntries||identityAudit.removedPeople)toast((identityAudit.removedEntries+identityAudit.removedPeople)+" structural identity record"+(identityAudit.removedEntries+identityAudit.removedPeople===1?"":"s")+" ignored","info",3600);
   try{saveDeptSnap(S.activeDept);}catch(err){}ren();return result;
+};
+
+// ── Unlinked people gate ──────────────────────────────────────────────────────
+// A "Birthdays"-style directory sheet (or any sheet that parsed to a bare role/queue
+// name via parseRotatingRoleCalendar, e.g. "Home messenger Roster") can surface real
+// people, or identities, with no role/team-leader link anywhere in the workbook. Block
+// Load until each has an explicit decision, then apply it once the schedule is committed.
+// Built on the same inject/refresh/confirm/commit wrapping pattern NorthStar uses above.
+function _bdCandidateLeaders(){
+  const known=Object.values(S.people||{}).filter(p=>p&&p.role==="leader").map(p=>p.name);
+  const decisions=_pendingLoad&&_pendingLoad.bdDecisions?Object.values(_pendingLoad.bdDecisions):[];
+  const batch=decisions.filter(d=>d.role==="leader").map(d=>d.name);
+  return[...new Set([...known,...batch])].sort();
+}
+function bdInjectLinkGate(scan){
+  const unlinked=(scan&&scan.unlinkedPeople||[]),roleIdentities=(scan&&scan.unresolvedRoleIdentities||[]);
+  if(!unlinked.length&&!roleIdentities.length)return;
+  const modal=document.querySelector("#parsePreviewOverlay>div");if(!modal||modal.querySelector(".bd-link-gate"))return;
+  const decisions={};
+  unlinked.forEach(u=>{decisions[u.name]={name:u.name,kind:"directory",monthDay:u.monthDay,sheet:u.sheet,role:"",reportsTo:""};});
+  roleIdentities.forEach(n=>{if(!decisions[n])decisions[n]={name:n,kind:"roleIdentity",monthDay:"",sheet:"",role:"",reportsTo:"",assignName:""};});
+  _pendingLoad.bdDecisions=decisions;
+  const total=Object.keys(decisions).length,gate=document.createElement("section");
+  gate.className="ns-identity-gate bd-link-gate";
+  gate.innerHTML=`<div><b>${total} unlinked ${total===1?"person":"people"} found</b><span id="bdGateCount">${total} decision${total===1?"":"s"} required</span></div><button class="ns-btn" onclick="bdOpenLinkReview()">Review people</button>`;
+  const hint=modal.querySelector("#parseLoadHint"),anchor=hint&&hint.parentElement===modal?hint:modal.lastElementChild;
+  modal.insertBefore(gate,anchor);
+  bdApplyLinkGateState();
+}
+function bdLinkGateUnresolved(){
+  if(!_pendingLoad||!_pendingLoad.bdDecisions)return[];
+  return Object.values(_pendingLoad.bdDecisions).filter(d=>!d.role||(d.role==="agent"&&!d.reportsTo)||(d.kind==="roleIdentity"&&d.role==="rename"&&!d.assignName));
+}
+function bdApplyLinkGateState(){
+  if(!_pendingLoad||!_pendingLoad.bdDecisions)return;
+  const unresolved=bdLinkGateUnresolved(),button=document.getElementById("parseLoadBtn"),hint=document.getElementById("parseLoadHint"),counter=document.getElementById("bdGateCount");
+  if(counter)counter.textContent=unresolved.length?unresolved.length+" decision"+(unresolved.length===1?"":"s")+" required":"All people linked";
+  if(unresolved.length&&button){button.disabled=true;button.style.opacity=".45";button.style.cursor="not-allowed";}
+  if(unresolved.length&&hint){hint.textContent="Resolve unlinked people before loading";hint.style.color="#d99000";}
+  const reviewCount=document.getElementById("bdReviewCount"),applyBtn=document.getElementById("bdApplyReviewBtn");
+  if(reviewCount)reviewCount.textContent=unresolved.length?unresolved.length+" decision"+(unresolved.length===1?"":"s")+" remaining":"All people reviewed";
+  if(applyBtn){applyBtn.disabled=!!unresolved.length;applyBtn.style.opacity=unresolved.length?".45":"1";}
+}
+function bdOpenLinkReview(){
+  if(!_pendingLoad||!_pendingLoad.bdDecisions)return;
+  document.getElementById("bdLinkReviewOverlay")?.remove();
+  const rows=Object.values(_pendingLoad.bdDecisions).map(d=>{
+    const id=nsHash(d.name),leaderOpts=_bdCandidateLeaders();
+    // A roleIdentity row (a schedule sheet with no name column) can only be renamed to a
+    // real linked person or kept as the role/queue name — this app treats whoever owns
+    // parsed schedule rows as a "leader" (schedule owner), so offering a plain Agent/Team
+    // Leader choice here would be a decision that syncPeopleFromEntries() silently undoes.
+    const roleSelect=d.kind==="roleIdentity"
+      ?`<select id="bdRole_${id}" onchange="bdSetRole('${XJS(d.name)}',this.value)"><option value=""${!d.role?" selected":""}>Role…</option><option value="rename"${d.role==="rename"?" selected":""}>Assign to a linked person</option><option value="keep"${d.role==="keep"?" selected":""}>Keep as role/queue name</option></select>`
+      :`<select id="bdRole_${id}" onchange="bdSetRole('${XJS(d.name)}',this.value)"><option value=""${!d.role?" selected":""}>Role…</option><option value="agent"${d.role==="agent"?" selected":""}>Agent</option><option value="leader"${d.role==="leader"?" selected":""}>Team Leader</option></select>`;
+    const reportsToVisible=d.role==="agent";
+    const reportsToSelect=`<select id="bdReports_${id}" style="${reportsToVisible?"":"display:none"}" onchange="bdSetReportsTo('${XJS(d.name)}',this.value)">`+
+      `<option value=""${!d.reportsTo?" selected":""}>Reports to…</option>`+
+      leaderOpts.filter(n=>n!==d.name).map(n=>`<option value="${XA(n)}"${d.reportsTo===n?" selected":""}>${X(n)}</option>`).join("")+
+      `<option value="__unassigned__"${d.reportsTo==="__unassigned__"?" selected":""}>Unassigned (decide later)</option></select>`;
+    const assignVisible=d.kind==="roleIdentity"&&d.role==="rename";
+    const assignSelect=d.kind==="roleIdentity"?`<select id="bdAssign_${id}" style="${assignVisible?"":"display:none"}" onchange="bdSetAssignName('${XJS(d.name)}',this.value)"><option value="">Which person…</option>${_bdCandidateAssignNames(d.name).map(n=>`<option value="${XA(n)}"${d.assignName===n?" selected":""}>${X(n)}</option>`).join("")}</select>`:"";
+    const meta=d.kind==="directory"?`<span style="font-size:10px;color:var(--tm)">Birthday ${X(d.monthDay||"")} · from ${X(d.sheet||"")}</span>`:`<span style="font-size:10px;color:var(--tm)">Schedule identity with no name column (sheet "${X(d.sheet||d.name)}")</span>`;
+    return`<div class="bd-link-row"><strong>${X(d.name)}</strong>${meta}${roleSelect}${reportsToSelect}${assignSelect}</div>`;
+  }).join("");
+  const html=`<div id="bdLinkReviewOverlay" class="ns-native-overlay ns-identity-review-overlay" role="dialog" aria-modal="true" aria-label="Unlinked people review"><div class="ns-identity-review-modal"><div class="ns-native-head"><div style="flex:1;min-width:0"><h3>Unlinked people review</h3><small>Decide each person's role and who agents report to before loading.</small></div><button class="ns-btn" onclick="bdCloseLinkReview()" aria-label="Close review">Close</button></div><div class="ns-identity-review-body"><section class="ns-identity-review-section">${rows}</section></div><div class="ns-native-actions"><span id="bdReviewCount" style="margin-right:auto;align-self:center;font:10px var(--mono);color:#d99000"></span><button class="ns-btn" onclick="bdCloseLinkReview()">Back to preview</button><button id="bdApplyReviewBtn" class="ns-btn primary" onclick="bdApplyLinkReview()">Apply review</button></div></div></div>`;
+  const host=document.createElement("div");host.innerHTML=html;document.body.appendChild(host.firstElementChild);
+  bdApplyLinkGateState();
+}
+function _bdCandidateAssignNames(excludeName){
+  if(!_pendingLoad||!_pendingLoad.bdDecisions)return[];
+  return Object.values(_pendingLoad.bdDecisions).filter(d=>d.kind==="directory"&&d.name!==excludeName).map(d=>d.name).sort();
+}
+function bdCloseLinkReview(){document.getElementById("bdLinkReviewOverlay")?.remove();}
+function bdSetRole(name,role){
+  if(!_pendingLoad||!_pendingLoad.bdDecisions||!_pendingLoad.bdDecisions[name])return;
+  const d=_pendingLoad.bdDecisions[name];d.role=role;if(role!=="agent")d.reportsTo="";if(role!=="rename")d.assignName="";
+  bdOpenLinkReview();_refreshParsePreviewLoadState();
+}
+function bdSetReportsTo(name,value){
+  if(!_pendingLoad||!_pendingLoad.bdDecisions||!_pendingLoad.bdDecisions[name])return;
+  _pendingLoad.bdDecisions[name].reportsTo=value;_refreshParsePreviewLoadState();
+}
+function bdSetAssignName(name,value){
+  if(!_pendingLoad||!_pendingLoad.bdDecisions||!_pendingLoad.bdDecisions[name])return;
+  _pendingLoad.bdDecisions[name].assignName=value;_refreshParsePreviewLoadState();
+}
+function bdApplyLinkReview(){
+  const unresolved=bdLinkGateUnresolved();
+  if(unresolved.length){toast("Review "+unresolved.length+" remaining decision"+(unresolved.length===1?"":"s"),"warn");return;}
+  bdCloseLinkReview();_refreshParsePreviewLoadState();toast("Unlinked people ready to load","ok",2200);
+}
+// Applied once loadIntoWorkspace has committed S.entries/S.people for this import.
+function bdApplyLinkDecisions(decisions){
+  Object.values(decisions||{}).forEach(d=>{
+    if(d.kind==="roleIdentity"){
+      if(d.role==="rename"&&d.assignName&&d.assignName!==d.name){
+        (S.entries||[]).forEach(e=>{if(e&&e.name===d.name)e.name=d.assignName;});
+        delete S.people[d.name];
+      }
+      return;// "keep" leaves the role/queue name as-is
+    }
+    const reportsTo=d.reportsTo==="__unassigned__"?null:(d.reportsTo||null);
+    ensurePerson(d.name,{role:d.role==="leader"?"leader":"agent",teamLeader:d.role==="leader"?null:reportsTo,birthday:d.monthDay||null,source:"directory"});
+  });
+  syncPeopleFromEntries();
+}
+Object.assign(window,{bdOpenLinkReview,bdCloseLinkReview,bdSetRole,bdSetReportsTo,bdSetAssignName,bdApplyLinkReview});
+
+const bdBaseShowParsePreview=showParsePreview;
+showParsePreview=function(wb,filename,manualOverride,sourceMeta,opts){
+  bdBaseShowParsePreview(wb,filename,manualOverride,sourceMeta,opts);
+  if(!_pendingLoad)return;
+  bdInjectLinkGate(_pendingLoad.scan);
+};
+
+const bdBaseRefreshPreview=_refreshParsePreviewLoadState;
+_refreshParsePreviewLoadState=function(){bdBaseRefreshPreview();bdApplyLinkGateState();};
+
+const bdBaseConfirmParsePreview=confirmParsePreview;
+confirmParsePreview=function(){
+  const unresolved=bdLinkGateUnresolved();
+  if(unresolved.length){toast("Resolve "+unresolved.length+" unlinked "+(unresolved.length===1?"person":"people")+" before loading","warn",3800);_refreshParsePreviewLoadState();return;}
+  NS.pendingBdDecisions=_pendingLoad&&_pendingLoad.bdDecisions?JSON.parse(JSON.stringify(_pendingLoad.bdDecisions)):null;
+  return bdBaseConfirmParsePreview();
+};
+
+const bdBaseLoadIntoWorkspace=loadIntoWorkspace;
+loadIntoWorkspace=function(wb,sourceName,opts){
+  const decisions=NS.pendingBdDecisions;NS.pendingBdDecisions=null;
+  const result=bdBaseLoadIntoWorkspace(wb,sourceName,opts);
+  if(decisions)bdApplyLinkDecisions(decisions);
+  return result;
 };
 
 const nsBaseRestoreFromSaveFile=restoreFromSaveFile;
