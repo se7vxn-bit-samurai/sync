@@ -1438,10 +1438,17 @@ body[data-theme="tide"]:is([data-variant="seafoam-day"],[data-variant="ice-sheet
 button.sd-clock-extra{cursor:pointer;font-family:inherit}
 button.sd-clock-extra:hover{border-color:var(--accent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 38%,transparent)}
 .sync-dashboard .sd-clock-extra b{display:block;font-family:'JetBrains Mono','DM Mono',monospace;font-size:13px;color:var(--text);line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sync-dashboard .sd-clock-extra span{display:block;margin-top:5px;font-size:9px;text-transform:uppercase;color:var(--tm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sync-dashboard .sd-dice-pair{display:inline-flex;gap:4px;vertical-align:middle}
 .sync-dashboard .sd-dice-icon{display:inline-grid!important;grid-template-columns:repeat(3,4px);grid-template-rows:repeat(3,4px);gap:2px;width:24px;height:24px;border:1px solid var(--bdr);border-radius:6px;background:linear-gradient(145deg,var(--bg2),var(--bg));place-content:center;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 16%,transparent);transform-origin:50% 68%}
-.sync-dashboard .sd-dice-icon i{width:4px;height:4px;border-radius:50%;background:var(--accent);opacity:.95}.sync-dashboard .sd-dice-icon i:nth-child(1){grid-column:1;grid-row:1}.sync-dashboard .sd-dice-icon i:nth-child(2){grid-column:3;grid-row:1}.sync-dashboard .sd-dice-icon i:nth-child(3){grid-column:2;grid-row:2}.sync-dashboard .sd-dice-icon i:nth-child(4){grid-column:1;grid-row:3}.sync-dashboard .sd-dice-icon i:nth-child(5){grid-column:3;grid-row:3}
-.sync-dashboard .sd-clock-extra.shuffle{position:relative;overflow:hidden}.sync-dashboard .sd-clock-extra.shuffle:before{content:"";position:absolute;inset:auto -15px 6px;height:8px;border-radius:50%;background:color-mix(in srgb,var(--accent) 25%,transparent);filter:blur(4px);opacity:0;transform:scaleX(.4);pointer-events:none}.sync-dashboard .sd-clock-extra.shuffle.rolling:before{animation:sd-dice-shadow .7s ease-in-out}.sync-dashboard .sd-clock-extra.shuffle.rolling .sd-dice-icon{animation:sd-dice-throw .7s cubic-bezier(.2,.76,.26,1)}.sync-dashboard .sd-clock-extra.shuffle.rolling .sd-dice-icon i{animation:sd-dice-pips .18s steps(2,end) 4}.sync-dashboard .sd-clock-extra.shuffle.rolling span{color:var(--accent)}
-@keyframes sd-colorway-flow{to{background-position:180% 0}}@keyframes sd-colorway-breathe{50%{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--swatch-b) 75%,transparent),0 0 23px color-mix(in srgb,var(--swatch-b) 28%,transparent)}}@keyframes sd-dice-throw{0%{transform:translate(0,0) rotate(0)}20%{transform:translate(6px,-8px) rotate(115deg)}48%{transform:translate(-5px,-15px) rotate(285deg)}74%{transform:translate(4px,-5px) rotate(520deg)}100%{transform:translate(0,0) rotate(720deg)}}@keyframes sd-dice-shadow{35%,70%{opacity:.85;transform:scaleX(1.2)}100%{opacity:0;transform:scaleX(.45)}}@keyframes sd-dice-pips{50%{opacity:.22;transform:scale(.55)}}
+.sync-dashboard .sd-dice-icon i{width:4px;height:4px;border-radius:50%;background:var(--accent);opacity:0}.sync-dashboard .sd-dice-icon i:nth-child(1){grid-column:1;grid-row:1}.sync-dashboard .sd-dice-icon i:nth-child(2){grid-column:2;grid-row:1}.sync-dashboard .sd-dice-icon i:nth-child(3){grid-column:3;grid-row:1}.sync-dashboard .sd-dice-icon i:nth-child(4){grid-column:1;grid-row:2}.sync-dashboard .sd-dice-icon i:nth-child(5){grid-column:2;grid-row:2}.sync-dashboard .sd-dice-icon i:nth-child(6){grid-column:3;grid-row:2}.sync-dashboard .sd-dice-icon i:nth-child(7){grid-column:1;grid-row:3}.sync-dashboard .sd-dice-icon i:nth-child(8){grid-column:2;grid-row:3}.sync-dashboard .sd-dice-icon i:nth-child(9){grid-column:3;grid-row:3}
+.sync-dashboard .sd-dice-icon[data-face="1"] i:nth-child(5){opacity:.95}
+.sync-dashboard .sd-dice-icon[data-face="2"] i:nth-child(1),.sync-dashboard .sd-dice-icon[data-face="2"] i:nth-child(9){opacity:.95}
+.sync-dashboard .sd-dice-icon[data-face="3"] i:nth-child(1),.sync-dashboard .sd-dice-icon[data-face="3"] i:nth-child(5),.sync-dashboard .sd-dice-icon[data-face="3"] i:nth-child(9){opacity:.95}
+.sync-dashboard .sd-dice-icon[data-face="4"] i:nth-child(1),.sync-dashboard .sd-dice-icon[data-face="4"] i:nth-child(3),.sync-dashboard .sd-dice-icon[data-face="4"] i:nth-child(7),.sync-dashboard .sd-dice-icon[data-face="4"] i:nth-child(9){opacity:.95}
+.sync-dashboard .sd-dice-icon[data-face="5"] i:nth-child(1),.sync-dashboard .sd-dice-icon[data-face="5"] i:nth-child(3),.sync-dashboard .sd-dice-icon[data-face="5"] i:nth-child(5),.sync-dashboard .sd-dice-icon[data-face="5"] i:nth-child(7),.sync-dashboard .sd-dice-icon[data-face="5"] i:nth-child(9){opacity:.95}
+.sync-dashboard .sd-dice-icon[data-face="6"] i:nth-child(1),.sync-dashboard .sd-dice-icon[data-face="6"] i:nth-child(3),.sync-dashboard .sd-dice-icon[data-face="6"] i:nth-child(4),.sync-dashboard .sd-dice-icon[data-face="6"] i:nth-child(6),.sync-dashboard .sd-dice-icon[data-face="6"] i:nth-child(7),.sync-dashboard .sd-dice-icon[data-face="6"] i:nth-child(9){opacity:.95}
+.sync-dashboard .sd-clock-extra.shuffle{position:relative;overflow:hidden}.sync-dashboard .sd-clock-extra.shuffle:before{content:"";position:absolute;inset:auto -15px 6px;height:8px;border-radius:50%;background:color-mix(in srgb,var(--accent) 25%,transparent);filter:blur(4px);opacity:0;transform:scaleX(.4);pointer-events:none}.sync-dashboard .sd-clock-extra.shuffle.rolling:before{animation:sd-dice-shadow .7s ease-in-out}.sync-dashboard .sd-clock-extra.shuffle.rolling .sd-dice-icon{animation:sd-dice-throw .7s cubic-bezier(.2,.76,.26,1)}.sync-dashboard .sd-clock-extra.shuffle.rolling .sd-dice-icon:nth-child(2){animation-delay:.04s}.sync-dashboard .sd-clock-extra.shuffle.rolling .sd-dice-icon i{animation:sd-dice-pips .18s steps(2,end) 4}.sync-dashboard .sd-clock-extra.shuffle.rolling span{color:var(--accent)}
+@keyframes sd-colorway-flow{to{background-position:180% 0}}@keyframes sd-colorway-breathe{50%{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--swatch-b) 75%,transparent),0 0 23px color-mix(in srgb,var(--swatch-b) 28%,transparent)}}@keyframes sd-dice-throw{0%{transform:translate(0,0) rotate(0)}20%{transform:translate(6px,-8px) rotate(115deg)}48%{transform:translate(-5px,-15px) rotate(285deg)}74%{transform:translate(4px,-5px) rotate(520deg)}100%{transform:translate(var(--dx,0),var(--dy,0)) rotate(var(--rot,720deg))}}@keyframes sd-dice-shadow{35%,70%{opacity:.85;transform:scaleX(1.2)}100%{opacity:0;transform:scaleX(.45)}}@keyframes sd-dice-pips{50%{opacity:.22;transform:scale(.55)}}
 .sync-dashboard .sd-week-tools{display:flex;align-items:center;gap:5px}.sync-dashboard .sd-week-tools button{width:24px;height:22px;border:1px solid var(--bdr);border-radius:7px;background:color-mix(in srgb,var(--bg) 78%,transparent);color:var(--accent);font-family:'DM Mono',monospace;cursor:pointer}
 .sync-dashboard .sd-week-tools button:hover{border-color:var(--accent);background:var(--al)}
 .sync-dashboard .sd-blueprint-preview{display:flex;flex-direction:column;gap:7px;min-width:0;overflow-x:auto;padding-bottom:3px}
@@ -1652,6 +1659,7 @@ body.sync-universal-active .ns-ops-main .ns-cross-department-action{pointer-even
 .pl-controls{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .pl-controls select,.pl-controls input{padding:4px 8px;border:1px solid var(--bdr);border-radius:6px;font-family:inherit;font-size:12px;background:var(--bg);color:var(--text)}
 .pl-btn{padding:4px 10px;border:1px solid var(--bdr);border-radius:6px;background:transparent;color:var(--accent);font-family:inherit;font-size:11px;font-weight:500;cursor:pointer;transition:all .12s}
+.zip-pick-list{max-height:300px;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;padding:8px 10px;display:flex;flex-direction:column;gap:4px}
 .pl-btn:hover{background:var(--al)}
 .pl-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 .pl-btn.danger{color:#dc2626;border-color:rgba(220,38,38,.3)}.pl-btn.danger:hover{background:rgba(220,38,38,.1)}
@@ -4520,7 +4528,11 @@ function rSyncDashboard(el){
   const themeName=(TH[S.th]&&TH[S.th].n)||S.th||"Theme";
   const variantName=typeof _themeVariantName==="function"?_themeVariantName(S.th||"surge",S.thVariant||0):"";
   const variantLabel=typeof _themeVariantLabel==="function"?_themeVariantLabel(variantName):X(variantName||"Core");
-  const clockExtras='<div class="sd-clock-extras"><div class="sd-clock-extra"><b>'+X(floorStart+'-'+floorEnd)+'</b><span>Floor window</span></div><button class="sd-clock-extra" onclick="openSettings()" title="Open settings"><b>Settings</b><span>Open panel</span></button><div class="sd-clock-extra"><b>'+X(themeName)+'</b><span>'+X(variantLabel)+'</span></div><button class="sd-clock-extra shuffle" onclick="shuffleDashboardColorway(this)" title="Throw dice and shuffle colourway"><b class="sd-dice-icon" aria-label="Shuffle colourway"><i></i><i></i><i></i><i></i><i></i></b><span>Shuffle colourway</span></button></div>';
+  const dicePips='<i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>';
+  // Faces persist in S so a shuffle's result survives the dashboard rerender it triggers
+  // (shuffleThemeColorway rebuilds this whole button) instead of snapping back to a default.
+  const diceFaces=Array.isArray(S._diceFaces)&&S._diceFaces.length===2?S._diceFaces:[3,4];
+  const clockExtras='<div class="sd-clock-extras"><div class="sd-clock-extra"><b>'+X(floorStart+'-'+floorEnd)+'</b><span>Floor window</span></div><button class="sd-clock-extra" onclick="openSettings()" title="Open settings"><b>Settings</b><span>Open panel</span></button><div class="sd-clock-extra"><b>'+X(themeName)+'</b><span>'+X(variantLabel)+'</span></div><button class="sd-clock-extra shuffle" onclick="shuffleDashboardColorway(this)" title="Throw dice and shuffle colourway (they always add up to 7)"><span class="sd-dice-pair" aria-label="Shuffle colourway"><b class="sd-dice-icon" data-face="'+diceFaces[0]+'">'+dicePips+'</b><b class="sd-dice-icon" data-face="'+diceFaces[1]+'">'+dicePips+'</b></span><span>Shuffle colourway</span></button></div>';
   const clockHtml='<div class="sd-clock-panel"><div class="sd-clock-grid"><div class="sd-clock"><b>'+saNow+'</b><span>South Africa</span></div><div class="sd-clock"><b>'+ukNow+'</b><span>United Kingdom</span></div></div>'+colorwayHtml+clockExtras+'</div>';
   const gotoHtml='<div class="sd-jump-grid"><button onclick="railNavToday()">Today</button><button onclick="railNavCalendar(&quot;cards&quot;)">Cards</button><button onclick="railNavCalendar(&quot;overtime&quot;)">OT</button><button onclick="railNavPeople(&quot;dashboard&quot;)">People</button><button onclick="railNavAnalytics(&quot;blueprint&quot;)">Blueprint</button><button onclick="railNavAnalytics(&quot;data&quot;)">Data</button></div>';
   const dept=S.activeDept||"default";
@@ -13061,8 +13073,26 @@ function shuffleDashboardColorway(button){
   button.dataset.rolling='1';
   button.disabled=true;
   button.classList.add('rolling');
+  // Two dice, always adding up to 7 (7OS easter egg) — each throw lands at a random
+  // offset/rotation within the box so they never settle in exactly the same spot twice.
+  const a=1+Math.floor(Math.random()*6),faces=[a,7-a];
+  S._diceFaces=faces;// survives the rerender shuffleThemeColorway() triggers below
+  button.querySelectorAll('.sd-dice-icon').forEach((die,i)=>{
+    die.setAttribute('data-face',String(faces[i]));
+    die.style.setProperty('--dx',(Math.random()*10-5).toFixed(1)+'px');
+    die.style.setProperty('--dy',(Math.random()*10-5).toFixed(1)+'px');
+    die.style.setProperty('--rot',(720+Math.floor(Math.random()*360))+'deg');
+  });
   // Let the throw finish before the dashboard redraws in the newly selected colourway.
-  window.setTimeout(()=>shuffleThemeColorway(),700);
+  window.setTimeout(()=>{
+    shuffleThemeColorway();
+    // Reset explicitly rather than relying on the surface rerender to replace this node —
+    // that rerender doesn't always happen (see the `else` branch in shuffleThemeColorway),
+    // and a button left disabled/rolling forever would be a real dead-end for the user.
+    button.dataset.rolling='0';
+    button.disabled=false;
+    button.classList.remove('rolling');
+  },700);
 }
 function _buildMastheadThemeControls(){
   const swatches=[
@@ -29988,17 +30018,17 @@ function _renderCardsZipPicker(){
   });
   h+=`<label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:3px 7px;border-radius:6px;border:1px solid var(--bdr)"><input type="checkbox" ${st.showCardWk!==false?'checked':''} onchange="_cardsZipSetShowCardWeek(this.checked)" style="accent-color:var(--accent);width:12px;height:12px"><span style="font-size:11px;color:var(--text)">Wk column</span></label>`;
   h+=`</div>`;
-  h+=`<div style="padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:12px;overflow:auto">`;
+  h+=`<div style="padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:12px">`;
   h+=`<div style="border:1px solid var(--bdr);border-radius:10px;overflow:hidden">`;
   h+=`<div style="padding:8px 10px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between"><span style="font-size:11px;font-weight:700;color:var(--accent)">Leaders (${cat.leaders.length})</span><span style="display:flex;gap:4px"><button class="pl-btn" style="font-size:10px;padding:2px 6px" onclick="_cardsZipSetLeaders('all')">All</button><button class="pl-btn" style="font-size:10px;padding:2px 6px" onclick="_cardsZipSetLeaders('current')">Current</button><button class="pl-btn" style="font-size:10px;padding:2px 6px" onclick="_cardsZipSetLeaders('none')">None</button></span></div>`;
-  h+=`<div style="max-height:300px;overflow:auto;padding:8px 10px;display:flex;flex-direction:column;gap:4px">`;
+  h+=`<div class="zip-pick-list">`;
   cat.leaders.forEach(n=>{
     h+=`<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text);cursor:pointer"><input type="checkbox" ${selectedLeaderSet.has(n)?"checked":""} onchange="_cardsZipToggleLeader('${XJS(n)}')" style="accent-color:var(--accent)"> ${X(n)}</label>`;
   });
   h+=`</div></div>`;
   h+=`<div style="border:1px solid var(--bdr);border-radius:10px;overflow:hidden">`;
   h+=`<div style="padding:8px 10px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between"><span style="font-size:11px;font-weight:700;color:var(--accent)">Months (${availableMonths.length})</span><span style="display:flex;gap:4px"><button class="pl-btn" style="font-size:10px;padding:2px 6px" onclick="_cardsZipSetMonths('all')">All</button><button class="pl-btn" style="font-size:10px;padding:2px 6px" onclick="_cardsZipSetMonths('current')">Current</button><button class="pl-btn" style="font-size:10px;padding:2px 6px" onclick="_cardsZipSetMonths('none')">None</button></span></div>`;
-  h+=`<div style="max-height:300px;overflow:auto;padding:8px 10px;display:flex;flex-direction:column;gap:4px">`;
+  h+=`<div class="zip-pick-list">`;
   cat.months.filter(m=>availableMonths.includes(m.key)).forEach(m=>{
     h+=`<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text);cursor:pointer"><input type="checkbox" ${selectedMonthSet.has(m.key)?"checked":""} onchange="_cardsZipToggleMonth('${m.key}')" style="accent-color:var(--accent)"> ${X(m.label)}</label>`;
   });
@@ -32262,6 +32292,8 @@ function nsInstallStyle(){
     .ns-native-overlay{position:fixed;inset:0;z-index:10020;background:rgba(0,0,0,.74);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px}.ns-native-modal{width:min(850px,96vw);max-height:90vh;overflow:auto;border:1px solid var(--bdr);border-radius:10px;background:var(--bg);box-shadow:var(--sl)}.ns-native-head{display:flex;align-items:center;gap:10px;padding:15px 17px;border-bottom:1px solid var(--bdr)}.ns-native-head h3{font-size:15px;margin:0}.ns-native-head small{display:block;color:var(--tm);font:10px var(--mono);margin-top:3px}.ns-native-body{padding:14px 17px}.ns-native-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--bdr);border-radius:6px;overflow:hidden}.ns-native-stat{padding:12px;border-right:1px solid var(--bdr)}.ns-native-stat:last-child{border-right:0}.ns-native-stat b{display:block;font:800 20px var(--mono);color:var(--accent)}.ns-native-stat span{font-size:9px;text-transform:uppercase;color:var(--tm)}.ns-native-types{display:flex;gap:5px;flex-wrap:wrap;margin:12px 0}.ns-native-type{padding:4px 8px;border:1px solid var(--accent);background:var(--al);color:var(--accent);border-radius:4px;font:10px var(--mono)}.ns-native-actions{display:flex;justify-content:flex-end;gap:8px;padding:12px 17px;border-top:1px solid var(--bdr)}
     .ns-identity-gate{margin:10px 16px 0;padding:10px 12px;border:1px solid rgba(245,158,11,.38);background:rgba(245,158,11,.07);border-radius:7px;display:flex;align-items:center;gap:10px}.ns-identity-gate>div{min-width:0;flex:1}.ns-identity-gate b{display:block;font-size:11px;color:#d99000}.ns-identity-gate span{display:block;margin-top:2px;font:9px var(--mono);color:var(--tm)}.ns-identity-review-overlay{z-index:10040}.ns-identity-review-modal{width:min(940px,96vw);height:min(760px,90vh);display:grid;grid-template-rows:auto minmax(0,1fr) auto;overflow:hidden;border:1px solid var(--bdr);border-radius:10px;background:var(--bg);box-shadow:var(--sl)}.ns-identity-review-body{overflow:auto;padding:12px 16px}.ns-identity-review-section{border:1px solid var(--bdr);border-radius:7px;overflow:hidden;margin-bottom:10px}.ns-identity-review-note{padding:9px 11px;margin-bottom:10px;border-left:3px solid var(--accent);background:var(--al);font-size:10px;color:var(--tm);line-height:1.5}
     .bd-link-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:9px 11px;border-bottom:1px solid var(--bdr)}.bd-link-row:last-child{border-bottom:0}.bd-link-row strong{font-size:11px;flex:0 0 auto;min-width:110px}.bd-link-row select{min-height:30px;border:1px solid var(--bdr);border-radius:5px;background:var(--card);color:var(--text);font:11px inherit;padding:5px 7px;flex:1 1 160px;min-width:140px}
+    .bd-link-pick{width:15px;height:15px;flex:0 0 auto}
+    .bd-link-bulk{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid var(--bdr);background:color-mix(in srgb,var(--al) 45%,transparent);position:sticky;top:0;z-index:2}.bd-link-bulk select{min-height:30px;border:1px solid var(--bdr);border-radius:5px;background:var(--card);color:var(--text);font:11px inherit;padding:5px 7px;flex:1 1 160px;min-width:140px}
     .ns-ops{display:flex;flex-direction:column;min-height:100%;background:var(--bg)}.ns-ops-context{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 12px;border-bottom:1px solid var(--bdr);font:10px var(--mono);color:var(--tm)}.ns-ops-main{padding:12px;overflow:auto;flex:1}.ns-toolbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:10px}.ns-toolbar input,.ns-toolbar select{min-height:30px;border:1px solid var(--bdr);border-radius:5px;background:var(--card);color:var(--text);font:11px inherit;padding:5px 8px}.ns-toolbar .grow{flex:1;min-width:180px}.ns-btn{min-height:30px;padding:5px 10px;border:1px solid var(--bdr);border-radius:5px;background:var(--card);color:var(--text);font:10px var(--mono);cursor:pointer}.ns-btn:hover{border-color:var(--accent);color:var(--accent)}.ns-btn.primary{background:var(--accent);border-color:var(--accent);color:#07110f;font-weight:800}.ns-btn.danger{color:#dc2626}.ns-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:10px}.ns-kpi{padding:10px 11px;border:1px solid var(--bdr);border-radius:6px;background:var(--card)}.ns-kpi b{display:block;font:800 20px var(--mono);color:var(--accent)}.ns-kpi span{font-size:9px;color:var(--tm);text-transform:uppercase}.ns-split{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr);gap:10px}.ns-panel{border:1px solid var(--bdr);border-radius:6px;background:var(--card);overflow:hidden}.ns-panel-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:36px;padding:8px 10px;border-bottom:1px solid var(--bdr)}.ns-panel-hd h3{font-size:12px;margin:0}.ns-panel-hd span{font:9px var(--mono);color:var(--tm)}.ns-panel-body{padding:9px 10px}.ns-table-wrap{overflow:auto}.ns-table{width:100%;border-collapse:collapse;font-size:10px}.ns-table th,.ns-table td{padding:7px 8px;border-bottom:1px solid var(--bdr);text-align:left;vertical-align:middle}.ns-table th{position:sticky;top:0;background:var(--bg2);color:var(--tm);font:9px var(--mono);text-transform:uppercase;z-index:1}.ns-table tr:hover td{background:var(--al)}.ns-labels{display:flex;gap:3px;flex-wrap:wrap}.ns-label{padding:2px 5px;border:1px solid var(--bdr);border-radius:4px;font:9px var(--mono);color:var(--tm)}.ns-label.ready{border-color:var(--ok);color:var(--ok);background:color-mix(in srgb,var(--ok) 8%,transparent)}.ns-tree{font-size:10px}.ns-tree-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;padding:6px 7px;border-bottom:1px solid var(--bdr)}.ns-tree-row b{font-size:10px}.ns-tree-row small{display:block;color:var(--tm);margin-top:2px}.ns-field{display:flex;flex-direction:column;gap:4px}.ns-field label{font:9px var(--mono);text-transform:uppercase;color:var(--tm)}.ns-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.ns-field.span-2{grid-column:span 2}.ns-empty{padding:24px 12px;text-align:center;color:var(--tm);font-size:11px}
     .ns-conflict-layout{display:grid;grid-template-columns:minmax(210px,.28fr) minmax(0,.72fr);gap:10px}.ns-conflict-list{border:1px solid var(--bdr);border-radius:6px;background:var(--card);max-height:570px;overflow:auto}.ns-conflict-item{display:block;width:100%;padding:9px 10px;border:0;border-bottom:1px solid var(--bdr);background:transparent;color:var(--text);text-align:left;cursor:pointer}.ns-conflict-item:hover,.ns-conflict-item.active{background:var(--al)}.ns-conflict-item b,.ns-conflict-item span,.ns-conflict-item small{display:block}.ns-conflict-item span{margin-top:3px;font:9px var(--mono);overflow:hidden;text-overflow:ellipsis}.ns-conflict-item small{margin-top:3px;color:var(--tm);font-size:9px}.ns-conflict-table code{display:block;max-width:330px;white-space:pre-wrap;overflow-wrap:anywhere;font:9px var(--mono);color:var(--text)}.ns-conflict-table select{min-height:28px;border:1px solid var(--bdr);border-radius:4px;background:var(--card);color:var(--text);font:10px inherit;padding:3px 5px}
     @media(max-width:900px){.ns-shared-row{grid-template-columns:1fr}.ns-native-stats,.ns-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.ns-split,.ns-conflict-layout{grid-template-columns:1fr}.ns-form-grid{grid-template-columns:1fr}.ns-field.span-2{grid-column:span 1}}
@@ -32675,8 +32707,9 @@ function bdApplyLinkGateState(){
 function bdOpenLinkReview(){
   if(!_pendingLoad||!_pendingLoad.bdDecisions)return;
   document.getElementById("bdLinkReviewOverlay")?.remove();
-  const rows=Object.values(_pendingLoad.bdDecisions).map(d=>{
-    const id=nsHash(d.name),leaderOpts=_bdCandidateLeaders();
+  const allDecisions=Object.values(_pendingLoad.bdDecisions),leaderOpts=_bdCandidateLeaders();
+  const rows=allDecisions.map(d=>{
+    const id=nsHash(d.name);
     // A roleIdentity row (a schedule sheet with no name column) can only be renamed to a
     // real linked person or kept as the role/queue name — this app treats whoever owns
     // parsed schedule rows as a "leader" (schedule owner), so offering a plain Agent/Team
@@ -32692,11 +32725,46 @@ function bdOpenLinkReview(){
     const assignVisible=d.kind==="roleIdentity"&&d.role==="rename";
     const assignSelect=d.kind==="roleIdentity"?`<select id="bdAssign_${id}" style="${assignVisible?"":"display:none"}" onchange="bdSetAssignName('${XJS(d.name)}',this.value)"><option value="">Which person…</option>${_bdCandidateAssignNames(d.name).map(n=>`<option value="${XA(n)}"${d.assignName===n?" selected":""}>${X(n)}</option>`).join("")}</select>`:"";
     const meta=d.kind==="directory"?`<span style="font-size:10px;color:var(--tm)">Birthday ${X(d.monthDay||"")} · from ${X(d.sheet||"")}</span>`:`<span style="font-size:10px;color:var(--tm)">Schedule identity with no name column (sheet "${X(d.sheet||d.name)}")</span>`;
-    return`<div class="bd-link-row"><strong>${X(d.name)}</strong>${meta}${roleSelect}${reportsToSelect}${assignSelect}</div>`;
+    const pick=`<input class="bd-link-pick" type="checkbox" onchange="bdMarkLinkReview('${XJS(d.name)}',this.checked)" aria-label="Select ${XA(d.name)}"${d._selected?" checked":""}>`;
+    return`<div class="bd-link-row">${pick}<strong>${X(d.name)}</strong>${meta}${roleSelect}${reportsToSelect}${assignSelect}</div>`;
   }).join("");
-  const html=`<div id="bdLinkReviewOverlay" class="ns-native-overlay ns-identity-review-overlay" role="dialog" aria-modal="true" aria-label="Unlinked people review"><div class="ns-identity-review-modal"><div class="ns-native-head"><div style="flex:1;min-width:0"><h3>Unlinked people review</h3><small>Decide each person's role and who agents report to before loading.</small></div><button class="ns-btn" onclick="bdCloseLinkReview()" aria-label="Close review">Close</button></div><div class="ns-identity-review-body"><section class="ns-identity-review-section">${rows}</section></div><div class="ns-native-actions"><span id="bdReviewCount" style="margin-right:auto;align-self:center;font:10px var(--mono);color:#d99000"></span><button class="ns-btn" onclick="bdCloseLinkReview()">Back to preview</button><button id="bdApplyReviewBtn" class="ns-btn primary" onclick="bdApplyLinkReview()">Apply review</button></div></div></div>`;
+  const bulkReportsOpts=leaderOpts.map(n=>`<option value="${XA(n)}">${X(n)}</option>`).join("")+`<option value="__unassigned__">Unassigned (decide later)</option>`;
+  const bulk=allDecisions.length>1?`<div class="bd-link-bulk"><button class="ns-btn" onclick="bdSelectLinkReview(true)">Select all</button><button class="ns-btn" onclick="bdSelectLinkReview(false)">Clear</button><span></span><button class="ns-btn primary" onclick="bdBulkSetRole('agent',false)">Agent (selected)</button><button class="ns-btn" onclick="bdBulkSetRole('leader',false)">Team Leader (selected)</button><button class="ns-btn" onclick="bdBulkSetRole('agent',true)">Agent (all)</button><button class="ns-btn" onclick="bdBulkSetRole('leader',true)">Team Leader (all)</button><select id="bdBulkReportsTo"><option value="">Reports to…</option>${bulkReportsOpts}</select><button class="ns-btn" onclick="bdBulkSetReportsTo($('bdBulkReportsTo').value,false)">Apply to selected</button></div>`:"";
+  const html=`<div id="bdLinkReviewOverlay" class="ns-native-overlay ns-identity-review-overlay" role="dialog" aria-modal="true" aria-label="Unlinked people review"><div class="ns-identity-review-modal"><div class="ns-native-head"><div style="flex:1;min-width:0"><h3>Unlinked people review</h3><small>Decide each person's role and who agents report to before loading.</small></div><button class="ns-btn" onclick="bdCloseLinkReview()" aria-label="Close review">Close</button></div><div class="ns-identity-review-body"><section class="ns-identity-review-section">${bulk}${rows}</section></div><div class="ns-native-actions"><span id="bdReviewCount" style="margin-right:auto;align-self:center;font:10px var(--mono);color:#d99000"></span><button class="ns-btn" onclick="bdCloseLinkReview()">Back to preview</button><button id="bdApplyReviewBtn" class="ns-btn primary" onclick="bdApplyLinkReview()">Apply review</button></div></div></div>`;
   const host=document.createElement("div");host.innerHTML=html;document.body.appendChild(host.firstElementChild);
   bdApplyLinkGateState();
+}
+function bdMarkLinkReview(name,checked){
+  if(!_pendingLoad||!_pendingLoad.bdDecisions||!_pendingLoad.bdDecisions[name])return;
+  _pendingLoad.bdDecisions[name]._selected=!!checked;
+}
+function bdSelectLinkReview(checked){
+  if(!_pendingLoad||!_pendingLoad.bdDecisions)return;
+  Object.values(_pendingLoad.bdDecisions).forEach(d=>{d._selected=!!checked;});
+  document.querySelectorAll(".bd-link-pick").forEach(input=>{input.checked=!!checked;});
+}
+function bdBulkSetRole(role,all){
+  if(!_pendingLoad||!_pendingLoad.bdDecisions)return;
+  let changed=0;
+  Object.values(_pendingLoad.bdDecisions).forEach(d=>{
+    if(d.kind==="roleIdentity")return;// only rename/keep are valid there — set individually
+    if(!(all||d._selected))return;
+    d.role=role;if(role!=="agent")d.reportsTo="";
+    changed++;
+  });
+  if(changed){bdOpenLinkReview();_refreshParsePreviewLoadState();}
+  toast(changed?changed+" "+(changed===1?"person":"people")+" set to "+(role==="leader"?"Team Leader":"Agent"):"Select one or more rows",changed?"ok":"info",2200);
+}
+function bdBulkSetReportsTo(value,all){
+  if(!_pendingLoad||!_pendingLoad.bdDecisions||!value)return;
+  let changed=0;
+  Object.values(_pendingLoad.bdDecisions).forEach(d=>{
+    if(d.kind==="roleIdentity"||d.role!=="agent")return;
+    if(!(all||d._selected))return;
+    d.reportsTo=value;changed++;
+  });
+  if(changed){bdOpenLinkReview();_refreshParsePreviewLoadState();}
+  toast(changed?changed+" "+(changed===1?"person":"people")+" now report to "+(value==="__unassigned__"?"Unassigned":value):"Select one or more Agent rows",changed?"ok":"info",2200);
 }
 function _bdCandidateAssignNames(excludeName){
   if(!_pendingLoad||!_pendingLoad.bdDecisions)return[];
@@ -32736,7 +32804,7 @@ function bdApplyLinkDecisions(decisions){
   });
   syncPeopleFromEntries();
 }
-Object.assign(window,{bdOpenLinkReview,bdCloseLinkReview,bdSetRole,bdSetReportsTo,bdSetAssignName,bdApplyLinkReview});
+Object.assign(window,{bdOpenLinkReview,bdCloseLinkReview,bdSetRole,bdSetReportsTo,bdSetAssignName,bdApplyLinkReview,bdMarkLinkReview,bdSelectLinkReview,bdBulkSetRole,bdBulkSetReportsTo});
 
 const bdBaseShowParsePreview=showParsePreview;
 showParsePreview=function(wb,filename,manualOverride,sourceMeta,opts){
