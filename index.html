@@ -28224,7 +28224,10 @@ function _syncOnSignedIn(session){
   const token=session&&session.access_token;
   if(!token||token===_syncHandledSessionToken)return;
   _syncHandledSessionToken=token;
-  syncPullWorkspace().then(async pulled=>{
+  // Guarded like the other syncPullWorkspace call sites: onAuthStateChange's INITIAL_SESSION
+  // callback can fire as a microtask before the later <script> block defining syncPullWorkspace
+  // (northstar-core.js, inlined by the standalone builder) has executed.
+  (typeof syncPullWorkspace==="function"?syncPullWorkspace():Promise.resolve(false)).then(async pulled=>{
     ren();
     // Fetch the profile exactly once here (force refresh) and hand it to both onboarding and
     // welcome-back, instead of each fetching it independently. Two independent fetches used to
