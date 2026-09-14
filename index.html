@@ -32170,6 +32170,18 @@ async function _syncGetUserId(){
   }catch(err){return null;}
 }
 
+// Personal (non-team) saves always use this fixed key, NOT nsActiveDepartmentKey(). nsCanonical()
+// is one unified store holding every department's people/schedule/OT/etc together (each record is
+// individually tagged with its own department_key internally — see NS_DEPARTMENT_TABLES) — it is
+// NOT split per department. Keying the row by whichever department tab happened to be active at
+// save time used to (a) silently duplicate the entire multi-department dataset into a separate row
+// every time the user switched tabs and saved again, and (b) made syncPullWorkspace() fetch a
+// potentially stale row on a new device that boots into "default" while the most recent save
+// actually landed under a different department's key. One fixed key means one row, always current,
+// regardless of which department tab is active. `department_key` stays meaningful for the
+// still-unbuilt team-shared-workspace path (see TODO(teams)), where distinct team departments are
+// a real, separate concept.
+const SYNC_PERSONAL_WORKSPACE_KEY="__personal__";
 async function _syncPushWorkspaceNow(){
   try{
     const userId=await _syncGetUserId();
@@ -32177,11 +32189,10 @@ async function _syncPushWorkspaceNow(){
     if(typeof _syncSetSaveDot==="function")_syncSetSaveDot("saving");
     const model=nsCanonical();
     const payload=Object.assign({},model,_syncCollectLocalKeys());
-    const deptKey=(typeof nsActiveDepartmentKey==="function"&&nsActiveDepartmentKey())||"default";
     const {error}=await sb.from("workspaces").upsert({
       owner_user_id:userId,
       team_id:null,
-      department_key:deptKey,
+      department_key:SYNC_PERSONAL_WORKSPACE_KEY,
       data:payload,
       updated_at:new Date().toISOString()
     },{onConflict:"owner_user_id,department_key"});
@@ -32223,11 +32234,14 @@ async function syncPullWorkspace(){
   try{
     const userId=await _syncGetUserId();
     if(!userId)return false;
-    const deptKey=(typeof nsActiveDepartmentKey==="function"&&nsActiveDepartmentKey())||"default";
+    // The user's own workspace always lives under the fixed SYNC_PERSONAL_WORKSPACE_KEY (see
+    // _syncPushWorkspaceNow) — never nsActiveDepartmentKey(), so a new device landing on "default"
+    // still finds the latest save regardless of which department tab was active when it was made.
     let row=null;
-    const personal=await sb.from("workspaces").select("*").eq("owner_user_id",userId).eq("department_key",deptKey).maybeSingle();
+    const personal=await sb.from("workspaces").select("*").eq("owner_user_id",userId).eq("department_key",SYNC_PERSONAL_WORKSPACE_KEY).maybeSingle();
     if(personal&&personal.data)row=personal.data;
     try{
+      const deptKey=(typeof nsActiveDepartmentKey==="function"&&nsActiveDepartmentKey())||"default";
       const memberships=await sb.from("team_members").select("team_id").eq("user_id",userId);
       const teamIds=((memberships&&memberships.data)||[]).map(m=>m.team_id).filter(Boolean);
       if(teamIds.length){
