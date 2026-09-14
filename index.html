@@ -955,6 +955,10 @@ body.th-newsprint{
 .lc-sync-signed-in .lc-sync-email{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.04em}
 .lc-sync-signed-in button{background:none;border:none;font-family:inherit;font-size:inherit;letter-spacing:.08em;text-transform:uppercase;color:var(--lc-very-faint);text-decoration:underline;cursor:pointer;padding:0;flex-shrink:0}
 .lc-sync-error{font-family:'DM Mono',monospace;font-size:clamp(6px,0.65vw,8px);color:#e5484d}
+.sync-ob-swatch{flex:1;border:1px solid var(--bd,#3a3a3a);background:var(--sw-a);border-radius:8px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:border-color .15s}
+.sync-ob-swatch i{width:16px;height:16px;border-radius:50%;background:var(--sw-b);display:block}
+.sync-ob-swatch span{font-size:10px;letter-spacing:.05em;color:var(--sw-b)}
+.sync-ob-swatch.active{border-color:var(--sw-b);box-shadow:0 0 0 1px var(--sw-b)}
 /* ── LC mode toggle ── */
 .lc-mode-toggle{display:flex;gap:1px;margin-bottom:clamp(7px,1.1vh,12px);background:var(--lc-sep-faint);border-radius:6px;padding:2px;flex-shrink:0}
 .lc-mode-btn{flex:1;font-family:'DM Mono',monospace;font-size:clamp(6px,0.68vw,8px);letter-spacing:.12em;text-transform:uppercase;padding:clamp(4px,.6vh,6px) 6px;border:none;background:transparent;color:var(--lc-faint);cursor:pointer;border-radius:4px;transition:all .15s;line-height:1.3;text-align:center}
@@ -27928,12 +27932,14 @@ async function _syncGetProfile(forceRefresh){
     const{data:userData}=await sb.auth.getUser();
     const user=userData&&userData.user;
     if(!user)return(_syncProfileCache=null);
-    const{data}=await sb.from('profiles').select('full_name,organization,role').eq('id',user.id).maybeSingle();
+    const{data}=await sb.from('profiles').select('full_name,organization,role,preferred_colorway,continuation_pref').eq('id',user.id).maybeSingle();
     _syncProfileCache={
       email:user.email||'',
       full_name:(data&&data.full_name)||'',
       organization:(data&&data.organization)||'',
       role:(data&&data.role)||'',
+      preferred_colorway:(data&&data.preferred_colorway)||'',
+      continuation_pref:(data&&data.continuation_pref)||'ask',
       googleName:(user.user_metadata&&(user.user_metadata.full_name||user.user_metadata.name))||''
     };
     return _syncProfileCache;
@@ -28012,19 +28018,43 @@ async function _syncSignInWithGoogle(){
   }
 }
 
+// The four colorways already offered on the dashboard (see the swatches array in
+// rSyncDashboard) — duplicated here as a small lookup so onboarding can offer the same choices
+// without depending on dashboard render internals.
+const SYNC_COLORWAY_SWATCHES=[
+  {k:"surge",l:"Surge",a:"#10121c",b:"#c349ee"},
+  {k:"tide",l:"Tide",a:"#0b1620",b:"#4db8c8"},
+  {k:"press",l:"Press",a:"#f3d9bd",b:"#8a6337"},
+  {k:"newsprint",l:"Newsprint",a:"#fff5c7",b:"#9381ff"}
+];
+function _syncColorwayPickerHtml(selected){
+  return SYNC_COLORWAY_SWATCHES.map(s=>`<button type="button" class="sync-ob-swatch${s.k===selected?' active':''}" data-colorway="${s.k}" onclick="_syncPickOnboardingColorway('${s.k}')" title="${X(s.l)}" style="--sw-a:${s.a};--sw-b:${s.b}"><i></i><span>${X(s.l)}</span></button>`).join('');
+}
+function _syncPickOnboardingColorway(key){
+  const wrap=document.getElementById('syncObColorways');
+  if(!wrap)return;
+  wrap.querySelectorAll('.sync-ob-swatch').forEach(el=>el.classList.toggle('active',el.dataset.colorway===key));
+  wrap.dataset.selected=key;
+  if(typeof setThemeColorway==='function')setThemeColorway(key); // live preview
+}
+
 // One-time "complete your profile" step shown right after a Google sign-in that has no saved
 // name yet (new account, or an existing account that skipped it before). Purely additive to the
-// `profiles` table (full_name/organization/role columns) — never blocks app usage; "Skip" just
-// closes it and it won't nag again until the next fresh sign-in with still-empty fields.
+// `profiles` table (full_name/organization/role/preferred_colorway columns) — never blocks app
+// usage; "Skip" just closes it and it won't nag again until the next fresh sign-in with still-
+// empty fields.
 async function _syncMaybeShowOnboarding(){
   const profile=await _syncGetProfile(true);
   if(!profile||profile.full_name)return;
   const suggested=profile.googleName||'';
+  const currentColorway=(typeof S!=='undefined'&&S.th)||'surge';
   const body=`
     <p style="margin:0 0 14px;color:var(--tx2,#888);font-size:13px;line-height:1.5">A couple of details so your workspace and greetings feel like yours.</p>
     <input type="text" id="syncObName" placeholder="Your name" value="${X(suggested)}" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1px solid var(--bd,#3a3a3a);background:var(--bg2,#1a1a1a);color:var(--tx,#eee);font-size:14px;margin-bottom:8px">
     <input type="text" id="syncObOrg" placeholder="Organization (optional)" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1px solid var(--bd,#3a3a3a);background:var(--bg2,#1a1a1a);color:var(--tx,#eee);font-size:14px;margin-bottom:8px">
     <input type="text" id="syncObRole" placeholder="Role (optional)" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1px solid var(--bd,#3a3a3a);background:var(--bg2,#1a1a1a);color:var(--tx,#eee);font-size:14px;margin-bottom:10px">
+    <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--tx2,#888);margin-bottom:6px">Preferred colourway</div>
+    <div id="syncObColorways" data-selected="${X(currentColorway)}" style="display:flex;gap:8px;margin-bottom:12px">${_syncColorwayPickerHtml(currentColorway)}</div>
     <div id="syncObError" style="display:none;color:#e5484d;font-size:12px;margin-bottom:10px"></div>
     <div style="display:flex;gap:8px">
       <button class="btn bp" id="syncObSaveBtn" style="flex:1" onclick="_syncSaveOnboarding()">Save and continue</button>
@@ -28042,6 +28072,7 @@ async function _syncSaveOnboarding(){
   const name=(document.getElementById('syncObName')?.value||'').trim();
   const org=(document.getElementById('syncObOrg')?.value||'').trim();
   const role=(document.getElementById('syncObRole')?.value||'').trim();
+  const colorway=document.getElementById('syncObColorways')?.dataset.selected||'surge';
   const errEl=document.getElementById('syncObError');
   const btn=document.getElementById('syncObSaveBtn');
   if(errEl){errEl.style.display='none';errEl.textContent='';}
@@ -28051,7 +28082,7 @@ async function _syncSaveOnboarding(){
     const{data:userData}=await sb.auth.getUser();
     const userId=userData&&userData.user&&userData.user.id;
     if(!userId)throw new Error('Not signed in');
-    const{error}=await sb.from('profiles').update({full_name:name,organization:org||null,role:role||null}).eq('id',userId);
+    const{error}=await sb.from('profiles').update({full_name:name,organization:org||null,role:role||null,preferred_colorway:colorway}).eq('id',userId);
     if(error)throw error;
     _syncProfileCache=null;
     _syncCloseOnboarding();
@@ -28063,6 +28094,41 @@ async function _syncSaveOnboarding(){
   }
 }
 
+// "Welcome back" chooser — shown only when a sign-in actually pulled down cloud data the
+// browser didn't already have (a fresh device, or after clearing local data). Local-only
+// returning visits already resume silently via the existing boot-time _restoreViewportFromState
+// check, so this modal would be redundant there. Respects continuation_pref='last' by skipping
+// straight to resuming, set via the "always continue automatically" checkbox below.
+function _syncShowWelcomeBack(profile){
+  const first=_syncFirstName(profile);
+  const body=`
+    <p style="margin:0 0 16px;color:var(--tx2,#888);font-size:13px;line-height:1.5">Welcome back${first?', '+X(first):''}. Your synced workspace is ready.</p>
+    <button class="btn bp" style="width:100%;margin-bottom:8px" onclick="_syncWelcomeBackChoice('continue')">Continue where I left off</button>
+    <button class="btn" style="width:100%;background:transparent;margin-bottom:12px" onclick="_syncWelcomeBackChoice('browse')">Show me my options instead</button>
+    <label style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--tx2,#888);cursor:pointer">
+      <input type="checkbox" id="syncWbAlways" style="margin:0">Always continue automatically — don't ask again
+    </label>`;
+  _qolModal('syncWelcomeBackModal','Welcome back','',body,'');
+}
+async function _syncWelcomeBackChoice(choice){
+  const always=document.getElementById('syncWbAlways')?.checked;
+  const modal=document.getElementById('syncWelcomeBackModal');
+  if(modal)modal.remove();
+  if(choice==='continue'&&typeof _restoreViewportFromState==='function')_restoreViewportFromState();
+  // 'browse' does nothing further — the landing screen (with its own upload/paste/blueprint
+  // options) is already what's showing, so closing the modal is the whole action.
+  if(always){
+    try{
+      const{data:userData}=await sb.auth.getUser();
+      const userId=userData&&userData.user&&userData.user.id;
+      if(userId){
+        await sb.from('profiles').update({continuation_pref:'last'}).eq('id',userId);
+        _syncProfileCache=null;
+      }
+    }catch(err){}
+  }
+}
+
 let _syncHandledSessionToken=null;
 function _syncOnSignedIn(session){
   // Cheap de-dupe: both the initial getSession() check and onAuthStateChange
@@ -28070,14 +28136,25 @@ function _syncOnSignedIn(session){
   const token=session&&session.access_token;
   if(!token||token===_syncHandledSessionToken)return;
   _syncHandledSessionToken=token;
-  syncPullWorkspace().then(pulled=>{
+  syncPullWorkspace().then(async pulled=>{
     ren();
-    // Reveal the loaded workspace (skip the empty landing screen) if the pull brought in
-    // real data and the current view hasn't already shown something.
-    if(pulled&&typeof _restoreViewportFromState==='function')_restoreViewportFromState();
+    if(!pulled)return; // nothing new came down — local boot already resumed silently if it had data
+    const profile=await _syncGetProfile();
+    if(profile&&profile.continuation_pref==='last'){
+      if(typeof _restoreViewportFromState==='function')_restoreViewportFromState();
+    }else{
+      _syncShowWelcomeBack(profile||{});
+    }
   }).catch(()=>{});
   _syncRenderAccountUI();
   _syncRenderLandingWidget();
+  // Apply the account's saved colourway (small cross-device preference — independent of the
+  // onboarding/resume prompts above, so it applies even for a returning user).
+  _syncGetProfile().then(profile=>{
+    if(profile&&profile.preferred_colorway&&typeof setThemeColorway==='function'){
+      setThemeColorway(profile.preferred_colorway);
+    }
+  }).catch(()=>{});
   // Self-gating (only shows when the profile has no saved name yet), so it's safe to call
   // on every sign-in-ish event rather than trying to distinguish "fresh" from "returning".
   _syncMaybeShowOnboarding();
