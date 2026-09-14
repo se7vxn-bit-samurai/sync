@@ -917,6 +917,14 @@ body.th-newsprint{
 .lc-feat-num{font-family:'Cinzel',serif;font-size:clamp(10px,0.9vw,12px);font-weight:700;color:var(--lc-accent);min-width:14px;padding-top:2px;opacity:.8;flex-shrink:0}
 .lc-feat-head{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(12px,1.1vw,14px);color:var(--lc-feat-head);margin-bottom:2px}
 .lc-feat-body{font-family:'Cormorant Garamond',serif;font-size:clamp(11px,1vw,13px);color:var(--lc-feat-body);line-height:1.4}
+.lc-projects{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
+.lc-projects-label{font-family:'DM Mono',monospace;font-size:clamp(9px,0.8vw,10px);letter-spacing:.18em;text-transform:uppercase;color:var(--lc-label);margin-bottom:2px}
+.lc-project-row{display:flex;align-items:center;gap:10px;padding:clamp(8px,1.1vh,12px) clamp(8px,1vw,12px);border:1px solid var(--lc-accent-faint);border-radius:8px;cursor:pointer;transition:border-color .15s,background .15s;background:transparent;text-align:left}
+.lc-project-row:hover{border-color:var(--lc-accent);background:var(--lc-dz-bg)}
+.lc-project-name{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(12px,1.1vw,14px);color:var(--lc-feat-head)}
+.lc-project-meta{font-family:'DM Mono',monospace;font-size:clamp(9px,0.8vw,10px);color:var(--lc-faint);margin-top:2px;letter-spacing:.04em}
+.lc-project-arrow{margin-left:auto;color:var(--lc-accent);font-size:14px;flex-shrink:0}
+.lc-project-more{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(11px,1vw,12px);color:var(--lc-muted);text-align:center;padding-top:4px}
 .lc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--lc-stat-sep);flex-shrink:0;margin-top:auto}
 .lc-stat{background:var(--lc-stat-bg);padding:clamp(7px,1.1vh,13px) 8px;text-align:center}
 .lc-stat-n{font-family:'Cinzel',serif;font-size:clamp(14px,1.55vw,20px);font-weight:700;color:var(--lc-accent);margin-bottom:2px}
@@ -2749,6 +2757,12 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
         </div>
         <div id="lcDesc" class="lc-desc">Schedules, people and operational decisions brought together in one trusted workflow intelligence system.</div>
       </div>
+
+      <!-- Signed-in project picker — replaces the marketing features/stats below when a signed-in
+           user has 2+ projects to choose from (see _syncRenderProjectPicker). Hidden by default;
+           a single-project account still just auto-resumes silently via the existing restore path,
+           so this only ever shows when there's a genuine choice to make. -->
+      <div id="lcProjectPicker" class="lc-projects" style="display:none"></div>
 
       <!-- Features -->
       <div class="lc-features">
@@ -28122,6 +28136,56 @@ async function _syncRenderLandingWidget(){
         <div id="syncLcError" class="lc-sync-error" style="display:none"></div>`;
     }
   }catch(err){}
+  _syncRenderProjectPicker();
+}
+// Signed-in landing state: with 2+ known projects (from the department tags already on synced
+// canonical data — real across every device, not just locally-opened tabs), the marketing feature
+// list/stats give way to a picker so signing in on a new device means "choose where to continue,"
+// not "load a file all over again." Exactly 0 or 1 project changes nothing here — a single project
+// still just auto-resumes silently via the existing _restoreViewportFromState() calls, and 0
+// projects means there's genuinely nothing to pick from yet.
+function _syncProjectPickerHtml(projects){
+  const shown=projects.slice(0,6);
+  let h='<div class="lc-projects-label">Continue a project</div>';
+  h+=shown.map(p=>{
+    const meta=[p.peopleCount?p.peopleCount+' people':'',p.scheduleCount?p.scheduleCount+' schedule rows':''].filter(Boolean).join(' · ')||'No data yet';
+    return `<button type="button" class="lc-project-row" onclick="_syncOpenProject('${XJS(p.name)}')"><div><div class="lc-project-name">${X(p.name)}</div><div class="lc-project-meta">${X(meta)}</div></div><span class="lc-project-arrow">→</span></button>`;
+  }).join('');
+  if(projects.length>shown.length)h+=`<div class="lc-project-more">+${projects.length-shown.length} more — open any project from the department switcher inside the app</div>`;
+  return h;
+}
+async function _syncRenderProjectPicker(){
+  const host=document.getElementById('lcProjectPicker');
+  if(!host)return;
+  const featuresEl=document.querySelector('.lc-features'),statsEl=document.querySelector('.lc-stats');
+  try{
+    const profile=await _syncGetProfile();
+    const projects=(profile&&typeof nsListCanonicalProjects==='function')?nsListCanonicalProjects():[];
+    if(profile&&projects.length>=2){
+      host.innerHTML=_syncProjectPickerHtml(projects);
+      host.style.display='flex';
+      if(featuresEl)featuresEl.style.display='none';
+      if(statsEl)statsEl.style.display='none';
+      return;
+    }
+  }catch(err){console.error('[sync] project picker render failed',err);}
+  host.style.display='none';host.innerHTML='';
+  if(featuresEl)featuresEl.style.display='';
+  if(statsEl)statsEl.style.display='';
+}
+// Jumps straight into a project chosen from the picker — sets the active department, rebuilds the
+// runtime schedule rows from the (already-synced) canonical data for it, registers it as an open
+// tab in the existing department-strip switcher (so switching between projects afterward keeps
+// working exactly like it does for a locally-imported one), and reveals the dashboard.
+function _syncOpenProject(name){
+  if(!name)return;
+  S.activeDept=name;
+  if(typeof nsRestoreEntriesFromCanonical==='function')nsRestoreEntriesFromCanonical();
+  if(!S.workspace||typeof S.workspace!=='object')S.workspace={};
+  if(!S.workspace[name]&&typeof saveDeptSnap==='function')saveDeptSnap(name);
+  if(typeof _restoreViewportFromState==='function')_restoreViewportFromState();
+  if(typeof updateDeptStrip==='function')updateDeptStrip();
+  if(typeof ren==='function')ren();
 }
 async function _syncSignInWithGoogle(){
   const errEl=document.getElementById('syncLcError');
@@ -32394,6 +32458,23 @@ async function syncPullWorkspace(){
   }catch(err){console.error("[sync] workspace pull failed",err);return false;}
 }
 
+// This entire file is wrapped in one top-level IIFE (see the opening `(function(){` at the very
+// top and its matching `})();` near the end) — every function above is scoped to THIS closure and
+// is NOT visible by bare name from the separate <script> block in 7os-sync-northstar.html, even
+// though that script runs after this one and both share the same `window`. Confirmed live:
+// `window.syncPullWorkspace` was `undefined` long after full page load, not just during a brief
+// startup race — meaning every `typeof X==='function'` guard in the main script around these names
+// (the manual save button, _syncOnSignedIn's own pull call, the project picker) was silently
+// succeeding into a permanent no-op, not a temporary one. Explicitly exporting the handful the main
+// script actually calls fixes that at the source, once, here, rather than patching each call site.
+window.syncPullWorkspace=syncPullWorkspace;
+window.syncPushWorkspace=syncPushWorkspace;
+window.syncFlushPendingPush=syncFlushPendingPush;
+window._syncPushWorkspaceNow=_syncPushWorkspaceNow;
+window._syncGetUserId=_syncGetUserId;
+window.nsRestoreEntriesFromCanonical=nsRestoreEntriesFromCanonical;
+window.nsListCanonicalProjects=nsListCanonicalProjects;
+
 function nsOpenDatabase(){
   if(!window.indexedDB)return Promise.reject(new Error("IndexedDB unavailable"));
   return new Promise((resolve,reject)=>{
@@ -32428,6 +32509,42 @@ function nsRestoreEntriesFromCanonical(){
     const scoped=(typeof nsScopedRows==="function")?nsScopedRows("schedule"):(nsCanonical().schedule||[]);
     S.entries=(scoped||[]).map(nsRuntimeEntry).filter(row=>row.date&&!isNaN(row.date));
   }catch(err){console.error("[sync] rebuilding runtime entries from canonical failed",err);}
+}
+
+// Enumerates the distinct projects/departments present in the canonical store (which, once synced,
+// holds every department the user has ever worked on, from any device — not just whatever's locally
+// open right now) so the signed-in landing screen can offer a "continue a project" picker instead of
+// either guessing which one to auto-resume or dumping the user back at an empty drop-zone. Reuses
+// the exact same department-key/source-map logic nsScopedRows() already uses, so counts here match
+// what actually filters into each department once opened.
+function nsListCanonicalProjects(){
+  try{
+    const model=nsCanonical(),sourceMap=nsSourceDepartmentMap(model),byKey=new Map();
+    const ensure=(key,name)=>{
+      if(!key)return null;
+      if(!byKey.has(key))byKey.set(key,{key,name:nsClean(name)||key,peopleCount:0,scheduleCount:0,lastUpdated:""});
+      const rec=byKey.get(key);
+      const cleanName=nsClean(name);
+      if(cleanName&&rec.name===rec.key)rec.name=cleanName;
+      return rec;
+    };
+    (model.sources||[]).forEach(source=>{
+      const key=nsDirectDepartmentKey(source);if(!key)return;
+      const rec=ensure(key,source.department_name||source.source_name);
+      if(rec&&source.loaded_at&&String(source.loaded_at)>String(rec.lastUpdated))rec.lastUpdated=source.loaded_at;
+    });
+    (model.people||[]).forEach(person=>{
+      const key=nsRecordDepartmentKey(person,model,sourceMap);if(!key)return;
+      const rec=ensure(key,person.home_department);
+      if(rec)rec.peopleCount++;
+    });
+    (model.schedule||[]).forEach(row=>{
+      const key=nsRecordDepartmentKey(row,model,sourceMap);if(!key)return;
+      const rec=ensure(key,row.department);
+      if(rec){rec.scheduleCount++;if(row.imported_at&&String(row.imported_at)>String(rec.lastUpdated))rec.lastUpdated=row.imported_at;}
+    });
+    return[...byKey.values()].filter(p=>p.peopleCount||p.scheduleCount).sort((a,b)=>String(b.lastUpdated||"").localeCompare(String(a.lastUpdated||"")));
+  }catch(err){console.error("[sync] listing canonical projects failed",err);return[];}
 }
 async function nsHydrateDatabase(){
   NS.hydrating=true;
@@ -34027,7 +34144,7 @@ function nsBrandSweep(){
 document.addEventListener("DOMContentLoaded",nsBrandSweep);setTimeout(nsBrandSweep,0);
 let nsLagExpected=performance.now()+1000;setInterval(()=>{const now=performance.now();NS.eventLoopLag=Math.max(0,now-nsLagExpected);nsLagExpected=now+1000;},1000);
 (()=>{
-  const doHydrate=()=>nsHydrateDatabase().then(localHydrated=>(typeof syncPullWorkspace==="function"?syncPullWorkspace():Promise.resolve(false)).then(remoteHydrated=>{
+  const doHydrate=()=>nsHydrateDatabase().then(localHydrated=>(typeof syncPullWorkspace==="function"?syncPullWorkspace():Promise.resolve(false)).then(async remoteHydrated=>{
     const hydrated=localHydrated||remoteHydrated;
     if(!hydrated)return;
     // Previously this only re-rendered when the app view (#mv) was ALREADY showing — meaning a
@@ -34037,7 +34154,12 @@ let nsLagExpected=performance.now()+1000;setInterval(()=>{const now=performance.
     // "Continue where I left off" button already uses to do exactly that; calling it here too
     // means a returning user (local reload, or signed-in with existing cloud data) lands straight
     // in their dashboard instead of at an empty drop-zone.
-    if(typeof _restoreViewportFromState==="function")_restoreViewportFromState();
+    // Exception: a signed-in user with 2+ distinct projects gets the landing-screen project picker
+    // (_syncRenderProjectPicker in the main script) instead of being silently dropped into whichever
+    // department happened to be active last — auto-resuming here would skip that choice entirely.
+    const userId=typeof _syncGetUserId==="function"?await _syncGetUserId():null;
+    const projectCount=(userId&&typeof nsListCanonicalProjects==="function")?nsListCanonicalProjects().length:0;
+    if(!(userId&&projectCount>=2)&&typeof _restoreViewportFromState==="function")_restoreViewportFromState();
     if(document.getElementById("ca"))try{ren();}catch(err){}
   }));
   const hydrate=()=>{
