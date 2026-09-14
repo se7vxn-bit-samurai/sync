@@ -897,7 +897,7 @@ body.th-newsprint{
 .lc-eyebrow{display:flex;align-items:center;gap:10px;margin-bottom:clamp(7px,1vh,12px);flex-shrink:0}
 .lc-rule{flex:1;height:1px;background:linear-gradient(to right,var(--lc-rule),transparent)}
 .lc-rule-r{background:linear-gradient(to left,var(--lc-rule),transparent);flex:0 0 22px}
-.lc-eyebrow-text{font-family:'DM Mono',monospace;font-size:clamp(7px,0.82vw,9px);letter-spacing:.22em;text-transform:uppercase;color:var(--lc-label);white-space:nowrap}
+.lc-eyebrow-text{font-family:'DM Mono',monospace;font-size:clamp(9px,0.9vw,11px);letter-spacing:.22em;text-transform:uppercase;color:var(--lc-label);white-space:nowrap}
 .lc-title-block{margin-bottom:clamp(8px,1.4vh,22px);flex-shrink:0}
 .lc-brand-lockup{display:flex;align-items:center;gap:10px;margin-bottom:clamp(10px,1.4vh,18px);align-self:flex-start;width:max-content;max-width:100%}
 .lc-sigil{width:clamp(34px,3.4vw,44px);aspect-ratio:1;border:1px solid var(--lc-rule);position:relative;display:grid;place-items:center;background:linear-gradient(135deg,rgba(255,255,255,.03),transparent);flex-shrink:0}
@@ -907,54 +907,64 @@ body.th-newsprint{
 .lc-sigil-mark{fill:var(--lc-title)}
 .lc-sigil-line{stroke:var(--lc-rule);stroke-width:1;fill:none}
 .lc-brand-copy{min-width:0}
-.lc-system-badge{display:inline-flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:clamp(5px,.58vw,7px);letter-spacing:.16em;text-transform:uppercase;color:var(--lc-accent);border-top:1px solid var(--lc-rule);padding:2px 0 0;margin-top:4px}
-.lc-kicker{font-family:'DM Mono',monospace;font-size:clamp(5px,0.62vw,7px);letter-spacing:.24em;text-transform:uppercase;color:var(--lc-faint);margin-bottom:2px}
-.lc-title{font-family:'Cinzel',serif;font-size:clamp(15px,1.75vw,24px);font-weight:800;line-height:1;letter-spacing:.08em;color:var(--lc-title);margin-bottom:2px}
-.lc-title-sub{font-family:'DM Mono',monospace;font-size:clamp(6px,.72vw,8px);font-weight:400;letter-spacing:.18em;color:var(--lc-title-sub);text-transform:uppercase;margin-bottom:0}
-.lc-desc{font-family:'Cormorant Garamond',serif;font-size:clamp(11px,1.15vw,14px);font-style:italic;color:var(--lc-desc);line-height:1.55;max-width:340px}
+.lc-system-badge{display:inline-flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:clamp(8px,.7vw,10px);letter-spacing:.16em;text-transform:uppercase;color:var(--lc-accent);border-top:1px solid var(--lc-rule);padding:2px 0 0;margin-top:4px}
+.lc-kicker{font-family:'DM Mono',monospace;font-size:clamp(8px,0.7vw,10px);letter-spacing:.24em;text-transform:uppercase;color:var(--lc-faint);margin-bottom:2px}
+.lc-title{font-family:'Cinzel',serif;font-size:clamp(16px,1.8vw,26px);font-weight:800;line-height:1;letter-spacing:.08em;color:var(--lc-title);margin-bottom:2px}
+.lc-title-sub{font-family:'DM Mono',monospace;font-size:clamp(9px,.8vw,11px);font-weight:400;letter-spacing:.18em;color:var(--lc-title-sub);text-transform:uppercase;margin-bottom:0}
+.lc-desc{font-family:'Cormorant Garamond',serif;font-size:clamp(12px,1.2vw,15px);font-style:italic;color:var(--lc-desc);line-height:1.55;max-width:340px}
 .lc-features{flex:1;min-height:0;overflow:hidden}
 .lc-feature{display:flex;align-items:flex-start;gap:12px;padding:clamp(6px,.9vh,11px) 0;border-bottom:.5px solid var(--lc-accent-faint)}
-.lc-feat-num{font-family:'Cinzel',serif;font-size:clamp(8px,0.82vw,10px);font-weight:700;color:var(--lc-accent);min-width:14px;padding-top:2px;opacity:.8;flex-shrink:0}
-.lc-feat-head{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(11px,1.05vw,13px);color:var(--lc-feat-head);margin-bottom:2px}
-.lc-feat-body{font-family:'Cormorant Garamond',serif;font-size:clamp(10px,.95vw,12px);color:var(--lc-feat-body);line-height:1.4}
+.lc-feat-num{font-family:'Cinzel',serif;font-size:clamp(10px,0.9vw,12px);font-weight:700;color:var(--lc-accent);min-width:14px;padding-top:2px;opacity:.8;flex-shrink:0}
+.lc-feat-head{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(12px,1.1vw,14px);color:var(--lc-feat-head);margin-bottom:2px}
+.lc-feat-body{font-family:'Cormorant Garamond',serif;font-size:clamp(11px,1vw,13px);color:var(--lc-feat-body);line-height:1.4}
 .lc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--lc-stat-sep);flex-shrink:0;margin-top:auto}
 .lc-stat{background:var(--lc-stat-bg);padding:clamp(7px,1.1vh,13px) 8px;text-align:center}
-.lc-stat-n{font-family:'Cinzel',serif;font-size:clamp(13px,1.5vw,19px);font-weight:700;color:var(--lc-accent);margin-bottom:2px}
-.lc-stat-l{font-family:'DM Mono',monospace;font-size:clamp(6px,0.65vw,7px);letter-spacing:.14em;text-transform:uppercase;color:var(--lc-faint)}
+.lc-stat-n{font-family:'Cinzel',serif;font-size:clamp(14px,1.55vw,20px);font-weight:700;color:var(--lc-accent);margin-bottom:2px}
+.lc-stat-l{font-family:'DM Mono',monospace;font-size:clamp(9px,0.75vw,10px);letter-spacing:.14em;text-transform:uppercase;color:var(--lc-faint)}
 .lc-right{background:var(--lc-right-bg);padding:clamp(14px,2.2vh,26px) clamp(12px,1.6vw,20px);position:relative;z-index:1;display:flex;flex-direction:column;overflow:hidden}
-.lc-right-label{font-family:'DM Mono',monospace;font-size:clamp(7px,0.75vw,9px);letter-spacing:.22em;text-transform:uppercase;color:var(--lc-label);margin-bottom:clamp(8px,1.3vh,14px);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.lc-right-label{font-family:'DM Mono',monospace;font-size:clamp(9px,0.85vw,11px);letter-spacing:.22em;text-transform:uppercase;color:var(--lc-label);margin-bottom:clamp(8px,1.3vh,14px);display:flex;align-items:center;gap:8px;flex-shrink:0}
 .lc-right-rule{flex:1;height:.5px;background:var(--lc-sep-faint)}
 .lc-dz{border:1px dashed var(--lc-accent-dashed);padding:clamp(12px,1.7vh,22px) 10px;text-align:center;margin-bottom:clamp(5px,.7vh,9px);cursor:pointer;background:var(--lc-dz-bg);flex-shrink:0;transition:border-color .2s}
 .lc-dz:hover,.lc-dz.dov{border-color:var(--lc-accent)}
 .lc-dz-arrow{font-size:clamp(13px,1.6vw,19px);opacity:.45;margin-bottom:clamp(4px,.6vh,8px);color:var(--lc-accent)}
-.lc-dz-head{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(11px,1.15vw,14px);color:var(--lc-feat-head);margin-bottom:3px}
-.lc-dz-sub{font-family:'Cormorant Garamond',serif;font-size:clamp(10px,.95vw,11px);font-style:italic;color:var(--lc-muted)}
+.lc-dz-head{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(12px,1.2vw,15px);color:var(--lc-feat-head);margin-bottom:3px}
+.lc-dz-sub{font-family:'Cormorant Garamond',serif;font-size:clamp(11px,1vw,12px);font-style:italic;color:var(--lc-muted)}
 .lc-dz-types{display:flex;gap:4px;justify-content:center;margin-top:clamp(5px,.65vh,9px)}
-.lc-type{font-family:'DM Mono',monospace;font-size:clamp(6px,0.72vw,8px);letter-spacing:.1em;text-transform:uppercase;color:var(--lc-faint);border:.5px solid var(--lc-accent-faint);padding:2px 5px}
+.lc-type{font-family:'DM Mono',monospace;font-size:clamp(9px,0.8vw,10px);letter-spacing:.1em;text-transform:uppercase;color:var(--lc-faint);border:.5px solid var(--lc-accent-faint);padding:2px 5px}
 .lc-paste-btn{width:100%;border:.5px solid var(--lc-sep-faint);background:transparent;padding:clamp(6px,.82vh,8px) 10px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:clamp(4px,.65vh,9px);font-family:inherit;transition:border-color .15s;flex-shrink:0}
 .lc-paste-btn:hover{border-color:var(--lc-accent)}
-.lc-paste-label{font-family:'DM Mono',monospace;font-size:clamp(7px,0.75vw,9px);letter-spacing:.15em;text-transform:uppercase;color:var(--lc-muted)}
-.lc-paste-kbd{font-family:'DM Mono',monospace;font-size:clamp(7px,0.75vw,9px);color:var(--lc-faint);border:.5px solid var(--lc-kbd-border);padding:2px 5px}
-.lc-or{display:flex;align-items:center;gap:8px;margin-bottom:clamp(4px,.65vh,9px);font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(10px,.95vw,12px);color:var(--lc-or);flex-shrink:0}
+.lc-paste-label{font-family:'DM Mono',monospace;font-size:clamp(9px,0.85vw,11px);letter-spacing:.15em;text-transform:uppercase;color:var(--lc-muted)}
+.lc-paste-kbd{font-family:'DM Mono',monospace;font-size:clamp(9px,0.85vw,11px);color:var(--lc-faint);border:.5px solid var(--lc-kbd-border);padding:2px 5px}
+.lc-or{display:flex;align-items:center;gap:8px;margin-bottom:clamp(4px,.65vh,9px);font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(11px,1vw,13px);color:var(--lc-or);flex-shrink:0}
 .lc-or-rule{flex:1;height:.5px;background:var(--lc-sep-faint)}
 .lc-new-btn{width:100%;border:1px solid var(--lc-new-border);background:var(--lc-new-bg);padding:clamp(8px,1.2vh,12px) 10px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:9px;margin-bottom:clamp(4px,.6vh,7px);font-family:inherit;transition:border-color .15s;flex-shrink:0}
 .lc-new-btn:hover{border-color:var(--lc-accent)}
 .lc-new-icon{font-family:'DM Mono',monospace;font-size:clamp(12px,1.4vw,16px);color:var(--lc-accent);opacity:.6;flex-shrink:0;line-height:1}
-.lc-new-head{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(11px,1.05vw,13px);color:var(--lc-feat-head);margin-bottom:2px}
-.lc-new-sub{font-family:'Cormorant Garamond',serif;font-size:clamp(9px,.88vw,11px);font-style:italic;color:var(--lc-muted)}
+.lc-new-head{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(12px,1.1vw,14px);color:var(--lc-feat-head);margin-bottom:2px}
+.lc-new-sub{font-family:'Cormorant Garamond',serif;font-size:clamp(10px,.95vw,12px);font-style:italic;color:var(--lc-muted)}
 .lc-roster-btn{width:100%;border:.5px solid var(--lc-accent-faint);background:transparent;padding:clamp(5px,.72vh,7px) 10px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:7px;font-family:inherit;transition:border-color .15s;flex-shrink:0;margin-bottom:clamp(4px,.6vh,7px)}
 .lc-roster-btn:hover{border-color:var(--lc-accent)}
-.lc-roster-label{font-family:'DM Mono',monospace;font-size:clamp(7px,0.72vw,9px);letter-spacing:.12em;text-transform:uppercase;color:var(--lc-faint)}
+.lc-roster-label{font-family:'DM Mono',monospace;font-size:clamp(9px,0.8vw,10px);letter-spacing:.12em;text-transform:uppercase;color:var(--lc-faint)}
 /* ── LC cloud sync widget ── */
 .lc-sync-widget{width:100%;margin-bottom:auto;display:flex;flex-direction:column;gap:5px;flex-shrink:0}
-.lc-sync-caption{font-family:'DM Mono',monospace;font-size:clamp(6px,0.65vw,8px);letter-spacing:.1em;text-transform:uppercase;color:var(--lc-very-faint)}
-.lc-sync-btn{width:100%;border:.5px solid var(--lc-accent-faint);background:transparent;padding:clamp(5px,.72vh,7px) 10px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:7px;font-family:inherit;font-size:clamp(7px,0.75vw,9px);color:var(--lc-faint);transition:border-color .15s}
+.lc-sync-caption{font-family:'DM Mono',monospace;font-size:clamp(9px,0.75vw,10px);letter-spacing:.1em;text-transform:uppercase;color:var(--lc-very-faint)}
+.lc-sync-btn{width:100%;border:.5px solid var(--lc-accent-faint);background:transparent;padding:clamp(5px,.72vh,7px) 10px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:7px;font-family:inherit;font-size:clamp(9px,0.85vw,11px);color:var(--lc-faint);transition:border-color .15s}
 .lc-sync-btn:hover{border-color:var(--lc-accent)}
 .lc-sync-btn:disabled{opacity:.5;cursor:default}
-.lc-sync-signed-in{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;font-family:'DM Mono',monospace;font-size:clamp(6px,0.65vw,8px);color:var(--lc-faint)}
+.lc-sync-signed-in{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;font-family:'DM Mono',monospace;font-size:clamp(9px,0.75vw,10px);color:var(--lc-faint)}
 .lc-sync-signed-in .lc-sync-email{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.04em}
 .lc-sync-signed-in button{background:none;border:none;font-family:inherit;font-size:inherit;letter-spacing:.08em;text-transform:uppercase;color:var(--lc-very-faint);text-decoration:underline;cursor:pointer;padding:0;flex-shrink:0}
-.lc-sync-error{font-family:'DM Mono',monospace;font-size:clamp(6px,0.65vw,8px);color:#e5484d}
+.lc-sync-error{font-family:'DM Mono',monospace;font-size:clamp(9px,0.75vw,10px);color:#e5484d}
+.lc-sync-icon-btn{border:.5px solid var(--lc-accent-faint);background:transparent;cursor:pointer;padding:3px 6px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;color:var(--lc-faint);transition:border-color .15s,color .15s;flex-shrink:0}
+.lc-sync-icon-btn:hover{border-color:var(--lc-accent);color:var(--lc-accent)}
+.lc-sync-icon-btn:disabled{opacity:.5;cursor:default}
+.lc-sync-icon-btn.saving svg{animation:sync-spin 1s linear infinite}
+@keyframes sync-spin{to{transform:rotate(360deg)}}
+.sync-save-dot{position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;background:transparent;transition:background-color .3s}
+.sync-save-dot.saving{background:#f5a623;animation:sync-dot-pulse 1s infinite}
+.sync-save-dot.saved{background:#2ecc71;animation:sync-dot-pulse 1.2s ease-out 1}
+.sync-save-dot.error{background:#e5484d}
+@keyframes sync-dot-pulse{0%{box-shadow:0 0 0 0 rgba(46,204,113,.6)}70%{box-shadow:0 0 0 6px rgba(46,204,113,0)}100%{box-shadow:0 0 0 0 rgba(46,204,113,0)}}
 .sync-ob-swatch{flex:1;border:1px solid var(--bd,#3a3a3a);background:var(--sw-a);border-radius:8px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:border-color .15s}
 .sync-ob-swatch i{width:16px;height:16px;border-radius:50%;background:var(--sw-b);display:block}
 .sync-ob-swatch span{font-size:10px;letter-spacing:.05em;color:var(--sw-b)}
@@ -2708,6 +2718,7 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
       <div class="lc-title-block">
         <div class="lc-brand-lockup">
           <div class="lc-sigil sync-mark sync-mark--launch" aria-hidden="true">
+            <span id="syncSaveDot" class="sync-save-dot" aria-hidden="true"></span>
             <svg viewBox="0 0 120 120" role="img" aria-label="Sync node network mark">
               <path class="sync-frame" d="M28 32 60 14 92 32M28 88l32 18 32-18M28 32v18M92 32v18M28 88V70M92 88V70"></path>
               <path class="sync-link" d="M30 49h22l20-11 21 11M31 72h22l18 11 21-11M52 49v23M72 38v45"></path>
@@ -27965,14 +27976,65 @@ async function _syncRenderAccountUI(){
     const badge=document.createElement('div');
     badge.id='syncAccountBadge';
     badge.style.cssText='display:flex;align-items:center;gap:8px;margin-left:8px;font-size:11px;color:var(--tm,#888)';
-    badge.innerHTML=`<span title="${X(profile.email)}" style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Hi ${X(first)}</span><button class="btn" style="padding:3px 9px;font-size:11px" onclick="_syncSignOut()">Sign out</button>`;
+    badge.innerHTML=`<span title="${X(profile.email)}" style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Hi ${X(first)}</span>${SYNC_SAVE_ICON_SVG_BTN('syncMastheadSaveBtn')}<button class="btn" style="padding:3px 9px;font-size:11px" onclick="_syncConfirmSignOut()">Sign out</button>`;
     // TODO(teams): once team creation/invite/switching exists, this is where a team-switcher
     // dropdown would extend S.activeDept / the existing department-switcher logic to also list
     // teams the user belongs to (via team_members), not just their personal workspace.
     host.appendChild(badge);
   }catch(err){}
 }
+
+// Manual save (floppy disk icon) + a small dot on the landing sigil that blinks green on a
+// successful sync, amber while saving, and red on failure. _syncSetSaveDot is called from
+// northstar-core.js's _syncPushWorkspaceNow so both the debounced auto-save and the manual
+// button below reflect the same state.
+const SYNC_SAVE_ICON_SVG='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>';
+function SYNC_SAVE_ICON_SVG_BTN(id){return `<button id="${id}" class="lc-sync-icon-btn" title="Save now" onclick="_syncManualSave('${id}')">${SYNC_SAVE_ICON_SVG}</button>`;}
+let _syncLastSyncedAt=null;
+try{_syncLastSyncedAt=localStorage.getItem('sync_last_synced_at')||null;}catch(err){}
+function _syncSetSaveDot(state){
+  // state: 'saving' | 'saved' | 'error'
+  const dot=document.getElementById('syncSaveDot');
+  if(dot){
+    dot.className='sync-save-dot '+state;
+    if(state==='saved'){_syncLastSyncedAt=new Date().toISOString();try{localStorage.setItem('sync_last_synced_at',_syncLastSyncedAt);}catch(err){}}
+    if(state==='saved'||state==='error')setTimeout(()=>{if(dot.className==='sync-save-dot '+state)dot.className='sync-save-dot';},2500);
+  }
+  ['syncMastheadSaveBtn','syncLcSaveBtn'].forEach(id=>{
+    const btn=document.getElementById(id);
+    if(!btn)return;
+    btn.classList.toggle('saving',state==='saving');
+    btn.disabled=state==='saving';
+  });
+}
+async function _syncManualSave(){
+  if(typeof _syncPushWorkspaceNow!=='function')return;
+  await _syncPushWorkspaceNow();
+}
+function _syncLastSyncedLabel(){
+  if(!_syncLastSyncedAt)return'never';
+  try{
+    const d=new Date(_syncLastSyncedAt);
+    return d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})+' on '+d.toLocaleDateString();
+  }catch(err){return'unknown'; }
+}
+function _syncConfirmSignOut(){
+  const body=`
+    <p style="margin:0 0 16px;color:var(--tx2,#888);font-size:13px;line-height:1.5">Last synced: <b>${X(_syncLastSyncedLabel())}</b></p>
+    <button class="btn bp" style="width:100%;margin-bottom:8px" onclick="_syncSaveThenSignOut()">Save and sign out</button>
+    <button class="btn" style="width:100%;background:transparent;margin-bottom:8px" onclick="_syncSignOut()">Sign out without saving</button>
+    <button class="btn" style="width:100%;background:transparent" onclick="document.getElementById('syncSignOutModal')?.remove()">Cancel</button>`;
+  _qolModal('syncSignOutModal','Sign out of Sync','',body,'');
+}
+async function _syncSaveThenSignOut(){
+  const modal=document.getElementById('syncSignOutModal');
+  if(modal)modal.remove();
+  try{if(typeof _syncPushWorkspaceNow==='function')await _syncPushWorkspaceNow();}catch(err){}
+  _syncSignOut();
+}
 async function _syncSignOut(){
+  const modal=document.getElementById('syncSignOutModal');
+  if(modal)modal.remove();
   try{await sb.auth.signOut();}catch(err){}
   location.reload();
 }
@@ -27994,18 +28056,21 @@ async function _syncRenderLandingWidget(){
     const profile=await _syncGetProfile();
     if(profile){
       const first=_syncFirstName(profile);
-      host.innerHTML=`<div class="lc-sync-signed-in"><span class="lc-sync-email" title="${X(profile.email)}">Hi ${X(first)} · synced</span><button onclick="_syncSignOut()">Sign out</button></div>`;
+      host.innerHTML=`<div class="lc-sync-signed-in"><span class="lc-sync-email" title="${X(profile.email)}">Hi ${X(first)} · synced</span><span style="display:flex;align-items:center;gap:4px">${SYNC_SAVE_ICON_SVG_BTN('syncLcSaveBtn')}<button onclick="_syncConfirmSignOut()">Sign out</button></span></div>`;
     }else{
       host.innerHTML=`
         <div class="lc-sync-caption">Sign in to sync across devices</div>
-        <button id="syncLcGoogleBtn" class="lc-sync-btn" onclick="_syncSignInWithGoogle()">${SYNC_GOOGLE_ICON_SVG}<span>Create account or sign in</span></button>
+        <div style="display:flex;gap:6px">
+          <button id="syncLcSignInBtn" class="lc-sync-btn" style="flex:1;justify-content:center" onclick="_syncSignInWithGoogle()">${SYNC_GOOGLE_ICON_SVG}<span>Sign in</span></button>
+          <button id="syncLcGoogleBtn" class="lc-sync-btn" style="flex:1;justify-content:center" onclick="_syncSignInWithGoogle()">${SYNC_GOOGLE_ICON_SVG}<span>Create account</span></button>
+        </div>
         <div id="syncLcError" class="lc-sync-error" style="display:none"></div>`;
     }
   }catch(err){}
 }
 async function _syncSignInWithGoogle(){
   const errEl=document.getElementById('syncLcError');
-  const btn=document.getElementById('syncLcGoogleBtn');
+  const btn=document.getElementById('syncLcGoogleBtn')||document.getElementById('syncLcSignInBtn');
   if(errEl){errEl.style.display='none';errEl.textContent='';}
   if(btn)btn.disabled=true;
   try{
@@ -32078,6 +32143,7 @@ async function _syncPushWorkspaceNow(){
   try{
     const userId=await _syncGetUserId();
     if(!userId)return false; // signed out — defensive no-op, should not happen behind the auth gate
+    if(typeof _syncSetSaveDot==="function")_syncSetSaveDot("saving");
     const model=nsCanonical();
     const payload=Object.assign({},model,_syncCollectLocalKeys());
     const deptKey=(typeof nsActiveDepartmentKey==="function"&&nsActiveDepartmentKey())||"default";
@@ -32088,8 +32154,12 @@ async function _syncPushWorkspaceNow(){
       data:payload,
       updated_at:new Date().toISOString()
     },{onConflict:"owner_user_id,department_key"});
+    if(typeof _syncSetSaveDot==="function")_syncSetSaveDot(error?"error":"saved");
     return!error;
-  }catch(err){return false;}
+  }catch(err){
+    if(typeof _syncSetSaveDot==="function")_syncSetSaveDot("error");
+    return false;
+  }
 }
 
 // Debounced entry point — mirrors the timing pattern of _schedulePersistFlush/_flushPersistQueue
