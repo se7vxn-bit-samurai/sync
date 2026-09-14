@@ -32264,6 +32264,10 @@ async function syncPullWorkspace(){
       if(typeof nsSanitizeCanonicalIdentities==="function")nsSanitizeCanonicalIdentities();
       if(typeof nsSyncPeopleToRuntime==="function")nsSyncPeopleToRuntime();
       _syncWriteLocalKeys(remote);
+      // See nsHydrateDatabase's matching call: S.entries drives the calendar/dashboard directly
+      // and is never itself pulled/persisted, so it needs rebuilding from the canonical schedule
+      // every time a remote pull actually replaces the local model.
+      nsRestoreEntriesFromCanonical();
       return true;
     }
     if(!row){
@@ -32301,11 +32305,28 @@ function nsQueueDatabaseWrite(model){
   },180);
 }
 
+// Bridges the canonical layer (people/schedule/etc, restored from IndexedDB or pulled from
+// Supabase) into S.entries — the flat runtime rows the calendar/dashboard actually render, and
+// the exact thing _restoreViewportFromState() checks to decide landing screen vs dashboard. Reuses
+// nsRuntimeEntry(), the same mapper an import already uses for non-PeopleHub schedule sources — a
+// hydrated/pulled canonical schedule row is shaped identically. Scoped to the active department via
+// nsScopedRows(), consistent with how the rest of the app already filters by department.
+function nsRestoreEntriesFromCanonical(){
+  try{
+    const scoped=(typeof nsScopedRows==="function")?nsScopedRows("schedule"):(nsCanonical().schedule||[]);
+    S.entries=(scoped||[]).map(nsRuntimeEntry).filter(row=>row.date&&!isNaN(row.date));
+  }catch(err){console.error("[sync] rebuilding runtime entries from canonical failed",err);}
+}
 async function nsHydrateDatabase(){
   NS.hydrating=true;
   try{
     const db=await nsOpenDatabase(),stored=await new Promise((resolve,reject)=>{const tx=db.transaction(NS_DB_STORE,"readonly"),request=tx.objectStore(NS_DB_STORE).get(NS_DB_KEY);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});db.close();
     if(stored&&String(stored.updated_at||"")>String(nsCanonical().updated_at||"")){S.nsCanonical=nsNormalizeCanonical(stored);nsSanitizeCanonicalIdentities();nsSyncPeopleToRuntime();}
+    // S.entries (unlike S.nsCanonical) is never itself persisted — rebuild it from whatever
+    // canonical schedule data is now in memory whenever it's currently empty, regardless of
+    // whether the block above just ran, so a normal page reload resumes straight into the
+    // dashboard instead of the landing screen. Never overwrites entries already in progress.
+    if((!S.entries||!S.entries.length))nsRestoreEntriesFromCanonical();
     NS.persistence="indexeddb";return true;
   }catch(err){NS.persistence="localStorage fallback";return false;}
   finally{NS.hydrating=false;}
@@ -33896,15 +33917,23 @@ let nsLagExpected=performance.now()+1000;setInterval(()=>{const now=performance.
 (()=>{
   const doHydrate=()=>nsHydrateDatabase().then(localHydrated=>(typeof syncPullWorkspace==="function"?syncPullWorkspace():Promise.resolve(false)).then(remoteHydrated=>{
     const hydrated=localHydrated||remoteHydrated;
-    if(hydrated&&document.getElementById("ca")&&!document.getElementById("mv")?.classList.contains("hid"))try{ren();}catch(err){}
+    if(!hydrated)return;
+    // Previously this only re-rendered when the app view (#mv) was ALREADY showing — meaning a
+    // restore that happened while the landing/drop-a-file screen was up (the normal case: this
+    // runs on an idle callback shortly after boot, before any file has been dropped) never
+    // actually revealed the restored workspace. _restoreViewportFromState() is the same call the
+    // "Continue where I left off" button already uses to do exactly that; calling it here too
+    // means a returning user (local reload, or signed-in with existing cloud data) lands straight
+    // in their dashboard instead of at an empty drop-zone.
+    if(typeof _restoreViewportFromState==="function")_restoreViewportFromState();
+    if(document.getElementById("ca"))try{ren();}catch(err){}
   }));
   const hydrate=()=>{
-    // Signed-out visitors are held at the login modal by the auth gate in the main script — skip
-    // touching IndexedDB/remote storage entirely until a session exists (see SIGNED_IN handling
-    // there, which re-runs this same hydration after login).
-    if(typeof sb!=="undefined"&&sb&&typeof sb.auth?.getSession==="function"){
-      return sb.auth.getSession().then(({data})=>{if(data&&data.session)return doHydrate();});
-    }
+    // Always run local IndexedDB hydration regardless of sign-in state — the app is fully usable
+    // signed out and local restore must not depend on auth. (This used to gate the entire call
+    // behind an existing session, which meant a signed-out user's own local IndexedDB data never
+    // got restored into S.entries at all — only syncPullWorkspace() inside doHydrate() actually
+    // needs a session, and it already no-ops safely on its own when signed out.)
     return doHydrate();
   };
   if("requestIdleCallback" in window)requestIdleCallback(hydrate,{timeout:1200});else setTimeout(hydrate,80);
