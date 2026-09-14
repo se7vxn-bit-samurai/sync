@@ -13470,7 +13470,7 @@ function rCal(el){
   else{
     if(working.length>0&&working.length<S.covMin)mid+=`<div style="margin:8px 0;padding:6px 10px;border-radius:6px;background:rgba(220,38,38,.1);color:#dc2626;font-size:12px;font-weight:500">\u26a0 Below minimum coverage (${working.length}/${S.covMin})</div>`;
     if(working.length){
-      const hcFilled=working.filter(e=>{const hc=getHc(e.date,e.name);return hc.total>0||hc.present>0;}).length;
+      const hcFilled=working.filter(e=>getHc(e.date,e.name).recorded).length;
       const chipCls=hcFilled===working.length&&working.length>0?"hc-chip done":hcFilled>0?"hc-chip part":"hc-chip none";
       const chipLabel=hcFilled===working.length&&working.length>0?"✓ HC complete":`${hcFilled}/${working.length} HC filled`;
       mid+=`<div class="roster-section"><div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">`;
@@ -13506,7 +13506,7 @@ function rCal(el){
         // Swap button — opens inline swap log form prefilled with this person as absent
         const swapFormKey='swap|'+excKey(selDate)+'|'+esc;
         mid+=`<button class="dd-mini-btn" style="${isCovering||isAbsent?'color:var(--early)':''}" onclick="S._swapFormDay=S._swapFormDay==='${swapFormKey}'?null:'${swapFormKey}';ren()" title="Log shift swap for this day">⇄</button>`;
-        mid+=`<div class="hc-widget"><span class="hc-label" style="font-size:8px;color:var(--tm);opacity:.5;letter-spacing:.5px;position:absolute;top:-9px;left:0;white-space:nowrap">${hc._fromRoster?'HC <span style="color:var(--accent);opacity:.8">👥</span>':'HC'}</span><input type="number" min="0" max="999" value="${hc.present||""}" placeholder="act" class="hc-inp"${inpStyle} onchange="setHc(new Date(${da}),'${esc}','present',this.value)" title="Actual headcount — agents present on shift"><span class="hc-sep">/</span><input type="number" min="0" max="999" value="${hc._fromRoster?'':hc.total||""}" placeholder="${hc._fromRoster?hc.total:'req'}" class="hc-inp"${hc._fromRoster?' style="border-color:rgba(122,180,255,.25)"':''} onchange="setHc(new Date(${da}),'${esc}','total',this.value)" title="${hc._fromRoster?'From roster: '+hc.total+' agents — type to override':'Required headcount — agents needed on shift'}"></div>`;
+        mid+=`<div class="hc-widget"><span class="hc-label" style="font-size:8px;color:var(--tm);opacity:.5;letter-spacing:.5px;position:absolute;top:-9px;left:0;white-space:nowrap">${!hc.recorded?'HC <span style="color:#dc2626;opacity:.8">•</span>':hc._fromRoster?'HC <span style="color:var(--accent);opacity:.8">👥</span>':'HC'}</span><input type="number" min="0" max="999" value="${hc.recorded?hc.present:(hc.present||"")}" placeholder="${hc.recorded?'':'not recorded'}" class="hc-inp"${inpStyle} onchange="setHc(new Date(${da}),'${esc}','present',this.value)" title="${hc.recorded?'Actual headcount — agents present on shift':'Attendance not recorded yet for this day'}"><span class="hc-sep">/</span><input type="number" min="0" max="999" value="${hc._fromRoster?'':hc.total||""}" placeholder="${hc._fromRoster?hc.total:'req'}" class="hc-inp"${hc._fromRoster?' style="border-color:rgba(122,180,255,.25)"':''} onchange="setHc(new Date(${da}),'${esc}','total',this.value)" title="${hc._fromRoster?'From roster: '+hc.total+' agents — type to override':'Required headcount — agents needed on shift'}"></div>`;
         // Inline swap form — key already declared above as swapFormKey
         if(S._swapFormDay===swapFormKey)mid+=`<div style="width:100%">${renderSwapFormInline(excKey(selDate),e.name)}</div>`;
         // Show logged exceptions for this person
@@ -13590,7 +13590,7 @@ function rCal(el){
     if(working.length){
       const _hcStripAgg=working.reduce((acc,e)=>{
         const hc=getHc(e.date,e.name);
-        acc.rostered+=(hc.total||0);acc.present+=(hc.present||0);acc.filled+=(hc.total>0||hc.present>0?1:0);
+        acc.rostered+=(hc.total||0);acc.present+=(hc.present||0);acc.filled+=(hc.recorded?1:0);
         return acc;
       },{rostered:0,present:0,filled:0});
       const _hcLost=allDayExc.reduce((s,x)=>s+(x.hoursLost||0),0);
@@ -13635,10 +13635,11 @@ function rCal(el){
   const hcAgg=working.reduce((acc,e)=>{
     const hc=getHc(e.date,e.name);const hrs=calcHrs(S.tz&&e.saS?e.saS:e.ukS,S.tz&&e.saE?e.saE:e.ukE);
     acc.total+=(hc.total||0);acc.present+=(hc.present||0);
+    if(hc.recorded)acc.recorded++;
     if(hc.present&&hrs)acc.agentHrs+=hc.present*hrs;
     return acc;
-  },{total:0,present:0,agentHrs:0});
-  const hcEntered=hcAgg.total>0||hcAgg.present>0;
+  },{total:0,present:0,agentHrs:0,recorded:0});
+  const hcEntered=hcAgg.recorded>0;
   const ukStarts=working.filter(e=>e.ukS).map(e=>e.ukS).sort();
   const ukEnds=working.filter(e=>e.ukE).map(e=>e.ukE).sort();
   const floorOpen=ukStarts.length?(S.tz?u2s(ukStarts[0],selDate):ukStarts[0]):null;
@@ -13673,7 +13674,7 @@ function rCal(el){
     right+=`</div>`;
     right+=`<div class="hc-bar" style="margin:0 0 6px"><div class="hb-p" style="width:${pct}%"></div><div class="hb-a" style="width:${100-pct}%"></div></div>`;
     if(hcAgg.agentHrs>0)right+=`<div class="mrow"><span class="mr-l">Agent Hrs</span><span class="mr-v mr-ok">~${Math.round(hcAgg.agentHrs)}h</span></div>`;
-    const atRisk=working.filter(e=>{const hc=getHc(e.date,e.name);return hc.total>0&&hc.present>=0&&hc.present<hc.total*0.8;});
+    const atRisk=working.filter(e=>{const hc=getHc(e.date,e.name);return hc.recorded&&hc.total>0&&hc.present<hc.total*0.8;});
     if(atRisk.length)right+=`<div style="margin-top:5px;padding:5px 8px;background:rgba(220,38,38,.08);border-radius:6px;font-size:11px;color:#dc2626;font-weight:500">\u26a0 ${atRisk.length} TL${atRisk.length>1?"s":""} below 80%</div>`;
     right+=`</div>`;
   } else {
@@ -13754,10 +13755,11 @@ function shareDay(){
   const hcAgg=working.reduce((acc,e)=>{
     const hc=getHc(e.date,e.name);const hrs=calcHrs(S.tz&&e.saS?e.saS:e.ukS,S.tz&&e.saE?e.saE:e.ukE);
     acc.total+=(hc.total||0);acc.present+=(hc.present||0);
+    if(hc.recorded)acc.recorded++;
     if(hc.present&&hrs)acc.agentHrs+=hc.present*hrs;
     return acc;
-  },{total:0,present:0,agentHrs:0});
-  const hcEntered=hcAgg.total>0||hcAgg.present>0;
+  },{total:0,present:0,agentHrs:0,recorded:0});
+  const hcEntered=hcAgg.recorded>0;
   const pct=hcAgg.total>0?Math.round(hcAgg.present/hcAgg.total*100):null;
   const ukStarts=working.filter(e=>e.ukS).map(e=>e.ukS).sort();
   const ukEnds=working.filter(e=>e.ukE).map(e=>e.ukE).sort();
@@ -13777,7 +13779,7 @@ function shareDay(){
       const sh=S.tz?sAD(e):uD(e);
       const hrs=calcHrs(S.tz&&e.saS?e.saS:e.ukS,S.tz&&e.saE?e.saE:e.ukE).toFixed(1)+"h";
       const hc=getHc(e.date,e.name);
-      const hcStr=hc.total>0?"   "+hc.present+"/"+hc.total+" agents":(hc.present>0?"   "+hc.present+" present":"");
+      const hcStr=hc.recorded?(hc.total>0?"   "+hc.present+"/"+hc.total+" agents":"   "+hc.present+" present"):"";
       lines.push("  "+e.name.padEnd(22)+" "+sh.padEnd(15)+hrs.padEnd(7)+hcStr);
     });
     lines.push("");
@@ -13838,17 +13840,20 @@ function getAttStats(entries){
 function hcKey(date,name){return(date instanceof Date?date.toISOString().split("T")[0]:date)+"|"+name;}
 function hcDefaultKey(name){return"default|"+name;}
 
-// Get HC for a specific date — falls back to person's default, then roster agent count
+// Get HC for a specific date — falls back to person's default, then roster agent count.
+// `recorded` distinguishes three real states: attendance not yet recorded for the day
+// (default/roster fallback, recorded:false) vs. explicitly recorded — whether that's a
+// genuine zero (present:0, recorded:true) or a nonzero complete count (recorded:true).
 function getHc(date,name){
   const explicit=S.hc[hcKey(date,name)];
-  if(explicit)return explicit;
+  if(explicit)return{...explicit,recorded:true};
   // Fall back to default total (present is always day-specific)
   const def=S.hc[hcDefaultKey(name)];
-  if(def&&def.total)return{total:def.total,present:0};
+  if(def&&def.total)return{total:def.total,present:0,recorded:false};
   // v44.3: Fall back to roster agent count if available
   const rosterCount=getAgentCount(name);
-  if(rosterCount>0)return{total:rosterCount,present:0,_fromRoster:true};
-  return{total:0,present:0};
+  if(rosterCount>0)return{total:rosterCount,present:0,recorded:false,_fromRoster:true};
+  return{total:0,present:0,recorded:false};
 }
 
 function setHc(date,name,field,val){
@@ -19222,10 +19227,11 @@ function _rCoverageContent(ad){
       const hc=getHc(ddDate,e.name);
       const hrs=calcHrs(S.tz&&e.saS?e.saS:e.ukS,S.tz&&e.saE?e.saE:e.ukE);
       acc.total+=(hc.total||0);acc.present+=(hc.present||0);
+      if(hc.recorded)acc.recorded++;
       if(hc.present&&hrs)acc.agentHrs+=hc.present*hrs;
       return acc;
-    },{total:0,present:0,agentHrs:0});
-    const ddHcEntered=ddHcAgg.total>0||ddHcAgg.present>0;
+    },{total:0,present:0,agentHrs:0,recorded:0});
+    const ddHcEntered=ddHcAgg.recorded>0;
     const ddPct=ddHcAgg.total>0?Math.round(ddHcAgg.present/ddHcAgg.total*100):null;
     const ddNote=getNote(ddDate).trim();
     const mode=S.anMode||"roster";
@@ -19274,9 +19280,10 @@ function _rCoverageContent(ad){
         ddWork.forEach(e=>{
           const hc=getHc(ddDate,e.name);
           const hasDefault=S.hc[hcDefaultKey(e.name)]?.total>0;
-          const pct2=hc.total>0?Math.round((hc.present||0)/hc.total*100):null;
+          const pct2=hc.recorded&&hc.total>0?Math.round((hc.present||0)/hc.total*100):null;
           const pctCls2=pct2!==null?(pct2>=90?"mr-ok":pct2>=75?"mr-warn":"mr-bad"):"";
-          h+=`<div class="da-an-row"><span class="dar-l" style="cursor:pointer" onclick="navToPerson('${XJS(e.name)}')">${X(e.name.split(" ")[0])}</span><span style="font-size:11px;font-family:'JetBrains Mono',monospace">${hc.present||"—"}/${hc.total||"—"}${pct2!==null?` <span class="${pctCls2}">(${pct2}%)</span>`:""}</span></div>`;
+          const presentStr=hc.recorded?hc.present:"—";
+          h+=`<div class="da-an-row"><span class="dar-l" style="cursor:pointer" onclick="navToPerson('${XJS(e.name)}')">${X(e.name.split(" ")[0])}</span><span style="font-size:11px;font-family:'JetBrains Mono',monospace">${presentStr}/${hc.total||"—"}${pct2!==null?` <span class="${pctCls2}">(${pct2}%)</span>`:""}</span></div>`;
         });
       } else {
         h+=`<div style="padding:14px;font-size:11px;color:var(--tm);text-align:center;line-height:1.6">No HC data for this day.<br><span style="opacity:.5">Enter counts on the Calendar tab.</span></div>`;
@@ -27954,7 +27961,7 @@ async function _syncGetProfile(forceRefresh){
       googleName:(user.user_metadata&&(user.user_metadata.full_name||user.user_metadata.name))||''
     };
     return _syncProfileCache;
-  }catch(err){return null;}
+  }catch(err){console.error('[sync] _syncGetProfile failed',err);return null;}
 }
 function _syncFirstName(profile){
   const name=(profile&&(profile.full_name||profile.googleName))||'';
@@ -28108,9 +28115,13 @@ function _syncPickOnboardingColorway(key){
 // `profiles` table (full_name/organization/role/preferred_colorway columns) — never blocks app
 // usage; "Skip" just closes it and it won't nag again until the next fresh sign-in with still-
 // empty fields.
-async function _syncMaybeShowOnboarding(){
-  const profile=await _syncGetProfile(true);
-  if(!profile||profile.full_name)return;
+// Accepts an already-fetched profile to avoid a second network round-trip and, more importantly,
+// to avoid racing _syncShowWelcomeBack (see _syncOnSignedIn below) — both are full-screen
+// position:fixed overlays at the same z-index, so if both fired independently whichever finished
+// its own async work last would silently bury the other. Returns true if it actually showed.
+async function _syncMaybeShowOnboarding(profile){
+  if(profile===undefined)profile=await _syncGetProfile(true);
+  if(!profile||profile.full_name)return false;
   const suggested=profile.googleName||'';
   const currentColorway=(typeof S!=='undefined'&&S.th)||'surge';
   const body=`
@@ -28127,12 +28138,22 @@ async function _syncMaybeShowOnboarding(){
     </div>`;
   _qolModal('syncOnboardModal','Finish setting up your profile','',body,'');
   setTimeout(()=>{const inp=document.getElementById('syncObName');if(inp)inp.focus();},30);
+  return true;
+}
+// Deferred check run once onboarding closes (Skip or Save) — see _syncOnSignedIn, which sets this
+// to a closure deciding whether Welcome Back should show, only when onboarding actually displayed
+// and therefore had to go first.
+let _syncPendingPostOnboarding=null;
+function _syncRunPendingPostOnboarding(){
+  const fn=_syncPendingPostOnboarding;
+  _syncPendingPostOnboarding=null;
+  if(typeof fn==='function')fn();
 }
 function _syncCloseOnboarding(){
   const modal=document.getElementById('syncOnboardModal');
   if(modal)modal.remove();
 }
-function _syncSkipOnboarding(){_syncCloseOnboarding();}
+function _syncSkipOnboarding(){_syncCloseOnboarding();_syncRunPendingPostOnboarding();}
 async function _syncSaveOnboarding(){
   const name=(document.getElementById('syncObName')?.value||'').trim();
   const org=(document.getElementById('syncObOrg')?.value||'').trim();
@@ -28153,7 +28174,9 @@ async function _syncSaveOnboarding(){
     _syncCloseOnboarding();
     _syncRenderAccountUI();
     _syncRenderLandingWidget();
+    _syncRunPendingPostOnboarding();
   }catch(err){
+    console.error('[sync] onboarding save failed',err);
     if(errEl){errEl.textContent=(err&&err.message)||'Could not save. Try again.';errEl.style.display='block';}
     if(btn){btn.disabled=false;btn.textContent='Save and continue';}
   }
@@ -28203,26 +28226,34 @@ function _syncOnSignedIn(session){
   _syncHandledSessionToken=token;
   syncPullWorkspace().then(async pulled=>{
     ren();
-    if(!pulled)return; // nothing new came down — local boot already resumed silently if it had data
-    const profile=await _syncGetProfile();
-    if(profile&&profile.continuation_pref==='last'){
-      if(typeof _restoreViewportFromState==='function')_restoreViewportFromState();
-    }else{
-      _syncShowWelcomeBack(profile||{});
-    }
-  }).catch(()=>{});
-  _syncRenderAccountUI();
-  _syncRenderLandingWidget();
-  // Apply the account's saved colourway (small cross-device preference — independent of the
-  // onboarding/resume prompts above, so it applies even for a returning user).
-  _syncGetProfile().then(profile=>{
+    // Fetch the profile exactly once here (force refresh) and hand it to both onboarding and
+    // welcome-back, instead of each fetching it independently. Two independent fetches used to
+    // race: onboarding and welcome-back are both full-screen position:fixed overlays sharing the
+    // same z-index, so whichever finished its own async chain last silently buried the other —
+    // in practice this meant onboarding (name/org/role/colourway) could render completely hidden
+    // behind Welcome Back with no visible sign either had fired.
+    let profile=null;
+    try{profile=await _syncGetProfile(true);}catch(err){console.error('[sync] profile fetch after sign-in failed',err);}
     if(profile&&profile.preferred_colorway&&typeof setThemeColorway==='function'){
       setThemeColorway(profile.preferred_colorway);
     }
-  }).catch(()=>{});
-  // Self-gating (only shows when the profile has no saved name yet), so it's safe to call
-  // on every sign-in-ish event rather than trying to distinguish "fresh" from "returning".
-  _syncMaybeShowOnboarding();
+    const showWelcomeBackIfDue=()=>{
+      if(!pulled)return; // nothing new came down — local boot already resumed silently if it had data
+      if(profile&&profile.continuation_pref==='last'){
+        if(typeof _restoreViewportFromState==='function')_restoreViewportFromState();
+      }else{
+        _syncShowWelcomeBack(profile||{});
+      }
+    };
+    // Self-gating (only shows when the profile has no saved name yet). Onboarding always goes
+    // first when it's due — Welcome Back is deferred until Skip/Save closes it, via
+    // _syncPendingPostOnboarding — so a brand-new account never has the two prompts race.
+    const showedOnboarding=await _syncMaybeShowOnboarding(profile);
+    if(showedOnboarding)_syncPendingPostOnboarding=showWelcomeBackIfDue;
+    else showWelcomeBackIfDue();
+  }).catch(err=>{console.error('[sync] post-sign-in flow failed',err);});
+  _syncRenderAccountUI();
+  _syncRenderLandingWidget();
 }
 async function _syncAuthGate(){
   // The app is fully usable offline/local-only, so boot unconditionally — auth only adds
@@ -32154,9 +32185,11 @@ async function _syncPushWorkspaceNow(){
       data:payload,
       updated_at:new Date().toISOString()
     },{onConflict:"owner_user_id,department_key"});
+    if(error)console.error("[sync] workspace push failed",error);
     if(typeof _syncSetSaveDot==="function")_syncSetSaveDot(error?"error":"saved");
     return!error;
   }catch(err){
+    console.error("[sync] workspace push threw",err);
     if(typeof _syncSetSaveDot==="function")_syncSetSaveDot("error");
     return false;
   }
@@ -32225,7 +32258,7 @@ async function syncPullWorkspace(){
       if(hasLocalData)await _syncPushWorkspaceNow();
     }
     return false;
-  }catch(err){return false;}
+  }catch(err){console.error("[sync] workspace pull failed",err);return false;}
 }
 
 function nsOpenDatabase(){
