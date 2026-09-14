@@ -964,6 +964,11 @@ body.th-newsprint{
 .sync-save-dot.saving{background:#f5a623;animation:sync-dot-pulse 1s infinite}
 .sync-save-dot.saved{background:#2ecc71;animation:sync-dot-pulse 1.2s ease-out 1}
 .sync-save-dot.error{background:#e5484d}
+.sync-save-dot.conflict{background:#f5a623;animation:sync-dot-pulse 1s infinite}
+.sync-issue-banner{position:fixed;top:0;left:0;right:0;z-index:99999;display:flex;align-items:center;gap:10px;justify-content:center;padding:9px 14px;font-size:12px;font-weight:600;color:#fff;background:#c0392b;box-shadow:0 2px 12px rgba(0,0,0,.25)}
+.sync-issue-banner.conflict{background:#b8860b}
+.sync-issue-banner button{border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.12);color:#fff;border-radius:5px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit}
+.sync-issue-banner button:hover{background:rgba(255,255,255,.22)}
 @keyframes sync-dot-pulse{0%{box-shadow:0 0 0 0 rgba(46,204,113,.6)}70%{box-shadow:0 0 0 6px rgba(46,204,113,0)}100%{box-shadow:0 0 0 0 rgba(46,204,113,0)}}
 .sync-ob-swatch{flex:1;border:1px solid var(--bd,#3a3a3a);background:var(--sw-a);border-radius:8px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:border-color .15s}
 .sync-ob-swatch i{width:16px;height:16px;border-radius:50%;background:var(--sw-b);display:block}
@@ -12319,6 +12324,10 @@ function restoreDeptSnap(name){
 function activateDept(name){
   if(!S.workspace[name])return;
   if(name===S.activeDept){ren();return;}
+  // Force any debounced cloud push out now, before switching away — local (IndexedDB) data is
+  // already safe by this point via nsPersist, but the cloud copy can otherwise lag up to ~800ms
+  // behind, and department switches are exactly the moment that lag becomes a real risk.
+  if(typeof syncFlushPendingPush==="function")syncFlushPendingPush();
   if(S.activeDept&&!isUniversalWorkspace())saveDeptSnap(S.activeDept);
   S._universalWorkspace=false;document.body.classList.remove("sync-universal-active");
   S.activeDept=name;
@@ -12331,6 +12340,7 @@ function activateDept(name){
 function removeDept(name,opts){
   opts=opts||{};
   if(!name)return;
+  if(typeof syncFlushPendingPush==="function")syncFlushPendingPush();
   if(!opts.skipUndo)_registerUndoState(`close dept: ${name}`);
   delete S.workspace[name];
   const remaining=Object.keys(S.workspace);
@@ -28018,6 +28028,44 @@ async function _syncManualSave(){
   if(typeof _syncPushWorkspaceNow!=='function')return;
   await _syncPushWorkspaceNow();
 }
+
+// Escalation for repeated save failures / a detected cross-device conflict — the save dot alone
+// fades in 2.5s and is easy to miss entirely, which is exactly how the missing-constraint bug went
+// unnoticed for a while. These stay up until dismissed or resolved, not on a timer.
+function _syncShowIssueBanner(kind,message,actions){
+  let el=document.getElementById('syncIssueBanner');
+  if(!el){el=document.createElement('div');el.id='syncIssueBanner';document.body.appendChild(el);}
+  el.className='sync-issue-banner'+(kind==='conflict'?' conflict':'');
+  el.innerHTML=`<span>${X(message)}</span>${actions||''}<button onclick="document.getElementById('syncIssueBanner')?.remove()" title="Dismiss">✕</button>`;
+}
+function _syncClearPersistentFailure(){
+  const el=document.getElementById('syncIssueBanner');
+  if(el&&!el.classList.contains('conflict'))el.remove();
+}
+function _syncOnPersistentFailure(count){
+  _syncShowIssueBanner('error',`Sync to the cloud has failed ${count} times in a row — your work is still safe on this device, but it isn't backed up right now.`,
+    `<button onclick="_syncRetryFromBanner()">Retry now</button>`);
+}
+async function _syncRetryFromBanner(){
+  if(typeof _syncPushWorkspaceNow==='function')await _syncPushWorkspaceNow();
+}
+// Fires when this device's pending save was refused because another device has written newer data
+// since this device last checked in — see the optimistic-concurrency guard in
+// _syncPushWorkspaceNow(). Reloading pulls that newer copy in (syncPullWorkspace already only
+// applies it if it's genuinely newer) rather than silently overwriting it.
+function _syncOnSyncConflict(){
+  _syncShowIssueBanner('conflict','Another device saved newer changes to this workspace. Reload to get the latest before continuing, to avoid overwriting it.',
+    `<button onclick="location.reload()">Reload now</button>`);
+}
+// Best-effort: flush any pending debounced cloud push the moment the tab is hidden or about to
+// unload, so switching apps/tabs or closing the browser doesn't leave the cloud copy lagging behind
+// whatever was just typed. Local (IndexedDB) persistence is unaffected either way.
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden'&&typeof syncFlushPendingPush==='function')syncFlushPendingPush();
+});
+window.addEventListener('beforeunload',()=>{
+  if(typeof syncFlushPendingPush==='function')syncFlushPendingPush();
+});
 function _syncLastSyncedLabel(){
   if(!_syncLastSyncedAt)return'never';
   try{
@@ -32185,26 +32233,70 @@ async function _syncGetUserId(){
 // still-unbuilt team-shared-workspace path (see TODO(teams)), where distinct team departments are
 // a real, separate concept.
 const SYNC_PERSONAL_WORKSPACE_KEY="__personal__";
+
+// The last remote updated_at we know about — set after every successful pull AND every successful
+// push (to the timestamp we just wrote). Used by _syncPushWorkspaceNow as an optimistic-concurrency
+// check: if another device has written a newer row than the last one we observed, this device's
+// full-canonical-blob upsert would silently clobber it (last-write-wins across the WHOLE dataset,
+// not just whatever this device was editing) — now, instead, that push is refused and surfaced as a
+// conflict so nothing is lost. Null until the first pull/push this session.
+let _syncLastKnownRemoteUpdatedAt=null;
+
+// Consecutive push failures — a single failed save fades from view (the dot) in 2.5s, easy to miss
+// entirely. On the 2nd consecutive failure this escalates to a persistent, dismiss-requiring banner
+// via the HTML-side _syncOnPersistentFailure/_syncClearPersistentFailure hooks (defined near the
+// save-dot code in 7os-sync-northstar.html) so a real outage can't go unnoticed the way the missing
+// workspaces constraint did.
+let _syncConsecutiveFailures=0;
+function _syncReportPushOutcome(state){
+  if(state==="saved"){
+    const hadFailures=_syncConsecutiveFailures>0;
+    _syncConsecutiveFailures=0;
+    if(hadFailures&&typeof _syncClearPersistentFailure==="function")_syncClearPersistentFailure();
+  }else if(state==="error"){
+    _syncConsecutiveFailures++;
+    if(_syncConsecutiveFailures>=2&&typeof _syncOnPersistentFailure==="function")_syncOnPersistentFailure(_syncConsecutiveFailures);
+  }else if(state==="conflict"){
+    if(typeof _syncOnSyncConflict==="function")_syncOnSyncConflict();
+  }
+}
+
 async function _syncPushWorkspaceNow(){
   try{
     const userId=await _syncGetUserId();
     if(!userId)return false; // signed out — defensive no-op, should not happen behind the auth gate
     if(typeof _syncSetSaveDot==="function")_syncSetSaveDot("saving");
+    // Optimistic-concurrency guard: check whether another device has written since we last knew
+    // about this row, BEFORE blindly overwriting it with our own full snapshot. Cheap (one indexed
+    // column) relative to the upsert itself, and this is the one thing standing between "two
+    // devices, two different projects open" and one of them silently losing work.
+    if(_syncLastKnownRemoteUpdatedAt){
+      const{data:existing}=await sb.from("workspaces").select("updated_at").eq("owner_user_id",userId).eq("department_key",SYNC_PERSONAL_WORKSPACE_KEY).maybeSingle();
+      if(existing&&existing.updated_at&&String(existing.updated_at)>String(_syncLastKnownRemoteUpdatedAt)){
+        if(typeof _syncSetSaveDot==="function")_syncSetSaveDot("conflict");
+        _syncReportPushOutcome("conflict");
+        return false;
+      }
+    }
     const model=nsCanonical();
     const payload=Object.assign({},model,_syncCollectLocalKeys());
+    const nowIso=new Date().toISOString();
     const {error}=await sb.from("workspaces").upsert({
       owner_user_id:userId,
       team_id:null,
       department_key:SYNC_PERSONAL_WORKSPACE_KEY,
       data:payload,
-      updated_at:new Date().toISOString()
+      updated_at:nowIso
     },{onConflict:"owner_user_id,department_key"});
     if(error)console.error("[sync] workspace push failed",error);
+    else _syncLastKnownRemoteUpdatedAt=nowIso;
     if(typeof _syncSetSaveDot==="function")_syncSetSaveDot(error?"error":"saved");
+    _syncReportPushOutcome(error?"error":"saved");
     return!error;
   }catch(err){
     console.error("[sync] workspace push threw",err);
     if(typeof _syncSetSaveDot==="function")_syncSetSaveDot("error");
+    _syncReportPushOutcome("error");
     return false;
   }
 }
@@ -32230,6 +32322,22 @@ function syncPushWorkspace(){
   },90);
 }
 
+// Forces any pending debounced push to run immediately instead of waiting out its timer — called
+// before switching departments/projects and before the tab unloads/hides, so the cloud copy never
+// lags more than a network round-trip behind local edits at the moments data loss would actually
+// matter. Local persistence (IndexedDB) is already synchronous-ish and unaffected either way; this
+// is specifically about not leaving the CLOUD copy stale across exactly those risky moments.
+async function syncFlushPendingPush(){
+  if(_syncPushFlushTimer){clearTimeout(_syncPushFlushTimer);_syncPushFlushTimer=null;}
+  if(_syncPushIdleHandle!==null&&_syncPushIdleHandle!==undefined){
+    if(typeof cancelIdleCallback==="function"){try{cancelIdleCallback(_syncPushIdleHandle);}catch(err){}}
+    else clearTimeout(_syncPushIdleHandle);
+    _syncPushIdleHandle=null;
+  }
+  if(_syncPushDirty){_syncPushDirty=false;return await _syncPushWorkspaceNow();}
+  return true;
+}
+
 // Pulls the newest workspace row (personal, or from any team the user belongs to — team support
 // is minimal for now, see TODO(teams) below) and, if newer than the local canonical model, writes
 // it back into localStorage/S following the exact pattern nsHydrateDatabase() already uses.
@@ -32243,6 +32351,10 @@ async function syncPullWorkspace(){
     let row=null;
     const personal=await sb.from("workspaces").select("*").eq("owner_user_id",userId).eq("department_key",SYNC_PERSONAL_WORKSPACE_KEY).maybeSingle();
     if(personal&&personal.data)row=personal.data;
+    // Record what this device now knows about the personal row's remote state regardless of which
+    // branch runs below (including "no row yet") — this is what _syncPushWorkspaceNow's conflict
+    // check compares against, so it must stay current on every pull, not just the ones that apply.
+    _syncLastKnownRemoteUpdatedAt=(row&&row.updated_at)||null;
     try{
       const deptKey=(typeof nsActiveDepartmentKey==="function"&&nsActiveDepartmentKey())||"default";
       const memberships=await sb.from("team_members").select("team_id").eq("user_id",userId);
