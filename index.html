@@ -925,6 +925,8 @@ body.th-newsprint{
 .lc-project-meta{font-family:'DM Mono',monospace;font-size:clamp(9px,0.8vw,10px);color:var(--lc-faint);margin-top:2px;letter-spacing:.04em}
 .lc-project-arrow{margin-left:auto;color:var(--lc-accent);font-size:14px;flex-shrink:0}
 .lc-project-more{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(11px,1vw,12px);color:var(--lc-muted);text-align:center;padding-top:4px}
+.lc-project-auto-resume{background:none;border:none;padding:8px 4px 2px;margin-top:2px;font-family:'DM Mono',monospace;font-size:clamp(9px,0.8vw,10px);letter-spacing:.04em;color:var(--lc-faint);text-decoration:underline;text-underline-offset:2px;cursor:pointer;text-align:center;width:100%}
+.lc-project-auto-resume:hover{color:var(--lc-accent)}
 .lc-new-source-toggle{display:flex;align-items:center;gap:6px;width:100%;justify-content:center;padding:clamp(8px,1.1vh,11px) 10px;border:1px dashed var(--lc-accent-dashed);border-radius:8px;background:transparent;cursor:pointer;font-family:'DM Mono',monospace;font-size:clamp(10px,0.9vw,11px);letter-spacing:.08em;text-transform:uppercase;color:var(--lc-muted);transition:border-color .15s,color .15s}
 .lc-new-source-toggle:hover{border-color:var(--lc-accent);color:var(--lc-accent)}
 .lc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--lc-stat-sep);flex-shrink:0;margin-top:auto}
@@ -28234,7 +28236,22 @@ function _syncProjectPickerHtml(projects){
     return `<button type="button" class="lc-project-row" onclick="_syncOpenProject('${XJS(p.name)}')"><div><div class="lc-project-name">${X(p.name)}</div><div class="lc-project-meta">${X(meta)}</div></div><span class="lc-project-arrow">→</span></button>`;
   }).join('');
   if(projects.length>shown.length)h+=`<div class="lc-project-more">+${projects.length-shown.length} more — open any project from the department switcher inside the app</div>`;
+  h+=`<button type="button" class="lc-project-auto-resume" onclick="_syncSetAlwaysAutoResume()">Always jump straight to my most recent project — skip this screen</button>`;
   return h;
+}
+// The picker's replacement for the retired Welcome Back modal's "don't ask again" checkbox — sets
+// the same profiles.continuation_pref='last' preference, then immediately acts on it (jumps into
+// the most recent project now) instead of requiring a separate confirmation step.
+async function _syncSetAlwaysAutoResume(){
+  try{
+    const{data:userData}=await sb.auth.getUser();
+    const userId=userData&&userData.user&&userData.user.id;
+    if(userId){
+      await sb.from('profiles').update({continuation_pref:'last'}).eq('id',userId);
+      _syncProfileCache=null;
+    }
+  }catch(err){console.error('[sync] setting always-auto-resume failed',err);}
+  if(typeof _syncResumeMostRecentProject==='function')_syncResumeMostRecentProject();
 }
 async function _syncRenderProjectPicker(){
   const host=document.getElementById('lcProjectPicker');
@@ -28279,8 +28296,9 @@ function _syncOpenProject(name){
   if(typeof updateDeptStrip==='function')updateDeptStrip();
   if(typeof ren==='function')ren();
 }
-// Shared by "Welcome back → Continue where I left off" and the continuation_pref==='last'
-// auto-resume path. Plain _restoreViewportFromState() trusts whatever S.activeDept already is
+// Shared by every "just resume" path — a signed-in reload, and the continuation_pref==='last'
+// auto-resume preference set from the picker's own link. Plain _restoreViewportFromState() trusts
+// whatever S.activeDept already is
 // (usually still the default "default" on a brand-new device/browser) — fine for a single-project
 // account, but on a fresh device with 2+ real projects none of which happen to be named "default",
 // that reveals a dashboard with an empty schedule instead of actually resuming anything. This
@@ -28337,10 +28355,9 @@ function _syncPickOnboardingColorway(key){
 // `profiles` table (full_name/organization/role/preferred_colorway columns) — never blocks app
 // usage; "Skip" just closes it and it won't nag again until the next fresh sign-in with still-
 // empty fields.
-// Accepts an already-fetched profile to avoid a second network round-trip and, more importantly,
-// to avoid racing _syncShowWelcomeBack (see _syncOnSignedIn below) — both are full-screen
-// position:fixed overlays at the same z-index, so if both fired independently whichever finished
-// its own async work last would silently bury the other. Returns true if it actually showed.
+// Accepts an already-fetched profile to avoid a second network round-trip (see _syncPostSignInFlow,
+// which fetches it once and hands it to both this and the resume decision that follows). Returns
+// true if it actually showed.
 async function _syncMaybeShowOnboarding(profile){
   if(profile===undefined)profile=await _syncGetProfile(true);
   if(!profile||profile.full_name)return false;
@@ -28407,78 +28424,73 @@ async function _syncSaveOnboarding(){
 // "Welcome back" chooser — shown only when a sign-in actually pulled down cloud data the
 // browser didn't already have (a fresh device, or after clearing local data). Local-only
 // returning visits already resume silently via the existing boot-time _restoreViewportFromState
-// check, so this modal would be redundant there. Respects continuation_pref='last' by skipping
-// straight to resuming, set via the "always continue automatically" checkbox below.
-function _syncShowWelcomeBack(profile){
-  const first=_syncFirstName(profile);
-  const body=`
-    <p style="margin:0 0 16px;color:var(--tx2,#888);font-size:13px;line-height:1.5">Welcome back${first?', '+X(first):''}. Your synced workspace is ready.</p>
-    <button class="btn bp" style="width:100%;margin-bottom:8px" onclick="_syncWelcomeBackChoice('continue')">Continue where I left off</button>
-    <button class="btn" style="width:100%;background:transparent;margin-bottom:12px" onclick="_syncWelcomeBackChoice('browse')">Show me my options instead</button>
-    <label style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--tx2,#888);cursor:pointer">
-      <input type="checkbox" id="syncWbAlways" style="margin:0">Always continue automatically — don't ask again
-    </label>`;
-  _qolModal('syncWelcomeBackModal','Welcome back','',body,'');
-}
-async function _syncWelcomeBackChoice(choice){
-  const always=document.getElementById('syncWbAlways')?.checked;
-  const modal=document.getElementById('syncWelcomeBackModal');
-  if(modal)modal.remove();
-  if(choice==='continue'&&typeof _syncResumeMostRecentProject==='function')_syncResumeMostRecentProject();
-  // 'browse' does nothing further — the landing screen (with its own upload/paste/blueprint
-  // options) is already what's showing, so closing the modal is the whole action.
-  if(always){
-    try{
-      const{data:userData}=await sb.auth.getUser();
-      const userId=userData&&userData.user&&userData.user.id;
-      if(userId){
-        await sb.from('profiles').update({continuation_pref:'last'}).eq('id',userId);
-        _syncProfileCache=null;
-      }
-    }catch(err){}
-  }
-}
-
+// check, so a separate prompt would be redundant there.
+//
+// Retired 2026-09-15: the "Welcome back — continue / show me my options" modal used to be the
+// only mechanism for this decision, back before the project picker existed. Once the picker
+// shipped, both existed at once: a sign-in with 2+ projects would pop this modal ON TOP OF the
+// picker, which was already fully rendered underneath — a binary choice stacked in front of the
+// real, better choice. The picker now owns this job outright (see _syncRenderProjectPicker /
+// _syncPostSignInFlow below); its own "always resume my most recent project automatically" link
+// replaces this modal's "don't ask again" checkbox, writing the same profiles.continuation_pref.
 let _syncHandledSessionToken=null;
-function _syncOnSignedIn(session){
-  // Cheap de-dupe: both the initial getSession() check and onAuthStateChange
-  // (SIGNED_IN or INITIAL_SESSION) can fire for the same session — only act once per token.
-  const token=session&&session.access_token;
-  if(!token||token===_syncHandledSessionToken)return;
+
+// The one place a successful sign-in's follow-up work happens — pull, profile, colourway,
+// onboarding, then resume-or-picker. Two different triggers used to each run this independently
+// (the auth-state-change event, and northstar-core.js's own boot-time idle callback), meaning two
+// separate network pulls and two separate decision trees that could disagree. Now both call this
+// same function; the in-flight/completed promise is cached per session token so the second caller
+// just awaits the first instead of repeating the work.
+let _syncPostSignInPromise=null;
+let _syncPostSignInPromiseToken=null;
+async function _syncPostSignInFlow(){
+  let token=null;
+  try{const{data}=await sb.auth.getSession();token=data&&data.session&&data.session.access_token;}catch(err){}
+  if(!token)return false; // signed out
+  if(_syncPostSignInPromise&&_syncPostSignInPromiseToken===token)return _syncPostSignInPromise;
+  _syncPostSignInPromiseToken=token;
   _syncHandledSessionToken=token;
-  // Guarded like the other syncPullWorkspace call sites: onAuthStateChange's INITIAL_SESSION
-  // callback can fire as a microtask before the later <script> block defining syncPullWorkspace
-  // (northstar-core.js, inlined by the standalone builder) has executed.
-  (typeof syncPullWorkspace==="function"?syncPullWorkspace():Promise.resolve(false)).then(async pulled=>{
+  _syncPostSignInPromise=(async()=>{
+    const pulled=await(typeof syncPullWorkspace==='function'?syncPullWorkspace():Promise.resolve(false));
     ren();
-    // Fetch the profile exactly once here (force refresh) and hand it to both onboarding and
-    // welcome-back, instead of each fetching it independently. Two independent fetches used to
-    // race: onboarding and welcome-back are both full-screen position:fixed overlays sharing the
-    // same z-index, so whichever finished its own async chain last silently buried the other —
-    // in practice this meant onboarding (name/org/role/colourway) could render completely hidden
-    // behind Welcome Back with no visible sign either had fired.
     let profile=null;
     try{profile=await _syncGetProfile(true);}catch(err){console.error('[sync] profile fetch after sign-in failed',err);}
     if(profile&&profile.preferred_colorway&&typeof setThemeColorway==='function'){
       setThemeColorway(profile.preferred_colorway);
     }
-    const showWelcomeBackIfDue=()=>{
-      if(!pulled)return; // nothing new came down — local boot already resumed silently if it had data
-      if(profile&&profile.continuation_pref==='last'){
-        if(typeof _syncResumeMostRecentProject==='function')_syncResumeMostRecentProject();
-      }else{
-        _syncShowWelcomeBack(profile||{});
+    const decideResume=()=>{
+      const projects=(typeof nsListCanonicalProjects==='function')?nsListCanonicalProjects():[];
+      const alwaysAutoResume=profile&&profile.continuation_pref==='last';
+      if(projects.length>=2&&!alwaysAutoResume){
+        // Leave the picker showing — it's already rendered (_syncRenderLandingWidget calls
+        // _syncRenderProjectPicker on every sign-in state change), so there's nothing further to do.
+        return;
       }
+      // 0 or 1 project (or the user opted into always-auto-resume with 2+): resume regardless of
+      // whether THIS pull found anything new — this is the only place that resumes a signed-in
+      // user now (northstar-core.js's boot-time hydrate defers to this same flow), so it can't
+      // skip just because nothing changed since last time; a plain same-device reload needs this
+      // to run every time, same as it always silently worked for local-only users.
+      if(typeof _syncResumeMostRecentProject==='function')_syncResumeMostRecentProject();
     };
     // Self-gating (only shows when the profile has no saved name yet). Onboarding always goes
-    // first when it's due — Welcome Back is deferred until Skip/Save closes it, via
-    // _syncPendingPostOnboarding — so a brand-new account never has the two prompts race.
+    // first when it's due — the resume decision is deferred until Skip/Save closes it, via
+    // _syncPendingPostOnboarding — so a brand-new account never sees both at once.
     const showedOnboarding=await _syncMaybeShowOnboarding(profile);
-    if(showedOnboarding)_syncPendingPostOnboarding=showWelcomeBackIfDue;
-    else showWelcomeBackIfDue();
-  }).catch(err=>{console.error('[sync] post-sign-in flow failed',err);});
+    if(showedOnboarding)_syncPendingPostOnboarding=decideResume;
+    else decideResume();
+    return pulled;
+  })();
   _syncRenderAccountUI();
   _syncRenderLandingWidget();
+  return _syncPostSignInPromise;
+}
+function _syncOnSignedIn(session){
+  // Cheap de-dupe: both the initial getSession() check and onAuthStateChange
+  // (SIGNED_IN or INITIAL_SESSION) can fire for the same session — only act once per token.
+  const token=session&&session.access_token;
+  if(!token||token===_syncHandledSessionToken)return;
+  _syncPostSignInFlow().catch(err=>{console.error('[sync] post-sign-in flow failed',err);});
 }
 async function _syncAuthGate(){
   // The app is fully usable offline/local-only, so boot unconditionally — auth only adds
@@ -34257,32 +34269,25 @@ function nsBrandSweep(){
 document.addEventListener("DOMContentLoaded",nsBrandSweep);setTimeout(nsBrandSweep,0);
 let nsLagExpected=performance.now()+1000;setInterval(()=>{const now=performance.now();NS.eventLoopLag=Math.max(0,now-nsLagExpected);nsLagExpected=now+1000;},1000);
 (()=>{
-  const doHydrate=()=>nsHydrateDatabase().then(localHydrated=>(typeof syncPullWorkspace==="function"?syncPullWorkspace():Promise.resolve(false)).then(async remoteHydrated=>{
-    const hydrated=localHydrated||remoteHydrated;
-    if(!hydrated)return;
-    // Previously this only re-rendered when the app view (#mv) was ALREADY showing — meaning a
-    // restore that happened while the landing/drop-a-file screen was up (the normal case: this
-    // runs on an idle callback shortly after boot, before any file has been dropped) never
-    // actually revealed the restored workspace. _restoreViewportFromState() is the same call the
-    // "Continue where I left off" button already uses to do exactly that; calling it here too
-    // means a returning user (local reload, or signed-in with existing cloud data) lands straight
-    // in their dashboard instead of at an empty drop-zone.
-    // Exception: a signed-in user with 2+ distinct projects gets the landing-screen project picker
-    // (_syncRenderProjectPicker in the main script) instead of being silently dropped into whichever
-    // department happened to be active last — auto-resuming here would skip that choice entirely.
+  // Local IndexedDB hydration always runs regardless of sign-in state — the app is fully usable
+  // signed out and local restore must not depend on auth. What happens AFTER hydration differs:
+  // signed-in users delegate entirely to _syncPostSignInFlow() (the main script's single
+  // pull-then-decide flow, also triggered by the auth-state-change event) rather than this file
+  // doing its own separate pull and resume decision — two independent pulls used to run on every
+  // sign-in, sometimes reaching different conclusions about whether to auto-resume or show the
+  // picker. _syncPostSignInFlow() caches its in-flight/completed promise per session token, so
+  // whichever of the two triggers (this idle callback, or the auth event) runs first does the
+  // work and the second just awaits the same result.
+  const doHydrate=()=>nsHydrateDatabase().then(async localHydrated=>{
     const userId=typeof _syncGetUserId==="function"?await _syncGetUserId():null;
-    const projectCount=(userId&&typeof nsListCanonicalProjects==="function")?nsListCanonicalProjects().length:0;
-    if(!(userId&&projectCount>=2)&&typeof _restoreViewportFromState==="function")_restoreViewportFromState();
+    if(userId&&typeof _syncPostSignInFlow==="function"){
+      await _syncPostSignInFlow();
+    }else if(localHydrated&&typeof _restoreViewportFromState==="function"){
+      _restoreViewportFromState();
+    }
     if(document.getElementById("ca"))try{ren();}catch(err){}
-  }));
-  const hydrate=()=>{
-    // Always run local IndexedDB hydration regardless of sign-in state — the app is fully usable
-    // signed out and local restore must not depend on auth. (This used to gate the entire call
-    // behind an existing session, which meant a signed-out user's own local IndexedDB data never
-    // got restored into S.entries at all — only syncPullWorkspace() inside doHydrate() actually
-    // needs a session, and it already no-ops safely on its own when signed out.)
-    return doHydrate();
-  };
+  });
+  const hydrate=()=>doHydrate();
   if("requestIdleCallback" in window)requestIdleCallback(hydrate,{timeout:1200});else setTimeout(hydrate,80);
 })();
 
