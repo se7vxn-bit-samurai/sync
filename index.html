@@ -919,15 +919,23 @@ body.th-newsprint{
 .lc-feat-body{font-family:'Cormorant Garamond',serif;font-size:clamp(11px,1vw,13px);color:var(--lc-feat-body);line-height:1.4}
 .lc-projects{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
 .lc-projects-label{font-family:'DM Mono',monospace;font-size:clamp(9px,0.8vw,10px);letter-spacing:.18em;text-transform:uppercase;color:var(--lc-label);margin-bottom:2px}
-.lc-project-row{display:flex;align-items:center;gap:10px;padding:clamp(8px,1.1vh,12px) clamp(8px,1vw,12px);border:1px solid var(--lc-accent-faint);border-radius:8px;cursor:pointer;transition:border-color .15s,background .15s;background:transparent;text-align:left}
-.lc-project-row:hover{border-color:var(--lc-accent);background:var(--lc-dz-bg)}
+.lc-project-row-wrap{display:flex;align-items:stretch;gap:6px}
+.lc-project-row{flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding:clamp(8px,1.1vh,12px) clamp(8px,1vw,12px);border:1px solid var(--lc-accent-faint);border-radius:8px;cursor:pointer;transition:border-color .15s,background .15s;background:transparent;text-align:left;font:inherit;color:inherit}
+.lc-project-row:hover,.lc-project-row:focus-visible{border-color:var(--lc-accent);background:var(--lc-dz-bg)}
+.lc-project-row:focus-visible{outline:2px solid var(--lc-accent);outline-offset:1px}
+.lc-project-row-main{display:flex;flex-direction:column;min-width:0}
 .lc-project-name{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(12px,1.1vw,14px);color:var(--lc-feat-head)}
 .lc-project-meta{font-family:'DM Mono',monospace;font-size:clamp(9px,0.8vw,10px);color:var(--lc-faint);margin-top:2px;letter-spacing:.04em}
 .lc-project-arrow{margin-left:auto;color:var(--lc-accent);font-size:14px;flex-shrink:0}
-.lc-project-delete{flex-shrink:0;width:26px;height:26px;border-radius:50%;border:1px solid transparent;background:transparent;color:var(--lc-faint);font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.5;transition:opacity .12s,color .12s,border-color .12s,background .12s}
-.lc-project-row:hover .lc-project-delete,.lc-project-delete:focus-visible{opacity:1}
+.lc-project-action{flex-shrink:0;width:26px;height:26px;border-radius:50%;border:1px solid transparent;background:transparent;color:var(--lc-faint);font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.5;transition:opacity .12s,color .12s,border-color .12s,background .12s;align-self:center}
+.lc-project-row-wrap:hover .lc-project-action,.lc-project-action:focus-visible{opacity:1}
+.lc-project-action:hover,.lc-project-action:focus-visible{color:var(--lc-accent);border-color:var(--lc-accent);opacity:1}
 .lc-project-delete:hover,.lc-project-delete:focus-visible{color:#e5484d;border-color:#e5484d;background:rgba(229,72,77,.08);opacity:1}
 .lc-project-more{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(11px,1vw,12px);color:var(--lc-muted);text-align:center;padding-top:4px}
+.lc-project-more-btn{width:100%;background:none;border:1px dashed var(--lc-accent-dashed);border-radius:8px;padding:8px 10px;font-family:'DM Mono',monospace;font-size:clamp(9px,0.8vw,10px);letter-spacing:.06em;text-transform:uppercase;color:var(--lc-muted);cursor:pointer;transition:border-color .15s,color .15s}
+.lc-project-more-btn:hover,.lc-project-more-btn:focus-visible{border-color:var(--lc-accent);color:var(--lc-accent)}
+.lc-project-search{width:100%;box-sizing:border-box;padding:7px 10px;border-radius:7px;border:1px solid var(--lc-accent-faint);background:transparent;color:inherit;font:inherit;font-size:clamp(11px,1vw,12px);margin-bottom:4px}
+.lc-project-search:focus-visible{outline:2px solid var(--lc-accent);outline-offset:1px;border-color:var(--lc-accent)}
 .lc-project-auto-resume{background:none;border:none;padding:8px 4px 2px;margin-top:2px;font-family:'DM Mono',monospace;font-size:clamp(9px,0.8vw,10px);letter-spacing:.04em;color:var(--lc-faint);text-decoration:underline;text-underline-offset:2px;cursor:pointer;text-align:center;width:100%}
 .lc-project-auto-resume:hover{color:var(--lc-accent)}
 .lc-new-source-toggle{display:flex;align-items:center;gap:6px;width:100%;justify-content:center;padding:clamp(8px,1.1vh,11px) 10px;border:1px dashed var(--lc-accent-dashed);border-radius:8px;background:transparent;cursor:pointer;font-family:'DM Mono',monospace;font-size:clamp(10px,0.9vw,11px);letter-spacing:.08em;text-transform:uppercase;color:var(--lc-muted);transition:border-color .15s,color .15s}
@@ -975,6 +983,14 @@ body.th-newsprint{
 .lc-sync-icon-btn:disabled{opacity:.5;cursor:default}
 .lc-sync-icon-btn.saving svg{animation:sync-spin 1s linear infinite}
 @keyframes sync-spin{to{transform:rotate(360deg)}}
+.sync-status-pill{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;border:1px solid var(--bdr,#3a3a3a);background:var(--al,rgba(255,255,255,.04));font-size:11px;line-height:1.4;color:var(--tm,#888);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.sync-status-pill .sync-status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:currentColor}
+.sync-status-pill.saved{color:#2ecc71;border-color:rgba(46,204,113,.35)}
+.sync-status-pill.saving{color:#f5a623;border-color:rgba(245,166,35,.35)}
+.sync-status-pill.saving .sync-status-dot{animation:sync-dot-pulse 1s infinite}
+.sync-status-pill.attention{color:#e5484d;border-color:rgba(229,72,77,.45);background:rgba(229,72,77,.08)}
+.sync-status-pill.offline{color:#f5a623;border-color:rgba(245,166,35,.35)}
+.sync-status-pill.local{color:var(--tm,#888)}
 .sync-save-dot{position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;background:transparent;transition:background-color .3s}
 .sync-save-dot.saving{background:#f5a623;animation:sync-dot-pulse 1s infinite}
 .sync-save-dot.saved{background:#2ecc71;animation:sync-dot-pulse 1.2s ease-out 1}
@@ -2765,10 +2781,12 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
         <div id="lcDesc" class="lc-desc">Schedules, people and operational decisions brought together in one trusted workflow intelligence system.</div>
       </div>
 
-      <!-- Signed-in project picker — replaces the marketing features/stats below when a signed-in
-           user has 2+ projects to choose from (see _syncRenderProjectPicker). Hidden by default;
-           a single-project account still just auto-resumes silently via the existing restore path,
-           so this only ever shows when there's a genuine choice to make. -->
+      <!-- Signed-in project picker — replaces the marketing features/stats below whenever a signed-in
+           user has any saved project (see _syncRenderProjectPicker). This is the signed-in
+           destination: a single project still shows here as one choice to open, rather than
+           auto-resuming silently, so "sign in → choose what to continue" holds even with one
+           project. Only an explicit "always jump to my most recent project" preference (or having
+           zero projects at all) skips straight past it. -->
       <div id="lcProjectPicker" class="lc-projects" style="display:none"></div>
 
       <!-- Features -->
@@ -2804,13 +2822,13 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
 
       <div class="lc-right-label">Load source<span class="lc-right-rule"></span></div>
 
-      <!-- Collapsed by default only when the signed-in project picker is showing (2+ projects) —
-           see _syncSetNewSourceCollapsed. Continuing an existing project is the prominent action
-           there; starting something new becomes a deliberate secondary click instead of the only
-           thing on the page. Signed out, or signed in with 0-1 projects, this stays expanded and
-           nothing here changes. -->
+      <!-- Collapsed by default whenever the signed-in project picker is showing (any saved
+           project) — see _syncSetNewSourceCollapsed. Continuing an existing project is the
+           prominent action there; starting something new stays available but becomes a deliberate
+           secondary click instead of competing with it. Signed out, or signed in with no saved
+           projects at all, this stays expanded and nothing here changes. -->
       <button id="lcNewSourceToggle" class="lc-new-source-toggle" style="display:none" onclick="_syncSetNewSourceCollapsed(false)">
-        <span class="lc-new-icon">+</span>Start something new
+        <span class="lc-new-icon">+</span>Start or import a new project
       </button>
       <div id="lcNewSourceGroup">
 
@@ -12361,12 +12379,19 @@ function activateDept(name){
   // already safe by this point via nsPersist, but the cloud copy can otherwise lag up to ~800ms
   // behind, and department switches are exactly the moment that lag becomes a real risk.
   if(typeof syncFlushPendingPush==="function")syncFlushPendingPush();
-  if(S.activeDept&&!isUniversalWorkspace())saveDeptSnap(S.activeDept);
+  if(S.activeDept&&!isUniversalWorkspace()){
+    saveDeptSnap(S.activeDept);
+    // The in-session snapshot above is runtime-only; this is the copy that survives a reload and
+    // follows the user to another device.
+    if(typeof _syncSaveViewState==="function")_syncSaveViewState(typeof nsActiveDepartmentKey==="function"?nsActiveDepartmentKey():"");
+  }
   S._universalWorkspace=false;document.body.classList.remove("sync-universal-active");
   S.activeDept=name;
   restoreDeptSnap(name);
+  if(typeof nsDepartmentKey==="function"&&typeof _syncRecordProjectOpened==="function")_syncRecordProjectOpened(nsDepartmentKey(name));
   loadSwapsForDept();
   showMV();
+  if(typeof _syncRestoreScrollForTab==="function")_syncRestoreScrollForTab();
   notifyLoadAnomalies(name);
 }
 
@@ -13331,7 +13356,12 @@ function renderRailToggle(){
     try{if(localStorage.getItem('mf_rail_collapsed')==='1'){rail.classList.add('collapsed');}}catch(e){}
   }
 }
-function _renderNow(){normalizeTabState();renderChrome();renderActiveTab();}
+function _renderNow(){
+  normalizeTabState();renderChrome();renderActiveTab();
+  // Every screen/filter/month change lands here eventually, so this is the one hook that keeps the
+  // per-project view record current without sprinkling save calls through every control.
+  if(typeof _syncScheduleViewSave==="function")_syncScheduleViewSave();
+}
 function ren(){_queueRenderTask("full",_renderNow);}
 
 /* ═══ CALENDAR ═══ */
@@ -28036,7 +28066,7 @@ async function _syncRenderAccountUI(){
     badge.title='Account & sync — '+profile.email;
     badge.style.cssText='display:flex;align-items:center;gap:6px;margin-left:8px;font-size:11px;color:var(--tm,#888);border:none;background:none;cursor:pointer;padding:2px 6px;font-family:inherit';
     badge.onclick=()=>{openSettings();};
-    badge.innerHTML=`<span id="syncSaveDotMasthead" class="sync-save-dot" style="position:relative;top:0;right:0"></span><span style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(first)}</span>`;
+    badge.innerHTML=`<span id="syncSaveDotMasthead" class="sync-save-dot" style="display:none"></span><span style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(first)}</span>${_syncStatusPillHtml()}`;
     // TODO(teams): once team creation/invite/switching exists, this is where a team-switcher
     // dropdown would extend S.activeDept / the existing department-switcher logic to also list
     // teams the user belongs to (via team_members), not just their personal workspace.
@@ -28057,9 +28087,9 @@ function _syncRenderSettingsAccountSection(){
   }
   let h=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Account</div>`;
   if(!profile){
-    h+=`<div style="font-size:12px;color:var(--tm);line-height:1.5;margin-bottom:10px">Sign in to sync this workspace across devices — your work stays fully usable offline either way.</div>`;
+    h+=`<div style="font-size:12px;color:var(--tm);line-height:1.5;margin-bottom:10px">Continue with Google to sync this workspace across devices — connects your existing account, or creates one if you're new. Your work stays fully usable offline either way.</div>`;
     h+=`<div style="display:flex;gap:6px">`;
-    h+=`<button class="btn bp" style="flex:1;justify-content:center;display:flex;align-items:center;gap:6px" onclick="_syncSignInWithGoogle()">${SYNC_GOOGLE_ICON_SVG}<span>Sign in</span></button>`;
+    h+=`<button class="btn bp" style="flex:1;justify-content:center;display:flex;align-items:center;gap:6px" onclick="_syncSignInWithGoogle()">${SYNC_GOOGLE_ICON_SVG}<span>Continue with Google</span></button>`;
     h+=`</div>`;
   }else{
     const first=_syncFirstName(profile);
@@ -28070,9 +28100,11 @@ function _syncRenderSettingsAccountSection(){
     h+=`<div id="syncSettingsProfileStatus" style="display:none;font-size:11px;color:var(--tm);margin-bottom:8px"></div>`;
     h+=`<div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--tm);margin-bottom:10px">Colourway set under Appearance above · syncs to every device you sign into</div>`;
     h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">`;
-    h+=`<span style="display:flex;align-items:center;gap:7px;font-size:11px;color:var(--tm)"><span id="syncSaveDotSettings" class="sync-save-dot" style="position:relative;top:0;right:0"></span>Last synced: ${X(_syncLastSyncedLabel())}</span>`;
+    h+=`<span style="display:flex;align-items:center;gap:7px;font-size:11px;color:var(--tm)"><span id="syncSaveDotSettings" class="sync-save-dot" style="display:none"></span>${_syncStatusPillHtml()}</span>`;
     h+=`<button class="btn" style="padding:5px 12px;font-size:11px" onclick="_syncManualSave()">Save now</button>`;
     h+=`</div>`;
+    h+=`<div style="font-size:11px;color:var(--tm);margin-bottom:10px">Last cloud save: ${X(_syncLastSyncedLabel())}</div>`;
+    h+=`<button class="btn" style="width:100%;justify-content:center;margin-bottom:8px" onclick="_syncExportBackup()">Export backup file</button>`;
     h+=`<button class="btn" style="width:100%;justify-content:center;color:#e5484d;border:1px solid rgba(229,72,77,.3)" onclick="closeSettings();_syncConfirmSignOut()">Sign out</button>`;
   }
   h+=`</div>`;
@@ -28122,7 +28154,73 @@ function _syncSetSaveDot(state){
     if(state==='saved'||state==='error')setTimeout(()=>{if(dot.className==='sync-save-dot '+state)dot.className='sync-save-dot';},2500);
   });
   if(state==='saved'){_syncLastSyncedAt=new Date().toISOString();try{localStorage.setItem('sync_last_synced_at',_syncLastSyncedAt);}catch(err){}}
+  _syncSetStatus(state);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   SYNC STATUS — the dot above fades after 2.5s and is a 9px circle
+   with no label, which is far too quiet for "is my work actually
+   backed up?". This is the same information said out loud, in words,
+   and it persists rather than fading: every surface showing it renders
+   a labelled pill that ages ("Saved to cloud just now" → "…4 min
+   ago"), reports offline as a state of its own rather than an error,
+   and says "needs attention" when a push genuinely failed.
+   ═══════════════════════════════════════════════════════════════ */
+let _syncStatusState='idle';
+function _syncRelativeTime(iso){
+  if(!iso)return'';
+  const then=Date.parse(iso);
+  if(isNaN(then))return'';
+  const mins=Math.floor((Date.now()-then)/60000);
+  if(mins<1)return'just now';
+  if(mins===1)return'1 min ago';
+  if(mins<60)return mins+' min ago';
+  const hrs=Math.floor(mins/60);
+  if(hrs===1)return'1 hour ago';
+  if(hrs<24)return hrs+' hours ago';
+  const days=Math.floor(hrs/24);
+  return days===1?'yesterday':days+' days ago';
+}
+// Resolves what to SAY from three inputs: the last push outcome, whether the browser has a network
+// at all, and whether there's an account to sync to in the first place. Signed out is not a
+// failure — it's local-only by design — so it gets its own calm wording rather than a warning.
+function _syncStatusInfo(){
+  const online=(typeof navigator==='undefined')||navigator.onLine!==false;
+  const signedIn=!!_syncProfileCache;
+  if(_syncStatusState==='saving')return{kind:'saving',label:'Saving…'};
+  if(_syncStatusState==='conflict')return{kind:'attention',label:'Needs attention — newer copy on another device'};
+  if(!online)return{kind:'offline',label:'Offline — saved on this device'};
+  if(_syncStatusState==='error')return{kind:'attention',label:'Needs attention — not backed up to the cloud'};
+  if(!signedIn)return{kind:'local',label:'Saved on this device'};
+  const rel=_syncRelativeTime(_syncLastSyncedAt);
+  if(!rel)return{kind:'local',label:'Saved on this device — not synced yet'};
+  return{kind:'saved',label:'Saved to cloud '+rel};
+}
+function _syncStatusPillHtml(extraStyle){
+  const info=_syncStatusInfo();
+  return `<span class="sync-status-pill ${info.kind}" data-sync-status title="${X(info.label)}"${extraStyle?` style="${extraStyle}"`:''}><i class="sync-status-dot" aria-hidden="true"></i><span class="sync-status-text">${X(info.label)}</span></span>`;
+}
+function _syncRenderStatusEverywhere(){
+  const info=_syncStatusInfo();
+  document.querySelectorAll('[data-sync-status]').forEach(el=>{
+    el.className='sync-status-pill '+info.kind;
+    el.title=info.label;
+    const text=el.querySelector('.sync-status-text');
+    if(text)text.textContent=info.label;
+  });
+}
+function _syncSetStatus(state){
+  _syncStatusState=state||'idle';
+  _syncRenderStatusEverywhere();
+}
+// "just now" has to stop being true on its own, or the pill quietly lies as time passes.
+setInterval(_syncRenderStatusEverywhere,60000);
+window.addEventListener('online',()=>{
+  _syncRenderStatusEverywhere();
+  // Coming back from offline is exactly when a pending local-only change should reach the cloud.
+  if(typeof syncFlushPendingPush==='function')syncFlushPendingPush();
+});
+window.addEventListener('offline',_syncRenderStatusEverywhere);
 async function _syncManualSave(){
   if(typeof _syncPushWorkspaceNow!=='function')return;
   await _syncPushWorkspaceNow();
@@ -28150,19 +28248,88 @@ async function _syncRetryFromBanner(){
 }
 // Fires when this device's pending save was refused because another device has written newer data
 // since this device last checked in — see the optimistic-concurrency guard in
-// _syncPushWorkspaceNow(). Reloading pulls that newer copy in (syncPullWorkspace already only
-// applies it if it's genuinely newer) rather than silently overwriting it.
+// _syncPushWorkspaceNow(). A bare "reload to avoid overwriting" banner told the user they had a
+// problem without telling them what changed or giving them any way out other than discarding their
+// own unsaved work sight-unseen, so this now opens a real comparison with three honest options:
+// take the other device's copy, keep a portable copy of this device's version first, or explicitly
+// overwrite. _syncConflictRemoteAt is set by the guard itself so the "12 min ago" here is the
+// actual remote timestamp, not a guess.
+let _syncConflictRemoteAt=null;
 function _syncOnSyncConflict(){
-  _syncShowIssueBanner('conflict','Another device saved newer changes to this workspace. Reload to get the latest before continuing, to avoid overwriting it.',
-    `<button onclick="location.reload()">Reload now</button>`);
+  _syncShowIssueBanner('conflict','Another device saved newer changes to this workspace.',
+    `<button onclick="_syncShowConflictComparison()">Compare and choose</button>`);
+  _syncShowConflictComparison();
+}
+function _syncShowConflictComparison(){
+  const project=S.activeDept||'this workspace';
+  const remoteRel=_syncRelativeTime(_syncConflictRemoteAt);
+  const localRel=_syncRelativeTime(_syncLastSyncedAt);
+  const row=(heading,detail,accent)=>`<div style="border:1px solid ${accent};border-radius:8px;padding:10px 12px;margin-bottom:8px"><div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px">${heading}</div><div style="font-size:11px;color:var(--tm);line-height:1.5">${detail}</div></div>`;
+  const body=`<div id="syncConflictBody">
+    <p style="margin:0 0 12px;color:var(--tx2,#888);font-size:13px;line-height:1.5">Two devices changed <b>${X(project)}</b>. Nothing has been overwritten — choose which copy to keep.</p>
+    ${row('This device',`Has changes made since its last cloud save${localRel?` (${X(localRel)})`:''}. Still safe on this device.`,'var(--bdr,#3a3a3a)')}
+    ${row('Another device',`Saved to the cloud${remoteRel?` ${X(remoteRel)}`:' more recently'}. This is the copy the cloud currently holds.`,'rgba(245,166,35,.45)')}
+    <button class="btn bp" style="width:100%;margin-bottom:8px" onclick="location.reload()">Reload and use the other device's copy</button>
+    <button class="btn" style="width:100%;margin-bottom:8px" onclick="_syncExportBackup()">Download this device's version first</button>
+    <button class="btn" style="width:100%;margin-bottom:8px;color:#e5484d;border:1px solid rgba(229,72,77,.3)" onclick="_syncForceOverwriteCloud()">Overwrite the cloud with this device's version</button>
+    <button class="btn" style="width:100%;background:transparent" onclick="document.getElementById('syncConflictModal')?.remove()">Decide later</button>
+  </div>`;
+  _qolModal('syncConflictModal','Two versions of this workspace','',body,'');
+}
+async function _syncForceOverwriteCloud(){
+  const bodyEl=document.getElementById('syncConflictBody');
+  if(bodyEl)bodyEl.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px;color:var(--tm)"><span class="sync-save-dot saving" style="position:relative;top:0;right:0;flex-shrink:0"></span>Overwriting the cloud copy…</div>`;
+  let ok=false;
+  try{ok=typeof _syncPushWorkspaceNow==='function'?await _syncPushWorkspaceNow({force:true}):false;}catch(err){ok=false;}
+  if(ok){
+    document.getElementById('syncConflictModal')?.remove();
+    document.getElementById('syncIssueBanner')?.remove();
+    toast('Cloud copy replaced with this device\'s version','ok');
+    return;
+  }
+  if(bodyEl)bodyEl.innerHTML=`
+    <p style="margin:0 0 12px;color:#e5484d;font-size:13px;line-height:1.5">The overwrite did not go through. Nothing was changed in the cloud.</p>
+    <button class="btn bp" style="width:100%;margin-bottom:8px" onclick="_syncForceOverwriteCloud()">Try again</button>
+    <button class="btn" style="width:100%;margin-bottom:8px" onclick="_syncExportBackup()">Download this device's version</button>
+    <button class="btn" style="width:100%;background:transparent" onclick="document.getElementById('syncConflictModal')?.remove()">Close</button>`;
+}
+
+// Portable snapshot of everything Sync holds for this user — the same payload shape the cloud push
+// sends (canonical model + the synced localStorage keys), so it can be read back by a human, kept
+// as an off-device backup, or used to reconstruct state if both the local and cloud copies go wrong.
+// Deliberately separate from the workbook exports, which produce spreadsheets of one project's
+// rows rather than the workspace itself.
+function _syncExportBackup(){
+  try{
+    const model=(typeof nsCanonical==='function')?nsCanonical():{};
+    const payload={
+      format:'sync-workspace-backup',
+      format_version:1,
+      exported_at:new Date().toISOString(),
+      exported_from:(typeof location!=='undefined'&&location.hostname)||'',
+      active_project:S.activeDept||'',
+      projects:(typeof nsListCanonicalProjects==='function')?nsListCanonicalProjects().map(p=>({key:p.key,name:p.name,peopleCount:p.peopleCount,scheduleCount:p.scheduleCount})):[],
+      workspace:Object.assign({},model,(typeof _syncCollectLocalKeys==='function')?_syncCollectLocalKeys():{})
+    };
+    const stamp=new Date().toISOString().slice(0,10);
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+    if(typeof nsDownloadBlob==='function')nsDownloadBlob(blob,`sync-backup-${stamp}.json`);
+    toast('Backup file downloaded','ok');
+  }catch(err){
+    console.error('[sync] backup export failed',err);
+    toast('Could not create the backup file','err');
+  }
 }
 // Best-effort: flush any pending debounced cloud push the moment the tab is hidden or about to
 // unload, so switching apps/tabs or closing the browser doesn't leave the cloud copy lagging behind
 // whatever was just typed. Local (IndexedDB) persistence is unaffected either way.
 document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='hidden'&&typeof syncFlushPendingPush==='function')syncFlushPendingPush();
+  if(document.visibilityState!=='hidden')return;
+  if(typeof _syncSaveViewState==='function')_syncSaveViewState();
+  if(typeof syncFlushPendingPush==='function')syncFlushPendingPush();
 });
 window.addEventListener('beforeunload',()=>{
+  if(typeof _syncSaveViewState==='function')_syncSaveViewState();
   if(typeof syncFlushPendingPush==='function')syncFlushPendingPush();
 });
 function _syncLastSyncedLabel(){
@@ -28212,35 +28379,74 @@ async function _syncRenderLandingWidget(){
       const first=_syncFirstName(profile);
       // Status only, not a second copy of save/sign-out — those live once, in Settings' Account
       // section (see _syncRenderSettingsAccountSection). Clicking here opens straight to it.
-      host.innerHTML=`<button class="lc-sync-signed-in" onclick="openSettings()" title="Account & sync settings" style="all:unset;display:flex;align-items:center;gap:8px;cursor:pointer;width:100%"><span class="lc-sync-email" title="${X(profile.email)}">Hi ${X(first)} · synced</span><span id="syncSaveDotLc" class="sync-save-dot" style="position:relative;top:0;right:0;margin-left:auto"></span></button>`;
+      host.innerHTML=`<button class="lc-sync-signed-in" onclick="openSettings()" title="Account & sync settings" style="all:unset;display:flex;align-items:center;gap:8px;cursor:pointer;width:100%;flex-wrap:wrap"><span class="lc-sync-email" title="${X(profile.email)}">Hi ${X(first)}</span><span id="syncSaveDotLc" class="sync-save-dot" style="display:none"></span>${_syncStatusPillHtml('margin-left:auto')}</button>`;
     }else{
       host.innerHTML=`
-        <div class="lc-sync-caption">Sign in to sync across devices</div>
-        <div style="display:flex;gap:6px">
-          <button id="syncLcSignInBtn" class="lc-sync-btn" style="flex:1;justify-content:center" onclick="_syncSignInWithGoogle()">${SYNC_GOOGLE_ICON_SVG}<span>Sign in</span></button>
-          <button id="syncLcGoogleBtn" class="lc-sync-btn" style="flex:1;justify-content:center" onclick="_syncSignInWithGoogle()">${SYNC_GOOGLE_ICON_SVG}<span>Create account</span></button>
-        </div>
+        <div class="lc-sync-caption">Continue with Google to sync across devices — connects your existing account, or creates one if you're new</div>
+        <button id="syncLcGoogleBtn" class="lc-sync-btn" style="width:100%;justify-content:center" onclick="_syncSignInWithGoogle()">${SYNC_GOOGLE_ICON_SVG}<span>Continue with Google</span></button>
         <div id="syncLcError" class="lc-sync-error" style="display:none"></div>`;
     }
   }catch(err){}
   _syncRenderProjectPicker();
 }
-// Signed-in landing state: with 2+ known projects (from the department tags already on synced
+// Signed-in landing state: with any known projects (from the department tags already on synced
 // canonical data — real across every device, not just locally-opened tabs), the marketing feature
 // list/stats give way to a picker so signing in on a new device means "choose where to continue,"
-// not "load a file all over again." Exactly 0 or 1 project changes nothing here — a single project
-// still just auto-resumes silently via the existing _restoreViewportFromState() calls, and 0
-// projects means there's genuinely nothing to pick from yet.
-function _syncProjectPickerHtml(projects){
-  const shown=projects.slice(0,6);
-  let h='<div class="lc-projects-label">Continue a project</div>';
-  h+=shown.map(p=>{
-    const meta=[p.peopleCount?p.peopleCount+' people':'',p.scheduleCount?p.scheduleCount+' schedule rows':''].filter(Boolean).join(' · ')||'No data yet';
-    // A div, not a nested button, so the delete "✕" can be its own real button inside without
-    // invalid button-in-button markup. Delete stops propagation so it never also opens the project.
-    return `<div class="lc-project-row" onclick="_syncOpenProject('${XJS(p.name)}')"><div><div class="lc-project-name">${X(p.name)}</div><div class="lc-project-meta">${X(meta)}</div></div><button type="button" class="lc-project-delete" title="Remove ${X(p.name)} — deletes it everywhere, cannot be undone" onclick="event.stopPropagation();_syncConfirmDeleteProject('${XJS(p.key)}','${XJS(p.name)}')">✕</button><span class="lc-project-arrow">→</span></div>`;
+// not "load a file all over again." A single project still shows here — as one row to open — so
+// the same "choose what to continue" moment holds every time there's something to continue. Only
+// 0 projects (genuinely nothing to pick from) or the explicit always-auto-resume preference skips it.
+//
+// Rows beyond the first 6 are hidden behind search/"Show all" rather than dropped — the department
+// switcher inside the app was a circular fallback (the user hasn't entered the app yet at this
+// screen), so anything not shown here was previously just unreachable from sign-in.
+let _syncPickerAllProjects=[];
+let _syncPickerQuery='';
+let _syncPickerShowAll=false;
+function _syncProjectRowsHtml(projects){
+  return projects.map(p=>{
+    const bits=[p.peopleCount?p.peopleCount+' people':'',p.scheduleCount?p.scheduleCount+' schedule rows':''];
+    if(p.lastOpened)bits.push('opened '+new Date(p.lastOpened).toLocaleDateString());
+    const meta=bits.filter(Boolean).join(' · ')||'No data yet';
+    // A real <button> for the row (keyboard/focus/Enter all work natively) with the delete control
+    // as a sibling <button>, not nested inside it — buttons can't contain buttons. Delete stops
+    // propagation so it never also opens the project.
+    return `<div class="lc-project-row-wrap"><button type="button" class="lc-project-row" onclick="_syncOpenProject('${XJS(p.name)}')"><span class="lc-project-row-main"><span class="lc-project-name">${X(p.name)}</span><span class="lc-project-meta">${X(meta)}</span></span><span class="lc-project-arrow" aria-hidden="true">→</span></button><button type="button" class="lc-project-action" title="Rename ${X(p.name)}" aria-label="Rename ${X(p.name)}" onclick="event.stopPropagation();_syncPromptRenameProject('${XJS(p.key)}','${XJS(p.name)}')">✎</button><button type="button" class="lc-project-action lc-project-delete" title="Remove ${X(p.name)} — deletes it everywhere, cannot be undone" aria-label="Delete ${X(p.name)}" onclick="event.stopPropagation();_syncConfirmDeleteProject('${XJS(p.key)}','${XJS(p.name)}')">✕</button></div>`;
   }).join('');
-  if(projects.length>shown.length)h+=`<div class="lc-project-more">+${projects.length-shown.length} more — open any project from the department switcher inside the app</div>`;
+}
+function _syncRenderProjectRows(){
+  const rowsHost=document.getElementById('lcProjectRows'),moreHost=document.getElementById('lcProjectMore');
+  if(!rowsHost)return;
+  const q=_syncPickerQuery.trim().toLowerCase();
+  const filtered=q?_syncPickerAllProjects.filter(p=>p.name.toLowerCase().includes(q)):_syncPickerAllProjects;
+  const showAll=_syncPickerShowAll||!!q;
+  const shown=showAll?filtered:filtered.slice(0,6);
+  rowsHost.innerHTML=_syncProjectRowsHtml(shown);
+  if(!moreHost)return;
+  if(!showAll&&filtered.length>shown.length){
+    moreHost.style.display='';
+    moreHost.innerHTML=`<button type="button" class="lc-project-more-btn" onclick="_syncShowAllProjects()">Show all ${filtered.length} projects</button>`;
+  }else if(q&&!filtered.length){
+    moreHost.style.display='';
+    moreHost.innerHTML=`<div class="lc-project-more">No projects match "${X(_syncPickerQuery)}"</div>`;
+  }else{
+    moreHost.style.display='none';moreHost.innerHTML='';
+  }
+}
+function _syncFilterProjectPicker(value){
+  _syncPickerQuery=value||'';
+  _syncRenderProjectRows();
+}
+function _syncShowAllProjects(){
+  _syncPickerShowAll=true;
+  _syncRenderProjectRows();
+}
+function _syncProjectPickerHtml(projects){
+  _syncPickerAllProjects=projects;
+  _syncPickerQuery='';
+  _syncPickerShowAll=false;
+  let h='<div class="lc-projects-label">Continue a project</div>';
+  if(projects.length>6)h+=`<input type="search" id="lcProjectSearch" class="lc-project-search" placeholder="Search projects…" aria-label="Search projects" oninput="_syncFilterProjectPicker(this.value)">`;
+  h+='<div id="lcProjectRows"></div><div id="lcProjectMore" style="display:none"></div>';
   h+=`<button type="button" class="lc-project-auto-resume" onclick="_syncSetAlwaysAutoResume()">Always jump straight to my most recent project — skip this screen</button>`;
   return h;
 }
@@ -28265,8 +28471,9 @@ async function _syncRenderProjectPicker(){
   try{
     const profile=await _syncGetProfile();
     const projects=(profile&&typeof nsListCanonicalProjects==='function')?nsListCanonicalProjects():[];
-    if(profile&&projects.length>=2){
+    if(profile&&projects.length>=1){
       host.innerHTML=_syncProjectPickerHtml(projects);
+      _syncRenderProjectRows();
       host.style.display='flex';
       if(featuresEl)featuresEl.style.display='none';
       if(statsEl)statsEl.style.display='none';
@@ -28301,16 +28508,221 @@ function _syncSetNewSourceCollapsed(collapsed){
 // unconditionally, which is correct here: by the time this function is called (from the picker, or
 // from _syncResumeMostRecentProject after validating against the same project list), the project
 // is already known to be real.
+// Device-local "last opened" signal (localStorage, keyed by department key) — canonical project
+// recency otherwise only comes from import/source timestamps (see nsListCanonicalProjects), which
+// drift from reality once a project is edited or opened from another device without a fresh
+// import. Recording an actual open event here gives the picker/auto-resume a truer "most recent."
+function _syncRecordProjectOpened(key){
+  if(!key)return;
+  try{
+    const raw=localStorage.getItem('sync_last_opened');
+    const map=raw?JSON.parse(raw):{};
+    map[key]=new Date().toISOString();
+    localStorage.setItem('sync_last_opened',JSON.stringify(map));
+  }catch(err){}
+}
+function _syncGetLastOpened(key){
+  try{
+    const raw=localStorage.getItem('sync_last_opened');
+    if(!raw||!key)return'';
+    const map=JSON.parse(raw);
+    return map[key]||'';
+  }catch(err){return'';}
+}
+/* ═══════════════════════════════════════════════════════════════
+   PER-PROJECT VIEW STATE — "continue exactly where you left off"
+
+   Reopening a project used to restore its DATA and then drop you on
+   whatever screen the app defaults to, with filters reset. The
+   in-session department switcher already kept view context (see
+   DEPT_FIELDS/saveDeptSnap), but that snapshot is runtime-only: it
+   never survived a reload, and it carries entries/wb/raw, so it is far
+   too heavy to sync. This is a deliberately small, flat record per
+   project — screen, sub-screen, filters, month/day, scroll offsets —
+   stored under its own localStorage key and included in the cloud
+   payload (SYNC_LOCAL_KEYS), so the same context follows you to
+   another device.
+   ═══════════════════════════════════════════════════════════════ */
+const SYNC_VIEW_STATE_KEY='sc_view_state';
+// Scalars only. Anything holding a workbook, rows, Sets or Maps stays out by design — this record
+// must stay small enough to ride along in every cloud push without thought.
+const SYNC_VIEW_SCALARS=['tab','calSubTab','plSubTab','peopleSubTab','anView','anMode','emp','team','dayFilter','shiftFilter','srch','tblType','tblSortCol','tblSortDir','month','mIdx','showCardWk','sh','rawSheet'];
+const SYNC_VIEW_TABS=['dashboard','calendar','people','ops','table','analytics','cards','planner','summary','raw'];
+function _syncReadViewStateMap(){
+  try{
+    const raw=localStorage.getItem(SYNC_VIEW_STATE_KEY);
+    const map=raw?JSON.parse(raw):null;
+    return(map&&typeof map==='object')?map:{};
+  }catch(err){return{};}
+}
+function _syncCaptureViewState(){
+  const view={};
+  SYNC_VIEW_SCALARS.forEach(f=>{
+    const v=S[f];
+    if(v===null||v===undefined)return;
+    const t=typeof v;
+    if(t==='string'||t==='number'||t==='boolean')view[f]=v;
+  });
+  ['calDay','anDay'].forEach(f=>{
+    const d=S[f];
+    if(d instanceof Date&&!isNaN(d))view[f]=d.toISOString();
+  });
+  // setTab() already maintains S._scrollPos per tab; top it up with the live offset for whatever
+  // tab is on screen right now, since the user may never switch tabs before leaving.
+  const scroll=Object.assign({},S._scrollPos||{});
+  try{
+    const ca=document.getElementById('ca');
+    if(ca&&S.tab)scroll[S.tab]=ca.scrollTop||0;
+  }catch(err){}
+  view._scrollPos=scroll;
+  view.savedAt=new Date().toISOString();
+  return view;
+}
+function _syncSaveViewState(deptKey){
+  const key=deptKey||(typeof nsActiveDepartmentKey==='function'?nsActiveDepartmentKey():'');
+  if(!key||key==='default')return;
+  // Nothing worth remembering before a project is actually open — avoids writing a "landing screen"
+  // view record that would later restore as an empty screen.
+  if(!(S.wb||(S.entries&&S.entries.length)))return;
+  try{
+    const map=_syncReadViewStateMap();
+    map[key]=_syncCaptureViewState();
+    const raw=JSON.stringify(map);
+    // Critical (synchronous) on purpose. A deferred write goes into _persistPendingSet and flushes
+    // later, which loses every case this record exists for: the beforeunload/visibilitychange save
+    // never reaches storage, a reload reads a stale record, and a cloud push collecting
+    // SYNC_LOCAL_KEYS finds the previous value. The record is a few hundred bytes.
+    if(typeof _persistSet==='function')_persistSet(SYNC_VIEW_STATE_KEY,raw,{critical:true});
+    else localStorage.setItem(SYNC_VIEW_STATE_KEY,raw);
+  }catch(err){}
+}
+let _syncViewSaveTimer=null;
+function _syncScheduleViewSave(){
+  if(_syncViewSaveTimer)clearTimeout(_syncViewSaveTimer);
+  _syncViewSaveTimer=setTimeout(()=>{_syncViewSaveTimer=null;_syncSaveViewState();},1500);
+}
+// Applies a saved view record onto S, validating every field against the project that was ACTUALLY
+// loaded — a month or sheet that no longer exists (deleted rows, a re-import with a different
+// range, an older device's stale record) must not be restored, or the app reopens on an empty
+// screen that looks like data loss. Anything that fails validation is simply left at its default.
+function _syncApplyViewState(deptKey){
+  if(!deptKey)return null;
+  const view=_syncReadViewStateMap()[deptKey];
+  if(!view||typeof view!=='object')return null;
+  if(view.tab&&SYNC_VIEW_TABS.indexOf(view.tab)>=0)S.tab=view.tab;
+  ['calSubTab','plSubTab','peopleSubTab','anView','anMode','emp','team','dayFilter','shiftFilter','srch','tblType','tblSortCol','tblSortDir'].forEach(f=>{
+    if(typeof view[f]==='string')S[f]=view[f];
+  });
+  if(typeof view.showCardWk==='boolean')S.showCardWk=view.showCardWk;
+  if(typeof view.month==='string'&&Array.isArray(S.months)&&S.months.indexOf(view.month)>=0){
+    S.month=view.month;
+    S.mIdx=S.months.indexOf(view.month);
+  }
+  if(typeof view.sh==='string'&&(view.sh==='__all__'||(Array.isArray(S.shs)&&S.shs.indexOf(view.sh)>=0)))S.sh=view.sh;
+  if(typeof view.rawSheet==='string'&&Array.isArray(S.shs)&&S.shs.indexOf(view.rawSheet)>=0)S.rawSheet=view.rawSheet;
+  ['calDay','anDay'].forEach(f=>{
+    if(typeof view[f]!=='string')return;
+    const d=new Date(view[f]);
+    if(!isNaN(d))S[f]=d;
+  });
+  if(view._scrollPos&&typeof view._scrollPos==='object'){
+    S._scrollPos=Object.assign({},S._scrollPos||{},view._scrollPos);
+  }
+  return view;
+}
+function _syncRestoreScrollForTab(){
+  requestAnimationFrame(()=>{
+    try{
+      const ca=document.getElementById('ca'),pos=S._scrollPos&&S._scrollPos[S.tab];
+      if(ca&&pos)ca.scrollTop=pos;
+    }catch(err){}
+  });
+}
 function _syncOpenProject(name){
   if(!name)return;
+  // Whatever project is open right now keeps its context before we switch away from it.
+  if(S.activeDept&&S.activeDept!==name)_syncSaveViewState(typeof nsActiveDepartmentKey==='function'?nsActiveDepartmentKey():'');
   S.activeDept=name;
+  const deptKey=(typeof nsDepartmentKey==='function')?nsDepartmentKey(name):'';
+  if(deptKey)_syncRecordProjectOpened(deptKey);
   if(typeof nsRestoreEntriesFromCanonical==='function')nsRestoreEntriesFromCanonical();
   if(!S.workspace||typeof S.workspace!=='object')S.workspace={};
   if(!S.workspace[name]&&typeof saveDeptSnap==='function')saveDeptSnap(name);
+  // After the data is loaded (so month/sheet validation has something real to check against) and
+  // before the first paint, so the project opens directly on the right screen rather than flashing
+  // the default one first.
+  if(deptKey)_syncApplyViewState(deptKey);
+  if(typeof normalizeTabState==='function')normalizeTabState();
   if(typeof showMV==='function')showMV();
   else if(typeof _restoreViewportFromState==='function')_restoreViewportFromState();
   if(typeof updateDeptStrip==='function')updateDeptStrip();
   if(typeof ren==='function')ren();
+  _syncRestoreScrollForTab();
+}
+// Renames a project from the picker, without having to open it first. Same cloud discipline as the
+// delete flow below: the modal holds a "Renaming…" state until the push is confirmed, and surfaces
+// a retry rather than closing on a silent failure.
+function _syncPromptRenameProject(key,name){
+  const body=`<div id="syncRenameProjectBody">
+    <p style="margin:0 0 12px;color:var(--tx2,#888);font-size:13px;line-height:1.5">Renames <b>${X(name)}</b> everywhere — every person, schedule entry and record tagged with it, on this device and in your synced cloud copy.</p>
+    <input type="text" id="syncRenameInput" value="${X(name)}" aria-label="New project name" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1px solid var(--bd,#3a3a3a);background:var(--bg2,#1a1a1a);color:var(--tx,#eee);font-size:14px;margin-bottom:10px">
+    <div id="syncRenameError" style="display:none;color:#e5484d;font-size:12px;margin-bottom:10px"></div>
+    <button class="btn bp" style="width:100%;margin-bottom:8px" onclick="_syncRenameProject('${XJS(key)}','${XJS(name)}')">Rename project</button>
+    <button class="btn" style="width:100%;background:transparent" onclick="document.getElementById('syncRenameProjectModal')?.remove()">Cancel</button>
+  </div>`;
+  _qolModal('syncRenameProjectModal','Rename project','',body,'');
+  setTimeout(()=>{
+    const input=document.getElementById('syncRenameInput');
+    if(!input)return;
+    input.focus();input.select();
+    input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();_syncRenameProject(key,name);}});
+  },30);
+}
+async function _syncRenameProject(key,oldName){
+  const input=document.getElementById('syncRenameInput'),errEl=document.getElementById('syncRenameError');
+  const next=String((input&&input.value)||'').trim().replace(/\s+/g,' ');
+  const fail=msg=>{if(errEl){errEl.textContent=msg;errEl.style.display='block';}};
+  if(errEl){errEl.style.display='none';errEl.textContent='';}
+  if(!next)return fail('Enter a name.');
+  if(next===oldName){document.getElementById('syncRenameProjectModal')?.remove();return;}
+  if(typeof nsRenameDepartmentEverywhere!=='function')return fail('Renaming is unavailable.');
+  const taken=(typeof nsListCanonicalProjects==='function'?nsListCanonicalProjects():[]).some(p=>p.key!==key&&p.name.toLowerCase()===next.toLowerCase());
+  if(taken)return fail('Another project already uses that name.');
+  const bodyEl=document.getElementById('syncRenameProjectBody');
+  if(bodyEl)bodyEl.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px;color:var(--tm)"><span class="sync-save-dot saving" style="position:relative;top:0;right:0;flex-shrink:0"></span>Renaming ${X(oldName)}…</div>`;
+  nsRenameDepartmentEverywhere(key,next);
+  let flushOk=true;
+  try{flushOk=typeof syncFlushPendingPush==='function'?await syncFlushPendingPush():true;}
+  catch(err){flushOk=false;}
+  _syncRenderProjectPicker();
+  if(typeof updateDeptStrip==='function')updateDeptStrip();
+  if(!flushOk){
+    const el=document.getElementById('syncRenameProjectBody');
+    if(el)el.innerHTML=`
+      <p style="margin:0 0 12px;color:#e5484d;font-size:13px;line-height:1.5">Renamed to <b>${X(next)}</b> on this device, but the cloud copy couldn't be confirmed — other devices may still show the old name until this succeeds.</p>
+      <button class="btn bp" style="width:100%;margin-bottom:8px" onclick="_syncRetryRenameFlush('${XJS(next)}')">Retry sync</button>
+      <button class="btn" style="width:100%;background:transparent" onclick="document.getElementById('syncRenameProjectModal')?.remove()">Close</button>`;
+    return;
+  }
+  document.getElementById('syncRenameProjectModal')?.remove();
+  toast(`Renamed to ${X(next)}`,'ok');
+}
+async function _syncRetryRenameFlush(name){
+  const bodyEl=document.getElementById('syncRenameProjectBody');
+  if(bodyEl)bodyEl.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px;color:var(--tm)"><span class="sync-save-dot saving" style="position:relative;top:0;right:0;flex-shrink:0"></span>Retrying sync for ${X(name)}…</div>`;
+  let flushOk=true;
+  try{flushOk=typeof syncFlushPendingPush==='function'?await syncFlushPendingPush():true;}
+  catch(err){flushOk=false;}
+  if(!flushOk){
+    const el=document.getElementById('syncRenameProjectBody');
+    if(el)el.innerHTML=`
+      <p style="margin:0 0 12px;color:#e5484d;font-size:13px;line-height:1.5">Still could not confirm the cloud copy for <b>${X(name)}</b>.</p>
+      <button class="btn bp" style="width:100%;margin-bottom:8px" onclick="_syncRetryRenameFlush('${XJS(name)}')">Retry sync</button>
+      <button class="btn" style="width:100%;background:transparent" onclick="document.getElementById('syncRenameProjectModal')?.remove()">Close</button>`;
+    return;
+  }
+  document.getElementById('syncRenameProjectModal')?.remove();
+  toast(`${X(name)} synced`,'ok');
 }
 // Deletes a project permanently — the real fix for stale/wrong entries sitting in the picker.
 // Previously the only way to remove one was hand-editing the Supabase row's JSONB directly, which
@@ -28321,26 +28733,81 @@ function _syncOpenProject(name){
 // nsRemoveDepartmentEverywhere in northstar-core.js), forces an immediate cloud push of the result,
 // then re-renders the picker — so there's nothing left anywhere to silently resurrect it.
 function _syncConfirmDeleteProject(key,name){
-  const body=`
+  const body=`<div id="syncDeleteProjectBody">
     <p style="margin:0 0 16px;color:var(--tx2,#888);font-size:13px;line-height:1.5">This permanently deletes <b>${X(name)}</b> — every person, schedule entry, team, and record tagged with it — from this device and your synced cloud copy. This cannot be undone.</p>
     <button class="btn" style="width:100%;margin-bottom:8px;background:#e5484d;color:#fff;border:none" onclick="_syncDeleteProject('${XJS(key)}','${XJS(name)}')">Delete ${X(name)} permanently</button>
-    <button class="btn" style="width:100%;background:transparent" onclick="document.getElementById('syncDeleteProjectModal')?.remove()">Cancel</button>`;
+    <button class="btn" style="width:100%;background:transparent" onclick="document.getElementById('syncDeleteProjectModal')?.remove()">Cancel</button>
+  </div>`;
   _qolModal('syncDeleteProjectModal','Remove this project?','',body,'');
 }
+// Stays in a "Removing…" state (and blocks the modal's own close controls) until the cloud flush
+// actually confirms — previously the modal closed and a "removed" toast fired the instant the local
+// delete happened, before the cloud push was even attempted, so a failed sync could leave a project
+// deleted on this device but still sitting on another device's/cloud's copy with nothing telling the
+// user that happened. On failure the modal stays open with the error and a Retry, rather than
+// silently claiming success.
+function _syncSetDeleteModalBusy(name,label){
+  const modal=document.getElementById('syncDeleteProjectModal'),bodyEl=document.getElementById('syncDeleteProjectBody');
+  if(bodyEl)bodyEl.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px;color:var(--tm)"><span class="sync-save-dot saving" style="position:relative;top:0;right:0;flex-shrink:0"></span>${X(label)} ${X(name)}…</div>`;
+  if(modal){
+    const closeBtn=modal.querySelector('.qol-close-btn');
+    if(closeBtn)closeBtn.disabled=true;
+    const backdrop=modal.querySelector('.qol-modal-backdrop');
+    if(backdrop)backdrop.onclick=null;
+  }
+}
+function _syncSetDeleteModalError(name,message){
+  const bodyEl=document.getElementById('syncDeleteProjectBody');
+  if(bodyEl)bodyEl.innerHTML=`
+    <p style="margin:0 0 12px;color:#e5484d;font-size:13px;line-height:1.5">Removed <b>${X(name)}</b> on this device, but the cloud copy couldn't be confirmed — it may still reappear here or on another device until this succeeds.</p>
+    <p style="margin:0 0 16px;color:var(--tx2,#888);font-size:12px">${X(message||'Sync failed.')}</p>
+    <button class="btn bp" style="width:100%;margin-bottom:8px" onclick="_syncRetryDeleteFlush('${XJS(name)}')">Retry sync</button>
+    <button class="btn" style="width:100%;background:transparent" onclick="document.getElementById('syncDeleteProjectModal')?.remove()">Close</button>`;
+  const modal=document.getElementById('syncDeleteProjectModal');
+  if(modal){
+    const closeBtn=modal.querySelector('.qol-close-btn');
+    if(closeBtn)closeBtn.disabled=false;
+    const backdrop=modal.querySelector('.qol-modal-backdrop');
+    if(backdrop)backdrop.onclick=()=>document.getElementById('syncDeleteProjectModal')?.remove();
+  }
+}
 async function _syncDeleteProject(key,name){
+  if(!key||typeof nsRemoveDepartmentEverywhere!=='function')return;
+  _syncSetDeleteModalBusy(name,'Removing');
+  const result=nsRemoveDepartmentEverywhere(key);
+  // nsPersist() (called inside nsRemoveDepartmentEverywhere) already debounce-queues a push;
+  // flush it now and wait for confirmation before treating the deletion as done.
+  let flushOk=true;
+  try{flushOk=typeof syncFlushPendingPush==='function'?await syncFlushPendingPush():true;}
+  catch(err){flushOk=false;}
+  if(!flushOk){
+    _syncSetDeleteModalError(name,'Could not confirm the cloud copy. Check your connection and try again.');
+    _syncRenderProjectPicker();
+    if(typeof updateDeptStrip==='function')updateDeptStrip();
+    return;
+  }
   const modal=document.getElementById('syncDeleteProjectModal');
   if(modal)modal.remove();
-  if(!key||typeof nsRemoveDepartmentEverywhere!=='function')return;
-  const result=nsRemoveDepartmentEverywhere(key);
   toast(result&&result.removed?`Removed ${X(name)} (${result.removed} record${result.removed===1?'':'s'})`:`${X(name)} removed`,'ok');
-  // nsPersist() (called inside nsRemoveDepartmentEverywhere) already debounce-queues a push;
-  // flush it now so the cloud copy is confirmed clean before the picker re-renders from it, rather
-  // than leaving a window where a stray auto-save elsewhere could race the deletion.
-  if(typeof syncFlushPendingPush==='function')await syncFlushPendingPush();
   if(S.activeDept&&typeof nsActiveDepartmentKey==='function'&&nsActiveDepartmentKey()===key){
     S.activeDept=null;S.entries=[];
     if(typeof _restoreViewportFromState==='function')_restoreViewportFromState();
   }
+  _syncRenderProjectPicker();
+  if(typeof updateDeptStrip==='function')updateDeptStrip();
+}
+async function _syncRetryDeleteFlush(name){
+  _syncSetDeleteModalBusy(name,'Retrying sync for');
+  let flushOk=true;
+  try{flushOk=typeof syncFlushPendingPush==='function'?await syncFlushPendingPush():true;}
+  catch(err){flushOk=false;}
+  if(!flushOk){
+    _syncSetDeleteModalError(name,'Still could not confirm the cloud copy.');
+    return;
+  }
+  const modal=document.getElementById('syncDeleteProjectModal');
+  if(modal)modal.remove();
+  toast(`${X(name)} removed`,'ok');
   _syncRenderProjectPicker();
   if(typeof updateDeptStrip==='function')updateDeptStrip();
 }
@@ -28499,8 +28966,17 @@ async function _syncPostSignInFlow(){
   if(_syncPostSignInPromise&&_syncPostSignInPromiseToken===token)return _syncPostSignInPromise;
   _syncPostSignInPromiseToken=token;
   _syncHandledSessionToken=token;
+  // syncPullWorkspace lives in the LAST <script> block in this file; _syncAuthGate runs at the end
+  // of THIS one, which is parsed earlier. So on a returning visit — a session that already exists
+  // at first paint — this flow fires before the sync layer exists, the `typeof` guard below quietly
+  // skips the pull, and the run still cached itself as complete under this session token. The
+  // northstar boot callback then called back in, got the cached "done" promise, and the cloud pull
+  // never happened at all: a returning user saw only whatever was already on this device, with
+  // their synced projects invisible until a manual re-sign-in. A run that could not pull is not a
+  // real run, so it releases its claim at the end and lets the next caller redo it properly.
+  const syncLayerReady=typeof syncPullWorkspace==='function';
   _syncPostSignInPromise=(async()=>{
-    const pulled=await(typeof syncPullWorkspace==='function'?syncPullWorkspace():Promise.resolve(false));
+    const pulled=await(syncLayerReady?syncPullWorkspace():Promise.resolve(false));
     ren();
     let profile=null;
     try{profile=await _syncGetProfile(true);}catch(err){console.error('[sync] profile fetch after sign-in failed',err);}
@@ -28510,24 +28986,41 @@ async function _syncPostSignInFlow(){
     const decideResume=()=>{
       const projects=(typeof nsListCanonicalProjects==='function')?nsListCanonicalProjects():[];
       const alwaysAutoResume=profile&&profile.continuation_pref==='last';
-      if(projects.length>=2&&!alwaysAutoResume){
+      if(projects.length>=1&&!alwaysAutoResume){
         // Leave the picker showing — it's already rendered (_syncRenderLandingWidget calls
         // _syncRenderProjectPicker on every sign-in state change), so there's nothing further to do.
+        // This is the signed-in destination for ANY saved project now, including exactly one.
         return;
       }
-      // 0 or 1 project (or the user opted into always-auto-resume with 2+): resume regardless of
-      // whether THIS pull found anything new — this is the only place that resumes a signed-in
-      // user now (northstar-core.js's boot-time hydrate defers to this same flow), so it can't
-      // skip just because nothing changed since last time; a plain same-device reload needs this
-      // to run every time, same as it always silently worked for local-only users.
+      // 0 projects (or the user opted into always-auto-resume): resume regardless of whether THIS
+      // pull found anything new — this is the only place that resumes a signed-in user now
+      // (northstar-core.js's boot-time hydrate defers to this same flow), so it can't skip just
+      // because nothing changed since last time; a plain same-device reload needs this to run every
+      // time, same as it always silently worked for local-only users.
       if(typeof _syncResumeMostRecentProject==='function')_syncResumeMostRecentProject();
     };
-    // Self-gating (only shows when the profile has no saved name yet). Onboarding always goes
-    // first when it's due — the resume decision is deferred until Skip/Save closes it, via
-    // _syncPendingPostOnboarding — so a brand-new account never sees both at once.
-    const showedOnboarding=await _syncMaybeShowOnboarding(profile);
-    if(showedOnboarding)_syncPendingPostOnboarding=decideResume;
-    else decideResume();
+    // Profile completion (name/org/role) never blocks this decision — it's optional, available any
+    // time from Settings' Account section (_syncRenderSettingsAccountSection), which already has
+    // the same fields inline. The old "Finish setting up your profile" modal used to pop up here
+    // BEFORE this ran, ahead of even the project picker — for a fresh Google account that meant
+    // profile details always came before "which project," blocking the one choice sign-in exists to
+    // offer. decideResume now always goes first; _syncMaybeShowOnboarding/_syncOnboardModal are kept
+    // around but are no longer invoked automatically from here.
+    //
+    // The picker MUST be re-rendered here, after the pull. The pair of render calls below this IIFE
+    // run synchronously, while the pull is still in flight — on a device with no local data yet
+    // (the entire point of signing in on a new machine) the project list is still empty at that
+    // moment, so the picker renders as "nothing to show" and hides itself. Nothing re-rendered it
+    // once the projects actually arrived, and decideResume() then returned early believing a picker
+    // was on screen, leaving the user on a bare drop-zone with their saved projects invisible.
+    await _syncRenderAccountUI();
+    await _syncRenderLandingWidget();
+    decideResume();
+    if(!syncLayerReady){
+      _syncPostSignInPromise=null;
+      _syncPostSignInPromiseToken=null;
+      _syncHandledSessionToken=null;
+    }
     return pulled;
   })();
   _syncRenderAccountUI();
@@ -32419,7 +32912,7 @@ function nsPersist(){
    <script src> AFTER that script runs, so both are already globals
    by the time any of this executes.
    ═══════════════════════════════════════════════════════════════ */
-const SYNC_LOCAL_KEYS=["sc_settings","sc_planner","sc_blueprints","sc_positions","sc_exceptions","sc_leaverequests","sc_dayclosed","sc_coaching","sc_qol_state","sc_att","sc_hc","sc_notes","sc_people","sc_rosterfile","sc_otplan","sc_leaderplanner","sc_shiftlib","sc_coveragereq","sc_forecast","sc_coachquality","sc_agentstatuses","sc_agentnotes","sc_name_remaps","sc_people_view","sc_people_home","sc_people_logbook"];
+const SYNC_LOCAL_KEYS=["sc_settings","sc_planner","sc_blueprints","sc_positions","sc_exceptions","sc_leaverequests","sc_dayclosed","sc_coaching","sc_qol_state","sc_att","sc_hc","sc_notes","sc_people","sc_rosterfile","sc_otplan","sc_leaderplanner","sc_shiftlib","sc_coveragereq","sc_forecast","sc_coachquality","sc_agentstatuses","sc_agentnotes","sc_name_remaps","sc_people_view","sc_people_home","sc_people_logbook","sc_view_state"];
 
 function _syncCollectLocalKeys(){
   const out={};
@@ -32512,21 +33005,60 @@ function _syncReportPushOutcome(state){
   }
 }
 
-async function _syncPushWorkspaceNow(){
+/* ───────────────────────────────────────────────────────────────
+   FIRST-PULL GATE
+
+   Boot pushes an auto-save on a timer (nsPersist → syncPushWorkspace,
+   ~90ms debounce + idle callback) while the sign-in flow is still
+   fetching the cloud copy. On a device with nothing stored locally —
+   a new machine, a cleared browser, a fresh profile — that push
+   carries an EMPTY canonical model, and the upsert is last-write-wins
+   across the whole workspace: it can land first and replace the
+   user's real cloud data with nothing, after which the pull finds
+   only the empty row it just created and there is nothing left to
+   restore. The optimistic-concurrency check cannot catch this,
+   because _syncLastKnownRemoteUpdatedAt is still null at that point.
+
+   So: no push reaches the cloud until this session has completed its
+   first pull. A push that arrives early is remembered and released
+   once the gate opens, so nothing is dropped — only reordered.
+   ─────────────────────────────────────────────────────────────── */
+let _syncInitialPullDone=false;
+let _syncPushDeferredByGate=false;
+function _syncOpenPushGate(){
+  if(_syncInitialPullDone)return;
+  _syncInitialPullDone=true;
+  if(!_syncPushDeferredByGate)return;
+  _syncPushDeferredByGate=false;
+  _syncPushWorkspaceNow();
+}
+async function _syncPushWorkspaceNow(opts){
+  opts=opts||{};
   try{
     const userId=await _syncGetUserId();
     if(!userId)return false; // signed out — defensive no-op, should not happen behind the auth gate
+    // opts.afterPull is the pull's own "no row existed, seed it from local" push, which by
+    // definition runs with the gate still shut and must not wait on itself.
+    if(!_syncInitialPullDone&&!opts.afterPull){
+      _syncPushDeferredByGate=true;
+      return false;
+    }
     if(typeof _syncSetSaveDot==="function")_syncSetSaveDot("saving");
     // Optimistic-concurrency guard: check whether another device has written since we last knew
     // about this row, BEFORE blindly overwriting it with our own full snapshot. Cheap (one indexed
     // column) relative to the upsert itself, and this is the one thing standing between "two
     // devices, two different projects open" and one of them silently losing work.
-    if(_syncLastKnownRemoteUpdatedAt){
+    // opts.force skips it — reached only from the conflict comparison's explicit "overwrite the
+    // cloud with this device's version" choice, never from an automatic save.
+    if(_syncLastKnownRemoteUpdatedAt&&!opts.force){
       const{data:existing}=await sb.from("workspaces").select("updated_at").eq("owner_user_id",userId).eq("department_key",SYNC_PERSONAL_WORKSPACE_KEY).maybeSingle();
       // Numeric comparison, not string: one side is a JS toISOString() ("...376Z"), the other a
       // Postgres timestamptz round-tripped through PostgREST ("...376+00:00") — different but
       // equal-value representations that don't compare correctly as plain strings.
       if(existing&&existing.updated_at&&Date.parse(existing.updated_at)>Date.parse(_syncLastKnownRemoteUpdatedAt)){
+        // Hand the real remote timestamp to the conflict comparison so it can say when the other
+        // device actually saved, instead of vaguely asserting that one did.
+        if(typeof _syncConflictRemoteAt!=="undefined")_syncConflictRemoteAt=existing.updated_at;
         if(typeof _syncSetSaveDot==="function")_syncSetSaveDot("conflict");
         _syncReportPushOutcome("conflict");
         return false;
@@ -32542,13 +33074,23 @@ async function _syncPushWorkspaceNow(){
       data:payload,
       updated_at:nowIso
     },{onConflict:"owner_user_id,department_key"});
-    if(error)console.error("[sync] workspace push failed",error);
+    if(error){
+      console.error("[sync] workspace push failed",error);
+      // Put the dirty flag back. syncPushWorkspace() clears it the moment it hands off to this
+      // function, so a push that then FAILS — the offline case, most obviously — used to leave
+      // nothing pending: syncFlushPendingPush() would no-op on reconnect and the change stayed
+      // local-only until some unrelated later edit happened to trigger another save. Restoring it
+      // makes the work outstanding again, so the reconnect flush (and the next flush of any kind)
+      // actually retries it.
+      _syncPushDirty=true;
+    }
     else _syncLastKnownRemoteUpdatedAt=nowIso;
     if(typeof _syncSetSaveDot==="function")_syncSetSaveDot(error?"error":"saved");
     _syncReportPushOutcome(error?"error":"saved");
     return!error;
   }catch(err){
     console.error("[sync] workspace push threw",err);
+    _syncPushDirty=true;
     if(typeof _syncSetSaveDot==="function")_syncSetSaveDot("error");
     _syncReportPushOutcome("error");
     return false;
@@ -32634,6 +33176,7 @@ async function syncPullWorkspace(){
       // and is never itself pulled/persisted, so it needs rebuilding from the canonical schedule
       // every time a remote pull actually replaces the local model.
       nsRestoreEntriesFromCanonical();
+      _syncOpenPushGate();
       return true;
     }
     if(!row){
@@ -32642,10 +33185,17 @@ async function syncPullWorkspace(){
       // server empty.
       const local=_syncCollectLocalKeys();
       const hasLocalData=(localModel.people&&localModel.people.length)||(localModel.schedule&&localModel.schedule.length)||Object.keys(local).length>0;
-      if(hasLocalData)await _syncPushWorkspaceNow();
+      if(hasLocalData)await _syncPushWorkspaceNow({afterPull:true});
     }
+    _syncOpenPushGate();
     return false;
-  }catch(err){console.error("[sync] workspace pull failed",err);return false;}
+  }catch(err){
+    console.error("[sync] workspace pull failed",err);
+    // Open the gate even on failure, or a pull that errors once would block every save for the rest
+    // of the session — local-first has to degrade to "push anyway", not to "never push again".
+    _syncOpenPushGate();
+    return false;
+  }
 }
 
 // This entire file is wrapped in one top-level IIFE (see the opening `(function(){` at the very
@@ -32664,6 +33214,17 @@ window._syncPushWorkspaceNow=_syncPushWorkspaceNow;
 window._syncGetUserId=_syncGetUserId;
 window.nsRestoreEntriesFromCanonical=nsRestoreEntriesFromCanonical;
 window.nsListCanonicalProjects=nsListCanonicalProjects;
+// Same trap as the exports above, found the same way — by a test, not by reading the code. The main
+// script guards every cross-file call with `typeof X==='function'`, so an unexported name does not
+// throw: it silently skips. These five were each being skipped permanently, which meant the
+// per-project view state never saved or restored (it keys off nsActiveDepartmentKey/nsDepartmentKey),
+// "last opened" was never recorded, deleting the project you had open never cleared it from view,
+// and the backup export wrote out an empty workspace.
+window.nsCanonical=nsCanonical;
+window.nsDepartmentKey=nsDepartmentKey;
+window.nsActiveDepartmentKey=nsActiveDepartmentKey;
+window.nsDownloadBlob=nsDownloadBlob;
+window._syncCollectLocalKeys=_syncCollectLocalKeys;
 
 function nsOpenDatabase(){
   if(!window.indexedDB)return Promise.reject(new Error("IndexedDB unavailable"));
@@ -32733,7 +33294,13 @@ function nsListCanonicalProjects(){
       const rec=ensure(key,row.department);
       if(rec){rec.scheduleCount++;if(row.imported_at&&String(row.imported_at)>String(rec.lastUpdated))rec.lastUpdated=row.imported_at;}
     });
-    return[...byKey.values()].filter(p=>p.peopleCount||p.scheduleCount).sort((a,b)=>String(b.lastUpdated||"").localeCompare(String(a.lastUpdated||"")));
+    return[...byKey.values()].filter(p=>p.peopleCount||p.scheduleCount).map(p=>{
+      p.lastOpened=(typeof _syncGetLastOpened==="function")?_syncGetLastOpened(p.key):"";
+      return p;
+    }).sort((a,b)=>{
+      const ra=a.lastOpened||a.lastUpdated||"",rb=b.lastOpened||b.lastUpdated||"";
+      return String(rb).localeCompare(String(ra));
+    });
   }catch(err){console.error("[sync] listing canonical projects failed",err);return[];}
 }
 
@@ -32789,6 +33356,90 @@ function nsRemoveDepartmentEverywhere(targetKey){
   }catch(err){console.error("[sync] removing department failed",err);return{removed:0,error:err};}
 }
 window.nsRemoveDepartmentEverywhere=nsRemoveDepartmentEverywhere;
+
+// Renames one project/department everywhere it is recorded — the counterpart to the removal above,
+// and for the same reason: renameDept() only ever worked on a department already OPEN as a tab
+// (it needs S.workspace[oldName]), so a project sitting in the sign-in picker, not yet opened on
+// this device, had no way to be renamed at all. Walks the same tables by the same derived key, so
+// records that inherit their department from a source (rather than carrying it directly) follow
+// their source automatically. The source map is built once, BEFORE any mutation, so every record
+// is still matched against its pre-rename key as the pass proceeds.
+const NS_DEPARTMENT_NAME_FIELDS=["scope_department","home_department","department","department_name"];
+const NS_DEPARTMENT_KEY_FIELDS=["department_key","workspace_key"];
+function nsRenameDepartmentEverywhere(targetKey,newName){
+  const clean=nsClean(newName);
+  if(!targetKey||!clean)return{renamed:0};
+  const nextKey=nsDepartmentKey(clean);
+  try{
+    const model=nsCanonical(),sourceMap=nsSourceDepartmentMap(model);
+    let renamed=0;
+    NS_DEPARTMENT_TABLES.forEach(table=>{
+      const arr=model[table];
+      if(!Array.isArray(arr))return;
+      arr.forEach(record=>{
+        if(!record||typeof record!=="object")return;
+        if(nsRecordDepartmentKey(record,model,sourceMap)!==targetKey)return;
+        let touched=false;
+        NS_DEPARTMENT_NAME_FIELDS.forEach(field=>{
+          if(nsClean(record[field]))  {record[field]=clean;touched=true;}
+        });
+        NS_DEPARTMENT_KEY_FIELDS.forEach(field=>{
+          if(nsClean(record[field])){record[field]=nextKey;touched=true;}
+        });
+        if(touched)renamed++;
+      });
+    });
+    if(S.people&&typeof S.people==="object"){
+      Object.keys(S.people).forEach(name=>{
+        const rec=S.people[name];if(!rec)return;
+        ["department","homeDepartment","team"].forEach(field=>{
+          if(nsClean(rec[field])&&nsDepartmentKey(rec[field])===targetKey)rec[field]=clean;
+        });
+      });
+    }
+    // Runtime tab snapshots and the two localStorage blobs keyed by department NAME rather than key.
+    if(S.workspace&&typeof S.workspace==="object"){
+      Object.keys(S.workspace).forEach(name=>{
+        if(nsDepartmentKey(name)!==targetKey||name===clean)return;
+        S.workspace[clean]=S.workspace[name];delete S.workspace[name];
+      });
+    }
+    ["sc_positions","sc_blueprints"].forEach(storageKey=>{
+      try{
+        const raw=localStorage.getItem(storageKey);
+        if(!raw)return;
+        const obj=JSON.parse(raw);
+        if(!obj||typeof obj!=="object")return;
+        let changed=false;
+        Object.keys(obj).forEach(name=>{
+          if(nsDepartmentKey(name)!==targetKey||name===clean)return;
+          obj[clean]=obj[name];delete obj[name];changed=true;
+        });
+        if(changed){if(typeof _persistSet==="function")_persistSet(storageKey,JSON.stringify(obj),{critical:true});else localStorage.setItem(storageKey,JSON.stringify(obj));}
+      }catch(err){}
+    });
+    // The device-local maps keyed by department key, so a rename doesn't reset "last opened" or
+    // throw away the saved view context for what is still the same project.
+    [["sync_last_opened",false],["sc_view_state",true]].forEach(([storageKey,critical])=>{
+      try{
+        const raw=localStorage.getItem(storageKey);
+        if(!raw)return;
+        const obj=JSON.parse(raw);
+        if(!obj||typeof obj!=="object"||!obj[targetKey]||nextKey===targetKey)return;
+        obj[nextKey]=obj[targetKey];delete obj[targetKey];
+        const out=JSON.stringify(obj);
+        if(typeof _persistSet==="function")_persistSet(storageKey,out,{critical});else localStorage.setItem(storageKey,out);
+      }catch(err){}
+    });
+    if(S.activeDept&&nsDepartmentKey(S.activeDept)===targetKey){
+      S.activeDept=clean;
+      if(typeof setDeptName==="function")setDeptName(clean);
+    }
+    nsPersist();
+    return{renamed,key:nextKey,name:clean};
+  }catch(err){console.error("[sync] renaming department failed",err);return{renamed:0,error:err};}
+}
+window.nsRenameDepartmentEverywhere=nsRenameDepartmentEverywhere;
 
 async function nsHydrateDatabase(){
   NS.hydrating=true;
