@@ -32420,6 +32420,22 @@ async function _syncGetUserId(){
 // a real, separate concept.
 const SYNC_PERSONAL_WORKSPACE_KEY="__personal__";
 
+// Numeric comparison, not string: every "is this newer" decision in the sync/hydrate paths below
+// compares a JS toISOString() timestamp ("...376Z") against one round-tripped through PostgREST
+// ("...376+00:00") — different-but-equal-value representations that do NOT reliably compare as
+// plain strings. Confirmed as a real, repeated data-loss cause: a device's local canonical model
+// could have a chronologically OLDER updated_at that nonetheless string-compared as "newer" than a
+// genuinely newer remote row, causing syncPullWorkspace() to skip applying the clean remote data —
+// leaving stale local data in place, which a subsequent auto-save would then push back up,
+// silently reverting a remote fix/cleanup. Fixed here once; used everywhere a timestamp comparison
+// decides whether to overwrite local or remote state.
+function nsIsNewerTimestamp(a,b){
+  const ta=Date.parse(a||""),tb=Date.parse(b||"");
+  if(isNaN(ta))return false;
+  if(isNaN(tb))return true;
+  return ta>tb;
+}
+
 // The last remote updated_at we know about — set after every successful pull AND every successful
 // push (to the timestamp we just wrote). Used by _syncPushWorkspaceNow as an optimistic-concurrency
 // check: if another device has written a newer row than the last one we observed, this device's
@@ -32554,12 +32570,12 @@ async function syncPullWorkspace(){
         // logic), this should pick the row for the team the user has active, not just "newest wins"
         // across every team the user happens to belong to.
         ((teamRows&&teamRows.data)||[]).forEach(r=>{
-          if(!row||String(r.updated_at||"")>String(row.updated_at||""))row=r;
+          if(!row||nsIsNewerTimestamp(r.updated_at,row.updated_at))row=r;
         });
       }
     }catch(err){}
     const localModel=nsCanonical();
-    if(row&&row.data&&String(row.updated_at||"")>String(localModel.updated_at||"")){
+    if(row&&row.data&&nsIsNewerTimestamp(row.updated_at,localModel.updated_at)){
       const remote=row.data;
       S.nsCanonical=nsNormalizeCanonical(remote);
       if(typeof nsSanitizeCanonicalIdentities==="function")nsSanitizeCanonicalIdentities();
