@@ -924,6 +924,9 @@ body.th-newsprint{
 .lc-project-name{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(12px,1.1vw,14px);color:var(--lc-feat-head)}
 .lc-project-meta{font-family:'DM Mono',monospace;font-size:clamp(9px,0.8vw,10px);color:var(--lc-faint);margin-top:2px;letter-spacing:.04em}
 .lc-project-arrow{margin-left:auto;color:var(--lc-accent);font-size:14px;flex-shrink:0}
+.lc-project-delete{flex-shrink:0;width:26px;height:26px;border-radius:50%;border:1px solid transparent;background:transparent;color:var(--lc-faint);font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.5;transition:opacity .12s,color .12s,border-color .12s,background .12s}
+.lc-project-row:hover .lc-project-delete,.lc-project-delete:focus-visible{opacity:1}
+.lc-project-delete:hover,.lc-project-delete:focus-visible{color:#e5484d;border-color:#e5484d;background:rgba(229,72,77,.08);opacity:1}
 .lc-project-more{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(11px,1vw,12px);color:var(--lc-muted);text-align:center;padding-top:4px}
 .lc-project-auto-resume{background:none;border:none;padding:8px 4px 2px;margin-top:2px;font-family:'DM Mono',monospace;font-size:clamp(9px,0.8vw,10px);letter-spacing:.04em;color:var(--lc-faint);text-decoration:underline;text-underline-offset:2px;cursor:pointer;text-align:center;width:100%}
 .lc-project-auto-resume:hover{color:var(--lc-accent)}
@@ -28233,7 +28236,9 @@ function _syncProjectPickerHtml(projects){
   let h='<div class="lc-projects-label">Continue a project</div>';
   h+=shown.map(p=>{
     const meta=[p.peopleCount?p.peopleCount+' people':'',p.scheduleCount?p.scheduleCount+' schedule rows':''].filter(Boolean).join(' · ')||'No data yet';
-    return `<button type="button" class="lc-project-row" onclick="_syncOpenProject('${XJS(p.name)}')"><div><div class="lc-project-name">${X(p.name)}</div><div class="lc-project-meta">${X(meta)}</div></div><span class="lc-project-arrow">→</span></button>`;
+    // A div, not a nested button, so the delete "✕" can be its own real button inside without
+    // invalid button-in-button markup. Delete stops propagation so it never also opens the project.
+    return `<div class="lc-project-row" onclick="_syncOpenProject('${XJS(p.name)}')"><div><div class="lc-project-name">${X(p.name)}</div><div class="lc-project-meta">${X(meta)}</div></div><button type="button" class="lc-project-delete" title="Remove ${X(p.name)} — deletes it everywhere, cannot be undone" onclick="event.stopPropagation();_syncConfirmDeleteProject('${XJS(p.key)}','${XJS(p.name)}')">✕</button><span class="lc-project-arrow">→</span></div>`;
   }).join('');
   if(projects.length>shown.length)h+=`<div class="lc-project-more">+${projects.length-shown.length} more — open any project from the department switcher inside the app</div>`;
   h+=`<button type="button" class="lc-project-auto-resume" onclick="_syncSetAlwaysAutoResume()">Always jump straight to my most recent project — skip this screen</button>`;
@@ -28295,6 +28300,38 @@ function _syncOpenProject(name){
   if(typeof _restoreViewportFromState==='function')_restoreViewportFromState();
   if(typeof updateDeptStrip==='function')updateDeptStrip();
   if(typeof ren==='function')ren();
+}
+// Deletes a project permanently — the real fix for stale/wrong entries sitting in the picker.
+// Previously the only way to remove one was hand-editing the Supabase row's JSONB directly, which
+// repeatedly proved non-durable: the local device's own canonical store (what the picker actually
+// reads, and what every auto-save re-pushes to the cloud) was never touched by a server-side edit,
+// so the same data kept reappearing. This strips it from local storage first (every canonical
+// table, the people/workspace runtime dicts, sc_positions/sc_blueprints — see
+// nsRemoveDepartmentEverywhere in northstar-core.js), forces an immediate cloud push of the result,
+// then re-renders the picker — so there's nothing left anywhere to silently resurrect it.
+function _syncConfirmDeleteProject(key,name){
+  const body=`
+    <p style="margin:0 0 16px;color:var(--tx2,#888);font-size:13px;line-height:1.5">This permanently deletes <b>${X(name)}</b> — every person, schedule entry, team, and record tagged with it — from this device and your synced cloud copy. This cannot be undone.</p>
+    <button class="btn" style="width:100%;margin-bottom:8px;background:#e5484d;color:#fff;border:none" onclick="_syncDeleteProject('${XJS(key)}','${XJS(name)}')">Delete ${X(name)} permanently</button>
+    <button class="btn" style="width:100%;background:transparent" onclick="document.getElementById('syncDeleteProjectModal')?.remove()">Cancel</button>`;
+  _qolModal('syncDeleteProjectModal','Remove this project?','',body,'');
+}
+async function _syncDeleteProject(key,name){
+  const modal=document.getElementById('syncDeleteProjectModal');
+  if(modal)modal.remove();
+  if(!key||typeof nsRemoveDepartmentEverywhere!=='function')return;
+  const result=nsRemoveDepartmentEverywhere(key);
+  toast(result&&result.removed?`Removed ${X(name)} (${result.removed} record${result.removed===1?'':'s'})`:`${X(name)} removed`,'ok');
+  // nsPersist() (called inside nsRemoveDepartmentEverywhere) already debounce-queues a push;
+  // flush it now so the cloud copy is confirmed clean before the picker re-renders from it, rather
+  // than leaving a window where a stray auto-save elsewhere could race the deletion.
+  if(typeof syncFlushPendingPush==='function')await syncFlushPendingPush();
+  if(S.activeDept&&typeof nsActiveDepartmentKey==='function'&&nsActiveDepartmentKey()===key){
+    S.activeDept=null;S.entries=[];
+    if(typeof _restoreViewportFromState==='function')_restoreViewportFromState();
+  }
+  _syncRenderProjectPicker();
+  if(typeof updateDeptStrip==='function')updateDeptStrip();
 }
 // Shared by every "just resume" path — a signed-in reload, and the continuation_pref==='last'
 // auto-resume preference set from the picker's own link. Plain _restoreViewportFromState() trusts
@@ -32687,6 +32724,60 @@ function nsListCanonicalProjects(){
     return[...byKey.values()].filter(p=>p.peopleCount||p.scheduleCount).sort((a,b)=>String(b.lastUpdated||"").localeCompare(String(a.lastUpdated||"")));
   }catch(err){console.error("[sync] listing canonical projects failed",err);return[];}
 }
+
+// Permanently removes every trace of one project/department — the picker's own delete action
+// (see _syncDeleteProject in the main script), built precisely because there was previously no
+// user-facing way to do this at all: the only tool available was hand-editing the Supabase row's
+// JSONB directly, which repeatedly proved non-durable — this device's local canonical store (the
+// actual source nsListCanonicalProjects reads from, and what every auto-save re-pushes to the
+// cloud) was never touched by those DB edits, so the same stale data kept reappearing no matter
+// how many times the server copy was cleaned. This is the real fix: strip it from every place it
+// can hide — every NS_DEPARTMENT_TABLES array, the S.people runtime dict, any open S.workspace
+// tab snapshot, and the sc_positions/sc_blueprints localStorage blobs (both keyed by department
+// name directly, a different shape NS_DEPARTMENT_TABLES doesn't cover) — then persists (which also
+// triggers an immediate cloud push) so there's nothing left in memory to silently resurrect it.
+function nsRemoveDepartmentEverywhere(targetKey){
+  if(!targetKey)return{removed:0};
+  try{
+    const model=nsCanonical(),sourceMap=nsSourceDepartmentMap(model);
+    let removed=0;
+    NS_DEPARTMENT_TABLES.forEach(table=>{
+      const arr=model[table];
+      if(!Array.isArray(arr))return;
+      const before=arr.length;
+      model[table]=arr.filter(record=>{
+        const key=nsRecordDepartmentKey(record,model,sourceMap);
+        if(key===targetKey){removed++;return false;}
+        return true;
+      });
+    });
+    if(S.people&&typeof S.people==="object"){
+      Object.keys(S.people).forEach(name=>{
+        const rec=S.people[name];
+        const dept=rec&&(rec.department||rec.homeDepartment||rec.team);
+        if(dept&&nsDepartmentKey(dept)===targetKey)delete S.people[name];
+      });
+    }
+    if(S.workspace&&typeof S.workspace==="object"){
+      Object.keys(S.workspace).forEach(name=>{if(nsDepartmentKey(name)===targetKey)delete S.workspace[name];});
+    }
+    ["sc_positions","sc_blueprints"].forEach(storageKey=>{
+      try{
+        const raw=localStorage.getItem(storageKey);
+        if(!raw)return;
+        const obj=JSON.parse(raw);
+        if(!obj||typeof obj!=="object")return;
+        let changed=false;
+        Object.keys(obj).forEach(name=>{if(nsDepartmentKey(name)===targetKey){delete obj[name];changed=true;}});
+        if(changed){if(typeof _persistSet==="function")_persistSet(storageKey,JSON.stringify(obj),{critical:true});else localStorage.setItem(storageKey,JSON.stringify(obj));}
+      }catch(err){}
+    });
+    nsPersist();
+    return{removed};
+  }catch(err){console.error("[sync] removing department failed",err);return{removed:0,error:err};}
+}
+window.nsRemoveDepartmentEverywhere=nsRemoveDepartmentEverywhere;
+
 async function nsHydrateDatabase(){
   NS.hydrating=true;
   try{
