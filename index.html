@@ -28291,13 +28291,24 @@ function _syncSetNewSourceCollapsed(collapsed){
 // runtime schedule rows from the (already-synced) canonical data for it, registers it as an open
 // tab in the existing department-strip switcher (so switching between projects afterward keeps
 // working exactly like it does for a locally-imported one), and reveals the dashboard.
+//
+// Uses showMV() to reveal, NOT _restoreViewportFromState() — found the hard way: a real project
+// with people but zero schedule rows (a PeopleHub-only import, no roster ever attached) passed the
+// picker's own bar (nsListCanonicalProjects requires peopleCount OR scheduleCount) but failed
+// _restoreViewportFromState()'s stricter one (S.wb or non-empty S.entries, i.e. schedule
+// specifically) — so auto-resume would silently stay on the landing screen with no visible error,
+// even though a real, deliberately-chosen project had just been opened. showMV() reveals
+// unconditionally, which is correct here: by the time this function is called (from the picker, or
+// from _syncResumeMostRecentProject after validating against the same project list), the project
+// is already known to be real.
 function _syncOpenProject(name){
   if(!name)return;
   S.activeDept=name;
   if(typeof nsRestoreEntriesFromCanonical==='function')nsRestoreEntriesFromCanonical();
   if(!S.workspace||typeof S.workspace!=='object')S.workspace={};
   if(!S.workspace[name]&&typeof saveDeptSnap==='function')saveDeptSnap(name);
-  if(typeof _restoreViewportFromState==='function')_restoreViewportFromState();
+  if(typeof showMV==='function')showMV();
+  else if(typeof _restoreViewportFromState==='function')_restoreViewportFromState();
   if(typeof updateDeptStrip==='function')updateDeptStrip();
   if(typeof ren==='function')ren();
 }
@@ -28334,20 +28345,21 @@ async function _syncDeleteProject(key,name){
   if(typeof updateDeptStrip==='function')updateDeptStrip();
 }
 // Shared by every "just resume" path — a signed-in reload, and the continuation_pref==='last'
-// auto-resume preference set from the picker's own link. Plain _restoreViewportFromState() trusts
-// whatever S.activeDept already is
-// (usually still the default "default" on a brand-new device/browser) — fine for a single-project
-// account, but on a fresh device with 2+ real projects none of which happen to be named "default",
-// that reveals a dashboard with an empty schedule instead of actually resuming anything. This
-// checks whether the currently-active department actually matches a real synced project first, and
-// if not, opens the most recently updated one via the same path the picker itself uses.
+// auto-resume preference set from the picker's own link. Always routes through _syncOpenProject()
+// when at least one real project exists (whichever the active department already matches, or
+// falling back to the most recently updated one) so the force-reveal fix there applies uniformly —
+// previously this short-circuited straight to _restoreViewportFromState() when the active
+// department already matched a real project, which reintroduced the exact "people but no schedule
+// silently fails to reveal" bug _syncOpenProject() now avoids. Only falls through to the plain
+// landing-screen check when there is truly no synced project at all.
 function _syncResumeMostRecentProject(){
   try{
     const projects=(typeof nsListCanonicalProjects==='function')?nsListCanonicalProjects():[];
     if(projects.length){
       const activeKey=(typeof nsActiveDepartmentKey==='function')?nsActiveDepartmentKey():'';
-      const activeMatches=activeKey&&projects.some(p=>p.key===activeKey);
-      if(!activeMatches){_syncOpenProject(projects[0].name);return;}
+      const match=projects.find(p=>p.key===activeKey)||projects[0];
+      _syncOpenProject(match.name);
+      return;
     }
   }catch(err){console.error('[sync] resuming most recent project failed',err);}
   if(typeof _restoreViewportFromState==='function')_restoreViewportFromState();
