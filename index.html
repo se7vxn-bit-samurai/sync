@@ -919,11 +919,16 @@ body.th-newsprint{
 .lc-feat-body{font-family:'Cormorant Garamond',serif;font-size:clamp(11px,1vw,13px);color:var(--lc-feat-body);line-height:1.4}
 .lc-projects{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
 .lc-projects-label{font-family:'DM Mono',monospace;font-size:clamp(9px,0.8vw,10px);letter-spacing:.18em;text-transform:uppercase;color:var(--lc-label);margin-bottom:2px}
-.lc-project-row{display:flex;align-items:center;gap:10px;padding:clamp(8px,1.1vh,12px) clamp(8px,1vw,12px);border:1px solid var(--lc-accent-faint);border-radius:8px;cursor:pointer;transition:border-color .15s,background .15s;background:transparent;text-align:left}
+.lc-project-row{display:flex;align-items:stretch;gap:4px;padding:0;border:1px solid var(--lc-accent-faint);border-radius:8px;transition:border-color .15s,background .15s;background:transparent}
 .lc-project-row:hover{border-color:var(--lc-accent);background:var(--lc-dz-bg)}
+.lc-project-row-main{flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding:clamp(8px,1.1vh,12px) clamp(8px,1vw,12px);border:none;background:none;cursor:pointer;text-align:left;font:inherit;color:inherit}
 .lc-project-name{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(12px,1.1vw,14px);color:var(--lc-feat-head)}
 .lc-project-meta{font-family:'DM Mono',monospace;font-size:clamp(9px,0.8vw,10px);color:var(--lc-faint);margin-top:2px;letter-spacing:.04em}
 .lc-project-arrow{margin-left:auto;color:var(--lc-accent);font-size:14px;flex-shrink:0}
+.lc-project-remove{flex-shrink:0;align-self:center;margin-right:6px;width:22px;height:22px;border:1px solid transparent;border-radius:6px;background:none;color:var(--lc-faint);cursor:pointer;font-size:12px;line-height:1;opacity:0;transition:opacity .15s,color .15s,border-color .15s,background .15s}
+.lc-project-row:hover .lc-project-remove,.lc-project-remove:focus-visible{opacity:1}
+.lc-project-remove:hover,.lc-project-remove:focus-visible{color:#dc2626;border-color:rgba(220,38,38,.35);background:rgba(220,38,38,.08)}
+@media(hover:none){.lc-project-remove{opacity:1}}
 .lc-project-more{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(11px,1vw,12px);color:var(--lc-muted);text-align:center;padding-top:4px}
 .lc-project-auto-resume{background:none;border:none;padding:8px 4px 2px;margin-top:2px;font-family:'DM Mono',monospace;font-size:clamp(9px,0.8vw,10px);letter-spacing:.04em;color:var(--lc-faint);text-decoration:underline;text-underline-offset:2px;cursor:pointer;text-align:center;width:100%}
 .lc-project-auto-resume:hover{color:var(--lc-accent)}
@@ -28233,7 +28238,7 @@ function _syncProjectPickerHtml(projects){
   let h='<div class="lc-projects-label">Continue a project</div>';
   h+=shown.map(p=>{
     const meta=[p.peopleCount?p.peopleCount+' people':'',p.scheduleCount?p.scheduleCount+' schedule rows':''].filter(Boolean).join(' · ')||'No data yet';
-    return `<button type="button" class="lc-project-row" onclick="_syncOpenProject('${XJS(p.name)}')"><div><div class="lc-project-name">${X(p.name)}</div><div class="lc-project-meta">${X(meta)}</div></div><span class="lc-project-arrow">→</span></button>`;
+    return `<div class="lc-project-row"><button type="button" class="lc-project-row-main" onclick="_syncOpenProject('${XJS(p.name)}')"><div><div class="lc-project-name">${X(p.name)}</div><div class="lc-project-meta">${X(meta)}</div></div><span class="lc-project-arrow">→</span></button><button type="button" class="lc-project-remove" title="Remove ${X(p.name)}" aria-label="Remove ${X(p.name)}" onclick="event.stopPropagation();_syncDeleteProjectFromPicker('${XJS(p.key)}','${XJS(p.name)}')">✕</button></div>`;
   }).join('');
   if(projects.length>shown.length)h+=`<div class="lc-project-more">+${projects.length-shown.length} more — open any project from the department switcher inside the app</div>`;
   h+=`<button type="button" class="lc-project-auto-resume" onclick="_syncSetAlwaysAutoResume()">Always jump straight to my most recent project — skip this screen</button>`;
@@ -32687,11 +32692,48 @@ function nsListCanonicalProjects(){
     return[...byKey.values()].filter(p=>p.peopleCount||p.scheduleCount).sort((a,b)=>String(b.lastUpdated||"").localeCompare(String(a.lastUpdated||"")));
   }catch(err){console.error("[sync] listing canonical projects failed",err);return[];}
 }
+// Removes every record tagged with the given department_key from the canonical store — across
+// every table NS_DEPARTMENT_TABLES lists, not just "people" — so a stale/wrong project can
+// actually be removed from the picker instead of only hidden. This was deliberately deferred (see
+// README) until there was a real, repeated need: manually editing the Supabase row directly proved
+// non-durable, because this device's own local IndexedDB copy of the canonical model never lost the
+// records, and kept re-asserting them on every subsequent local edit's auto-save. Deleting here
+// instead — in nsCanonical(), the actual in-memory/IndexedDB store the picker and every save read
+// from — fixes it at the source on THIS device. nsPersist() (called at the end) queues the
+// IndexedDB write and immediately fires syncPushWorkspace(), so the cleaned state reaches Supabase
+// right away rather than waiting for some unrelated future edit to trigger a save.
+function nsDeleteCanonicalProject(key){
+  if(!key)return false;
+  try{
+    const model=nsCanonical(),sourceMap=nsSourceDepartmentMap(model);
+    const keepsRecord=(record)=>nsRecordDepartmentKey(record,model,sourceMap)!==key;
+    NS_DEPARTMENT_TABLES.forEach(table=>{
+      if(Array.isArray(model[table]))model[table]=model[table].filter(keepsRecord);
+    });
+    if(typeof nsSyncPeopleToRuntime==="function")nsSyncPeopleToRuntime();
+    if(typeof nsRestoreEntriesFromCanonical==="function")nsRestoreEntriesFromCanonical();
+    if(typeof nsPersist==="function")nsPersist();
+    return true;
+  }catch(err){console.error("[sync] deleting canonical project failed",err);return false;}
+}
+window.nsDeleteCanonicalProject=nsDeleteCanonicalProject;
+// Confirm-then-delete wrapper called from the project-picker row's remove button. Re-renders the
+// picker afterward (not just removes the DOM row) so the "2+ projects" threshold that decides
+// whether the picker shows at all re-evaluates correctly when a delete drops the count to 1 or 0.
+async function _syncDeleteProjectFromPicker(key,name){
+  if(!confirm(`Remove "${name}" from this device and your synced account?\n\nThis permanently deletes all of its people, schedule, and related records. This cannot be undone.`))return;
+  const ok=typeof nsDeleteCanonicalProject==="function"&&nsDeleteCanonicalProject(key);
+  if(ok){
+    if(typeof toast==="function")toast(`"${name}" removed`,"ok");
+    if(typeof _syncRenderProjectPicker==="function")await _syncRenderProjectPicker();
+  }else if(typeof toast==="function")toast("Could not remove project","err");
+}
+window._syncDeleteProjectFromPicker=_syncDeleteProjectFromPicker;
 async function nsHydrateDatabase(){
   NS.hydrating=true;
   try{
     const db=await nsOpenDatabase(),stored=await new Promise((resolve,reject)=>{const tx=db.transaction(NS_DB_STORE,"readonly"),request=tx.objectStore(NS_DB_STORE).get(NS_DB_KEY);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});db.close();
-    if(stored&&String(stored.updated_at||"")>String(nsCanonical().updated_at||"")){S.nsCanonical=nsNormalizeCanonical(stored);nsSanitizeCanonicalIdentities();nsSyncPeopleToRuntime();}
+    if(stored&&nsIsNewerTimestamp(stored.updated_at,nsCanonical().updated_at)){S.nsCanonical=nsNormalizeCanonical(stored);nsSanitizeCanonicalIdentities();nsSyncPeopleToRuntime();}
     // S.entries (unlike S.nsCanonical) is never itself persisted — rebuild it from whatever
     // canonical schedule data is now in memory whenever it's currently empty, regardless of
     // whether the block above just ran, so a normal page reload resumes straight into the
