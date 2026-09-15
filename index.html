@@ -12846,9 +12846,6 @@ function renderToolbar(){
   h+=`<button class="sb-month-btn" onclick="navM(1)" title="Next month">&#9654;</button>`;
   h+=`</div>`;
 
-  // ── Today highlight toggle ──
-  h+=`<button class="sb-icon-btn sb-today${S.hlToday?' active':''}" onclick="setTodayHighlight(!S.hlToday);renderToolbar()" title="${S.hlToday?'Today highlight ON':'Today highlight OFF'}">◉</button>`;
-
   // ── Person filter active indicator ──
   if(S.emp&&S.emp!=='all'){
     h+=`<span class="sb-person-filter" style="font-size:10px;color:var(--accent);cursor:pointer;padding:3px 10px;background:var(--al);border-radius:16px;display:flex;align-items:center;gap:4px;font-weight:500;border:1px solid var(--accent);opacity:.85" onclick="clearLeaderFilter()" title="Clear person filter">👤 ${X(S.emp.split(' ')[0])} <span style="opacity:.5;font-size:9px">✕</span></span>`;
@@ -12863,31 +12860,10 @@ function renderToolbar(){
   // ── Utility actions ──
   h+=`<div class="sb-actions">`;
 
-  // ── Scratchpad / Notes ──
-  const spLines=(S.scratchpad||'').trim().split(/\n/).filter(l=>l.trim());
-  const spCount=spLines.length;
-  h+=`<div class="sb-popover"><button class="sb-icon-btn${S._scratchOpen?' active':''}" onclick="S._scratchOpen=!S._scratchOpen;renderToolbar()" title="Quick notes">📝${spCount>0?'<span class="sb-badge">'+spCount+'</span>':''}</button>`;
-  if(S._scratchOpen){
-    h+=`<div class="sb-scratchpad-pop">`;
-    h+=`<div class="sp-hd"><h4>Notes</h4><button onclick="S._scratchOpen=false;renderToolbar()" style="background:none;border:none;color:var(--tm);cursor:pointer;font-size:13px">✕</button></div>`;
-    h+=`<textarea id="scratchInput" placeholder="Quick notes, reminders, todos...\n\nPersisted across sessions." oninput="S.scratchpad=this.value;_saveScratchpad()">${X(S.scratchpad||'')}</textarea>`;
-    h+=`<div class="sp-ft">Auto-saved locally</div></div>`;
-  }
-  h+=`</div>`;
-
-  // ── Filters button ──
-  const hasFilters=(S.shs.length>1)||(teams.length>1);
-  const activeFilterCount=(S.sh!=="__all__"&&S.shs.length>1?1:0)+(S.team!=="all"&&teams.length>1?1:0)+(S.allMonths?1:0);
-  if(hasFilters){
-    h+=`<div class="sb-popover"><button class="sb-icon-btn${activeFilterCount?' active':''}" onclick="S._filtersOpen=!S._filtersOpen;renderToolbar()" title="Filters${activeFilterCount?' ('+activeFilterCount+' active)':''}"><svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M1 2h12M3 7h8M5 12h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>${activeFilterCount?'<span class="sb-badge">'+activeFilterCount+'</span>':''}</button>`;
-    if(S._filtersOpen){
-      h+=`<div style="position:absolute;top:100%;right:0;margin-top:6px;padding:14px;background:var(--bg2,rgba(10,14,26,.97));border:1px solid var(--rule,var(--bdr));border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.35);z-index:200;min-width:220px">`;
-      if(S.shs.length>1)h+=`<div style="margin-bottom:12px"><div style="font-size:10px;color:var(--ink3,var(--tm));margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Sheet</div><select onchange="S._filtersOpen=false;swSh(this.value)" style="width:100%;padding:6px 10px;border:1px solid var(--rule,var(--bdr));border-radius:8px;font-size:11px;background:var(--bg);color:var(--ink,var(--text));font-family:inherit"><option value="__all__"${S.sh==='__all__'?' selected':''}>All sheets</option>${S.shs.map(s=>`<option value="${X(s)}"${s===S.sh?' selected':''}>${X(s)}</option>`).join('')}</select></div>`;
-      if(teams.length>1)h+=`<div style="margin-bottom:12px"><div style="font-size:10px;color:var(--ink3,var(--tm));margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Team</div><select onchange="S._filtersOpen=false;setTeam(this.value)" style="width:100%;padding:6px 10px;border:1px solid var(--rule,var(--bdr));border-radius:8px;font-size:11px;background:var(--bg);color:var(--ink,var(--text));font-family:inherit"><option value="all">All teams</option>${teams.map(t=>`<option value="${X(t)}"${t===S.team?' selected':''}>${X(t)}</option>`).join('')}</select></div>`;
-      h+=`<label style="font-size:11px;display:flex;align-items:center;gap:8px;cursor:pointer;color:var(--ink2,var(--text))"><input type="checkbox" ${S.allMonths?'checked':''} onchange="S.allMonths=this.checked;S._filtersOpen=false;rerenderCurrentSurface();rerenderChromeOnly()" style="accent-color:var(--accent)"> All months view</label></div>`;
-    }
-    h+=`</div>`;
-  }
+  // Today highlight, Notes, and Filters moved into Settings (see _syncRenderToolbarExtrasSection)
+  // to declutter the mobile toolbar, which was cramming 5+ icon buttons into one row next to
+  // search. All three retain their exact original behavior/state (S.hlToday, S.scratchpad,
+  // S.sh/S.team/S.allMonths) — only where they're reachable from changed.
 
   // ── Separator ──
   h+=`<div class="sb-separator"></div>`;
@@ -16413,7 +16389,13 @@ function renderSettings(){
   const h_ref={val:inner};
   // Use h variable for the rest of the building (alias)
   let h='';
-  
+
+  // ── Account ── the one place save/sign-out/profile live now, replacing the separate controls
+  // that used to be duplicated in the masthead badge and the landing widget (see
+  // _syncRenderAccountUI/_syncRenderLandingWidget — both now just show a status indicator that
+  // opens this panel instead of their own copy of the same buttons).
+  h+=_syncRenderSettingsAccountSection();
+
   // ── Appearance ──
   h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Appearance</div>`;
   h+=`<div style="display:flex;gap:6px;margin-bottom:10px">`;
@@ -16458,8 +16440,29 @@ function renderSettings(){
   // Toggles
   h+=`<label style="font-size:12px;display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0"><input type="checkbox" ${S.cbMode?"checked":""} onchange="setCbMode(this.checked);renderSettings()"> Colour-blind mode</label>`;
   h+=`<label style="font-size:12px;display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0"><input type="checkbox" ${S.tz?"checked":""} onchange="setTimezoneEnabled(this.checked);renderSettings()"> UK → SA timezone</label>`;
+  h+=`<label style="font-size:12px;display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0"><input type="checkbox" ${S.hlToday?"checked":""} onchange="setTodayHighlight(this.checked);renderSettings()"> Highlight today in calendar</label>`;
   h+=`</div>`;
-  
+
+  // ── Sheet & Team filters — moved here from the toolbar's Filters popover (same S.sh/S.team/
+  // S.allMonths state, same swSh()/setTeam() calls) so the mobile toolbar isn't crowded with an
+  // icon that only mattered when multiple sheets/teams were actually loaded.
+  {
+    const _teams=gT();
+    if((S.shs&&S.shs.length>1)||(_teams&&_teams.length>1)){
+      h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Sheet &amp; Team Filter</div>`;
+      if(S.shs&&S.shs.length>1)h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0"><span style="font-size:12px">Sheet</span><select onchange="swSh(this.value);renderSettings()" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-size:12px;max-width:180px"><option value="__all__"${S.sh==='__all__'?' selected':''}>All sheets</option>${S.shs.map(s=>`<option value="${X(s)}"${s===S.sh?' selected':''}>${X(s)}</option>`).join('')}</select></div>`;
+      if(_teams&&_teams.length>1)h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0"><span style="font-size:12px">Team</span><select onchange="setTeam(this.value);renderSettings()" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-size:12px;max-width:180px"><option value="all">All teams</option>${_teams.map(t=>`<option value="${X(t)}"${t===S.team?' selected':''}>${X(t)}</option>`).join('')}</select></div>`;
+      h+=`<label style="font-size:12px;display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0"><input type="checkbox" ${S.allMonths?"checked":""} onchange="S.allMonths=this.checked;rerenderCurrentSurface();rerenderChromeOnly();renderSettings()"> All months view</label>`;
+      h+=`</div>`;
+    }
+  }
+
+  // ── Quick notes — moved here from the toolbar's popover (same S.scratchpad state and
+  // _saveScratchpad(), just reachable from Settings instead of a dedicated mobile toolbar icon).
+  h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Quick Notes</div>`;
+  h+=`<textarea id="syncSettingsScratchpad" placeholder="Quick notes, reminders, todos...&#10;&#10;Persisted across sessions." oninput="S.scratchpad=this.value;_saveScratchpad()" style="width:100%;box-sizing:border-box;min-height:80px;padding:8px 10px;border-radius:7px;border:1px solid var(--bdr);background:var(--card);color:var(--text);font-size:12px;font-family:inherit;resize:vertical">${X(S.scratchpad||'')}</textarea>`;
+  h+=`<div style="font-size:10px;color:var(--tm);margin-top:4px">Auto-saved locally</div></div>`;
+
   // ── Schedule Rules ──
   h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Schedule Rules</div>`;
   const ruleRows=[
@@ -28009,6 +28012,10 @@ function _syncFirstName(profile){
 // Account indicator in the masthead: "Hi {first name}" + sign-out. Intentionally bare-bones —
 // full team creation/invite/switching UI is out of scope for this pass (see TODO(teams) below
 // and in northstar-core.js's syncPullWorkspace()).
+// A single small status indicator, not a second copy of save/sign-out — those now live in exactly
+// one place, the Settings panel's Account section (_syncRenderSettingsAccountSection). Clicking
+// this opens Settings straight there. Same treatment in the landing widget (_syncRenderLandingWidget)
+// so there is one control, not two different-looking ones depending on which screen you're on.
 async function _syncRenderAccountUI(){
   try{
     const host=document.getElementById('ha');
@@ -28018,10 +28025,13 @@ async function _syncRenderAccountUI(){
     const profile=await _syncGetProfile();
     if(!profile)return; // nothing to show in the masthead when signed out — the landing widget covers it
     const first=_syncFirstName(profile);
-    const badge=document.createElement('div');
+    const badge=document.createElement('button');
     badge.id='syncAccountBadge';
-    badge.style.cssText='display:flex;align-items:center;gap:8px;margin-left:8px;font-size:11px;color:var(--tm,#888)';
-    badge.innerHTML=`<span title="${X(profile.email)}" style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Hi ${X(first)}</span>${SYNC_SAVE_ICON_SVG_BTN('syncMastheadSaveBtn')}<button class="btn" style="padding:3px 9px;font-size:11px" onclick="_syncConfirmSignOut()">Sign out</button>`;
+    badge.className='lc-sync-icon-btn';
+    badge.title='Account & sync — '+profile.email;
+    badge.style.cssText='display:flex;align-items:center;gap:6px;margin-left:8px;font-size:11px;color:var(--tm,#888);border:none;background:none;cursor:pointer;padding:2px 6px;font-family:inherit';
+    badge.onclick=()=>{openSettings();};
+    badge.innerHTML=`<span id="syncSaveDotMasthead" class="sync-save-dot" style="position:relative;top:0;right:0"></span><span style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(first)}</span>`;
     // TODO(teams): once team creation/invite/switching exists, this is where a team-switcher
     // dropdown would extend S.activeDept / the existing department-switcher logic to also list
     // teams the user belongs to (via team_members), not just their personal workspace.
@@ -28029,28 +28039,84 @@ async function _syncRenderAccountUI(){
   }catch(err){}
 }
 
+// The Account section inside Settings — the one and only place save/sign-out/profile editing
+// live now (see _syncRenderAccountUI and _syncRenderLandingWidget, both reduced to a status dot
+// that opens here instead of duplicating these controls). renderSettings() is synchronous, so this
+// reads the already-warm _syncProfileCache rather than awaiting a fresh fetch; if nothing's cached
+// yet (Settings opened very early, before anything else has fetched it) it kicks off a fetch and
+// re-renders once it lands, same pattern used elsewhere in this file.
+function _syncRenderSettingsAccountSection(){
+  const profile=_syncProfileCache;
+  if(profile===null&&typeof sb!=='undefined'&&sb){
+    _syncGetProfile().then(()=>{if(S._settingsOpen)renderSettings();}).catch(()=>{});
+  }
+  let h=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Account</div>`;
+  if(!profile){
+    h+=`<div style="font-size:12px;color:var(--tm);line-height:1.5;margin-bottom:10px">Sign in to sync this workspace across devices — your work stays fully usable offline either way.</div>`;
+    h+=`<div style="display:flex;gap:6px">`;
+    h+=`<button class="btn bp" style="flex:1;justify-content:center;display:flex;align-items:center;gap:6px" onclick="_syncSignInWithGoogle()">${SYNC_GOOGLE_ICON_SVG}<span>Sign in</span></button>`;
+    h+=`</div>`;
+  }else{
+    const first=_syncFirstName(profile);
+    h+=`<div style="font-size:12px;color:var(--tm);margin-bottom:10px" title="${X(profile.email)}">Signed in as <b style="color:var(--text)">${X(profile.email)}</b></div>`;
+    h+=`<input type="text" id="syncSettingsName" placeholder="Your name" value="${X(profile.full_name||'')}" onchange="_syncSaveSettingsProfile()" style="width:100%;box-sizing:border-box;padding:8px 10px;border-radius:7px;border:1px solid var(--bdr);background:var(--card);color:var(--text);font-size:12px;font-family:inherit;margin-bottom:6px">`;
+    h+=`<input type="text" id="syncSettingsOrg" placeholder="Organization (optional)" value="${X(profile.organization||'')}" onchange="_syncSaveSettingsProfile()" style="width:100%;box-sizing:border-box;padding:8px 10px;border-radius:7px;border:1px solid var(--bdr);background:var(--card);color:var(--text);font-size:12px;font-family:inherit;margin-bottom:6px">`;
+    h+=`<input type="text" id="syncSettingsRole" placeholder="Role (optional)" value="${X(profile.role||'')}" onchange="_syncSaveSettingsProfile()" style="width:100%;box-sizing:border-box;padding:8px 10px;border-radius:7px;border:1px solid var(--bdr);background:var(--card);color:var(--text);font-size:12px;font-family:inherit;margin-bottom:10px">`;
+    h+=`<div id="syncSettingsProfileStatus" style="display:none;font-size:11px;color:var(--tm);margin-bottom:8px"></div>`;
+    h+=`<div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--tm);margin-bottom:10px">Colourway set under Appearance above · syncs to every device you sign into</div>`;
+    h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">`;
+    h+=`<span style="display:flex;align-items:center;gap:7px;font-size:11px;color:var(--tm)"><span id="syncSaveDotSettings" class="sync-save-dot" style="position:relative;top:0;right:0"></span>Last synced: ${X(_syncLastSyncedLabel())}</span>`;
+    h+=`<button class="btn" style="padding:5px 12px;font-size:11px" onclick="_syncManualSave()">Save now</button>`;
+    h+=`</div>`;
+    h+=`<button class="btn" style="width:100%;justify-content:center;color:#e5484d;border:1px solid rgba(229,72,77,.3)" onclick="closeSettings();_syncConfirmSignOut()">Sign out</button>`;
+  }
+  h+=`</div>`;
+  return h;
+}
+async function _syncSaveSettingsProfile(){
+  const name=(document.getElementById('syncSettingsName')?.value||'').trim();
+  const org=(document.getElementById('syncSettingsOrg')?.value||'').trim();
+  const role=(document.getElementById('syncSettingsRole')?.value||'').trim();
+  const statusEl=document.getElementById('syncSettingsProfileStatus');
+  const show=(text,isErr)=>{if(!statusEl)return;statusEl.textContent=text;statusEl.style.color=isErr?'#e5484d':'var(--tm)';statusEl.style.display='block';};
+  try{
+    const{data:userData}=await sb.auth.getUser();
+    const userId=userData&&userData.user&&userData.user.id;
+    if(!userId)throw new Error('Not signed in');
+    show('Saving…');
+    const{error}=await sb.from('profiles').update({full_name:name||null,organization:org||null,role:role||null}).eq('id',userId);
+    if(error)throw error;
+    _syncProfileCache=null;
+    show('Saved');
+    setTimeout(()=>{if(statusEl)statusEl.style.display='none';},1800);
+    _syncRenderAccountUI();
+    _syncRenderLandingWidget();
+  }catch(err){
+    console.error('[sync] settings profile save failed',err);
+    show((err&&err.message)||'Could not save','error');
+  }
+}
+
 // Manual save (floppy disk icon) + a small dot on the landing sigil that blinks green on a
 // successful sync, amber while saving, and red on failure. _syncSetSaveDot is called from
 // northstar-core.js's _syncPushWorkspaceNow so both the debounced auto-save and the manual
-// button below reflect the same state.
-const SYNC_SAVE_ICON_SVG='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>';
-function SYNC_SAVE_ICON_SVG_BTN(id){return `<button id="${id}" class="lc-sync-icon-btn" title="Save now" onclick="_syncManualSave('${id}')">${SYNC_SAVE_ICON_SVG}</button>`;}
+// Save button in Settings' Account section reflect the same state.
 let _syncLastSyncedAt=null;
 try{_syncLastSyncedAt=localStorage.getItem('sync_last_synced_at')||null;}catch(err){}
 function _syncSetSaveDot(state){
-  // state: 'saving' | 'saved' | 'error'
-  const dot=document.getElementById('syncSaveDot');
-  if(dot){
+  // state: 'saving' | 'saved' | 'error' | 'conflict'
+  // Drives every visible copy of the sync-status dot — the landing sigil and the single masthead
+  // account indicator (_syncRenderAccountUI) — so wherever you're looking, the state agrees. There
+  // is no longer a separate save button anywhere to also toggle; the Save button now lives once, in
+  // Settings' Account section, and doesn't need a "saving" disabled state here since that panel just
+  // re-renders on the next open.
+  ['syncSaveDot','syncSaveDotMasthead','syncSaveDotLc','syncSaveDotSettings'].forEach(id=>{
+    const dot=document.getElementById(id);
+    if(!dot)return;
     dot.className='sync-save-dot '+state;
-    if(state==='saved'){_syncLastSyncedAt=new Date().toISOString();try{localStorage.setItem('sync_last_synced_at',_syncLastSyncedAt);}catch(err){}}
     if(state==='saved'||state==='error')setTimeout(()=>{if(dot.className==='sync-save-dot '+state)dot.className='sync-save-dot';},2500);
-  }
-  ['syncMastheadSaveBtn','syncLcSaveBtn'].forEach(id=>{
-    const btn=document.getElementById(id);
-    if(!btn)return;
-    btn.classList.toggle('saving',state==='saving');
-    btn.disabled=state==='saving';
   });
+  if(state==='saved'){_syncLastSyncedAt=new Date().toISOString();try{localStorage.setItem('sync_last_synced_at',_syncLastSyncedAt);}catch(err){}}
 }
 async function _syncManualSave(){
   if(typeof _syncPushWorkspaceNow!=='function')return;
@@ -28139,7 +28205,9 @@ async function _syncRenderLandingWidget(){
     const profile=await _syncGetProfile();
     if(profile){
       const first=_syncFirstName(profile);
-      host.innerHTML=`<div class="lc-sync-signed-in"><span class="lc-sync-email" title="${X(profile.email)}">Hi ${X(first)} · synced</span><span style="display:flex;align-items:center;gap:4px">${SYNC_SAVE_ICON_SVG_BTN('syncLcSaveBtn')}<button onclick="_syncConfirmSignOut()">Sign out</button></span></div>`;
+      // Status only, not a second copy of save/sign-out — those live once, in Settings' Account
+      // section (see _syncRenderSettingsAccountSection). Clicking here opens straight to it.
+      host.innerHTML=`<button class="lc-sync-signed-in" onclick="openSettings()" title="Account & sync settings" style="all:unset;display:flex;align-items:center;gap:8px;cursor:pointer;width:100%"><span class="lc-sync-email" title="${X(profile.email)}">Hi ${X(first)} · synced</span><span id="syncSaveDotLc" class="sync-save-dot" style="position:relative;top:0;right:0;margin-left:auto"></span></button>`;
     }else{
       host.innerHTML=`
         <div class="lc-sync-caption">Sign in to sync across devices</div>
