@@ -28211,6 +28211,24 @@ function _syncOpenProject(name){
   if(typeof updateDeptStrip==='function')updateDeptStrip();
   if(typeof ren==='function')ren();
 }
+// Shared by "Welcome back → Continue where I left off" and the continuation_pref==='last'
+// auto-resume path. Plain _restoreViewportFromState() trusts whatever S.activeDept already is
+// (usually still the default "default" on a brand-new device/browser) — fine for a single-project
+// account, but on a fresh device with 2+ real projects none of which happen to be named "default",
+// that reveals a dashboard with an empty schedule instead of actually resuming anything. This
+// checks whether the currently-active department actually matches a real synced project first, and
+// if not, opens the most recently updated one via the same path the picker itself uses.
+function _syncResumeMostRecentProject(){
+  try{
+    const projects=(typeof nsListCanonicalProjects==='function')?nsListCanonicalProjects():[];
+    if(projects.length){
+      const activeKey=(typeof nsActiveDepartmentKey==='function')?nsActiveDepartmentKey():'';
+      const activeMatches=activeKey&&projects.some(p=>p.key===activeKey);
+      if(!activeMatches){_syncOpenProject(projects[0].name);return;}
+    }
+  }catch(err){console.error('[sync] resuming most recent project failed',err);}
+  if(typeof _restoreViewportFromState==='function')_restoreViewportFromState();
+}
 async function _syncSignInWithGoogle(){
   const errEl=document.getElementById('syncLcError');
   const btn=document.getElementById('syncLcGoogleBtn')||document.getElementById('syncLcSignInBtn');
@@ -28338,7 +28356,7 @@ async function _syncWelcomeBackChoice(choice){
   const always=document.getElementById('syncWbAlways')?.checked;
   const modal=document.getElementById('syncWelcomeBackModal');
   if(modal)modal.remove();
-  if(choice==='continue'&&typeof _restoreViewportFromState==='function')_restoreViewportFromState();
+  if(choice==='continue'&&typeof _syncResumeMostRecentProject==='function')_syncResumeMostRecentProject();
   // 'browse' does nothing further — the landing screen (with its own upload/paste/blueprint
   // options) is already what's showing, so closing the modal is the whole action.
   if(always){
@@ -28379,7 +28397,7 @@ function _syncOnSignedIn(session){
     const showWelcomeBackIfDue=()=>{
       if(!pulled)return; // nothing new came down — local boot already resumed silently if it had data
       if(profile&&profile.continuation_pref==='last'){
-        if(typeof _restoreViewportFromState==='function')_restoreViewportFromState();
+        if(typeof _syncResumeMostRecentProject==='function')_syncResumeMostRecentProject();
       }else{
         _syncShowWelcomeBack(profile||{});
       }
@@ -32360,7 +32378,10 @@ async function _syncPushWorkspaceNow(){
     // devices, two different projects open" and one of them silently losing work.
     if(_syncLastKnownRemoteUpdatedAt){
       const{data:existing}=await sb.from("workspaces").select("updated_at").eq("owner_user_id",userId).eq("department_key",SYNC_PERSONAL_WORKSPACE_KEY).maybeSingle();
-      if(existing&&existing.updated_at&&String(existing.updated_at)>String(_syncLastKnownRemoteUpdatedAt)){
+      // Numeric comparison, not string: one side is a JS toISOString() ("...376Z"), the other a
+      // Postgres timestamptz round-tripped through PostgREST ("...376+00:00") — different but
+      // equal-value representations that don't compare correctly as plain strings.
+      if(existing&&existing.updated_at&&Date.parse(existing.updated_at)>Date.parse(_syncLastKnownRemoteUpdatedAt)){
         if(typeof _syncSetSaveDot==="function")_syncSetSaveDot("conflict");
         _syncReportPushOutcome("conflict");
         return false;
