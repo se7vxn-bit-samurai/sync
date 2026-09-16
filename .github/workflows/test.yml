@@ -1,0 +1,44 @@
+name: Tests
+
+# This repository is served directly by GitHub Pages, so a push to main IS the deploy. These tests
+# therefore run against index.html exactly as shipped — the same artifact the browser loads —
+# rather than against a dev server or a bundle that only resembles it.
+#
+# Note on what this does and does not guarantee: with Pages deploying from the branch, this runs
+# ALONGSIDE the deploy, not before it. It detects a bad commit; it does not hold one back. See
+# deploy.yml for the gated alternative.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - run: npm ci
+
+      # Only Chromium is installed: both configured projects (desktop and mobile) use it, so
+      # pulling Firefox and WebKit would add minutes for browsers nothing runs on.
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run the suite
+        run: npm test
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore

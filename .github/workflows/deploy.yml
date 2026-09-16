@@ -1,0 +1,77 @@
+name: Test and deploy
+
+# The gated alternative to Pages' "deploy from a branch".
+#
+# Right now a push to main publishes immediately and the test suite runs beside it — so a broken
+# commit reaches sync.theguide.club and the red X arrives afterwards. This workflow runs the suite
+# FIRST and publishes only if it passes, which is the difference between detecting a regression and
+# preventing one.
+#
+# It is manual-only until two things are done, in this order:
+#   1. Repo Settings -> Pages -> Build and deployment -> Source: change "Deploy from a branch" to
+#      "GitHub Actions". Until this is set, deploy-pages below cannot publish and will fail.
+#   2. Add the push trigger here:
+#          push:
+#            branches: [main]
+#      and delete .github/workflows/test.yml, whose job is then done by the test job below.
+#
+# Publishing only index.html and CNAME is deliberate: the branch-based deploy currently serves the
+# whole repo root, so tests/, package.json and the lockfile are all reachable on the public site.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race; queue instead, and do not cancel one that is mid-publish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run the suite against the artifact that ships
+        run: npm test
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assemble the site
+        run: |
+          mkdir -p _site
+          cp index.html _site/
+          cp CNAME _site/
+          ls -la _site
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
