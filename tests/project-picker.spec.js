@@ -77,4 +77,29 @@ test.describe('project counts', () => {
     const opened = await page.evaluate(() => JSON.parse(localStorage.getItem('sync_last_opened') || '{}'));
     expect(Object.keys(opened)).toContain('project c');
   });
+
+  test('opening a project on a fresh sign-in (cloud pull only, no local workbook) shows its schedule', async ({ page }) => {
+    // Regression: S.entries rebuilt correctly from the cloud pull (the schedule ROWS were really
+    // there), but S.months/S.month/S.mIdx — the separate index every local import path derives for
+    // itself at load time — was never rebuilt for this cross-device path. The calendar had no month
+    // to show, so it rendered as if nothing had loaded even though the data was genuinely present.
+    // Reported as: "sign in, open a saved project, the dashboard opens but every tab and column is
+    // empty."
+    await signInWith(page, 1);
+    await waitForPicker(page);
+    await page.locator(picker.rows).first().click();
+    await expect(page.locator('#mv')).toBeVisible();
+
+    expect(await page.evaluate(() => S.entries.length)).toBeGreaterThan(0);
+    expect(await page.evaluate(() => S.months.length)).toBeGreaterThan(0);
+    expect(await page.evaluate(() => S.month)).not.toBeNull();
+    // The month index must actually correspond to real data, not just be non-empty. Month keys
+    // are 0-indexed throughout this codebase (getFullYear()+"-"+P(getMonth()), no +1) — matched
+    // here rather than the calendar convention, since that's what S.months actually contains.
+    const monthsMatchEntries = await page.evaluate(() => {
+      const entryMonths = new Set(S.entries.filter((e) => e.date).map((e) => e.date.getFullYear() + '-' + String(e.date.getMonth()).padStart(2, '0')));
+      return S.months.every((m) => entryMonths.has(m)) && S.months.length === entryMonths.size;
+    });
+    expect(monthsMatchEntries).toBe(true);
+  });
 });

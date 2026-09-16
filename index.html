@@ -33564,6 +33564,18 @@ function nsRestoreEntriesFromCanonical(){
   try{
     const scoped=(typeof nsScopedRows==="function")?nsScopedRows("schedule"):(nsCanonical().schedule||[]);
     S.entries=(scoped||[]).map(nsRuntimeEntry).filter(row=>row.date&&!isNaN(row.date));
+    // S.entries drives the calendar/dashboard directly, but S.months/S.month/S.mIdx are a SEPARATE
+    // derived index that every local import path (proc/loadIntoWorkspace, etc.) computes for itself
+    // at load time — this function is the one entry point that rebuilds S.entries WITHOUT going
+    // through any of those, because it exists specifically for the cross-device/no-local-workbook
+    // case (a fresh sign-in pulling cloud data, or reopening a project from the picker). Left
+    // uncalled here, S.months stays [] (or holds whatever the previously open project left behind),
+    // so the calendar has no month to show and every month-gated surface renders empty — the
+    // schedule data is genuinely in S.entries, but nothing built the index used to navigate to it.
+    // _refreshLoadedMonthsFromEntries lives in the main inline script, which runs BEFORE this file
+    // loads (see the file-load-order note elsewhere in this file), so it is already a global by the
+    // time this executes; the typeof guard matches this codebase's convention for that boundary.
+    if(typeof _refreshLoadedMonthsFromEntries==="function")_refreshLoadedMonthsFromEntries();
   }catch(err){console.error("[sync] rebuilding runtime entries from canonical failed",err);}
 }
 
