@@ -127,6 +127,32 @@ test.describe('boot safety', () => {
   });
 });
 
+test.describe('settings', () => {
+  test('opening Settings while signed out does not lock up the tab', async ({ page }) => {
+    // Regression: the account section refetched the profile whenever the cache was null and
+    // re-rendered itself on every fetch. Signed out, null is the permanent answer, so the two fed
+    // each other — an unbounded promise chain that froze the tab outright and, on a real
+    // connection, would hammer the auth endpoint indefinitely.
+    await openApp(page);
+    await page.evaluate(() => openSettings());
+    await expect(page.locator('#settingsOverlay')).toBeVisible();
+    await expect(page.locator('#settingsOverlay')).toContainText('Continue with Google');
+    // The page must still be responsive afterwards.
+    expect(await page.evaluate(() => 1 + 1)).toBe(2);
+  });
+
+  test('opening Settings after a reload with no project open stays responsive', async ({ page }) => {
+    await openApp(page, { profile: PROFILE, workspaceRow: workspaceRow(buildWorkspace(1)) });
+    await page.evaluate(() => window.__fakeSupabase.signIn());
+    await waitForPicker(page);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => !!window.sb);
+    await page.evaluate(() => openSettings());
+    await expect(page.locator('#settingsOverlay')).toBeVisible();
+    expect(await page.evaluate(() => 1 + 1)).toBe(2);
+  });
+});
+
 test.describe('backup export', () => {
   test('produces a portable snapshot containing the real workspace', async ({ page }) => {
     await signedInWith(page, 2);

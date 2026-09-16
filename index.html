@@ -2879,6 +2879,15 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
         <span class="lc-roster-label">Add agent roster</span>
       </button>
 
+      <!-- First run only: every other route in requires the user to already have a roster
+           spreadsheet in hand, which makes the product impossible to evaluate before committing
+           real data to it. Shown only while there are genuinely no saved projects — see
+           _syncRenderSampleOffer. -->
+      <button id="lcSampleBtn" onclick="_syncCreateSampleProject()" class="lc-roster-btn" style="display:none">
+        <span style="font-size:13px;opacity:.5">✨</span>
+        <span class="lc-roster-label">Explore with a sample project</span>
+      </button>
+
       </div>
 
       <!-- Cloud sync (Supabase) -->
@@ -5544,6 +5553,28 @@ function _collectCommandPaletteActions(){
       if(fi)fi.click();
     }
   });
+  // Project-level actions. The palette previously started INSIDE a project — every action assumed
+  // one was already open — so the one thing a user most often wants ("switch to the other project")
+  // was the one thing it could not do.
+  try{
+    const projects=(typeof nsListCanonicalProjects==="function")?nsListCanonicalProjects():[];
+    projects.forEach(p=>{
+      if(S.activeDept&&String(p.name)===String(S.activeDept))return;
+      actions.push({
+        id:"project:"+p.key,
+        label:"Open project "+p.name,
+        hint:[p.peopleCount?p.peopleCount+" people":"",p.scheduleCount?p.scheduleCount+" schedule rows":""].filter(Boolean).join(" · ")||"No data yet",
+        keywords:"open project switch workspace department "+p.name,
+        group:"Projects",
+        run:()=>{if(typeof _syncOpenProject==="function")_syncOpenProject(p.name);}
+      });
+    });
+  }catch(err){}
+  actions.push({id:"project-picker",label:"Switch project…",hint:"Back to your projects",keywords:"projects switch picker choose continue workspace",group:"Projects",run:()=>{if(typeof _syncShowProjectPicker==="function")_syncShowProjectPicker();}});
+  actions.push({id:"save-snapshot",label:"Save snapshot",hint:"Restore point on this device",keywords:"snapshot backup restore point version history save",group:"Operations",run:()=>{if(typeof _syncSaveSnapshotNow==="function")_syncSaveSnapshotNow();}});
+  actions.push({id:"backups",label:"Snapshots & backups",hint:"Restore a previous version",keywords:"snapshot backup restore version history rollback undo",group:"Operations",run:()=>{openSettings();}});
+  actions.push({id:"export-backup",label:"Export backup file",hint:"Portable copy of everything",keywords:"export backup download json portable snapshot",group:"Exports",run:()=>{if(typeof _syncExportBackup==="function")_syncExportBackup();}});
+  actions.push({id:"settings",label:"Settings",hint:"Account, appearance, backups",keywords:"settings preferences account profile sync appearance",group:"System",run:()=>{openSettings();}});
   actions.push({id:"sync-dashboard",label:"Open Sync Dashboard",hint:"Overall command view",keywords:"dashboard home overview sync hub",run:()=>{railNavDashboard();}});
   actions.push({id:"today-handoff",label:"Today handoff panel",hint:"Working/off/issues + copy",keywords:"today handoff shift summary working off copy",run:()=>{openTodayHandoff();}});
   actions.push({id:"issue-inbox",label:"Issue inbox",hint:"Flags, follow-ups, coverage risks",keywords:"issues inbox alerts flags decision queue risks",run:()=>{openIssueInbox();}});
@@ -5686,7 +5717,7 @@ function _renderCommandPaletteRows(){
   const input=document.getElementById("cmdPaletteQuery");
   if(!host||!input)return;
   const q=(input.value||"").trim().toLowerCase();
-  const groupOrder=["Navigate","Operations","People","Views","Exports","System"];
+  const groupOrder=["Projects","Navigate","Operations","People","Views","Exports","System"];
   const rows=_collectCommandPaletteActions().map((a,index)=>({...a,_index:index,_group:_commandGroup(a),_score:_fuzzyCommandScore(a,q)})).filter(a=>Number.isFinite(a._score)).sort((a,b)=>q?(b._score-a._score||a._index-b._index):(groupOrder.indexOf(a._group)-groupOrder.indexOf(b._group)||a._index-b._index));
   _cmdPaletteRows=rows;
   if(S._cmdPaletteIndex>=rows.length)S._cmdPaletteIndex=Math.max(0,rows.length-1);
@@ -11548,6 +11579,19 @@ function showParsePreview(wb,filename,manualOverride,sourceMeta,opts){
   }
 
   const hasSession=S.entries&&S.entries.length>0;
+  // Does this workbook's detected name land on a project that already exists? If so the default
+  // "replace" is a merge into real, existing data — the one import outcome that is genuinely hard
+  // to unpick afterwards — so the copy route has to be offered here, at the decision point, rather
+  // than left as something to notice afterwards. See _switchPendingLoadToCopy.
+  const collidingProject=(()=>{
+    try{
+      const detected=String(_pendingLoad.departmentName||scan.deptName||"").trim().toLowerCase();
+      if(!detected||loadMode==="add")return null;
+      const list=typeof nsListCanonicalProjects==="function"?nsListCanonicalProjects():[];
+      return list.find(p=>String(p.name||"").trim().toLowerCase()===detected)||null;
+    }catch(err){return null;}
+  })();
+  _pendingLoad.collidingProject=collidingProject;
   const confCol=scan.confidence==="high"?"var(--early)":scan.confidence==="medium"?"var(--wknd)":"#dc2626";
   const hasWarnings=scan.warnings.length>0||scan.dupes.length>0||scan.fingerprints.length>0;
 
@@ -11764,6 +11808,7 @@ function showParsePreview(wb,filename,manualOverride,sourceMeta,opts){
     h+=`</button>`;
     h+=`</div>`;
     h+=`<div id="parseLoadHint" style="padding:10px 8px 0;margin-top:10px;border-top:1px solid var(--bdr);font-size:11px;color:#dc2626;text-align:right">Ready to load with a fresh start</div>`;
+    h+=_parseCopyNoticeHtml(collidingProject);
     h+=`<div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;padding:10px 0 0 8px">`;
     h+=`<button onclick="openPendingImportReview()" style="padding:7px 12px;border:1px solid var(--bdr);border-radius:7px;background:var(--al);color:var(--accent);font-family:inherit;font-size:12px;cursor:pointer">Smart review</button>`;
     h+=`<button onclick="cancelParsePreview()" style="padding:7px 18px;border:1px solid var(--bdr);border-radius:7px;background:none;color:var(--tm);font-family:inherit;font-size:12px;cursor:pointer">Cancel</button>`;
@@ -11781,6 +11826,7 @@ function showParsePreview(wb,filename,manualOverride,sourceMeta,opts){
   if(!hasCache){
     if(loadGated)h+=`<div id="parseLoadHint" style="padding:10px 16px 0;border-top:1px solid var(--bdr);font-size:11px;color:var(--tm);text-align:right">Invalid anchor month detected — click <strong>Use detected range</strong></div>`;
     else h+=`<div id="parseLoadHint" style="padding:10px 16px 0;border-top:1px solid var(--bdr);font-size:11px;color:var(--tm);text-align:right">Ready to load</div>`;
+    h+=_parseCopyNoticeHtml(collidingProject);
     h+=`<div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;padding:12px 16px;${actionTopBorder}">`;
     h+=`<button onclick="openPendingImportReview()" style="padding:7px 12px;border:1px solid var(--bdr);border-radius:7px;background:var(--al);color:var(--accent);font-family:inherit;font-size:12px;cursor:pointer">Smart review</button>`;
     h+=`<button onclick="cancelParsePreview()" style="padding:7px 18px;border:1px solid var(--bdr);border-radius:7px;background:none;color:var(--tm);font-family:inherit;font-size:12px;cursor:pointer">Cancel</button>`;
@@ -11797,6 +11843,36 @@ function showParsePreview(wb,filename,manualOverride,sourceMeta,opts){
   _refreshParsePreviewLoadState();
 }
 
+// Shown only when the incoming workbook's detected name matches a project that already exists —
+// the case where "Load" quietly means "merge into six months of existing roster". Saying so, with
+// the copy route one click away, is the difference between an informed update and an accident.
+function _parseCopyNoticeHtml(project){
+  if(!project)return"";
+  const counts=[project.peopleCount?project.peopleCount+" people":"",project.scheduleCount?project.scheduleCount+" schedule rows":""].filter(Boolean).join(" · ")||"no data yet";
+  return`<div id="parseCopyNotice" style="margin:10px 16px 0;padding:10px 12px;border:1px solid var(--wknd,#f5a623);border-radius:8px;background:rgba(245,166,35,.08)">
+    <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:3px">A project called “${X(project.name)}” already exists</div>
+    <div style="font-size:11px;color:var(--tm);line-height:1.5;margin-bottom:8px">It currently holds ${X(counts)}. Loading will update that project in place. Import as a separate copy instead if this workbook is a variant, a different period, or you are not sure.</div>
+    <button type="button" onclick="_switchPendingLoadToCopy()" style="padding:6px 12px;border:1px solid var(--bdr);border-radius:7px;background:var(--al);color:var(--accent);font-family:inherit;font-size:12px;cursor:pointer">Open as a copy instead</button>
+  </div>`;
+}
+// Flips the pending import from "replace that project" to "create a new one". confirmParsePreview
+// already routes mode==="add" through _nextAvailableDepartmentName, so the copy gets a free name
+// ("Ops (2)") and the existing project is left untouched.
+function _switchPendingLoadToCopy(){
+  if(!_pendingLoad)return;
+  _pendingLoad.mode="add";
+  const existing=_pendingLoad.collidingProject;
+  _pendingLoad.collidingProject=null;
+  const notice=document.getElementById("parseCopyNotice");
+  const copyName=typeof _nextAvailableDepartmentName==="function"?_nextAvailableDepartmentName(_pendingLoad.departmentName||_pendingLoad.scan.deptName):"";
+  if(notice){
+    notice.style.borderColor="var(--accent)";
+    notice.style.background="var(--al)";
+    notice.innerHTML=`<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:3px">Importing as a separate copy</div>
+      <div style="font-size:11px;color:var(--tm);line-height:1.5">${X(existing?existing.name:"The existing project")} stays exactly as it is${copyName?`. This workbook loads as “${X(copyName)}”`:""}.</div>`;
+  }
+  toast("Will import as a new project","ok");
+}
 function confirmParsePreview(){
   if(!_pendingLoad)return;
   const pending=_pendingLoad;
@@ -11824,6 +11900,11 @@ function confirmParsePreview(){
   if(overlay)overlay.remove();
   _pendingLoad=null;
   _registerUndoState("Import schedule: "+filename,{localStorageKeys:["sc_qol_state",QOL_SHARED_STORAGE_KEY]});
+  // Undo above covers this session; the snapshot covers "that import was wrong" discovered later.
+  // Not awaited on purpose: nsSaveSnapshot clones the canonical model synchronously before its
+  // first await, so the capture is of pre-import state regardless, and a slow IndexedDB write must
+  // never sit between the user pressing Load and the import starting.
+  if(typeof _syncAutoSnapshot==="function")_syncAutoSnapshot("Before importing "+filename,"auto-import");
   const cacheKept=_cacheMode==="keep";
   if(isAdditional){
     if(S.activeDept)saveDeptSnap(S.activeDept);
@@ -12383,7 +12464,7 @@ function activateDept(name){
     saveDeptSnap(S.activeDept);
     // The in-session snapshot above is runtime-only; this is the copy that survives a reload and
     // follows the user to another device.
-    if(typeof _syncSaveViewState==="function")_syncSaveViewState(typeof nsActiveDepartmentKey==="function"?nsActiveDepartmentKey():"");
+    if(typeof _syncSaveViewState==="function")_syncSaveViewState(typeof nsActiveDepartmentKey==="function"?nsActiveDepartmentKey():"",{withCounts:true});
   }
   S._universalWorkspace=false;document.body.classList.remove("sync-universal-active");
   S.activeDept=name;
@@ -13333,7 +13414,15 @@ function renderMonthNav(){
   const el=document.getElementById("mfMastheadMonthNav");
   if(el)el.innerHTML=label;
 }
-function renderChrome(){renderMonthNav();renderToolbar();renderTabs();renderKeyboardHints();renderInfoBar();renderContinuityBar();renderRailToggle();}
+function renderChrome(){
+  renderMonthNav();renderToolbar();renderTabs();renderKeyboardHints();renderInfoBar();renderContinuityBar();renderRailToggle();
+  // renderToolbar() re-emits the notification tray markup wholesale, which throws away the rendered
+  // list and resets the unread badge to 0 — while _notifs itself survives in memory. Any toast
+  // raised shortly before a render therefore vanished from the history the moment anything
+  // re-rendered, which is exactly when notifications worth keeping tend to be raised (opening a
+  // project, finishing an import, a failed save). Repaint it from the state that was never lost.
+  _refreshNotifUI();
+}
 function toggleRail(){const rail=$("mfRail");if(!rail)return;rail.classList.toggle('collapsed');const col=rail.classList.contains('collapsed');try{_persistSet('mf_rail_collapsed',col?'1':'0');}catch(e){}}
 function setDeptName(n){const el=$("fl");const sep=$("mhDeptSep");if(!el)return;if(n){el.textContent=n;el.style.display="";if(sep)sep.style.display="";}else{el.style.display="none";if(sep)sep.style.display="none";}}
 function togExp(){togExpRail();}
@@ -16430,6 +16519,9 @@ function renderSettings(){
   // _syncRenderAccountUI/_syncRenderLandingWidget — both now just show a status indicator that
   // opens this panel instead of their own copy of the same buttons).
   h+=_syncRenderSettingsAccountSection();
+
+  // ── Backups & history ──
+  h+=_syncRenderSettingsSnapshotSection();
 
   // ── Appearance ──
   h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Appearance</div>`;
@@ -28020,12 +28112,23 @@ function nsBootApp(){
 }
 
 let _syncProfileCache=null;
+// null means two different things — "never fetched" and "fetched, and there is no profile because
+// nobody is signed in" — and the Settings account section keys its background refetch off exactly
+// that value. Signed out, it therefore refetched on every render and re-rendered on every fetch:
+// an unbounded loop that pinned the tab (the promise chain resolves without ever yielding, so the
+// event loop never drains) and, on a real connection, hammered the auth endpoint forever. This flag
+// is the missing distinction: has a fetch actually COMPLETED, whatever its answer.
+let _syncProfileResolved=false;
+function _syncInvalidateProfileCache(){
+  _syncProfileCache=null;
+  _syncProfileResolved=false;
+}
 async function _syncGetProfile(forceRefresh){
   if(_syncProfileCache&&!forceRefresh)return _syncProfileCache;
   try{
     const{data:userData}=await sb.auth.getUser();
     const user=userData&&userData.user;
-    if(!user)return(_syncProfileCache=null);
+    if(!user){_syncProfileResolved=true;return(_syncProfileCache=null);}
     const{data}=await sb.from('profiles').select('full_name,organization,role,preferred_colorway,continuation_pref').eq('id',user.id).maybeSingle();
     _syncProfileCache={
       email:user.email||'',
@@ -28036,8 +28139,15 @@ async function _syncGetProfile(forceRefresh){
       continuation_pref:(data&&data.continuation_pref)||'ask',
       googleName:(user.user_metadata&&(user.user_metadata.full_name||user.user_metadata.name))||''
     };
+    _syncProfileResolved=true;
     return _syncProfileCache;
-  }catch(err){console.error('[sync] _syncGetProfile failed',err);return null;}
+  }catch(err){
+    // Counts as resolved too. A failing fetch that left this false would restore exactly the loop
+    // above, just triggered by an outage instead of by signing out; reopening Settings retries.
+    _syncProfileResolved=true;
+    console.error('[sync] _syncGetProfile failed',err);
+    return null;
+  }
 }
 function _syncFirstName(profile){
   const name=(profile&&(profile.full_name||profile.googleName))||'';
@@ -28082,7 +28192,9 @@ async function _syncRenderAccountUI(){
 // re-renders once it lands, same pattern used elsewhere in this file.
 function _syncRenderSettingsAccountSection(){
   const profile=_syncProfileCache;
-  if(profile===null&&typeof sb!=='undefined'&&sb){
+  // Only when a fetch has never completed — see _syncProfileResolved. Keying this off a null cache
+  // alone made signed-out renders re-render themselves forever.
+  if(profile===null&&!_syncProfileResolved&&typeof sb!=='undefined'&&sb){
     _syncGetProfile().then(()=>{if(S._settingsOpen)renderSettings();}).catch(()=>{});
   }
   let h=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Account</div>`;
@@ -28110,6 +28222,109 @@ function _syncRenderSettingsAccountSection(){
   h+=`</div>`;
   return h;
 }
+/* ═══════════════════════════════════════════════════════════════
+   SNAPSHOTS UI — the visible half of nsSaveSnapshot/nsRestoreSnapshot
+   (northstar-core.js). Deliberately plain: a list of restore points
+   with what each one held, so "restore the copy from before this
+   morning's import" is a two-click answer rather than a support
+   question. Restore takes its own snapshot first, so choosing the
+   wrong one is itself recoverable — that is what makes the button
+   safe to press.
+   ═══════════════════════════════════════════════════════════════ */
+const SYNC_SNAPSHOT_REASON_LABELS={
+  manual:'Saved manually',
+  'auto-delete':'Before deleting a project',
+  'auto-import':'Before importing a sheet',
+  'auto-restore':'Before an earlier restore'
+};
+function _syncSnapshotWhen(at){
+  if(!at)return'';
+  try{
+    const d=new Date(at);
+    return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+' · '+d.toLocaleDateString();
+  }catch(err){return'';}
+}
+function _syncRenderSettingsSnapshotSection(){
+  const snapshots=(typeof nsListSnapshots==='function')?nsListSnapshots():[];
+  let h=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Backups & history</div>`;
+  h+=`<div style="font-size:12px;color:var(--tm);line-height:1.5;margin-bottom:10px">A snapshot is a full copy of this workspace kept on this device. One is taken automatically before anything destructive — an import, a project deletion, another restore.</div>`;
+  h+=`<button class="btn" style="width:100%;justify-content:center;margin-bottom:10px" onclick="_syncSaveSnapshotNow()">Save snapshot now</button>`;
+  if(!snapshots.length){
+    h+=`<div style="font-size:11px;color:var(--tm);font-style:italic;margin-bottom:10px">No snapshots yet.</div>`;
+  }else{
+    h+=`<div id="syncSnapshotList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">`;
+    snapshots.forEach(s=>{
+      const reason=SYNC_SNAPSHOT_REASON_LABELS[s.reason]||'Saved';
+      const counts=[s.people?s.people+' people':'',s.schedule?s.schedule+' schedule rows':''].filter(Boolean).join(' · ')||'Empty workspace';
+      const projects=(s.projects||[]).length?(s.projects.length+' project'+(s.projects.length===1?'':'s')+': '+s.projects.slice(0,3).join(', ')+(s.projects.length>3?'…':'')):'No projects';
+      h+=`<div style="border:1px solid var(--bdr);border-radius:8px;padding:9px 10px">`;
+      h+=`<div style="font-size:12px;color:var(--text);font-weight:600">${X(s.label)}</div>`;
+      h+=`<div style="font-size:11px;color:var(--tm);margin-top:2px">${X(reason)} · ${X(_syncSnapshotWhen(s.at))}</div>`;
+      h+=`<div style="font-size:11px;color:var(--tm);margin-top:2px">${X(projects)}</div>`;
+      h+=`<div style="font-size:11px;color:var(--tm);margin-top:1px">${X(counts)}</div>`;
+      h+=`<div style="display:flex;gap:6px;margin-top:8px">`;
+      h+=`<button class="btn" style="flex:1;justify-content:center;padding:5px 10px;font-size:11px" onclick="_syncConfirmRestoreSnapshot('${XJS(s.id)}','${XJS(s.label)}')">Restore</button>`;
+      h+=`<button class="btn" style="padding:5px 10px;font-size:11px;color:#e5484d" onclick="_syncDeleteSnapshotFromSettings('${XJS(s.id)}')" aria-label="Delete snapshot ${X(s.label)}">Delete</button>`;
+      h+=`</div></div>`;
+    });
+    h+=`</div>`;
+  }
+  h+=`</div>`;
+  return h;
+}
+async function _syncSaveSnapshotNow(){
+  if(typeof nsSaveSnapshot!=='function'){toast('Snapshots are unavailable','err');return;}
+  const entry=await nsSaveSnapshot('Manual snapshot',{reason:'manual'});
+  if(!entry){toast('Could not save a snapshot','err');return;}
+  toast('Snapshot saved','ok');
+  if(S._settingsOpen)renderSettings();
+}
+function _syncConfirmRestoreSnapshot(id,label){
+  const body=`<div id="syncRestoreSnapshotBody">
+    <p style="margin:0 0 16px;color:var(--tx2,#888);font-size:13px;line-height:1.5">Replaces the current workspace with <b>${X(label)}</b> — every project, person and schedule row goes back to how they were then. A snapshot of the current state is saved first, so this can be undone by restoring that one.</p>
+    <button class="btn bp" style="width:100%;margin-bottom:8px" onclick="_syncRestoreSnapshotNow('${XJS(id)}','${XJS(label)}')">Restore this snapshot</button>
+    <button class="btn" style="width:100%;background:transparent" onclick="document.getElementById('syncRestoreSnapshotModal')?.remove()">Cancel</button>
+  </div>`;
+  _qolModal('syncRestoreSnapshotModal','Restore this snapshot?','',body,'');
+}
+async function _syncRestoreSnapshotNow(id,label){
+  const bodyEl=document.getElementById('syncRestoreSnapshotBody');
+  if(bodyEl)bodyEl.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px;color:var(--tm)"><span class="sync-save-dot saving" style="position:relative;top:0;right:0;flex-shrink:0"></span>Restoring ${X(label)}…</div>`;
+  const result=(typeof nsRestoreSnapshot==='function')?await nsRestoreSnapshot(id):{ok:false,error:'Snapshots are unavailable'};
+  if(!result||!result.ok){
+    if(bodyEl)bodyEl.innerHTML=`
+      <p style="margin:0 0 12px;color:#e5484d;font-size:13px;line-height:1.5">${X((result&&result.error)||'Restore failed')}</p>
+      <p style="margin:0 0 16px;color:var(--tx2,#888);font-size:12px">Your current workspace has not been changed.</p>
+      <button class="btn" style="width:100%;background:transparent" onclick="document.getElementById('syncRestoreSnapshotModal')?.remove()">Close</button>`;
+    return;
+  }
+  document.getElementById('syncRestoreSnapshotModal')?.remove();
+  // The restore replaced the canonical model wholesale, so whatever project was open may no longer
+  // exist. Drop back to the picker rather than leaving a stale project on screen.
+  S.activeDept=null;S.entries=[];
+  if(typeof _restoreViewportFromState==='function')_restoreViewportFromState();
+  _syncRenderProjectPicker();
+  if(typeof updateDeptStrip==='function')updateDeptStrip();
+  if(typeof ren==='function')ren();
+  if(S._settingsOpen)renderSettings();
+  toast(`Restored ${X(label)}`,'ok');
+  // Push the restored state so other devices converge on it rather than overwriting it back.
+  if(typeof syncFlushPendingPush==='function')syncFlushPendingPush();
+}
+async function _syncDeleteSnapshotFromSettings(id){
+  if(typeof nsDeleteSnapshot!=='function')return;
+  await nsDeleteSnapshot(id);
+  if(S._settingsOpen)renderSettings();
+}
+// Taken before anything that rewrites or removes real data. Never blocks the action it protects:
+// if the snapshot cannot be written (private mode, storage pressure) the user's explicit request
+// still goes ahead.
+async function _syncAutoSnapshot(label,reason){
+  if(typeof nsSaveSnapshot!=='function')return null;
+  try{return await nsSaveSnapshot(label,{reason:reason||'manual'});}
+  catch(err){console.error('[sync] auto-snapshot failed',err);return null;}
+}
+
 async function _syncSaveSettingsProfile(){
   const name=(document.getElementById('syncSettingsName')?.value||'').trim();
   const org=(document.getElementById('syncSettingsOrg')?.value||'').trim();
@@ -28123,7 +28338,7 @@ async function _syncSaveSettingsProfile(){
     show('Saving…');
     const{error}=await sb.from('profiles').update({full_name:name||null,organization:org||null,role:role||null}).eq('id',userId);
     if(error)throw error;
-    _syncProfileCache=null;
+    _syncInvalidateProfileCache();
     show('Saved');
     setTimeout(()=>{if(statusEl)statusEl.style.display='none';},1800);
     _syncRenderAccountUI();
@@ -28325,11 +28540,11 @@ function _syncExportBackup(){
 // whatever was just typed. Local (IndexedDB) persistence is unaffected either way.
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState!=='hidden')return;
-  if(typeof _syncSaveViewState==='function')_syncSaveViewState();
+  if(typeof _syncSaveViewState==='function')_syncSaveViewState(undefined,{withCounts:true});
   if(typeof syncFlushPendingPush==='function')syncFlushPendingPush();
 });
 window.addEventListener('beforeunload',()=>{
-  if(typeof _syncSaveViewState==='function')_syncSaveViewState();
+  if(typeof _syncSaveViewState==='function')_syncSaveViewState(undefined,{withCounts:true});
   if(typeof syncFlushPendingPush==='function')syncFlushPendingPush();
 });
 function _syncLastSyncedLabel(){
@@ -28459,7 +28674,7 @@ async function _syncSetAlwaysAutoResume(){
     const userId=userData&&userData.user&&userData.user.id;
     if(userId){
       await sb.from('profiles').update({continuation_pref:'last'}).eq('id',userId);
-      _syncProfileCache=null;
+      _syncInvalidateProfileCache();
     }
   }catch(err){console.error('[sync] setting always-auto-resume failed',err);}
   if(typeof _syncResumeMostRecentProject==='function')_syncResumeMostRecentProject();
@@ -28471,6 +28686,9 @@ async function _syncRenderProjectPicker(){
   try{
     const profile=await _syncGetProfile();
     const projects=(profile&&typeof nsListCanonicalProjects==='function')?nsListCanonicalProjects():[];
+    // Signed out, the sample offer still depends on whether this device has anything of its own.
+    const anyProjects=projects.length?true:((typeof nsListCanonicalProjects==='function'?nsListCanonicalProjects():[]).length>0);
+    _syncRenderSampleOffer(anyProjects);
     if(profile&&projects.length>=1){
       host.innerHTML=_syncProjectPickerHtml(projects);
       _syncRenderProjectRows();
@@ -28555,7 +28773,8 @@ function _syncReadViewStateMap(){
     return(map&&typeof map==='object')?map:{};
   }catch(err){return{};}
 }
-function _syncCaptureViewState(){
+function _syncCaptureViewState(opts){
+  opts=opts||{};
   const view={};
   SYNC_VIEW_SCALARS.forEach(f=>{
     const v=S[f];
@@ -28576,9 +28795,21 @@ function _syncCaptureViewState(){
   }catch(err){}
   view._scrollPos=scroll;
   view.savedAt=new Date().toISOString();
+  // Counts as they stood when this project was left, so reopening can say what moved since.
+  // Only recomputed on the "leaving" saves (switching project, tab hidden, unload) — the debounced
+  // save runs every 1.5s while the user works, and nsListCanonicalProjects walks every record in
+  // the workspace, which is not a walk to repeat on a timer on a large roster. Between those, the
+  // previous counts are carried forward: they are meant to describe when you left, not right now.
+  if(opts.withCounts){
+    const counts=_syncProjectCounts(S.activeDept);
+    if(counts)view.counts=counts;
+  }else if(opts.previousCounts){
+    view.counts=opts.previousCounts;
+  }
   return view;
 }
-function _syncSaveViewState(deptKey){
+function _syncSaveViewState(deptKey,opts){
+  opts=opts||{};
   const key=deptKey||(typeof nsActiveDepartmentKey==='function'?nsActiveDepartmentKey():'');
   if(!key||key==='default')return;
   // Nothing worth remembering before a project is actually open — avoids writing a "landing screen"
@@ -28586,7 +28817,7 @@ function _syncSaveViewState(deptKey){
   if(!(S.wb||(S.entries&&S.entries.length)))return;
   try{
     const map=_syncReadViewStateMap();
-    map[key]=_syncCaptureViewState();
+    map[key]=_syncCaptureViewState({withCounts:opts.withCounts,previousCounts:map[key]&&map[key].counts});
     const raw=JSON.stringify(map);
     // Critical (synchronous) on purpose. A deferred write goes into _persistPendingSet and flushes
     // later, which loses every case this record exists for: the beforeunload/visibilitychange save
@@ -28638,10 +28869,75 @@ function _syncRestoreScrollForTab(){
     }catch(err){}
   });
 }
+// Offered only while the account genuinely has nothing — once there is a real project, a sample
+// one is clutter competing with it.
+function _syncRenderSampleOffer(hasProjects){
+  const btn=document.getElementById('lcSampleBtn');
+  if(btn)btn.style.display=hasProjects?'none':'';
+}
+function _syncCreateSampleProject(){
+  if(typeof nsCreateSampleProject!=='function'){toast('Sample project unavailable','err');return;}
+  const result=nsCreateSampleProject('Sample Team');
+  if(!result){toast('Could not create the sample project','err');return;}
+  toast(`Sample project ready — ${result.people} people, ${result.schedule} shifts`,'ok');
+  _syncOpenProject(result.name);
+  _syncRenderProjectPicker();
+  if(typeof syncPushWorkspace==='function')syncPushWorkspace();
+}
+// Back to the project splash from inside the app — the palette's "Switch project…" and the
+// counterpart to _syncOpenProject. Keeps the loaded project in memory (nothing is cleared) so
+// coming straight back is instant; only the viewport changes.
+function _syncShowProjectPicker(){
+  if(S.activeDept)_syncSaveViewState(typeof nsActiveDepartmentKey==='function'?nsActiveDepartmentKey():'',{withCounts:true});
+  if(typeof syncFlushPendingPush==='function')syncFlushPendingPush();
+  const us=document.getElementById('us'),mv=document.getElementById('mv'),ha=document.getElementById('ha');
+  if(us)us.style.display='flex';
+  if(mv){mv.classList.add('hid');mv.style.display='none';}
+  if(ha)ha.style.display='none';
+  _syncRenderProjectPicker();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   WHAT CHANGED SINCE LAST TIME
+
+   Reopening a project after a few days — or on another device, after
+   someone else's import — gave no indication that anything had moved.
+   The view record already marks the moment a project was last left,
+   so it can carry the counts as they stood then; comparing those to
+   what loaded now turns "is this current?" into a stated answer.
+   Counts only: this is an orientation line, not an audit trail (the
+   change history already exists for that).
+   ═══════════════════════════════════════════════════════════════ */
+function _syncProjectCounts(name){
+  try{
+    const key=(typeof nsDepartmentKey==='function')?nsDepartmentKey(name):'';
+    const project=(typeof nsListCanonicalProjects==='function'?nsListCanonicalProjects():[]).find(p=>p.key===key);
+    return project?{people:project.peopleCount||0,schedule:project.scheduleCount||0}:null;
+  }catch(err){return null;}
+}
+function _syncChangedSinceSummary(previous,current){
+  if(!previous||!current)return'';
+  const dPeople=(current.people||0)-(previous.people||0);
+  const dSchedule=(current.schedule||0)-(previous.schedule||0);
+  if(!dPeople&&!dSchedule)return'';
+  const part=(delta,singular,plural)=>{
+    if(!delta)return'';
+    const n=Math.abs(delta);
+    return`${delta>0?'+':'−'}${n} ${n===1?singular:plural}`;
+  };
+  return[part(dPeople,'person','people'),part(dSchedule,'schedule row','schedule rows')].filter(Boolean).join(' · ');
+}
+function _syncShowChangedSince(name,previousView){
+  if(!previousView||!previousView.counts||!previousView.savedAt)return;
+  const summary=_syncChangedSinceSummary(previousView.counts,_syncProjectCounts(name));
+  if(!summary)return;
+  const since=_syncRelativeTime(previousView.savedAt);
+  toast(`Changed since you were last here${since?' ('+since+')':''}: ${summary}`,'info',6000);
+}
 function _syncOpenProject(name){
   if(!name)return;
   // Whatever project is open right now keeps its context before we switch away from it.
-  if(S.activeDept&&S.activeDept!==name)_syncSaveViewState(typeof nsActiveDepartmentKey==='function'?nsActiveDepartmentKey():'');
+  if(S.activeDept&&S.activeDept!==name)_syncSaveViewState(typeof nsActiveDepartmentKey==='function'?nsActiveDepartmentKey():'',{withCounts:true});
   S.activeDept=name;
   const deptKey=(typeof nsDepartmentKey==='function')?nsDepartmentKey(name):'';
   if(deptKey)_syncRecordProjectOpened(deptKey);
@@ -28651,13 +28947,14 @@ function _syncOpenProject(name){
   // After the data is loaded (so month/sheet validation has something real to check against) and
   // before the first paint, so the project opens directly on the right screen rather than flashing
   // the default one first.
-  if(deptKey)_syncApplyViewState(deptKey);
+  const previousView=deptKey?_syncApplyViewState(deptKey):null;
   if(typeof normalizeTabState==='function')normalizeTabState();
   if(typeof showMV==='function')showMV();
   else if(typeof _restoreViewportFromState==='function')_restoreViewportFromState();
   if(typeof updateDeptStrip==='function')updateDeptStrip();
   if(typeof ren==='function')ren();
   _syncRestoreScrollForTab();
+  _syncShowChangedSince(name,previousView);
 }
 // Renames a project from the picker, without having to open it first. Same cloud discipline as the
 // delete flow below: the modal holds a "Renaming…" state until the push is confirmed, and surfaces
@@ -28774,6 +29071,9 @@ function _syncSetDeleteModalError(name,message){
 async function _syncDeleteProject(key,name){
   if(!key||typeof nsRemoveDepartmentEverywhere!=='function')return;
   _syncSetDeleteModalBusy(name,'Removing');
+  // A restore point BEFORE the records are stripped — deletion is permanent everywhere else by
+  // design, and this is the only thing standing between "wrong project" and "gone".
+  await _syncAutoSnapshot('Before deleting '+name,'auto-delete');
   const result=nsRemoveDepartmentEverywhere(key);
   // nsPersist() (called inside nsRemoveDepartmentEverywhere) already debounce-queues a push;
   // flush it now and wait for confirmation before treating the deletion as done.
@@ -28925,7 +29225,7 @@ async function _syncSaveOnboarding(){
     if(!userId)throw new Error('Not signed in');
     const{error}=await sb.from('profiles').update({full_name:name,organization:org||null,role:role||null,preferred_colorway:colorway}).eq('id',userId);
     if(error)throw error;
-    _syncProfileCache=null;
+    _syncInvalidateProfileCache();
     _syncCloseOnboarding();
     _syncRenderAccountUI();
     _syncRenderLandingWidget();
@@ -29118,9 +29418,7 @@ function toast(msg,type,dur,opts){
     const removed=_notifs.pop();
     if(removed&&removed.actionId)dropNotifAction(removed.actionId);
   }
-  const badge=$("notifBadge");
-  if(badge){const unread=Math.min(_notifs.length,99);badge.textContent=unread;badge.style.display=unread>0?"flex":"none";}
-  renderNotifList();
+  _refreshNotifUI();
   const btn=$("notifBtn");
   if(btn){btn.style.background='rgba(122,180,255,.2)';setTimeout(()=>{btn.style.background='';},600);}
   if(!opts.popup)return;
@@ -29150,6 +29448,13 @@ function runNotifAction(id){
   const fn=id?_notifActions[id]:null;
   if(!fn)return;
   try{fn();}catch(err){console.error(err);toast("Notification action failed","err");}
+}
+// Badge + list together, from _notifs. Called both when a notification arrives and after every
+// chrome render, since the render replaces the markup these write into.
+function _refreshNotifUI(){
+  const badge=$("notifBadge");
+  if(badge){const unread=Math.min(_notifs.length,99);badge.textContent=unread;badge.style.display=unread>0?"flex":"none";}
+  renderNotifList();
 }
 function renderNotifList(){
   const list=$("notifList");if(!list)return;
@@ -33440,6 +33745,248 @@ function nsRenameDepartmentEverywhere(targetKey,newName){
   }catch(err){console.error("[sync] renaming department failed",err);return{renamed:0,error:err};}
 }
 window.nsRenameDepartmentEverywhere=nsRenameDepartmentEverywhere;
+
+/* ═══════════════════════════════════════════════════════════════
+   SNAPSHOTS — local version history
+
+   Every destructive path in this app (import over an existing
+   project, delete, rename, "overwrite the cloud with my copy") was
+   previously a one-way door: undo covers in-session edits, but not
+   "that import mangled six months of roster" discovered a day later.
+   A snapshot is a full copy of the canonical model plus the synced
+   localStorage keys, written to the SAME IndexedDB store under its
+   own key — no schema bump needed, since that store is keyed
+   explicitly rather than auto-incrementing.
+
+   Device-local by design. The index deliberately does NOT join
+   SYNC_LOCAL_KEYS: the bodies live in this browser's IndexedDB, so
+   syncing the list would show another device restore points it
+   cannot restore.
+   ═══════════════════════════════════════════════════════════════ */
+const NS_SNAPSHOT_INDEX_KEY="sc_snapshots";
+const NS_SNAPSHOT_PREFIX="snapshot:";
+const NS_SNAPSHOT_MAX=12;
+
+function nsReadSnapshotIndex(){
+  try{
+    const raw=localStorage.getItem(NS_SNAPSHOT_INDEX_KEY);
+    const list=raw?JSON.parse(raw):null;
+    return Array.isArray(list)?list:[];
+  }catch(err){return[];}
+}
+function nsWriteSnapshotIndex(list){
+  try{
+    const raw=JSON.stringify(list);
+    if(typeof _persistSet==="function")_persistSet(NS_SNAPSHOT_INDEX_KEY,raw,{critical:true});
+    else localStorage.setItem(NS_SNAPSHOT_INDEX_KEY,raw);
+  }catch(err){}
+}
+function nsListSnapshots(){
+  return nsReadSnapshotIndex().slice().sort((a,b)=>String(b.at||"").localeCompare(String(a.at||"")));
+}
+async function nsSnapshotDbPut(id,record){
+  const db=await nsOpenDatabase();
+  try{
+    await new Promise((resolve,reject)=>{
+      const tx=db.transaction(NS_DB_STORE,"readwrite");
+      tx.objectStore(NS_DB_STORE).put(record,NS_SNAPSHOT_PREFIX+id);
+      tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
+    });
+  }finally{db.close();}
+}
+async function nsSnapshotDbGet(id){
+  const db=await nsOpenDatabase();
+  try{
+    return await new Promise((resolve,reject)=>{
+      const tx=db.transaction(NS_DB_STORE,"readonly"),request=tx.objectStore(NS_DB_STORE).get(NS_SNAPSHOT_PREFIX+id);
+      request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);
+    });
+  }finally{db.close();}
+}
+async function nsSnapshotDbDelete(id){
+  const db=await nsOpenDatabase();
+  try{
+    await new Promise((resolve,reject)=>{
+      const tx=db.transaction(NS_DB_STORE,"readwrite");
+      tx.objectStore(NS_DB_STORE).delete(NS_SNAPSHOT_PREFIX+id);
+      tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
+    });
+  }finally{db.close();}
+}
+// `reason` distinguishes a deliberate "Save snapshot" from the automatic one taken just before a
+// destructive action, so the restore list can say which is which — an automatic entry is the one a
+// user actually looks for after something went wrong.
+async function nsSaveSnapshot(label,opts){
+  opts=opts||{};
+  try{
+    const model=nsCanonical();
+    const clone=typeof structuredClone==="function"?structuredClone(model):JSON.parse(JSON.stringify(model));
+    const id=nsHash(nsNow()+"|"+Math.random())+"-"+Date.now().toString(36);
+    const at=nsNow();
+    const projects=(typeof nsListCanonicalProjects==="function"?nsListCanonicalProjects():[]).map(p=>p.name);
+    const record={
+      id,at,
+      label:nsClean(label)||"Snapshot",
+      reason:opts.reason||"manual",
+      model:clone,
+      localKeys:typeof _syncCollectLocalKeys==="function"?_syncCollectLocalKeys():{}
+    };
+    await nsSnapshotDbPut(id,record);
+    const entry={
+      id,at,
+      label:record.label,
+      reason:record.reason,
+      projects,
+      people:(clone.people||[]).length,
+      schedule:(clone.schedule||[]).length
+    };
+    const index=nsReadSnapshotIndex();
+    index.push(entry);
+    // Prune oldest first, but never drop a snapshot taken automatically before a destructive action
+    // while a plain manual one is still available to discard instead.
+    const sorted=index.slice().sort((a,b)=>String(a.at||"").localeCompare(String(b.at||"")));
+    while(sorted.length>NS_SNAPSHOT_MAX){
+      const victim=sorted.find(s=>s.reason==="manual")||sorted[0];
+      sorted.splice(sorted.indexOf(victim),1);
+      try{await nsSnapshotDbDelete(victim.id);}catch(err){}
+    }
+    nsWriteSnapshotIndex(sorted);
+    return entry;
+  }catch(err){
+    console.error("[sync] saving snapshot failed",err);
+    return null;
+  }
+}
+async function nsDeleteSnapshot(id){
+  if(!id)return false;
+  try{
+    await nsSnapshotDbDelete(id);
+    nsWriteSnapshotIndex(nsReadSnapshotIndex().filter(s=>s.id!==id));
+    return true;
+  }catch(err){console.error("[sync] deleting snapshot failed",err);return false;}
+}
+// Restoring is itself destructive — it replaces the current workspace — so it takes its own
+// snapshot first. That is what makes restore safe to try: picking the wrong restore point is
+// recoverable by restoring the one this just created.
+async function nsRestoreSnapshot(id){
+  if(!id)return{ok:false,error:"No snapshot selected"};
+  try{
+    const record=await nsSnapshotDbGet(id);
+    if(!record||!record.model)return{ok:false,error:"That snapshot could not be read from this device"};
+    await nsSaveSnapshot("Before restoring "+(record.label||"a snapshot"),{reason:"auto-restore"});
+    S.nsCanonical=nsNormalizeCanonical(record.model);
+    if(typeof nsSanitizeCanonicalIdentities==="function")nsSanitizeCanonicalIdentities();
+    if(typeof nsSyncPeopleToRuntime==="function")nsSyncPeopleToRuntime();
+    if(record.localKeys&&typeof _syncWriteLocalKeys==="function")_syncWriteLocalKeys(record.localKeys);
+    nsRestoreEntriesFromCanonical();
+    nsPersist();
+    return{ok:true,label:record.label||"Snapshot",at:record.at};
+  }catch(err){
+    console.error("[sync] restoring snapshot failed",err);
+    return{ok:false,error:(err&&err.message)||"Restore failed"};
+  }
+}
+/* ═══════════════════════════════════════════════════════════════
+   SAMPLE PROJECT
+
+   Every way into this app previously required the user to already
+   have a roster spreadsheet, correctly shaped, in hand — so the
+   product could not be evaluated before real data was committed to
+   it. This builds a small but genuinely representative project
+   (teams, shifts, days off, a weekend) directly in the canonical
+   store, using the same record shapes an import produces, so every
+   downstream surface treats it as an ordinary project: it can be
+   renamed, deleted, synced and exported like any other.
+   ═══════════════════════════════════════════════════════════════ */
+const NS_SAMPLE_PEOPLE=[
+  {name:"Amara Okafor",team:"Early",role:"Team leader"},
+  {name:"Ben Sorensen",team:"Early",role:"Advisor"},
+  {name:"Chloe Duarte",team:"Early",role:"Advisor"},
+  {name:"Dmitri Volkov",team:"Late",role:"Team leader"},
+  {name:"Esi Mensah",team:"Late",role:"Advisor"},
+  {name:"Farid Haddad",team:"Late",role:"Advisor"}
+];
+function nsCreateSampleProject(preferredName){
+  try{
+    const model=nsCanonical();
+    let name=nsClean(preferredName)||"Sample Team";
+    const taken=new Set((typeof nsListCanonicalProjects==="function"?nsListCanonicalProjects():[]).map(p=>nsDepartmentKey(p.name)));
+    let n=2;
+    while(taken.has(nsDepartmentKey(name)))name=(nsClean(preferredName)||"Sample Team")+" ("+n++ +")";
+    const sourceId=nsId("src","sample|"+name+"|"+Date.now());
+    const loadedAt=nsNow();
+    model.sources.push({
+      source_id:sourceId,
+      source_name:"Sample roster",
+      source_kind:"sample",
+      department_name:name,
+      loaded_at:loadedAt,
+      sheets:1,
+      source_rows:0
+    });
+    NS_SAMPLE_PEOPLE.forEach((person,index)=>{
+      model.people.push({
+        person_id:nsId("per",name+"|"+person.name),
+        full_name:person.name,
+        home_department:name,
+        team_name:person.team,
+        role:person.role,
+        authority_rank:index===0||index===3?2:1,
+        source_id:sourceId
+      });
+    });
+    // Four weeks starting from the Monday of the current week, so the calendar, month views and
+    // "today" highlighting all have something real to show the moment it opens.
+    const start=new Date();
+    start.setHours(0,0,0,0);
+    start.setDate(start.getDate()-((start.getDay()+6)%7));
+    const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+    const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+    let rows=0;
+    for(let day=0;day<28;day++){
+      const date=new Date(start);
+      date.setDate(start.getDate()+day);
+      const weekday=date.getDay();
+      NS_SAMPLE_PEOPLE.forEach((person,index)=>{
+        // A rolling days-off pattern per person rather than a fixed weekend for everyone, so
+        // coverage, fairness and the off-day surfaces have something non-trivial to read.
+        const offset=(day+index*2)%7;
+        const isOff=offset===5||offset===6;
+        const early=person.team==="Early";
+        model.schedule.push({
+          schedule_id:nsId("sch",name+"|"+person.name+"|"+iso(date)),
+          person_name:person.name,
+          department:name,
+          team_name:person.team,
+          source_id:sourceId,
+          date:iso(date),
+          day_of_week:DAYS[weekday],
+          is_off:isOff,
+          off_type:isOff?"OFF":"",
+          uk_start:isOff?"":(early?"07:00":"12:00"),
+          uk_end:isOff?"":(early?"15:00":"20:00"),
+          authority_rank:1,
+          imported_at:loadedAt
+        });
+        rows++;
+      });
+    }
+    const source=model.sources[model.sources.length-1];
+    if(source)source.source_rows=rows;
+    if(typeof nsSyncPeopleToRuntime==="function")nsSyncPeopleToRuntime();
+    nsPersist();
+    return{name,people:NS_SAMPLE_PEOPLE.length,schedule:rows};
+  }catch(err){
+    console.error("[sync] creating the sample project failed",err);
+    return null;
+  }
+}
+window.nsCreateSampleProject=nsCreateSampleProject;
+
+window.nsSaveSnapshot=nsSaveSnapshot;
+window.nsListSnapshots=nsListSnapshots;
+window.nsRestoreSnapshot=nsRestoreSnapshot;
+window.nsDeleteSnapshot=nsDeleteSnapshot;
 
 async function nsHydrateDatabase(){
   NS.hydrating=true;

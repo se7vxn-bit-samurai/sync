@@ -4,7 +4,9 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const ROOT = path.join(__dirname, '..');
+// Defaults to this repo (the single-file deploy artifact). SYNC_SERVE_ROOT points the same suite at
+// the multi-file web build instead, so both artifacts are verified by identical tests.
+const ROOT = path.resolve(process.env.SYNC_SERVE_ROOT || path.join(__dirname, '..'));
 const PORT = Number(process.env.PORT || 4173);
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.css': 'text/css; charset=utf-8' };
 
