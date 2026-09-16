@@ -34648,6 +34648,19 @@ function nsRecordImportPerformance(pending,result){
 
 function nsConfirmNativeImport(){
   const pending=NS.pendingNative;if(!pending)return;
+  // A restore point before the merge. nsCommitWorkbook rewrites canonical records in place by
+  // stable ID and source authority, so a workbook that is subtly wrong (a re-exported file with
+  // shifted IDs, a stale copy) silently rewrites real history with no way back.
+  //
+  // This was missed when the snapshot safety net was added: that hook went on
+  // confirmParsePreview, which only handles general-roster workbooks. Every native SyncSheets
+  // format — ScheduleHub, PeopleHub, DepartmentHub, the packs, i.e. the formats this product is
+  // built around — commits through HERE and was left unprotected. Caught by the import tests.
+  //
+  // Not awaited: nsSaveSnapshot clones the canonical model synchronously before its first await,
+  // so the capture is of pre-import state regardless, and a slow IndexedDB write must not sit
+  // between the user pressing Import and the import starting.
+  try{nsSaveSnapshot("Before importing "+pending.filename,{reason:"auto-import"});}catch(err){console.error("[sync] pre-import snapshot failed",err);}
   try{
     const commitStarted=performance.now();
     NS.deferPersist=true;NS.persistPending=false;
