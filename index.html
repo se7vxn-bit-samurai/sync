@@ -34004,7 +34004,7 @@ async function nsHydrateDatabase(){
   NS.hydrating=true;
   try{
     const db=await nsOpenDatabase(),stored=await new Promise((resolve,reject)=>{const tx=db.transaction(NS_DB_STORE,"readonly"),request=tx.objectStore(NS_DB_STORE).get(NS_DB_KEY);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});db.close();
-    if(stored&&String(stored.updated_at||"")>String(nsCanonical().updated_at||"")){S.nsCanonical=nsNormalizeCanonical(stored);nsSanitizeCanonicalIdentities();nsSyncPeopleToRuntime();}
+    if(stored&&nsIsNewerTimestamp(stored.updated_at,nsCanonical().updated_at)){S.nsCanonical=nsNormalizeCanonical(stored);nsSanitizeCanonicalIdentities();nsSyncPeopleToRuntime();}
     // S.entries (unlike S.nsCanonical) is never itself persisted — rebuild it from whatever
     // canonical schedule data is now in memory whenever it's currently empty, regardless of
     // whether the block above just ran, so a normal page reload resumes straight into the
