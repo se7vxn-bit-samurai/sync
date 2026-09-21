@@ -4749,12 +4749,15 @@ function rOps(el){
   const ready=ctx.intel?ctx.intel.ready:0,structure=ctx.intel?ctx.intel.issues.length:0;
   let body="";
   if(view==="overview"){
+    const otWishCount=(typeof nsScopedRows==="function"?nsScopedRows("otWishes"):[]).length;
+    const otCard=otWishCount?'<section class="an-card"><div class="an-card-hd"><h4>Overtime planning</h4><span>'+otWishCount+' wish'+(otWishCount===1?"":"es")+'</span></div><div class="an-card-body"><div class="qol-filterbar"><span style="font-size:11px;color:var(--tm)">Availability, fairness history, and allocation for imported OT wishes.</span><button class="qol-row-btn primary" style="margin-left:auto" onclick="S.opsView=&quot;otplus&quot;;rOps($(&quot;ca&quot;))">Open OT+ workbench</button></div></div></section>':"";
+    const universalCard=(typeof isUniversalWorkspace==="function"&&isUniversalWorkspace())?'<section class="an-card"><div class="an-card-hd"><h4>Universal workspace</h4><span>read-only combined view</span></div><div class="an-card-body"><div class="qol-filterbar"><span style="font-size:11px;color:var(--tm)">Department records stay isolated until you deliberately review them together.</span><button class="qol-row-btn primary ns-cross-department-action" style="margin-left:auto" onclick="S.opsView=&quot;cross-department&quot;;rOps($(&quot;ca&quot;))">Review across departments</button></div></div></section>':"";
     body='<div class="sd-kpis" style="margin:0">'+
       _opsMetric("On floor",ctx.working.length+" / "+ctx.people.length,ctx.off.length+" off / leave")+
       _opsMetric("Decision queue",ctx.issues.length,ctx.flags.length+" ops/blueprint flags",ctx.issues.length?"warn":"")+
       _opsMetric("People readiness",ready+" ready",structure+" structure signals")+
       _opsMetric("Blueprint",blueprint,(S.shs||[]).length+" sources")+
-    '</div><div class="qol-two-col" style="margin-top:12px"><section class="an-card"><div class="an-card-hd"><h4>Decision Queue</h4><span>Ops Hub port</span></div><div class="an-card-body">'+_opsIssueRows(5)+'</div></section><section class="an-card"><div class="an-card-hd"><h4>Sources Hub</h4><span>'+_opsSourceRows().length+' sources</span></div><div class="an-card-body"><div class="sd-list">'+_opsSourceCards()+'</div></div></section><section class="an-card"><div class="an-card-hd"><h4>Logbook</h4><span>people memory</span></div><div class="an-card-body">'+_opsLogbookRows(5)+'</div></section><section class="an-card"><div class="an-card-hd"><h4>Events</h4><span>current scope</span></div><div class="an-card-body">'+_opsEventRows(5)+'</div></section></div>';
+    '</div><div class="qol-two-col" style="margin-top:12px"><section class="an-card"><div class="an-card-hd"><h4>Decision Queue</h4><span>Ops Hub port</span></div><div class="an-card-body">'+_opsIssueRows(5)+'</div></section><section class="an-card"><div class="an-card-hd"><h4>Sources Hub</h4><span>'+_opsSourceRows().length+' sources</span></div><div class="an-card-body"><div class="sd-list">'+_opsSourceCards()+'</div></div></section><section class="an-card"><div class="an-card-hd"><h4>Logbook</h4><span>people memory</span></div><div class="an-card-body">'+_opsLogbookRows(5)+'</div></section><section class="an-card"><div class="an-card-hd"><h4>Events</h4><span>current scope</span></div><div class="an-card-body">'+_opsEventRows(5)+'</div></section>'+otCard+universalCard+'</div>';
   }else if(view==="decisions"){
     body='<section class="an-card"><div class="an-card-hd"><h4>Decision Queue</h4><span>'+ctx.issues.length+' open</span></div><div class="an-card-body"><div class="qol-filterbar"><span style="font-size:11px;color:var(--tm)">Ops Hub pattern: every signal should have owner, evidence, status, and next action.</span><button class="qol-row-btn primary" style="margin-left:auto" onclick="openIssueInbox()">Open Issue Inbox</button></div>'+_opsIssueRows(80)+'</div></section>';
   }else if(view==="sources"){
@@ -13142,21 +13145,21 @@ function renderTabs(){
   const groups=[
     {id:"dashboard",label:"Home",active:S.tab==="dashboard",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="1.5" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/><rect x="8" y="1.5" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/><rect x="1.5" y="8" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/><rect x="8" y="8" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/></svg>`,action:"railNavDashboard()",children:[]},
     {id:"calendar",label:"Calendar",active:S.tab==="calendar",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.2"/><line x1="1" y1="5" x2="13" y2="5" stroke="currentColor" stroke-width="1"/><line x1="4" y1="1" x2="4" y2="3" stroke="currentColor" stroke-width="1.2"/><line x1="10" y1="1" x2="10" y2="3" stroke="currentColor" stroke-width="1.2"/></svg>`,children:[
-      {id:"day",label:"Dashboard",active:S.tab==="calendar"&&S.calSubTab==="day",action:"railNavCalendar('day')"},
+      {id:"day",label:"Calendar",active:S.tab==="calendar"&&S.calSubTab==="day",action:"railNavCalendar('day')"},
       {id:"cards",label:"Cards",active:S.tab==="calendar"&&S.calSubTab==="cards",action:"railNavCalendar('cards')"},
       {id:"coaching",label:"Coaching",active:S.tab==="calendar"&&S.calSubTab==="coaching",action:"railNavCalendar('coaching')"},
       {id:"overtime",label:"Overtime",active:S.tab==="calendar"&&S.calSubTab==="overtime",action:"railNavCalendar('overtime')"},
       {id:"planner",label:"Planner",active:S.tab==="calendar"&&S.calSubTab==="schedule",action:"railNavCalendar('planner')"}
     ]},
     {id:"people",label:"People",badge:peopleBadge,active:S.tab==="people",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 13c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="currentColor" stroke-width="1.2"/></svg>`,children:[
-      {id:"dashboard",label:"Dashboard",active:S.tab==="people"&&S.peopleSubTab==="dashboard",action:"railNavPeople('dashboard')"},
+      {id:"dashboard",label:"People overview",active:S.tab==="people"&&S.peopleSubTab==="dashboard",action:"railNavPeople('dashboard')"},
       {id:"team",label:"Team",active:S.tab==="people"&&S.peopleSubTab==="team",action:"railNavPeople('team')"},
       {id:"agents",label:"Agents",active:S.tab==="people"&&S.peopleSubTab==="agents",action:"railNavPeople('agents')"},
       {id:"logbook",label:"Logbook",active:S.tab==="people"&&S.peopleSubTab==="logbook",action:"railNavPeople('logbook')"},
       {id:"events",label:"Events",active:S.tab==="people"&&S.peopleSubTab==="events",action:"railNavPeople('events')"}
     ]},
     {id:"analytics",label:"Ops",active:S.tab==="analytics",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="8" width="3" height="5" rx="0.5" stroke="currentColor" stroke-width="1"/><rect x="5.5" y="4" width="3" height="9" rx="0.5" stroke="currentColor" stroke-width="1"/><rect x="10" y="1" width="3" height="12" rx="0.5" stroke="currentColor" stroke-width="1"/></svg>`,children:[
-      {id:"dashboard",label:"Dashboard",active:S.tab==="analytics"&&activeAnView==="dashboard",action:"railNavAnalytics('dashboard')"},
+      {id:"dashboard",label:"Operational analytics",active:S.tab==="analytics"&&activeAnView==="dashboard",action:"railNavAnalytics('dashboard')"},
       {id:"workspace",label:"Workspace",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="overview",action:"railNavOps('overview')"},
       {id:"schedule-window",label:"Schedule Window",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="schedule",action:"railNavOps('schedule')"},
       {id:"coverage",label:"Coverage",active:S.tab==="analytics"&&activeAnView==="coverage",action:"railNavAnalytics('coverage')"},
@@ -13458,7 +13461,7 @@ function ren(){_queueRenderTask("full",_renderNow);}
 function renderCalendarSubtabNav(active){
   var a=active||"day";
   var h='<div class="people-subtab-nav">';
-  h+='<button class="pst-btn'+(a==="day"?' a':'')+'" onclick="S.calSubTab=\'day\';ren()">Dashboard</button>';
+  h+='<button class="pst-btn'+(a==="day"?' a':'')+'" onclick="S.calSubTab=\'day\';ren()">Calendar</button>';
   h+='<button class="pst-btn'+(a==="cards"?' a':'')+'" onclick="S.calSubTab=\'cards\';S.plSubTab=\'cards\';ren()">Cards</button>';
   h+='<button class="pst-btn'+(a==="coaching"?' a':'')+'" onclick="S.calSubTab=\'coaching\';S.plSubTab=\'coaching\';ren()">Coaching</button>';
   h+='<button class="pst-btn'+(a==="overtime"?' a':'')+'" onclick="S.calSubTab=\'overtime\';S.plSubTab=\'overtime\';ren()">Overtime</button>';
@@ -19261,18 +19264,13 @@ function rAnalytics(el){
   if(S.anView==="forecast"||S.anView==="capacity")S.anView="dashboard";
   if(!["dashboard","coverage","alerts","absence","rawdata","blueprint","ops"].includes(S.anView))S.anView="dashboard";
 
-  const flagCount=computeFlags().filter(f=>f.category==="operational"||f.category==="blueprint").length;
-  const alertsBadge=flagCount>0?` <span style="font-size:10px;padding:1px 5px;border-radius:8px;background:rgba(220,38,38,.15);color:#dc2626;font-weight:700">${flagCount}</span>`:"";
-
   let h=`<div id="analyticsSurface">`;
+  // v58: the rail's Ops group is the single navigation surface for these destinations now —
+  // this bar used to duplicate it with a second, independently-stale set of Dashboard/Workspace/
+  // Coverage/Blueprint/Absence/Alerts/Data buttons (its "Workspace" button didn't even reset
+  // S.opsView, so it could land you on whatever Ops sub-view was open last). Keep only the scope
+  // toggle, which the rail has no equivalent for.
   h+=`<div id="analyticsModeControls" class="an-mode-toggle">`;
-  h+=`<button class="an-mode-btn${S.anView==="dashboard"?" active":""}" data-anview="dashboard" onclick="setAnalyticsView('dashboard')">Dashboard</button>`;
-  h+=`<button class="an-mode-btn${S.anView==="ops"?" active":""}" data-anview="ops" onclick="setAnalyticsView('ops')">Workspace</button>`;
-  h+=`<button class="an-mode-btn${S.anView==="coverage"?" active":""}" data-anview="coverage" onclick="setAnalyticsView('coverage')">Coverage</button>`;
-  h+=`<button class="an-mode-btn${S.anView==="blueprint"?" active":""}" data-anview="blueprint" onclick="setAnalyticsView('blueprint')">Blueprint</button>`;
-  h+=`<button class="an-mode-btn${S.anView==="absence"?" active":""}" data-anview="absence" onclick="setAnalyticsView('absence')">Absence</button>`;
-  h+=`<button class="an-mode-btn${S.anView==="alerts"?" active":""}" data-anview="alerts" onclick="setAnalyticsView('alerts')">Alerts${alertsBadge}</button>`;
-  h+=`<button class="an-mode-btn${S.anView==="rawdata"?" active":""}" data-anview="rawdata" onclick="setAnalyticsView('rawdata')">Data</button>`;
   // Scope toggle
   if(!S.anScope)S.anScope='month';
   const scopeVisible=['dashboard','coverage','absence'].includes(S.anView);
@@ -32464,7 +32462,7 @@ function rPeople(el){
   // Sub-tab nav
   h+=`<div class="people-subtab-nav">`;
   const subtabs=[
-    {id:"dashboard",l:"Dashboard"},
+    {id:"dashboard",l:"People overview"},
     {id:"team",l:"Team"},
     {id:"agents",l:"Agents"},
     {id:"logbook",l:"Logbook"},
@@ -35140,8 +35138,11 @@ function nsCoverReady(person){
 }
 
 function nsOpsShell(view,body){
-  const scope=((typeof isUniversalWorkspace==="function"&&isUniversalWorkspace())||S._universalWorkspace===true)?"Universal":(S.activeDept||"NorthStar workspace"),sources=nsScopedRows("sources"),publish=nsScopedRows("publishQueue"),conflicts=nsScopedRows("conflicts");
-  return`<div class="people-hq ops-hq ns-ops"><div class="ns-ops-context"><span>Workspace</span><b>${nsEsc(scope)}</b><span>Sources</span><b>${sources.length}</b><span>Pending publish</span><b>${publish.filter(item=>item.status==="pending").length}</b><span>Open conflicts</span><b>${conflicts.filter(item=>item.status==="open").length}</b></div><div class="ns-ops-main">${body}</div></div>`;
+  const universal=((typeof isUniversalWorkspace==="function"&&isUniversalWorkspace())||S._universalWorkspace===true),scope=universal?"Universal":(S.activeDept||"NorthStar workspace"),sources=nsScopedRows("sources"),publish=nsScopedRows("publishQueue"),conflicts=nsScopedRows("conflicts");
+  // Universal workspace disables every other Ops control (see body.sync-universal-active .ns-ops-main
+  // rule) except .ns-cross-department-action — this is that action's only entry point.
+  const crossDeptAction=universal&&view!=="cross-department"?`<button class="ns-btn ns-cross-department-action" onclick="S.opsView='cross-department';rOps($('ca'))" style="margin-left:auto">Review across departments</button>`:"";
+  return`<div class="people-hq ops-hq ns-ops"><div class="ns-ops-context"><span>Workspace</span><b>${nsEsc(scope)}</b><span>Sources</span><b>${sources.length}</b><span>Pending publish</span><b>${publish.filter(item=>item.status==="pending").length}</b><span>Open conflicts</span><b>${conflicts.filter(item=>item.status==="open").length}</b>${crossDeptAction}</div><div class="ns-ops-main">${body}</div></div>`;
 }
 
 function nsOrgDepartments(){
