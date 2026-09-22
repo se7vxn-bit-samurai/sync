@@ -3375,7 +3375,15 @@ function _pushUndoEntry(label,payload){
   const id="undo_"+at.toString(36)+"_"+Math.random().toString(36).slice(2,7);
   const category=_historyCategory(label,"undo-point");
   _undoStack.push({id,label:String(label||"change"),category,payload,at});
-  while(_undoStack.length>_UNDO_MAX)_undoStack.shift();
+  // Each restore point deep-clones the whole of S, entries included, so on a
+  // large roster twenty of them is twenty copies of the schedule held in
+  // memory. That was only reachable after an import; now that a session
+  // resumes on load it is reachable from the moment the page opens. Keep fewer
+  // restore points once the schedule is big — depth matters less than the tab
+  // surviving.
+  const entryCount=(S.entries&&S.entries.length)||0;
+  const cap=entryCount>20000?3:entryCount>8000?5:entryCount>3000?10:_UNDO_MAX;
+  while(_undoStack.length>cap)_undoStack.shift();
   try{
     S.changeHistory=S.changeHistory||[];
     S.changeHistory.unshift({id,label:String(label||"change"),category,at:new Date(at).toISOString(),type:"restore-point",restorable:true});
@@ -6030,12 +6038,29 @@ const _persistPendingRemove=new Set();
 let _persistFlushTimer=null;
 let _persistIdleHandle=null;
 let _persistCriticalDepth=0;
+// localStorage writes were wrapped in empty catches everywhere, so a full quota
+// lost the write in silence — no toast, no console line, and settings or a
+// month of notes would simply not be there next time. Report it once per
+// session rather than on every key, which would be unusable.
+let _persistQuotaWarned=false;
+function _noteStorageFailure(key,err){
+  const quota=err&&(err.name==="QuotaExceededError"||err.name==="NS_ERROR_DOM_QUOTA_REACHED"||err.code===22);
+  try{console.warn("Could not save \""+key+"\" to local storage:",err);}catch(e){}
+  if(_persistQuotaWarned)return;
+  _persistQuotaWarned=true;
+  try{
+    toast(quota
+      ?"Browser storage is full — recent changes could not be saved. Export a Save+ file to keep this work."
+      :"Local storage is unavailable — recent changes could not be saved. Export a Save+ file to keep this work.",
+      "err",8000);
+  }catch(e){}
+}
 function _persistSet(key,val,opts){
   const k=String(key);
   const v=String(val);
   const critical=opts&&opts.critical;
   if(critical||_persistCriticalDepth>0){
-    try{localStorage.setItem(k,v);}catch(e){}
+    try{localStorage.setItem(k,v);}catch(e){_noteStorageFailure(k,e);}
     return;
   }
   _persistPendingRemove.delete(k);
@@ -6046,7 +6071,7 @@ function _persistRemove(key,opts){
   const k=String(key);
   const critical=opts&&opts.critical;
   if(critical||_persistCriticalDepth>0){
-    try{localStorage.removeItem(k);}catch(e){}
+    try{localStorage.removeItem(k);}catch(e){_noteStorageFailure(k,e);}
     return;
   }
   _persistPendingSet.delete(k);
@@ -6063,8 +6088,8 @@ function _flushPersistQueue(){
   }
   if(_persistFlushTimer){clearTimeout(_persistFlushTimer);_persistFlushTimer=null;}
   if(!_persistPendingSet.size&&!_persistPendingRemove.size)return;
-  _persistPendingSet.forEach((val,key)=>{try{localStorage.setItem(key,val);}catch(e){}});
-  _persistPendingRemove.forEach(key=>{try{localStorage.removeItem(key);}catch(e){}});
+  _persistPendingSet.forEach((val,key)=>{try{localStorage.setItem(key,val);}catch(e){_noteStorageFailure(key,e);}});
+  _persistPendingRemove.forEach(key=>{try{localStorage.removeItem(key);}catch(e){_noteStorageFailure(key,e);}});
   _persistPendingSet.clear();
   _persistPendingRemove.clear();
 }
@@ -20402,20 +20427,80 @@ function rHistoryComparison(){
 }
 
 // #10: Analytics — Absence Breakdown view
+// The parser already classifies every off-day it reads — SICK, LEAVE, TRAINING,
+// PH, WFH, OFF — so a roster states plainly who was absent. Only manually logged
+// exceptions used to reach the Absence view, which meant a month with hundreds of
+// sick and leave days reported "0 events" and told the user to type them in by
+// hand. These three categories are genuine absences; OFF is a scheduled rest day
+// and PH/WFH are not absences at all, so none of those carry over.
+const ROSTER_ABSENCE_TYPES={SICK:"sick",LEAVE:"annual_leave",TRAINING:"training"};
+
+// A derived absence has no recorded duration, so charge it the person's usual
+// working day — the median of the shifts they actually work — rather than zero,
+// which would report the events but leave "hours lost" wrong.
+function _typicalShiftHours(name){
+  const cache=ensureCache();
+  cache._typicalHrs=cache._typicalHrs||{};
+  if(cache._typicalHrs[name]!==undefined)return cache._typicalHrs[name];
+  const hrs=(S.entries||[])
+    .filter(e=>e&&e.name===name&&!e.isOff&&e.ukS&&e.ukE)
+    .map(e=>calcHrs(e.ukS,e.ukE))
+    .filter(n=>n>0&&n<=16)
+    .sort((a,b)=>a-b);
+  const val=hrs.length?hrs[Math.floor(hrs.length/2)]:8;
+  cache._typicalHrs[name]=val;
+  return val;
+}
+
+function deriveRosterAbsences(monthEnt){
+  const out=[];
+  (monthEnt||[]).forEach(e=>{
+    if(!e||!e.isOff||!e.date)return;
+    const type=ROSTER_ABSENCE_TYPES[String(e.offL||"").toUpperCase()];
+    if(!type)return;
+    const d=e.date instanceof Date?e.date:new Date(e.date);
+    if(isNaN(d))return;
+    const name=e.name||"";
+    out.push({
+      date:d.getFullYear()+"-"+P(d.getMonth()+1)+"-"+P(d.getDate()),
+      type,person:name,agentName:"",
+      hoursLost:_typicalShiftHours(name),
+      derived:true,
+      note:"Read from the schedule ("+(e.raw||e.offL)+")"
+    });
+  });
+  return out;
+}
+
 function rAbsenceBreakdown(y,m,monthEnt){
   const monthKey=y+'-'+P(m+1);
-  const monthExcs=effExc().filter(x=>{
+  const logged=effExc().filter(x=>{
     if(!x.date)return false;
     return x.date.startsWith(monthKey);
   });
+  // A manually logged exception is the better record of the same absence — it
+  // carries the real duration and any note — so it wins over the derived one for
+  // that person and date instead of both being counted.
+  const claimed=new Set(logged.map(x=>(x.person||"")+"|"+x.date));
+  const derived=deriveRosterAbsences(monthEnt).filter(x=>{
+    const key=x.person+"|"+x.date;
+    if(claimed.has(key))return false;
+    claimed.add(key);
+    return true;
+  });
+  const monthExcs=logged.concat(derived);
+  const derivedCount=derived.length;
   const totalLost=monthExcs.reduce((s,x)=>s+(x.hoursLost||0),0);
 
   let h=`<div style="padding:14px">`;
   h+=`<div style="font-size:15px;font-weight:700;margin-bottom:4px">Absence & Exception Breakdown</div>`;
-  h+=`<div style="font-size:11px;color:var(--tm);margin-bottom:14px">${MOFULL[m]} ${y} · ${monthExcs.length} events · ${Math.round(totalLost*10)/10}h lost</div>`;
+  const provenance=derivedCount
+    ?` · ${derivedCount} read from the schedule${logged.length?", "+logged.length+" logged by hand":""}`
+    :(logged.length?" · all logged by hand":"");
+  h+=`<div style="font-size:11px;color:var(--tm);margin-bottom:14px">${MOFULL[m]} ${y} · ${monthExcs.length} events · ${Math.round(totalLost*10)/10}h lost${provenance}</div>`;
 
   if(!monthExcs.length){
-    h+=`<div style="padding:30px 0;text-align:center;color:var(--tm)">No exceptions logged for this month.<br><span style="font-size:11px;opacity:.6">Log events via Calendar → + Flag to populate this view.</span></div>`;
+    h+=`<div style="padding:30px 0;text-align:center;color:var(--tm)">No absences this month — none in the schedule, none logged.<br><span style="font-size:11px;opacity:.6">Sick, leave and training days are read from the roster automatically. Anything else, log via Calendar → + Flagto populate this view.</span></div>`;
     h+=`</div>`;
     return h;
   }
@@ -35578,7 +35663,11 @@ function nsRenderScheduleWindow(el){
 }
 
 function nsCsv(rows){const keys=[...new Set(rows.flatMap(row=>Object.keys(row||{})))],quote=value=>{let text=String(value??"");if(/^[=+\-@\t\r]/.test(text))text="'"+text;return '"'+text.replace(/"/g,'""')+'"';};return[keys.map(quote).join(","),...rows.map(row=>keys.map(key=>quote(row[key])).join(","))].join("\r\n");}
-function nsExportCsv(kind){let rows=[],name="Export";if(kind==="schedule"){rows=nsRuntimeScheduleRows();name="Schedule";}if(kind==="people"){rows=nsAllPeople();name="People";}if(kind==="person"){rows=nsRuntimeScheduleRows().filter(row=>row.name===S.nsSchedulePerson);name=(S.nsSchedulePerson||"Person")+"_Schedule";}nsDownloadBlob(new Blob([nsCsv(rows)],{type:"text/csv;charset=utf-8"}),"Sync_"+name.replace(/[^a-z0-9_-]+/gi,"_")+"_"+new Date().toISOString().slice(0,10)+".csv");}
+function nsExportCsv(kind){let rows=[],name="Export";if(kind==="schedule"){rows=nsRuntimeScheduleRows();name="Schedule";}if(kind==="people"){rows=nsAllPeople();name="People";}if(kind==="person"){rows=nsRuntimeScheduleRows().filter(row=>row.name===S.nsSchedulePerson);name=(S.nsSchedulePerson||"Person")+"_Schedule";}
+  // nsCsv([]) is an empty string, so this used to hand over a 0-byte file with no header and no
+  // warning — most often from the person export with nobody selected. Say why instead.
+  if(!rows.length){toast(kind==="person"&&!S.nsSchedulePerson?"Choose a person on the Schedule Window first — nothing to export yet.":"Nothing to export for "+name.replace(/_/g," ")+".","info",4200);return;}
+  nsDownloadBlob(new Blob([nsCsv(rows)],{type:"text/csv;charset=utf-8"}),"Sync_"+name.replace(/[^a-z0-9_-]+/gi,"_")+"_"+new Date().toISOString().slice(0,10)+".csv");}
 function nsRenderExportCentre(el){
   nsMergeRuntimePeopleDirectory();const model=nsCanonical(),people=nsAllPeople(),teams=nsScopedRows("teams"),schedule=nsRuntimeScheduleRows(),publish=nsScopedRows("publishQueue"),sources=nsScopedRows("sources"),leaders=people.filter(person=>/lead|supervisor|manager/i.test(person.role_type||"")),agents=people.length-leaders.length,body=`<div class="ns-export-sections">
     <section class="ns-export-hero"><div><small>MICROSOFT-FIRST PACK BUILDER</small><h2>Publish a pristine SyncSheets v3.1 pack</h2><p>Every workbook uses the Save+ visual system, immutable IDs and value-backed links that reconcile through Sync.</p><button class="ns-btn primary" onclick="nsOpenV31PackBuilder()">Build complete pack ZIP</button></div><div class="ns-export-readiness"><b>${people.length}<span>people</span></b><b>${agents}<span>agents</span></b><b>${teams.length}<span>teams</span></b><b>${schedule.length}<span>schedule rows</span></b></div></section>

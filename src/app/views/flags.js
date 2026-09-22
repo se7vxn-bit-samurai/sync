@@ -554,20 +554,80 @@ function rHistoryComparison(){
 }
 
 // #10: Analytics — Absence Breakdown view
+// The parser already classifies every off-day it reads — SICK, LEAVE, TRAINING,
+// PH, WFH, OFF — so a roster states plainly who was absent. Only manually logged
+// exceptions used to reach the Absence view, which meant a month with hundreds of
+// sick and leave days reported "0 events" and told the user to type them in by
+// hand. These three categories are genuine absences; OFF is a scheduled rest day
+// and PH/WFH are not absences at all, so none of those carry over.
+const ROSTER_ABSENCE_TYPES={SICK:"sick",LEAVE:"annual_leave",TRAINING:"training"};
+
+// A derived absence has no recorded duration, so charge it the person's usual
+// working day — the median of the shifts they actually work — rather than zero,
+// which would report the events but leave "hours lost" wrong.
+function _typicalShiftHours(name){
+  const cache=ensureCache();
+  cache._typicalHrs=cache._typicalHrs||{};
+  if(cache._typicalHrs[name]!==undefined)return cache._typicalHrs[name];
+  const hrs=(S.entries||[])
+    .filter(e=>e&&e.name===name&&!e.isOff&&e.ukS&&e.ukE)
+    .map(e=>calcHrs(e.ukS,e.ukE))
+    .filter(n=>n>0&&n<=16)
+    .sort((a,b)=>a-b);
+  const val=hrs.length?hrs[Math.floor(hrs.length/2)]:8;
+  cache._typicalHrs[name]=val;
+  return val;
+}
+
+function deriveRosterAbsences(monthEnt){
+  const out=[];
+  (monthEnt||[]).forEach(e=>{
+    if(!e||!e.isOff||!e.date)return;
+    const type=ROSTER_ABSENCE_TYPES[String(e.offL||"").toUpperCase()];
+    if(!type)return;
+    const d=e.date instanceof Date?e.date:new Date(e.date);
+    if(isNaN(d))return;
+    const name=e.name||"";
+    out.push({
+      date:d.getFullYear()+"-"+P(d.getMonth()+1)+"-"+P(d.getDate()),
+      type,person:name,agentName:"",
+      hoursLost:_typicalShiftHours(name),
+      derived:true,
+      note:"Read from the schedule ("+(e.raw||e.offL)+")"
+    });
+  });
+  return out;
+}
+
 function rAbsenceBreakdown(y,m,monthEnt){
   const monthKey=y+'-'+P(m+1);
-  const monthExcs=effExc().filter(x=>{
+  const logged=effExc().filter(x=>{
     if(!x.date)return false;
     return x.date.startsWith(monthKey);
   });
+  // A manually logged exception is the better record of the same absence — it
+  // carries the real duration and any note — so it wins over the derived one for
+  // that person and date instead of both being counted.
+  const claimed=new Set(logged.map(x=>(x.person||"")+"|"+x.date));
+  const derived=deriveRosterAbsences(monthEnt).filter(x=>{
+    const key=x.person+"|"+x.date;
+    if(claimed.has(key))return false;
+    claimed.add(key);
+    return true;
+  });
+  const monthExcs=logged.concat(derived);
+  const derivedCount=derived.length;
   const totalLost=monthExcs.reduce((s,x)=>s+(x.hoursLost||0),0);
 
   let h=`<div style="padding:14px">`;
   h+=`<div style="font-size:15px;font-weight:700;margin-bottom:4px">Absence & Exception Breakdown</div>`;
-  h+=`<div style="font-size:11px;color:var(--tm);margin-bottom:14px">${MOFULL[m]} ${y} · ${monthExcs.length} events · ${Math.round(totalLost*10)/10}h lost</div>`;
+  const provenance=derivedCount
+    ?` · ${derivedCount} read from the schedule${logged.length?", "+logged.length+" logged by hand":""}`
+    :(logged.length?" · all logged by hand":"");
+  h+=`<div style="font-size:11px;color:var(--tm);margin-bottom:14px">${MOFULL[m]} ${y} · ${monthExcs.length} events · ${Math.round(totalLost*10)/10}h lost${provenance}</div>`;
 
   if(!monthExcs.length){
-    h+=`<div style="padding:30px 0;text-align:center;color:var(--tm)">No exceptions logged for this month.<br><span style="font-size:11px;opacity:.6">Log events via Calendar → + Flag to populate this view.</span></div>`;
+    h+=`<div style="padding:30px 0;text-align:center;color:var(--tm)">No absences this month — none in the schedule, none logged.<br><span style="font-size:11px;opacity:.6">Sick, leave and training days are read from the roster automatically. Anything else, log via Calendar → + Flagto populate this view.</span></div>`;
     h+=`</div>`;
     return h;
   }

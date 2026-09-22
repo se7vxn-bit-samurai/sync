@@ -5,12 +5,29 @@ const _persistPendingRemove=new Set();
 let _persistFlushTimer=null;
 let _persistIdleHandle=null;
 let _persistCriticalDepth=0;
+// localStorage writes were wrapped in empty catches everywhere, so a full quota
+// lost the write in silence — no toast, no console line, and settings or a
+// month of notes would simply not be there next time. Report it once per
+// session rather than on every key, which would be unusable.
+let _persistQuotaWarned=false;
+function _noteStorageFailure(key,err){
+  const quota=err&&(err.name==="QuotaExceededError"||err.name==="NS_ERROR_DOM_QUOTA_REACHED"||err.code===22);
+  try{console.warn("Could not save \""+key+"\" to local storage:",err);}catch(e){}
+  if(_persistQuotaWarned)return;
+  _persistQuotaWarned=true;
+  try{
+    toast(quota
+      ?"Browser storage is full — recent changes could not be saved. Export a Save+ file to keep this work."
+      :"Local storage is unavailable — recent changes could not be saved. Export a Save+ file to keep this work.",
+      "err",8000);
+  }catch(e){}
+}
 function _persistSet(key,val,opts){
   const k=String(key);
   const v=String(val);
   const critical=opts&&opts.critical;
   if(critical||_persistCriticalDepth>0){
-    try{localStorage.setItem(k,v);}catch(e){}
+    try{localStorage.setItem(k,v);}catch(e){_noteStorageFailure(k,e);}
     return;
   }
   _persistPendingRemove.delete(k);
@@ -21,7 +38,7 @@ function _persistRemove(key,opts){
   const k=String(key);
   const critical=opts&&opts.critical;
   if(critical||_persistCriticalDepth>0){
-    try{localStorage.removeItem(k);}catch(e){}
+    try{localStorage.removeItem(k);}catch(e){_noteStorageFailure(k,e);}
     return;
   }
   _persistPendingSet.delete(k);
@@ -38,8 +55,8 @@ function _flushPersistQueue(){
   }
   if(_persistFlushTimer){clearTimeout(_persistFlushTimer);_persistFlushTimer=null;}
   if(!_persistPendingSet.size&&!_persistPendingRemove.size)return;
-  _persistPendingSet.forEach((val,key)=>{try{localStorage.setItem(key,val);}catch(e){}});
-  _persistPendingRemove.forEach(key=>{try{localStorage.removeItem(key);}catch(e){}});
+  _persistPendingSet.forEach((val,key)=>{try{localStorage.setItem(key,val);}catch(e){_noteStorageFailure(key,e);}});
+  _persistPendingRemove.forEach(key=>{try{localStorage.removeItem(key);}catch(e){_noteStorageFailure(key,e);}});
   _persistPendingSet.clear();
   _persistPendingRemove.clear();
 }

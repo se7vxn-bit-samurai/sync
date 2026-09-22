@@ -82,7 +82,15 @@ function _pushUndoEntry(label,payload){
   const id="undo_"+at.toString(36)+"_"+Math.random().toString(36).slice(2,7);
   const category=_historyCategory(label,"undo-point");
   _undoStack.push({id,label:String(label||"change"),category,payload,at});
-  while(_undoStack.length>_UNDO_MAX)_undoStack.shift();
+  // Each restore point deep-clones the whole of S, entries included, so on a
+  // large roster twenty of them is twenty copies of the schedule held in
+  // memory. That was only reachable after an import; now that a session
+  // resumes on load it is reachable from the moment the page opens. Keep fewer
+  // restore points once the schedule is big — depth matters less than the tab
+  // surviving.
+  const entryCount=(S.entries&&S.entries.length)||0;
+  const cap=entryCount>20000?3:entryCount>8000?5:entryCount>3000?10:_UNDO_MAX;
+  while(_undoStack.length>cap)_undoStack.shift();
   try{
     S.changeHistory=S.changeHistory||[];
     S.changeHistory.unshift({id,label:String(label||"change"),category,at:new Date(at).toISOString(),type:"restore-point",restorable:true});
