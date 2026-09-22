@@ -28535,17 +28535,23 @@ function _syncExportBackup(){
     toast('Could not create the backup file','err');
   }
 }
-// Best-effort: flush any pending debounced cloud push the moment the tab is hidden or about to
-// unload, so switching apps/tabs or closing the browser doesn't leave the cloud copy lagging behind
-// whatever was just typed. Local (IndexedDB) persistence is unaffected either way.
+// Best-effort: flush any pending debounced cloud push AND any pending debounced local IndexedDB
+// write the moment the tab is hidden or about to unload, so switching apps/tabs or closing the
+// browser doesn't leave either copy lagging behind whatever was just typed. IndexedDB persistence
+// is NOT synchronous — nsQueueDatabaseWrite debounces 180ms — so without the nsFlushDatabaseWrite
+// call here, an edit made in that window and followed by an immediate close was only covered by
+// the synchronous localStorage copy, which nsPersist() deliberately keeps schedule-less. An
+// offline/signed-out user (no cloud copy to fall back on) could lose that edit outright.
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState!=='hidden')return;
   if(typeof _syncSaveViewState==='function')_syncSaveViewState(undefined,{withCounts:true});
   if(typeof syncFlushPendingPush==='function')syncFlushPendingPush();
+  if(typeof nsFlushDatabaseWrite==='function')nsFlushDatabaseWrite();
 });
 window.addEventListener('beforeunload',()=>{
   if(typeof _syncSaveViewState==='function')_syncSaveViewState(undefined,{withCounts:true});
   if(typeof syncFlushPendingPush==='function')syncFlushPendingPush();
+  if(typeof nsFlushDatabaseWrite==='function')nsFlushDatabaseWrite();
 });
 function _syncLastSyncedLabel(){
   if(!_syncLastSyncedAt)return'never';
@@ -33530,6 +33536,7 @@ window.nsDepartmentKey=nsDepartmentKey;
 window.nsActiveDepartmentKey=nsActiveDepartmentKey;
 window.nsDownloadBlob=nsDownloadBlob;
 window._syncCollectLocalKeys=_syncCollectLocalKeys;
+window.nsFlushDatabaseWrite=nsFlushDatabaseWrite;
 
 function nsOpenDatabase(){
   if(!window.indexedDB)return Promise.reject(new Error("IndexedDB unavailable"));
@@ -33546,12 +33553,25 @@ async function nsDatabaseWrite(model){
   finally{db.close();}
 }
 
+function _nsWriteDatabaseSnapshot(){
+  const current=nsCanonical(),snapshot=typeof structuredClone==="function"?structuredClone(current):JSON.parse(JSON.stringify(current));
+  return nsDatabaseWrite(snapshot).catch(()=>{NS.persistence="localStorage fallback";});
+}
 function nsQueueDatabaseWrite(model){
   clearTimeout(NS.dbWriteTimer);
-  NS.dbWriteTimer=setTimeout(()=>{
-    const current=nsCanonical(),snapshot=typeof structuredClone==="function"?structuredClone(current):JSON.parse(JSON.stringify(current));
-    nsDatabaseWrite(snapshot).catch(()=>{NS.persistence="localStorage fallback";});
-  },180);
+  NS.dbWriteTimer=setTimeout(_nsWriteDatabaseSnapshot,180);
+}
+// Forces a pending debounced IndexedDB write to happen now instead of waiting out its 180ms timer —
+// the local-persistence counterpart to syncFlushPendingPush(). Called from the same
+// visibilitychange/beforeunload handlers in 7os-sync-northstar.html so an edit made just before the
+// tab closes/hides isn't lost from IndexedDB (see that call site for the full rationale). Exported
+// below like every other cross-file entry point this file has — see the block of window.X=X
+// assignments and its comment on why that export is not optional.
+function nsFlushDatabaseWrite(){
+  if(!NS.dbWriteTimer)return Promise.resolve();
+  clearTimeout(NS.dbWriteTimer);
+  NS.dbWriteTimer=null;
+  return _nsWriteDatabaseSnapshot();
 }
 
 // Bridges the canonical layer (people/schedule/etc, restored from IndexedDB or pulled from

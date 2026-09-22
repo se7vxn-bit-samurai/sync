@@ -192,6 +192,42 @@ test.describe('boot safety', () => {
     expect(stored).toBeTruthy();
     expect(stored.schedule.length).toBe(1);
   });
+
+  test('a debounced IndexedDB write is flushed when the tab is hidden, not left to its 180ms timer', async ({ page }) => {
+    // Regression: nsQueueDatabaseWrite() debounces 180ms with no flush on tab hide/close, unlike
+    // the cloud push (syncFlushPendingPush(), called from the same visibilitychange/beforeunload
+    // handlers). An edit made right before the tab closes could be lost from IndexedDB entirely —
+    // the synchronous localStorage copy nsPersist() also writes is always schedule-less. Checking
+    // well inside the 180ms window (not after it) is the point: waiting it out would pass even
+    // without the fix, since the natural timer would have fired on its own by then.
+    await openApp(page);
+    await page.evaluate(() => {
+      // Real path, not a hand-built model: creates sample people+schedule and calls nsPersist()
+      // internally, which queues the debounced IndexedDB write.
+      window.nsCreateSampleProject();
+      Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await page.waitForTimeout(80); // comfortably inside the 180ms debounce window
+
+    const stored = await page.evaluate(
+      () =>
+        new Promise((resolve, reject) => {
+          const req = indexedDB.open('sync-northstar', 1);
+          req.onsuccess = () => {
+            const db = req.result;
+            const tx = db.transaction('workspace', 'readonly');
+            const getReq = tx.objectStore('workspace').get('canonical');
+            getReq.onsuccess = () => { resolve(getReq.result); db.close(); };
+            getReq.onerror = () => reject(getReq.error);
+          };
+          req.onerror = () => reject(req.error);
+        })
+    );
+
+    expect(stored).toBeTruthy();
+    expect((stored.schedule || []).length).toBeGreaterThan(0);
+  });
 });
 
 test.describe('settings', () => {
