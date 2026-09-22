@@ -1,15 +1,8 @@
 name: Tests
 
-# This repository is served directly by GitHub Pages, so a push to main IS the deploy. These tests
-# therefore run against index.html exactly as shipped — the same artifact the browser loads —
-# rather than against a dev server or a bundle that only resembles it.
-#
-# Note on what this does and does not guarantee: with Pages deploying from the branch, this runs
-# ALONGSIDE the deploy, not before it. It detects a bad commit; it does not hold one back. See
-# deploy.yml for the gated alternative.
+# Pull requests only. Pushes to main are tested by deploy.yml, which gates the publish on the same
+# suite, so running it here too would just double the minutes.
 on:
-  push:
-    branches: [main]
   pull_request:
   workflow_dispatch:
 

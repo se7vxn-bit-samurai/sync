@@ -6287,7 +6287,10 @@ function _deriveParseYearHint(filename,sheetNames){
 const TRE=/(\d{1,2})[:\.](\d{2})\s*(am|pm)?\s*[-–—]\s*(\d{1,2})[:\.](\d{2})\s*(am|pm)?/i,TMIL=/(\d{4})\s*[-–—]\s*(\d{4})/;
 function X(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
 function XA(s){return X(s);}
-function XJ(s){return String(s).replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/"/g,'\\"');}
+// Escapes for a single-quoted JS string that may itself sit inside a double-quoted HTML attribute
+// (onclick="fn('${XJ(v)}')"). \uXXXX escapes are decoded by JS but never by the HTML parser, so a
+// value can neither end the attribute (") nor smuggle a quote in as an entity (&#39;).
+function XJ(s){return String(s).replace(/[\\'"&<>\r\n\u2028\u2029]/g,c=>"\\u"+c.charCodeAt(0).toString(16).padStart(4,"0"));}
 function XJS(s){return X(XJ(s));}
 function cssAlpha(color,pct){return `color-mix(in srgb, ${color} ${pct}%, transparent)`;}
 const CSS_ALPHA_BDR_13=cssAlpha("var(--bdr)",13);
@@ -13625,7 +13628,7 @@ function rCal(el){
         const inpStyle=pct!==null?(pct>=90?" style='color:var(--early)'":pct>=75?" style='color:var(--wknd)'":" style='color:#dc2626'"):"";
         const personExcs=getExcForPerson(selDate,e.name);
         const hasExc=personExcs.length>0;
-        const formKey=esc+'|'+excKey(selDate);
+        const formKey=e.name+'|'+excKey(selDate);
         const formOpen=S._excFormOpen===formKey;
         // #12: TL colour strip — 3px left border based on effective HC%
         const _tlCls=pct!==null?(pct>=90?'tl-green':pct>=75?'tl-amber':'tl-red'):'';
@@ -13640,10 +13643,10 @@ function rCal(el){
         mid+=`<button class="dd-mini-btn" onclick="navToPerson('${esc}')" title="Open month card">Month</button>`;
         mid+=renderInlineNoteButton("person",e.name,e.name,"compact");
         const _excWithAgent=personExcs.find(ex=>ex.agentName);
-        mid+=`<button class="exc-flag${hasExc?' has-exc':''}" onclick="${_excWithAgent?`openAgentDrawer('${XJS(_excWithAgent.agentName)}')`:`S._excFormOpen=S._excFormOpen==='${formKey}'?null:'${formKey}';ren()`}">${hasExc?'⚡'+personExcs.length:'+ Flag'}</button>`;
+        mid+=`<button class="exc-flag${hasExc?' has-exc':''}" onclick="${_excWithAgent?`openAgentDrawer('${XJS(_excWithAgent.agentName)}')`:`S._excFormOpen=S._excFormOpen==='${XJ(formKey)}'?null:'${XJ(formKey)}';ren()`}">${hasExc?'⚡'+personExcs.length:'+ Flag'}</button>`;
         // Swap button — opens inline swap log form prefilled with this person as absent
-        const swapFormKey='swap|'+excKey(selDate)+'|'+esc;
-        mid+=`<button class="dd-mini-btn" style="${isCovering||isAbsent?'color:var(--early)':''}" onclick="S._swapFormDay=S._swapFormDay==='${swapFormKey}'?null:'${swapFormKey}';ren()" title="Log shift swap for this day">⇄</button>`;
+        const swapFormKey='swap|'+excKey(selDate)+'|'+e.name;
+        mid+=`<button class="dd-mini-btn" style="${isCovering||isAbsent?'color:var(--early)':''}" onclick="S._swapFormDay=S._swapFormDay==='${XJ(swapFormKey)}'?null:'${XJ(swapFormKey)}';ren()" title="Log shift swap for this day">⇄</button>`;
         mid+=`<div class="hc-widget"><span class="hc-label" style="font-size:8px;color:var(--tm);opacity:.5;letter-spacing:.5px;position:absolute;top:-9px;left:0;white-space:nowrap">${!hc.recorded?'HC <span style="color:#dc2626;opacity:.8">•</span>':hc._fromRoster?'HC <span style="color:var(--accent);opacity:.8">👥</span>':'HC'}</span><input type="number" min="0" max="999" value="${hc.recorded?hc.present:(hc.present||"")}" placeholder="${hc.recorded?'':'not recorded'}" class="hc-inp"${inpStyle} onchange="setHc(new Date(${da}),'${esc}','present',this.value)" title="${hc.recorded?'Actual headcount — agents present on shift':'Attendance not recorded yet for this day'}"><span class="hc-sep">/</span><input type="number" min="0" max="999" value="${hc._fromRoster?'':hc.total||""}" placeholder="${hc._fromRoster?hc.total:'req'}" class="hc-inp"${hc._fromRoster?' style="border-color:rgba(122,180,255,.25)"':''} onchange="setHc(new Date(${da}),'${esc}','total',this.value)" title="${hc._fromRoster?'From roster: '+hc.total+' agents — type to override':'Required headcount — agents needed on shift'}"></div>`;
         // Inline swap form — key already declared above as swapFormKey
         if(S._swapFormDay===swapFormKey)mid+=`<div style="width:100%">${renderSwapFormInline(excKey(selDate),e.name)}</div>`;
@@ -13651,7 +13654,7 @@ function rCal(el){
         personExcs.forEach(ex=>{
           const t=EXC_TYPES.find(t=>t.id===ex.type);
           const editKey=formKey+'|edit|'+ex.id;
-          mid+=`<div class="exc-logged" style="width:100%"><span>${t?t.icon:'⚠'}</span><span>${t?t.label:ex.type}</span><span style="opacity:.6">${ex.severity}</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px">${ex.hoursLost}h lost</span>${ex.notes?`<span style="opacity:.5;font-size:11px">${X(ex.notes).substring(0,30)}</span>`:''}<span class="exc-del" style="opacity:.4;cursor:pointer;font-size:11px" onclick="S._excFormOpen='${editKey}';S._excEditId='${ex.id}';ren()" title="Edit">✎</span><span class="exc-del" onclick="removeException('${ex.id}')" title="Remove">✕</span></div>`;
+          mid+=`<div class="exc-logged" style="width:100%"><span>${t?t.icon:'⚠'}</span><span>${t?t.label:ex.type}</span><span style="opacity:.6">${ex.severity}</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px">${ex.hoursLost}h lost</span>${ex.notes?`<span style="opacity:.5;font-size:11px">${X(ex.notes).substring(0,30)}</span>`:''}<span class="exc-del" style="opacity:.4;cursor:pointer;font-size:11px" onclick="S._excFormOpen='${XJ(editKey)}';S._excEditId='${ex.id}';ren()" title="Edit">✎</span><span class="exc-del" onclick="removeException('${ex.id}')" title="Remove">✕</span></div>`;
           // Inline edit form for this exception
           if(S._excFormOpen===editKey){
             mid+=`<div class="exc-form" style="width:100%">`;
@@ -13700,7 +13703,7 @@ function rCal(el){
         const tag=e.team!=="Main"?` <span style="font-size:10px;opacity:.3">${X(e.team)}</span>`:"";
         const daySwaps=getSwapsForDay(excKey(selDate));
         const covered=daySwaps.find(sw=>sw.absentLeader===e.name);
-        const swapFormKey='swap|'+excKey(selDate)+'|off|'+XJ(e.name);
+        const swapFormKey='swap|'+excKey(selDate)+'|off|'+e.name;
         const rowCls=covered?'roster-item off-item swap-covered':'roster-item off-item';
         mid+=`<div class="${rowCls}">`;
         mid+=`<span class="ri-name" style="cursor:pointer" onclick="openDayInvestigation('${XJS(e.name)}','${excKey(selDate)}','calendar')">${X(e.name)}${tag}</span>`;
@@ -13710,7 +13713,7 @@ function rCal(el){
           mid+=`<span class="swap-tag" style="margin-left:auto" title="Covered by ${covered.coverLeader}">⇄ ${X(covered.coverLeader.split(' ')[0])}</span>`;
           mid+=`<button style="background:none;border:none;color:var(--tm);cursor:pointer;font-size:11px;padding:1px 4px" onclick="removeSwap('${covered.id}')" title="Remove swap">✕</button>`;
         } else {
-          mid+=`<button class="dd-mini-btn" style="margin-left:auto;font-size:11px" onclick="S._swapFormDay=S._swapFormDay==='${swapFormKey}'?null:'${swapFormKey}';ren()" title="Log who covered this person">⇄ Cover</button>`;
+          mid+=`<button class="dd-mini-btn" style="margin-left:auto;font-size:11px" onclick="S._swapFormDay=S._swapFormDay==='${XJ(swapFormKey)}'?null:'${XJ(swapFormKey)}';ren()" title="Log who covered this person">⇄ Cover</button>`;
         }
         mid+=`</div>`;
         if(S._swapFormDay===swapFormKey)mid+=renderSwapFormInline(excKey(selDate),e.name);
@@ -31991,7 +31994,7 @@ function rPeopleAgentsView(){
     if(!S._agentsBulkTL||!addLeaders.includes(S._agentsBulkTL))S._agentsBulkTL=(S.emp!=="all"&&addLeaders.includes(S.emp))?S.emp:(S._agentsViewTLFilter&&addLeaders.includes(S._agentsViewTLFilter)?S._agentsViewTLFilter:addLeaders[0]);
     h+=`<details ${!allAgents.length?"open":""} style="border-bottom:1px solid var(--bdr);padding:8px 18px;background:rgba(255,255,255,.012)">`;
     h+=`<summary style="cursor:pointer;font-size:11px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.08em">Add / paste agents</summary>`;
-    h+=`<div style="display:flex;align-items:center;gap:8px;margin:8px 0 6px"><span style="font-size:10px;color:var(--tm);font-weight:700;text-transform:uppercase">Leader</span><select onchange="S._agentsBulkTL=this.value;rPeople($('ca'))" style="padding:4px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);color:var(--text);font-family:inherit;font-size:11px">${addLeaders.map(l=>`<option value="${XJS(l)}"${S._agentsBulkTL===l?" selected":""}>${X(l)}</option>`).join("")}</select></div>`;
+    h+=`<div style="display:flex;align-items:center;gap:8px;margin:8px 0 6px"><span style="font-size:10px;color:var(--tm);font-weight:700;text-transform:uppercase">Leader</span><select onchange="S._agentsBulkTL=this.value;rPeople($('ca'))" style="padding:4px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);color:var(--text);font-family:inherit;font-size:11px">${addLeaders.map(l=>`<option value="${X(l)}"${S._agentsBulkTL===l?" selected":""}>${X(l)}</option>`).join("")}</select></div>`;
     h+=renderPeopleAgentAddBox(S._agentsBulkTL,"agents");
     h+=`</details>`;
   }
@@ -35492,7 +35495,7 @@ function nsRenderScheduleWindow(el){
   el.innerHTML=nsOpsShell("schedule",body);
 }
 
-function nsCsv(rows){const keys=[...new Set(rows.flatMap(row=>Object.keys(row||{})))],quote=value=>'"'+String(value??"").replace(/"/g,'""')+'"';return[keys.map(quote).join(","),...rows.map(row=>keys.map(key=>quote(row[key])).join(","))].join("\r\n");}
+function nsCsv(rows){const keys=[...new Set(rows.flatMap(row=>Object.keys(row||{})))],quote=value=>{let text=String(value??"");if(/^[=+\-@\t\r]/.test(text))text="'"+text;return '"'+text.replace(/"/g,'""')+'"';};return[keys.map(quote).join(","),...rows.map(row=>keys.map(key=>quote(row[key])).join(","))].join("\r\n");}
 function nsExportCsv(kind){let rows=[],name="Export";if(kind==="schedule"){rows=nsRuntimeScheduleRows();name="Schedule";}if(kind==="people"){rows=nsAllPeople();name="People";}if(kind==="person"){rows=nsRuntimeScheduleRows().filter(row=>row.name===S.nsSchedulePerson);name=(S.nsSchedulePerson||"Person")+"_Schedule";}nsDownloadBlob(new Blob([nsCsv(rows)],{type:"text/csv;charset=utf-8"}),"Sync_"+name.replace(/[^a-z0-9_-]+/gi,"_")+"_"+new Date().toISOString().slice(0,10)+".csv");}
 function nsRenderExportCentre(el){
   nsMergeRuntimePeopleDirectory();const model=nsCanonical(),people=nsAllPeople(),teams=nsScopedRows("teams"),schedule=nsRuntimeScheduleRows(),publish=nsScopedRows("publishQueue"),sources=nsScopedRows("sources"),leaders=people.filter(person=>/lead|supervisor|manager/i.test(person.role_type||"")),agents=people.length-leaders.length,body=`<div class="ns-export-sections">

@@ -1,23 +1,14 @@
 name: Test and deploy
 
-# The gated alternative to Pages' "deploy from a branch".
+# Pages builds from GitHub Actions (Settings -> Pages -> Source), so this workflow IS the deploy: the
+# suite runs first and the site publishes only if it passes. A broken commit never reaches
+# sync.theguide.club; the last good deploy stays live.
 #
-# Right now a push to main publishes immediately and the test suite runs beside it — so a broken
-# commit reaches sync.theguide.club and the red X arrives afterwards. This workflow runs the suite
-# FIRST and publishes only if it passes, which is the difference between detecting a regression and
-# preventing one.
-#
-# It is manual-only until two things are done, in this order:
-#   1. Repo Settings -> Pages -> Build and deployment -> Source: change "Deploy from a branch" to
-#      "GitHub Actions". Until this is set, deploy-pages below cannot publish and will fail.
-#   2. Add the push trigger here:
-#          push:
-#            branches: [main]
-#      and delete .github/workflows/test.yml, whose job is then done by the test job below.
-#
-# Publishing only index.html and CNAME is deliberate: the branch-based deploy currently serves the
-# whole repo root, so tests/, package.json and the lockfile are all reachable on the public site.
+# Publishing only index.html and CNAME is deliberate: tests/, package.json and the lockfile stay out
+# of the public site.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
