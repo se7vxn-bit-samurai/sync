@@ -31,6 +31,8 @@ jobs:
         with:
           node-version: '20'
           cache: npm
+      - name: index.html is exactly what src/ builds
+        run: node build/build.js --check
       - run: npm ci
       - name: Install Chromium
         run: npx playwright install --with-deps chromium

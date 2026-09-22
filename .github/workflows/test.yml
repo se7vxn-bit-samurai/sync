@@ -18,6 +18,8 @@ jobs:
           node-version: '20'
           cache: npm
 
+      - name: index.html is exactly what src/ builds
+        run: node build/build.js --check
       - run: npm ci
 
       # Only Chromium is installed: both configured projects (desktop and mobile) use it, so
