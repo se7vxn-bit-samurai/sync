@@ -1,0 +1,274 @@
+<script>
+(function(){
+"use strict";
+
+const B=window.SyncSheetsV31Bridge;
+if(!B)return;
+
+const CONTRACT="3.1.0";
+const TEMPLATE_ROOT="../02_SyncSheets_V3/SyncSheets%20v3.1/Starter%20Pack/";
+const TEMPLATE_FILES={
+  peoplehub:"PeopleHub_v3.1_Starter.xlsx",
+  schedulehub:"ScheduleHub_v3.1_Starter.xlsx",
+  departmenthub:"DepartmentHub_v3.1_Starter.xlsx",
+  saveplus:"SavePlus_v3.1_Starter.xlsx",
+  ot_mgmt:"OTPlus_MGMT_v3.1_Starter.xlsx",
+  ot_wishlist:"OTPlus_Wishlist_v3.1_Starter.xlsx",
+  teamlead:"TeamLead_Pack_v3.1_Starter.xlsx",
+  team_agent:"Team_Agent_Request_Pack_v3.1_Starter.xlsx"
+};
+const FAMILY_LABELS={peoplehub:"PeopleHub",schedulehub:"ScheduleHub",departmenthub:"DepartmentHub",saveplus:"Save+",ot_mgmt:"OT+ Management",ot_wishlist:"OT+ Wishlist",teamlead:"Team Lead packs",team_agent:"Team AGNT request packs"};
+const MONTH_RE=/^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(?:uary|ruary|ch|il|e|y|ust|tember|ober|ember)?(?:\s+\d{4})?$/i;
+const MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+function clean(v){return B.clean(v);}
+function esc(v){return B.esc(v);}
+function js(v){return B.js(v);}
+function clone(value){return typeof structuredClone==="function"?structuredClone(value):JSON.parse(JSON.stringify(value));}
+function safe(value){return clean(value||"Workspace").replace(/[^a-z0-9 _-]+/gi,"").replace(/\s+/g,"_").replace(/^_+|_+$/g,"")||"Workspace";}
+function cell(ws,r,c,value,style){const address=XLSX.utils.encode_cell({r,c}),current=ws[address]||{},next=Object.assign({},current);delete next.f;delete next.w;next.v=value==null?"":value;next.t=typeof value==="number"?"n":typeof value==="boolean"?"b":"s";if(style&&next.s===undefined&&style.s!==undefined)next.s=style.s;if(style&&next.z===undefined&&style.z!==undefined)next.z=style.z;ws[address]=next;return next;}
+function formula(ws,r,c,value,style){const target=cell(ws,r,c,"",style);delete target.v;target.f=value;target.t="n";}
+function sheetName(wb,wanted){return (wb.SheetNames||[]).find(name=>name.toLowerCase()===String(wanted).toLowerCase())||"";}
+function monthKey(date){return date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0");}
+function iso(date){return date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0");}
+function parseDate(value){const match=String(value||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);return match?new Date(Number(match[1]),Number(match[2])-1,Number(match[3])):null;}
+function addMonths(date,count){return new Date(date.getFullYear(),date.getMonth()+count,1);}
+function rangeMonths(start,end){const first=new Date(start.getFullYear(),start.getMonth(),1),last=new Date(end.getFullYear(),end.getMonth(),1),out=[];for(let d=first;d<=last&&out.length<18;d=addMonths(d,1))out.push(new Date(d));return out;}
+function sourcePeriod(){const dates=B.scopedRows("schedule").map(row=>parseDate(row.date)).filter(Boolean).sort((a,b)=>a-b),today=new Date();return{start:dates[0]||new Date(today.getFullYear(),today.getMonth(),1),end:dates[dates.length-1]||new Date(today.getFullYear(),today.getMonth()+11,1)};}
+function base64Bytes(value){const raw=atob(value),out=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)out[i]=raw.charCodeAt(i);return out;}
+
+async function loadTemplate(kind){
+  const filename=TEMPLATE_FILES[kind];if(!filename)throw new Error("Unknown v3.1 template: "+kind);
+  let bytes=null,embedded=window.SYNC_V31_TEMPLATE_ASSETS&&window.SYNC_V31_TEMPLATE_ASSETS[kind];
+  if(embedded)bytes=base64Bytes(embedded);
+  else{const response=await fetch(TEMPLATE_ROOT+encodeURIComponent(filename));if(!response.ok)throw new Error("Template could not be loaded ("+response.status+")");bytes=new Uint8Array(await response.arrayBuffer());}
+  return XLSX.read(bytes,{type:"array",cellStyles:true,cellFormula:true,cellNF:true,cellDates:true});
+}
+
+async function loadTemplateBytes(kind){
+  const filename=TEMPLATE_FILES[kind];if(!filename)throw new Error("Unknown v3.1 template: "+kind);
+  const embedded=window.SYNC_V31_TEMPLATE_ASSETS&&window.SYNC_V31_TEMPLATE_ASSETS[kind];if(embedded)return base64Bytes(embedded);
+  const response=await fetch(TEMPLATE_ROOT+encodeURIComponent(filename));if(!response.ok)throw new Error("Template could not be loaded ("+response.status+")");return new Uint8Array(await response.arrayBuffer());
+}
+
+async function loadExcelTemplate(kind){
+  if(typeof ensureExcelJsReady==="function")await ensureExcelJsReady();
+  if(typeof ExcelJS==="undefined")throw new Error("ExcelJS is unavailable");
+  const bytes=await loadTemplateBytes(kind),buffer=bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),wb=new ExcelJS.Workbook();await wb.xlsx.load(buffer);wb.calcProperties.fullCalcOnLoad=true;wb.calcProperties.forceFullCalc=true;return wb;
+}
+
+const FAMILY_SHEETS={
+  peoplehub:["Dashboard","theGuide","Org Chart","People","Teams","Org Roles","Acting","Identity Aliases","Sources","Sync Log","Workbook Meta"],
+  schedulehub:["Dashboard","theGuide","Working Today","Clean View","Schedule_Data","Teams","Import Batches","Sources","Sync Log","Workbook Meta"],
+  departmenthub:["Dashboard","theGuide","Team Setup","Blueprint","Positions","Schedule Output","OT Management","Leave Requests","Leave Tracker","Coverage","Roster","Overrides","Fairness","Schedule Feed","Sources","Sync Log","Workbook Meta"],
+  ot_mgmt:["Dashboard","theGuide","Team Setup","Roster","Schedule","OT Management","Fairness","Sources","Sync Log","Workbook Meta"],
+  ot_wishlist:["Dashboard","theGuide","Roster","My Schedule","Leave Requests","Sources","Sync Log","Workbook Meta"],
+  teamlead:["Dashboard","theGuide","Team Setup","Roster","Schedule Output","OT Review","Leave Decisions","Fairness","Link Status","Sources","Sync Log","Workbook Meta"],
+  team_agent:["Dashboard","theGuide","My Schedule","Leave Requests","Leave Status","Roster","Link Status","Sources","Sync Log","Workbook Meta"]
+};
+
+const V31={deep:"0B5D47",dark:"064E3B",mint:"DDF7EA",mint2:"ECFDF5",gold:"F4B942",cream:"FFF8E1",ink:"12372A",muted:"5B786D",white:"FFFFFF",line:"B8DCCB",gray:"EEF3F0"};
+function exClone(value){return value?JSON.parse(JSON.stringify(value)):value;}
+function exNorm(value){return clean(value).toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"");}
+function exValue(row,header){
+  const key=exNorm(header),aliases={name:["full_name","person_name","leader_name","agent_name","name"],leader_name:["leader_name","person_name","full_name"],person_name:["person_name","full_name","leader_name"],agent_name:["agent_name","full_name","person_name"],leader_person_id:["leader_person_id","person_id"],person_id:["person_id","leader_person_id"],role:["role","role_type","job_title"],operational_role:["role_type","role"],job_title:["job_title","manager_title"],manager_title:["job_title","manager_title"],team:["home_team","team_name","team"],team_name:["team_name","home_team","team"],department:["department","home_department"],reports_to:["manager_name","reports_to_person_id"],reports_to_person_id:["reports_to_person_id"],uk_shift_start:["uk_shift_start","uk_start"],uk_shift_end:["uk_shift_end","uk_end"],sa_shift_start:["sa_shift_start","sa_start"],sa_shift_end:["sa_shift_end","sa_end"],raw_value:["raw_value","raw_source_token"],rotation_week:["rotation_week","week"],file_week:["file_week","rotation_week","week"]};
+  const candidates=[key,...(aliases[key]||[])];for(const candidate of candidates)if(row&&row[candidate]!==undefined&&row[candidate]!==null)return Array.isArray(row[candidate])?row[candidate].join(", "):row[candidate];return"";
+}
+function exHeaderRow(ws){
+  const known=new Set(["person_id","leader_person_id","full_name","name","leader_name","person_name","team_name","team","role","role_type","date","day_of_week","source_id","leave_request_id","decision_id","wish_id","run_id","org_role_id","team_id"]),limit=Math.min(24,Math.max(ws.rowCount,8));let best={row:1,score:0};
+  for(let r=1;r<=limit;r++){let score=0;ws.getRow(r).eachCell({includeEmpty:false},cell=>{if(known.has(exNorm(cell.text||cell.value)))score++;});if(score>best.score)best={row:r,score};}return best;
+}
+function exWriteTable(wb,spec){
+  const ws=wb.getWorksheet(spec.sheet);if(!ws||!spec.rows)return 0;const found=exHeaderRow(ws);if(!found.score)return 0;
+  const header=ws.getRow(found.row),columns=[];header.eachCell({includeEmpty:true},(cell,col)=>{if(clean(cell.text||cell.value))columns.push({col,header:cell.text||cell.value});});if(!columns.length)return 0;
+  const template=ws.getRow(found.row+1);for(let r=found.row+1;r<=Math.max(ws.rowCount,found.row+spec.rows.length+2);r++)columns.forEach(({col})=>{ws.getCell(r,col).value=null;});
+  spec.rows.forEach((record,index)=>{const row=ws.getRow(found.row+1+index);columns.forEach(({col,header:label})=>{const target=row.getCell(col),sample=template.getCell(col);if(sample.style)target.style=exClone(sample.style);target.value=exValue(record,label);});row.commit();});
+  if(spec.rows.length)ws.autoFilter={from:{row:found.row,column:columns[0].col},to:{row:found.row,column:columns[columns.length-1].col}};return spec.rows.length;
+}
+function exSpecs(kind,model){
+  const specs=workbookSpecs(kind,model).slice(),add=(sheet,rows)=>{if(!specs.some(spec=>spec.sheet===sheet))specs.push({sheet,rows});};
+  if(kind==="peoplehub")add("Org Chart",model.people.map(person=>({person_id:person.person_id,name:person.full_name,title:person.job_title||person.role_type,team:person.home_team,reports_to:person.manager_name||person.reports_to_person_id,status:person.status}))); 
+  if(kind==="schedulehub"){add("Working Today",model.schedule);add("Clean View",model.schedule);add("Schedule_Data",model.schedule);add("Teams",model.teams);}
+  if(kind==="departmenthub"){add("Team Setup",model.teams);add("Roster",model.people);add("Schedule Output",model.schedule);add("Schedule Feed",model.schedule);}
+  if(kind==="teamlead"){add("Team Setup",model.teams.length?model.teams:model.people);add("Roster",model.people);add("Schedule Output",model.schedule);}
+  if(kind==="team_agent"){add("Roster",model.people);add("My Schedule",model.schedule);}
+  if(kind==="ot_mgmt"){add("Team Setup",model.teams.length?model.teams:model.people);add("Roster",model.people);add("Schedule",model.schedule);}
+  if(kind==="ot_wishlist"){add("Roster",model.people);add("My Schedule",model.schedule);}
+  return specs;
+}
+function exTitleStyle(cell){cell.fill={type:"pattern",pattern:"solid",fgColor:{argb:V31.deep}};cell.font={name:"Aptos Display",size:16,bold:true,color:{argb:V31.white}};cell.alignment={vertical:"middle"};}
+function exHeaderStyle(cell){cell.fill={type:"pattern",pattern:"solid",fgColor:{argb:V31.deep}};cell.font={name:"Aptos",size:10,bold:true,color:{argb:V31.white}};cell.alignment={vertical:"middle",horizontal:"center",wrapText:true};cell.border={bottom:{style:"thin",color:{argb:V31.line}}};}
+function exBodyStyle(cell,index){cell.font={name:"Aptos",size:10,color:{argb:V31.ink}};cell.fill={type:"pattern",pattern:"solid",fgColor:{argb:index%2?V31.white:V31.mint2}};cell.border={bottom:{style:"hair",color:{argb:V31.line}}};cell.alignment={vertical:"middle"};}
+function exEnsureFamily(wb,kind,model,file){
+  (FAMILY_SHEETS[kind]||[]).forEach(name=>{if(!wb.getWorksheet(name))wb.addWorksheet(name);});
+  const guide=wb.getWorksheet("theGuide");if(guide&&guide.rowCount<4){guide.views=[{showGridLines:false}];guide.mergeCells("A1:H1");guide.getCell("A1").value=(file.label||"SyncSheets v3.1")+" · theGuide";exTitleStyle(guide.getCell("A1"));guide.mergeCells("A2:H2");guide.getCell("A2").value="Open Dashboard first. Green tabs are editable, mint tabs are published views, gold tabs govern decisions, gray tabs carry machine data.";guide.getCell("A2").font={name:"Aptos",size:10,italic:true,color:{argb:V31.muted}};[["A4","Identity","person_id is immutable; names and external employee numbers are attributes."],["A6","Linking","Workbooks exchange value-backed records through Sync or the approved SharePoint flow."],["A8","Privacy",kind==="team_agent"?"Shared team requests only. Private leave, medical, coaching and personal notes are excluded.":"Use the role-appropriate workbook and keep private notes in Sync."],["A10","Editing","Re-import edited outputs into Sync to reconcile changes safely by ID."]].forEach(([address,title,text])=>{guide.getCell(address).value=title;guide.getCell(address).font={bold:true,color:{argb:V31.deep}};guide.getCell(address.replace("A","B")).value=text;});guide.getColumn(1).width=20;guide.getColumn(2).width=86;}
+  exSpecs(kind,model).forEach(spec=>{let ws=wb.getWorksheet(spec.sheet);if(!ws)ws=wb.addWorksheet(spec.sheet);if(exHeaderRow(ws).score)return;ws.views=[{showGridLines:false,state:"frozen",ySplit:4}];ws.mergeCells(1,1,1,Math.max(8,Object.keys(spec.rows[0]||{}).length));ws.getCell(1,1).value=spec.sheet.toUpperCase()+" · "+(file.label||"SyncSheets v3.1");exTitleStyle(ws.getCell(1,1));ws.getRow(1).height=26;ws.mergeCells(2,1,2,Math.max(8,Object.keys(spec.rows[0]||{}).length));ws.getCell(2,1).value="governed records · immutable IDs · value-backed Sync publish";ws.getCell(2,1).font={name:"Aptos",size:9,italic:true,color:{argb:V31.muted}};const keys=Object.keys(spec.rows[0]||{});keys.forEach((key,index)=>{ws.getCell(4,index+1).value=key;exHeaderStyle(ws.getCell(4,index+1));ws.getColumn(index+1).width=Math.max(13,Math.min(30,key.length+4));});});
+}
+function exDashboard(wb,kind,model,file){
+  let ws=wb.getWorksheet(kind==="saveplus"?"Overview":"Dashboard");if(!ws)ws=wb.addWorksheet(kind==="saveplus"?"Overview":"Dashboard");ws.views=[{showGridLines:false,state:"frozen",ySplit:2}];
+  const counts={people:model.people.length,leaders:model.people.filter(person=>/lead|supervisor|manager/i.test(person.role_type||"")).length,teams:model.teams.length,schedule:model.schedule.length,leave:model.leave.length,ot:model.otDecisions.length,sources:model.sources.length};
+  const card=(left,row,value,label)=>{const right=left+1;ws.mergeCells(row,left,row,right);ws.mergeCells(row+1,left,row+1,right);const valueCell=ws.getCell(row,left),labelCell=ws.getCell(row+1,left);valueCell.value=value;valueCell.fill={type:"pattern",pattern:"solid",fgColor:{argb:V31.mint}};valueCell.font={name:"Aptos Display",size:18,bold:true,color:{argb:V31.dark}};valueCell.alignment={horizontal:"center",vertical:"middle"};labelCell.value=label;labelCell.fill={type:"pattern",pattern:"solid",fgColor:{argb:V31.mint}};labelCell.font={name:"Aptos",size:9,bold:true,color:{argb:V31.deep}};labelCell.alignment={horizontal:"center",vertical:"middle"};[valueCell,labelCell].forEach(cell=>cell.border={top:{style:"thin",color:{argb:V31.line}},left:{style:"thin",color:{argb:V31.line}},bottom:{style:"thin",color:{argb:V31.line}},right:{style:"thin",color:{argb:V31.line}}});};
+  if(kind==="peoplehub")[[1,4,counts.people,"PEOPLE"],[4,4,counts.leaders,"TEAM LEADS"],[7,4,model.people.filter(person=>(person.labels||[]).some(label=>/yat/i.test(label))).length,"YATS TAGGED"],[10,4,model.acting.length,"ACTING TODAY"]].forEach(args=>card(...args));
+  else if(kind==="schedulehub")[[1,4,counts.schedule,"SCHEDULE ROWS"],[4,4,counts.people,"PEOPLE"],[7,4,counts.teams,"TEAMS"],[10,4,counts.sources,"SOURCES"]].forEach(args=>card(...args));
+  else [[1,4,counts.teams,"TEAMS"],[4,4,counts.people,"PEOPLE"],[7,4,counts.leave,"PENDING LEAVE"],[10,4,model.schedule.length?Math.max(1,new Set(model.schedule.map(row=>row.rotation_week).filter(Boolean)).size):0,"ROTATION WEEKS"],[1,7,counts.schedule,"SCHEDULE ROWS"],[4,7,counts.leave,"LEAVE RECORDS"],[7,7,counts.ot,"OT DECISIONS"],[10,7,counts.sources,"SOURCES"]].forEach(args=>card(...args));
+  ws.mergeCells("A1:K1");ws.getCell("A1").value=(file.label||"SyncSheets v3.1").toUpperCase();exTitleStyle(ws.getCell("A1"));ws.getRow(1).height=28;ws.mergeCells("A2:K2");ws.getCell("A2").value="Ordo ex Tabulis · governed people, schedules and decisions · generated "+new Date().toISOString().slice(0,10);ws.getCell("A2").font={name:"Aptos",size:9,italic:true,color:{argb:V31.muted}};
+  [["A10","HOW TO READ THIS WORKBOOK"],["A11","Start here for scope, health and publishing readiness."],["A12","Human tabs use the Save+ visual language; machine tabs remain structured for Sync."],["A13","Linked records reconcile by person_id and pack manifest relationships—never by names."],["A14","Re-import edited workbooks into Sync before publishing the next pack."]].forEach(([address,value],index)=>{ws.mergeCells(`${address}:${String.fromCharCode(75)}${address.slice(1)}`);ws.getCell(address).value=value;if(index===0){ws.getCell(address).fill={type:"pattern",pattern:"solid",fgColor:{argb:V31.deep}};ws.getCell(address).font={name:"Aptos",size:10,bold:true,color:{argb:V31.white}};}else ws.getCell(address).font={name:"Aptos",size:10,color:{argb:V31.ink}};});for(let col=1;col<=11;col++)ws.getColumn(col).width=14;
+}
+function exGovernance(wb,kind,model,manifest,file){
+  let meta=wb.getWorksheet("Workbook Meta");if(!meta){meta=wb.addWorksheet("Workbook Meta");meta.addRow(["key","value"]);}
+  const values={workbook_id:file.file_id,workbook_name:file.label,contract_version:CONTRACT,visual_system:"SyncSheets v3.1 · Save+ visual baseline",identity_key:"person_id (immutable)",generated_utc:manifest.generated_utc,generator:"Sync v3.1 ExcelJS template pipeline",microsoft_targets:"Excel Desktop; SharePoint; Excel Online",link_mode:"value-backed hierarchy; reconciled through Sync",agent_scope:kind==="team_agent"?"team-shared-request-scope":"role-scoped"};
+  const seen=new Set();for(let row=2;row<=Math.max(meta.rowCount,2);row++){const key=exNorm(meta.getCell(row,1).value);if(values[key]!==undefined){meta.getCell(row,2).value=values[key];seen.add(key);}}
+  Object.entries(values).filter(([key])=>!seen.has(key)).forEach(([key,value])=>meta.addRow([key,value]));meta.state="veryHidden";
+  let pack=wb.getWorksheet("Pack Manifest");if(pack)wb.removeWorksheet(pack.id);pack=wb.addWorksheet("Pack Manifest");pack.addRow(["SYNCSHEETS PACK MANIFEST",null,null,null,null,null,null,null]);pack.mergeCells("A1:H1");exTitleStyle(pack.getCell("A1"));pack.addRow(["pack_id",manifest.pack_id,"file_id",file.file_id,"kind",file.kind,"contract",CONTRACT]);pack.addRow(["department",manifest.department_name,"scope",file.scope_id,"period",manifest.period.start+" to "+manifest.period.end,"link mode",manifest.link_mode]);pack.addRow([]);pack.addRow(["relationship_id","from_file_id","to_file_id","record_family","direction","mechanism","freshness","notes"]);for(let col=1;col<=8;col++)exHeaderStyle(pack.getCell(5,col));manifest.relationships.forEach((relationship,index)=>{pack.addRow([relationship.relationship_id,relationship.from_file_id,relationship.to_file_id,relationship.record_family,relationship.direction,relationship.mechanism,relationship.freshness,relationship.notes]);for(let col=1;col<=8;col++)exBodyStyle(pack.getCell(6+index,col),index);});pack.views=[{showGridLines:false,state:"frozen",ySplit:5}];[24,24,24,24,14,28,22,48].forEach((width,index)=>pack.getColumn(index+1).width=width);pack.state="hidden";
+  if(kind==="saveplus"){let state=wb.getWorksheet("_app_state_json");if(!state)state=wb.addWorksheet("_app_state_json");const payload=JSON.stringify({schema:"sync.saveplus.v3.1",contract_version:CONTRACT,pack_manifest:manifest,northStar:Object.assign({},model,{syncLog:model.syncLog.slice(0,250)})}),chunks=payload.match(/[\s\S]{1,28000}/g)||[];state.getCell("A1").value="chunk";state.getCell("B1").value="json";chunks.forEach((chunk,index)=>{state.getCell(index+2,1).value=index+1;state.getCell(index+2,2).value=chunk;});state.state="veryHidden";}
+}
+function exMonthSheets(wb,kind,model,start,end){
+  if(!["teamlead","team_agent","ot_mgmt","ot_wishlist"].includes(kind))return;wb.worksheets.filter(ws=>MONTH_RE.test(ws.name)).forEach(ws=>wb.removeWorksheet(ws.id));
+  rangeMonths(start,end).forEach(month=>{const ws=wb.addWorksheet(MONTHS[month.getMonth()]+" "+month.getFullYear(),{views:[{showGridLines:false,state:"frozen",xSplit:2,ySplit:4}]});const days=new Date(month.getFullYear(),month.getMonth()+1,0).getDate(),people=model.people.slice().sort((a,b)=>a.full_name.localeCompare(b.full_name));
+    ws.mergeCells(1,1,1,36);ws.getCell(1,1).value=monthTitle(kind,month);exTitleStyle(ws.getCell(1,1));ws.getRow(1).height=28;ws.mergeCells(2,1,2,36);ws.getCell(2,1).value="SyncSheets v3.1 · Ordo ex Tabulis · governed by immutable person_id";ws.getCell(2,1).font={name:"Aptos",size:9,italic:true,color:{argb:V31.muted}};
+    ws.getCell(4,1).value="person_id";ws.getCell(4,2).value="Name";for(let day=1;day<=31;day++){const date=new Date(month.getFullYear(),month.getMonth(),day),cell=ws.getCell(4,day+2);cell.value=day<=days?day+"\n"+["Su","Mo","Tu","We","Th","Fr","Sa"][date.getDay()]:"";}ws.getCell(4,34).value="Wishes";ws.getCell(4,35).value="Unavailable";ws.getCell(4,36).value="Confirmed";for(let col=1;col<=36;col++)exHeaderStyle(ws.getCell(4,col));ws.getRow(4).height=28;
+    people.forEach((person,index)=>{const row=5+index;ws.getCell(row,1).value=person.person_id;ws.getCell(row,2).value=person.full_name;for(let day=1;day<=days;day++){const dateIso=iso(new Date(month.getFullYear(),month.getMonth(),day));ws.getCell(row,day+2).value=monthToken(kind,model,person,dateIso);}ws.getCell(row,34).value={formula:`COUNTIF(C${row}:AG${row},"*OT*")+COUNTIF(C${row}:AG${row},"MAYBE")`,result:0};ws.getCell(row,35).value={formula:`COUNTIF(C${row}:AG${row},"UNAVAILABLE")`,result:0};ws.getCell(row,36).value={formula:`COUNTIF(C${row}:AG${row},"*CONF*")`,result:0};for(let col=1;col<=36;col++){exBodyStyle(ws.getCell(row,col),index);if(col>2)ws.getCell(row,col).alignment={horizontal:"center",vertical:"middle"};}});
+    const noteRow=5+people.length;ws.mergeCells(noteRow,1,noteRow,36);ws.getCell(noteRow,1).value=kind==="team_agent"?"Shared team request surface. Do not enter medical, coaching or private notes.":"Use governed request tokens. Blank means no wish or decision.";ws.getCell(noteRow,1).fill={type:"pattern",pattern:"solid",fgColor:{argb:V31.cream}};ws.getCell(noteRow,1).font={name:"Aptos",size:9,italic:true,color:{argb:V31.muted}};ws.getColumn(1).width=18;ws.getColumn(2).width=24;for(let col=3;col<=33;col++)ws.getColumn(col).width=6;for(let col=34;col<=36;col++)ws.getColumn(col).width=11;ws.autoFilter={from:{row:4,column:1},to:{row:4,column:36}};});
+}
+async function buildExcelWorkbook(kind,model,start,end,manifest,file){
+  ensureJobTitleRoles(model);
+  if(kind==="saveplus"&&typeof buildSheetOverview==="function"){
+    const wb=new ExcelJS.Workbook();if(typeof applyExportMetadata==="function")applyExportMetadata(wb,"Save+ v3.1 pack","all");buildSheetOverview(wb,"all");buildSheetsPerLeader(wb,"all");buildSheetAnalytics(wb,"all");buildSheetScheduleData(wb);if(typeof buildSheetSourceManifest==="function")buildSheetSourceManifest(wb);buildSheetPeople(wb);if(typeof buildSheetNotes==="function")buildSheetNotes(wb);if(typeof buildSheetQoLState==="function")buildSheetQoLState(wb);if(typeof buildSheetChangeLog==="function")buildSheetChangeLog(wb);if(typeof buildSheetBlueprint==="function")buildSheetBlueprint(wb);if(typeof buildSheetPositions==="function")buildSheetPositions(wb);if(typeof buildSheetExceptions==="function")buildSheetExceptions(wb);if(typeof buildSheetCoaching==="function")buildSheetCoaching(wb);if(typeof finalisePremiumWorkbook==="function")finalisePremiumWorkbook(wb);exGovernance(wb,kind,model,manifest,file);return wb;
+  }
+  const wb=new ExcelJS.Workbook();exEnsureFamily(wb,kind,model,file);exSpecs(kind,model).forEach(spec=>exWriteTable(wb,spec));exMonthSheets(wb,kind,model,start,end);exDashboard(wb,kind,model,file);exGovernance(wb,kind,model,manifest,file);return wb;
+}
+
+function scopedModel(department,team){
+  const source=B.model(),out={};Object.keys(source).forEach(key=>out[key]=Array.isArray(source[key])?source[key].slice():source[key]);
+  const deptKey=clean(department).toLowerCase(),people=source.people.filter(person=>!deptKey||clean(person.home_department||department).toLowerCase()===deptKey),teamPeople=team?people.filter(person=>clean(person.home_team)===clean(team)):people,ids=new Set(teamPeople.map(person=>person.person_id));
+  out.people=teamPeople;out.roles=source.roles.filter(row=>ids.has(row.person_id));out.acting=source.acting.filter(row=>ids.has(row.person_id)||ids.has(row.acting_for_person_id));out.aliases=source.aliases.filter(row=>ids.has(row.person_id));
+  out.teams=team?source.teams.filter(row=>clean(row.team_name)===clean(team)):source.teams.filter(row=>!deptKey||clean(row.department||department).toLowerCase()===deptKey);
+  const personById=new Map(teamPeople.map(person=>[person.person_id,person])),personByName=new Map(teamPeople.map(person=>[B.nameKey(person.full_name),person]));
+  out.schedule=source.schedule.filter(row=>ids.has(row.person_id)||personByName.has(B.nameKey(row.person_name))).map(row=>{const person=personById.get(row.person_id)||personByName.get(B.nameKey(row.person_name));return Object.assign({},row,person?{person_id:person.person_id,person_name:person.full_name,team_name:person.home_team||row.team_name,department:person.home_department||row.department}:{});});
+  out.otWishes=source.otWishes.filter(row=>ids.has(row.person_id));out.otDecisions=source.otDecisions.filter(row=>ids.has(row.person_id));out.leave=source.leave.filter(row=>ids.has(row.person_id));out.fairness=source.fairness.filter(row=>!row.person_id||ids.has(row.person_id));
+  out.sources=source.sources.slice();out.syncLog=source.syncLog.slice(0,1000);out.sourceLinks=source.sourceLinks.slice();out.imports=source.imports.slice();return out;
+}
+
+function ensureJobTitleRoles(model){
+  model.people.forEach(person=>{if(!person.job_title)return;const id=B.id("NS-ROLE",person.person_id+"|job-title");const existing=model.roles.find(role=>role.org_role_id===id);if(existing){existing.role="Job Title: "+person.job_title;existing.person_name=person.full_name;return;}model.roles.push({org_role_id:id,person_id:person.person_id,person_name:person.full_name,role:"Job Title: "+person.job_title,scope_team_id:"",scope_department:person.home_department||"",status:"Active",notes:"Separate from operational role",source_id:"NS-BROWSER",authority_rank:0});});
+}
+
+function workbookSpecs(kind,model){
+  if(kind==="saveplus")return[
+    {sheet:"People",rows:model.people,keys:["person_id"]},{sheet:"Identity Aliases",rows:model.aliases,keys:["person_id","alias_value"]},{sheet:"Schedule_Data",rows:model.schedule,keys:["person_id","date"]},{sheet:"OT Management",rows:model.otDecisions,keys:["decision_id"]},{sheet:"OT Wishes",rows:model.otWishes,keys:["wish_id"]},{sheet:"Leave",rows:model.leave,keys:["leave_request_id"]},{sheet:"Sources",rows:model.sources,keys:["source_id"]},{sheet:"Sync Log",rows:model.syncLog,keys:["run_id"]}
+  ];
+  if(kind==="ot_mgmt")return B.writebackSpecs("otplus",model);
+  if(kind==="ot_wishlist")return[
+    {sheet:"Roster",rows:model.people,keys:["person_id"]},{sheet:"Leave Requests",rows:model.leave.map(row=>Object.assign({},row,{notes:""})),keys:["leave_request_id"]},{sheet:"Sources",rows:model.sources,keys:["source_id"]},{sheet:"Sync Log",rows:model.syncLog,keys:["run_id"]}
+  ];
+  if(kind==="teamlead")return B.writebackSpecs("teamlead_pack",model);
+  if(kind==="team_agent")return B.writebackSpecs("agent_pack",Object.assign({},model,{leave:model.leave.map(row=>Object.assign({},row,{notes:""}))}));
+  return B.writebackSpecs(kind,model);
+}
+
+function monthTitle(kind,date){const label=date.toLocaleDateString(undefined,{month:"long",year:"numeric"}).toUpperCase();if(kind==="teamlead"||kind==="ot_mgmt")return label+" - review and confirm OT";if(kind==="team_agent")return label+" - team OT requests";return label+" - mark team OT wishes";}
+function monthToken(kind,model,person,date){
+  const wish=model.otWishes.find(row=>row.person_id===person.person_id&&row.date===date),decision=model.otDecisions.find(row=>row.person_id===person.person_id&&row.date===date);
+  if(kind==="teamlead"||kind==="ot_mgmt")return decision&&(decision.decision||decision.status)||"";
+  return wish&&(wish.raw_token||wish.status)||"";
+}
+
+function rewriteSheetFormulaReferences(wb,mapping){
+  Object.values(wb.Sheets).forEach(ws=>Object.keys(ws).filter(key=>key[0]!=="!").forEach(key=>{const item=ws[key];if(!item||!item.f)return;Object.entries(mapping).forEach(([from,to])=>{const quoted=new RegExp("'"+from.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"'!","g"),plain=new RegExp("\\b"+from.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"!","g");item.f=item.f.replace(quoted,"'"+to+"'!").replace(plain,"'"+to+"'!");});}));
+}
+
+function buildMonthTabs(wb,kind,model,start,end){
+  if(!["teamlead","team_agent","ot_mgmt","ot_wishlist"].includes(kind))return;
+  const desired=rangeMonths(start,end);if(!desired.length)return;
+  const old=wb.SheetNames.filter(name=>MONTH_RE.test(name)),template=old[0]&&clone(wb.Sheets[old[0]]);if(!template)return;
+  const mapping={};desired.forEach((date,index)=>{const oldName=old[index],newName=MONTHS[date.getMonth()]+" "+date.getFullYear();if(oldName){mapping[oldName]=newName;if(oldName!==newName){wb.Sheets[newName]=wb.Sheets[oldName];delete wb.Sheets[oldName];wb.SheetNames[wb.SheetNames.indexOf(oldName)]=newName;}}else{wb.Sheets[newName]=clone(template);const anchor=wb.SheetNames.findIndex(name=>MONTH_RE.test(name));wb.SheetNames.splice(anchor+index,0,newName);}});
+  old.slice(desired.length).forEach(name=>{const index=wb.SheetNames.indexOf(name);if(index>=0){wb.SheetNames.splice(index,1);delete wb.Sheets[name];}});
+  rewriteSheetFormulaReferences(wb,mapping);
+  desired.forEach(date=>{
+    const name=MONTHS[date.getMonth()]+" "+date.getFullYear(),ws=wb.Sheets[name],days=new Date(date.getFullYear(),date.getMonth()+1,0).getDate(),people=model.people.slice().sort((a,b)=>a.full_name.localeCompare(b.full_name)),baseRow=4,styleRow={};
+    for(let col=0;col<36;col++)styleRow[col]=clone(ws[XLSX.utils.encode_cell({r:baseRow,c:col})]||{});
+    const instruction=clone(ws.A6||{});Object.keys(ws).filter(key=>key[0]!=="!").forEach(key=>{const pos=XLSX.utils.decode_cell(key);if(pos.r>=4)delete ws[key];});
+    cell(ws,0,0,monthTitle(kind,date),ws.A1);for(let day=1;day<=31;day++){const col=day+1;if(day<=days){const d=new Date(date.getFullYear(),date.getMonth(),day),dateIso=iso(d);cell(ws,2,col,dateIso,ws[XLSX.utils.encode_cell({r:2,c:col})]);cell(ws,3,col,day+"\n"+["Su","Mo","Tu","We","Th","Fr","Sa"][d.getDay()],ws[XLSX.utils.encode_cell({r:3,c:col})]);}else{cell(ws,2,col,"",ws[XLSX.utils.encode_cell({r:2,c:col})]);cell(ws,3,col,"",ws[XLSX.utils.encode_cell({r:3,c:col})]);}}
+    people.forEach((person,index)=>{const row=baseRow+index;cell(ws,row,0,person.person_id,styleRow[0]);cell(ws,row,1,person.full_name,styleRow[1]);for(let day=1;day<=days;day++){const dateIso=iso(new Date(date.getFullYear(),date.getMonth(),day));cell(ws,row,day+1,monthToken(kind,model,person,dateIso),styleRow[day+1]);}formula(ws,row,33,`COUNTIF(C${row+1}:AG${row+1},"*OT*")+COUNTIF(C${row+1}:AG${row+1},"MAYBE")`,styleRow[33]);formula(ws,row,34,`COUNTIF(C${row+1}:AG${row+1},"UNAVAILABLE")`,styleRow[34]);formula(ws,row,35,`COUNTIF(C${row+1}:AG${row+1},"*CONF*")`,styleRow[35]);});
+    const instructionRow=baseRow+people.length;cell(ws,instructionRow,0,kind==="team_agent"?"Shared team request grid: names, dates and request tokens only. Do not enter medical, coaching or private notes here.":"Use the dropdown tokens. Blank means no wish or decision.",instruction);ws["!ref"]="A1:AJ"+(instructionRow+1);
+  });
+}
+
+function fillMeta(wb,kind,manifest,file){
+  const metaName=sheetName(wb,"Workbook Meta"),meta=metaName&&wb.Sheets[metaName];if(meta){const rows=XLSX.utils.sheet_to_json(meta,{header:1,defval:"",raw:false});rows.forEach((row,index)=>{const key=clean(row[0]).toLowerCase();if(key==="workbook_id")cell(meta,index,1,file.file_id,meta.B2);if(key==="workbook_name")cell(meta,index,1,file.label,meta.B2);if(key==="generated_utc")cell(meta,index,1,manifest.generated_utc,meta.B2);if(key==="agent_scope")cell(meta,index,1,kind==="team_agent"?"team-shared-request-scope":"role-scoped",meta.B2);});}
+  const manifestName=sheetName(wb,"Pack Manifest"),ws=manifestName&&wb.Sheets[manifestName];if(!ws)return;
+  [manifest.pack_id,file.file_id,file.kind,manifest.department_id,file.scope_id,manifest.period.start,manifest.period.end,CONTRACT].forEach((value,col)=>cell(ws,4,col,value,ws[XLSX.utils.encode_cell({r:4,c:col})]));
+  Object.keys(ws).filter(key=>key[0]!=="!").forEach(key=>{const pos=XLSX.utils.decode_cell(key);if(pos.r>=8)delete ws[key];});
+  manifest.relationships.forEach((rel,index)=>{const row=8+index,values=[rel.relationship_id,rel.from_file_id,rel.to_file_id,rel.record_family,rel.direction,rel.mechanism,rel.freshness,rel.notes];values.forEach((value,col)=>cell(ws,row,col,value,ws[XLSX.utils.encode_cell({r:8,c:col})]));});ws["!ref"]="A1:H"+Math.max(9,8+manifest.relationships.length);
+}
+
+function fillSaveState(wb,model,manifest){
+  const name=sheetName(wb,"_app_state_json"),ws=name&&wb.Sheets[name];if(!ws)return;const payload=JSON.stringify({schema:"sync.saveplus.v3.1",contract_version:CONTRACT,pack_manifest:manifest,northStar:Object.assign({},model,{syncLog:model.syncLog.slice(0,250)})}),chunks=payload.match(/[\s\S]{1,28000}/g)||[];chunks.forEach((part,index)=>{cell(ws,index+1,0,index+1,ws.A2);cell(ws,index+1,1,part,ws.B2);});ws["!ref"]="A1:B"+(chunks.length+1);
+}
+
+function updateWorkbook(wb,kind,model,start,end,manifest,file){
+  ensureJobTitleRoles(model);workbookSpecs(kind,model).forEach(spec=>B.writeTable(wb,spec));buildMonthTabs(wb,kind,model,start,end);if(kind==="teamlead"||kind==="ot_mgmt")B.writeOTGrids(wb,model.otDecisions,true);if(kind==="team_agent"||kind==="ot_wishlist")B.writeOTGrids(wb,model.otWishes,false);fillMeta(wb,kind,manifest,file);if(kind==="saveplus")fillSaveState(wb,model,manifest);return wb;
+}
+
+function departments(){const names=[...new Set(B.model().people.map(person=>clean(person.home_department)).filter(Boolean))];return names.length?names:[clean(S.activeDept)||"Workspace"];}
+function teamsFor(department){const model=B.model(),names=[...new Set(model.people.filter(person=>!department||clean(person.home_department||department)===clean(department)).map(person=>clean(person.home_team)).filter(Boolean))];model.teams.filter(team=>!department||clean(team.department||department)===clean(department)).forEach(team=>{if(team.team_name&&!names.includes(team.team_name))names.push(team.team_name);});return names.length?names:["Main Team"];}
+function sourceFingerprint(){const source=B.scopedRows("sources").find(item=>item.fingerprint)||B.scopedRows("sources")[0]||{};return source.fingerprint||source.source_id||"browser";}
+
+function packFiles(department,families){
+  const dept=safe(department),files=[];
+  const add=(kind,path,scope,label)=>files.push({file_id:B.id("NS-FILE",kind+"|"+department+"|"+scope),kind,path,scope_id:scope,label});
+  if(families.peoplehub)add("peoplehub","Company Hubs/PeopleHub_v3.1.xlsx","company","PeopleHub v3.1");
+  if(families.schedulehub)add("schedulehub","Company Hubs/ScheduleHub_v3.1.xlsx","company","ScheduleHub v3.1");
+  if(families.departmenthub)add("departmenthub",dept+"/DepartmentHub_v3.1.xlsx",department,"DepartmentHub v3.1");
+  if(families.saveplus)add("saveplus",dept+"/SavePlus_v3.1.xlsx",department,"Save+ v3.1");
+  if(families.ot_mgmt)add("ot_mgmt",dept+"/OTPlus/OTPlus_MGMT_v3.1.xlsx",department,"OT+ Management v3.1");
+  if(families.ot_wishlist)add("ot_wishlist",dept+"/OTPlus/OTPlus_Wishlist_v3.1.xlsx",department,"OT+ Wishlist v3.1");
+  teamsFor(department).forEach(team=>{const teamPath=dept+"/Teams/"+safe(team);if(families.teamlead)add("teamlead",teamPath+"/"+safe(team)+"_TeamLead_Pack_v3.1.xlsx",team,team+" Team Lead pack");if(families.team_agent)add("team_agent",teamPath+"/"+safe(team)+"_Team_AGNT_Request_Pack_v3.1.xlsx",team,team+" AGNT request pack");});return files;
+}
+
+function relationships(files){
+  const find=kind=>files.find(file=>file.kind===kind),people=find("peoplehub"),schedule=find("schedulehub"),dept=find("departmenthub"),rows=[];
+  const add=(from,to,family,direction,notes)=>{if(!from||!to)return;rows.push({relationship_id:B.id("NS-REL",from.file_id+"|"+to.file_id+"|"+family),from_file_id:from.file_id,to_file_id:to.file_id,record_family:family,direction,mechanism:"Sync value publish / SharePoint-ready",freshness:"On next Sync import/publish",notes});};
+  add(people,dept,"People + organisation","downstream","DepartmentHub consumes governed people, teams and reporting lines");add(schedule,dept,"Schedule","downstream","DepartmentHub consumes normalized schedule records");files.filter(file=>file.kind==="teamlead").forEach(file=>add(dept,file,"Schedule + decisions","two-way","TL edits reconcile by immutable IDs"));files.filter(file=>file.kind==="team_agent").forEach(file=>{const tl=files.find(item=>item.kind==="teamlead"&&item.scope_id===file.scope_id);add(tl||dept,file,"OT + leave requests","two-way","Team request scope; private notes excluded");});files.filter(file=>["saveplus","ot_mgmt","ot_wishlist"].includes(file.kind)).forEach(file=>add(dept,file,"Operational records","two-way","Manual edits return through Sync; no fragile cross-file formulas"));return rows;
+}
+
+function manifestFor(department,start,end,files){const generated=B.now(),packId=B.id("NS-PACK",sourceFingerprint()+"|"+department+"|"+iso(start)+"|"+iso(end));return{schema:"syncsheets.pack-manifest",manifest_version:1,contract_version:CONTRACT,pack_id:packId,generated_utc:generated,department_id:B.id("NS-D",department),department_name:department,source_fingerprint:sourceFingerprint(),period:{start:iso(start),end:iso(end),month_mode:"selected-range",maximum_months:18},identity:{person_id:"immutable",external_employee_identifiers:"aliases"},off_day_rules:{E:"inferred_off_marker; normalized to OFF; raw token retained",black_fill:"visual evidence only",OFF:"explicit off marker"},microsoft_targets:["Excel Desktop/shared drive","SharePoint/Excel Online"],link_mode:"value-backed hierarchy; SharePoint-ready",privacy:{team_agent:"team request fields only; private leave/coaching notes excluded"},files,relationships:relationships(files)};}
+
+function progress(title,total){document.getElementById("nsV31PackProgress")?.remove();const host=document.createElement("div");host.innerHTML=`<div id="nsV31PackProgress" class="ns-native-overlay" role="dialog" aria-modal="true"><div class="ns-native-modal" style="width:min(620px,96vw)"><div class="ns-native-head"><div style="flex:1"><h3>${esc(title)}</h3><small id="nsV31PackPhase">Preparing v3.1 templates...</small></div><span id="nsV31PackCount" class="ns-native-type">0/${total}</span></div><div class="ns-native-body"><div style="height:7px;border-radius:4px;background:var(--bdr);overflow:hidden"><div id="nsV31PackBar" style="height:100%;width:0;background:var(--accent);transition:width .2s"></div></div></div></div></div>`;document.body.appendChild(host.firstElementChild);}
+function progressSet(done,total,phase){const count=document.getElementById("nsV31PackCount"),bar=document.getElementById("nsV31PackBar"),label=document.getElementById("nsV31PackPhase");if(count)count.textContent=done+"/"+total;if(bar)bar.style.width=Math.round(done/Math.max(1,total)*100)+"%";if(label)label.textContent=phase;}
+
+async function nsBuildV31Pack(){
+  if(typeof JSZip==="undefined")return toast("ZIP library unavailable","err");
+  const department=document.getElementById("nsV31Department")?.value||departments()[0],start=parseDate(document.getElementById("nsV31Start")?.value),end=parseDate(document.getElementById("nsV31End")?.value);if(!start||!end||end<start)return toast("Choose a valid start and end date","warn");if(rangeMonths(start,end).length>18)return toast("Choose a range of 18 months or less","warn");
+  const families={};document.querySelectorAll("#nsV31PackBuilder [data-family]").forEach(input=>families[input.dataset.family]=input.checked);const files=packFiles(department,families);if(!files.length)return toast("Select at least one workbook family","warn");
+  const manifest=manifestFor(department,start,end,files),zip=new JSZip();document.getElementById("nsV31PackBuilder")?.remove();progress("Building "+department+" SyncSheets pack",files.length);
+  try{for(let index=0;index<files.length;index++){const file=files[index],team=["teamlead","team_agent"].includes(file.kind)?file.scope_id:"",model=scopedModel(department,team);progressSet(index,files.length,"Populating "+file.label+"...");const wb=await buildExcelWorkbook(file.kind,model,start,end,manifest,file),buffer=await wb.xlsx.writeBuffer();zip.file(file.path,buffer);await new Promise(resolve=>setTimeout(resolve,0));progressSet(index+1,files.length,file.label+" ready");}
+    zip.file("pack-manifest.json",JSON.stringify(manifest,null,2));zip.file("README.txt",`SyncSheets v3.1 Pack\r\nPack ID: ${manifest.pack_id}\r\nDepartment: ${department}\r\nPeriod: ${manifest.period.start} to ${manifest.period.end}\r\n\r\nOpen the DepartmentHub first. Files exchange values through Sync or the approved SharePoint flow. They intentionally do not rely on fragile cross-workbook formulas. Re-import edited files into Sync to reconcile manual changes by immutable person_id.\r\n`);const blob=await zip.generateAsync({type:"blob",compression:"DEFLATE",compressionOptions:{level:6}});B.download(blob,safe(department)+"_"+manifest.period.start.slice(0,7).replace("-","")+"_SyncSheets_v3.1_Pack.zip");
+    const model=B.model();model.syncLog.unshift({run_id:B.id("NS-RUN","pack|"+manifest.pack_id),run_utc:B.now(),app:"Sync NorthStar",action:"export_syncsheets_pack",table_name:"SyncSheets v3.1",rows_written:files.length,result:"EXPORTED",notes:manifest.pack_id,source_id:"NS-BROWSER"});B.persist();toast(files.length+" linked v3.1 workbook"+(files.length===1?"":"s")+" packaged","ok",5200);
+  }catch(error){console.error("v3.1 pack export failed",error);toast("Pack build stopped: "+error.message,"err",6500);}finally{document.getElementById("nsV31PackProgress")?.remove();}
+}
+
+function nsOpenV31PackBuilder(){
+  const period=sourcePeriod(),body=`<div class="ns-form-grid"><div class="ns-field span-2"><label>Department pack</label><select id="nsV31Department">${departments().map(name=>`<option>${esc(name)}</option>`).join("")}</select></div><div class="ns-field"><label>Start date</label><input id="nsV31Start" type="date" value="${iso(period.start)}"></div><div class="ns-field"><label>End date</label><input id="nsV31End" type="date" value="${iso(period.end)}"></div><div class="ns-field span-2"><label>Workbook families</label><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px">${Object.entries(FAMILY_LABELS).map(([key,label])=>`<label style="display:flex;align-items:center;gap:7px;border:1px solid var(--bdr);border-radius:6px;padding:8px;font-size:11px"><input type="checkbox" data-family="${key}" checked> <span><b>${esc(label)}</b><small style="display:block;color:var(--tm);margin-top:2px">${key==="team_agent"?"One shared request file per team":"Included in the governed hierarchy"}</small></span></label>`).join("")}</div></div><div class="ns-field span-2"><div style="padding:9px;border:1px solid var(--bdr);border-radius:6px;color:var(--tm);font-size:10px;line-height:1.55"><b style="color:var(--text)">Portable Microsoft-first pass</b><br>Creates a ZIP for Excel Desktop/shared drives and a SharePoint-ready manifest. Each workbook keeps the v3 visual baseline. Live SharePoint publishing remains value-backed through Sync/Power Automate rather than cross-file formulas.</div></div></div>`;
+  _qolModal("nsV31PackBuilder","Build SyncSheets v3.1 pack","Source period by default · choose up to 18 months",body,`<button class="ns-btn" onclick="document.getElementById('nsV31PackBuilder')?.remove()">Cancel</button><button class="ns-btn primary" onclick="nsBuildV31Pack()">Build linked pack ZIP</button>`);
+}
+
+function orgReviewRows(){return B.scopedRows("people").slice().sort((a,b)=>a.full_name.localeCompare(b.full_name));}
+function nsOpenOrganisationReview(){
+  const people=orgReviewRows();if(!people.length)return;const eCount=B.scopedRows("schedule").filter(row=>/inferred off marker E/i.test(row.source_format||"")).length,options=people.map(person=>`<option value="${esc(person.person_id)}">${esc(person.full_name)}</option>`).join("");
+  const rows=people.map(person=>{const suggested=clean(person.home_team)&&clean(person.home_team).toLowerCase()!=="main"?person.home_team:person.full_name.split(/\s+/)[0]+" Team";return`<tr data-person-id="${esc(person.person_id)}"><td><input class="ns-org-name" value="${esc(person.full_name)}"><small style="display:block;color:var(--tm);font:8px var(--mono);margin-top:3px">${esc(person.person_id)} · immutable</small></td><td><input class="ns-org-title" placeholder="Custom job title" value="${esc(person.job_title||"")}"></td><td><input class="ns-org-role" list="nsOrgRoleList" value="${esc(person.role_type||"Team Leader")}"></td><td><input class="ns-org-team" value="${esc(suggested)}"></td><td><select class="ns-org-reports"><option value="">No reporting line</option>${options}</select></td><td><input class="ns-org-notes" value="${esc(person.notes||"")}"></td></tr>`;}).join("");
+  const body=`<datalist id="nsOrgRoleList"><option>Agent</option><option>Team Leader</option><option>Supervisor</option><option>Manager</option><option>Senior Lead</option></datalist><div style="padding:9px;border:1px solid var(--bdr);border-radius:6px;margin-bottom:9px;color:var(--tm);font-size:10px;line-height:1.5"><b style="color:var(--text)">People & Organisation review</b><br>Rename people, add any job title, set the operational role, team and reporting line. IDs do not change. ${eCount?eCount+" source cells marked E were interpreted as off days; their raw marker is retained for audit.":"No inferred E off-day markers were found."}</div><div class="ns-table-wrap" style="max-height:58vh"><table class="ns-table"><thead><tr><th>Name</th><th>Job title</th><th>Operational role</th><th>Team</th><th>Reports to</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  _qolModal("nsOrganisationReview","Review people and organisation",people.length+" imported people · required before the first full pack",body,`<button class="ns-btn" onclick="document.getElementById('nsOrganisationReview')?.remove()">Review later</button><button class="ns-btn primary" onclick="nsSaveOrganisationReview()">Apply organisation</button>`);
+  people.forEach(person=>{const select=document.querySelector(`#nsOrganisationReview tr[data-person-id="${CSS.escape(person.person_id)}"] .ns-org-reports`);if(select)select.value=person.reports_to_person_id||"";});
+}
+
+function nsSaveOrganisationReview(){
+  const model=B.model(),rows=[...document.querySelectorAll("#nsOrganisationReview tbody tr")],renames=new Map();rows.forEach(row=>{const id=row.dataset.personId,person=model.people.find(item=>item.person_id===id);if(!person)return;const old=person.full_name,name=clean(row.querySelector(".ns-org-name")?.value)||old,title=clean(row.querySelector(".ns-org-title")?.value),role=clean(row.querySelector(".ns-org-role")?.value)||"Agent",team=clean(row.querySelector(".ns-org-team")?.value),reports=row.querySelector(".ns-org-reports")?.value||"";if(old!==name)renames.set(old,name);Object.assign(person,{full_name:name,job_title:title,role_type:role,home_team:team,home_department:person.home_department||S.activeDept||"Workspace",reports_to_person_id:reports,manager_name:"",notes:clean(row.querySelector(".ns-org-notes")?.value),source_id:"NS-BROWSER",authority_rank:0,last_modified_utc:B.now(),sync_status:"Staged"});if(title){const titleRole={org_role_id:B.id("NS-ROLE",id+"|job-title"),person_id:id,person_name:name,role:"Job Title: "+title,scope_team_id:"",scope_department:person.home_department,status:"Active",notes:"Separate from operational role",source_id:"NS-BROWSER",authority_rank:0};B.upsert("roles",[titleRole],item=>item.org_role_id,0);}const teamRecord={team_id:B.id("NS-T",person.home_department+"|"+team),team_name:team,department:person.home_department,leader_person_id:/lead|supervisor|manager/i.test(role)?id:"",leader_name:/lead|supervisor|manager/i.test(role)?name:"",member_count:0,status:"Active",source_id:"NS-BROWSER",authority_rank:0};B.upsert("teams",[teamRecord],item=>item.team_id,0);B.stageChange("PeopleHub","People",id,"organisation_review",person);});
+  const nameFields=[[model.schedule,"person_name"],[model.otWishes,"person_name"],[model.otDecisions,"person_name"],[model.leave,"person_name"],[model.roles,"person_name"]];nameFields.forEach(([records,field])=>records.forEach(record=>{if(renames.has(record[field]))record[field]=renames.get(record[field]);}));(S.entries||[]).forEach(entry=>{if(renames.has(entry.name))entry.name=renames.get(entry.name);});renames.forEach((next,old)=>{if(S.people&&S.people[old]){S.people[next]=Object.assign({},S.people[old],{name:next});delete S.people[old];}});
+  const byId=new Map(model.people.map(person=>[person.person_id,person]));model.people.forEach(person=>person.manager_name=(byId.get(person.reports_to_person_id)||{}).full_name||"");model.teams.forEach(team=>team.member_count=model.people.filter(person=>clean(person.home_team)===clean(team.team_name)).length);B.ensureOrgUnits();B.syncPeople();B.persist();try{saveDeptSnap(S.activeDept);}catch(error){}document.getElementById("nsOrganisationReview")?.remove();ren();toast(rows.length+" people and organisation records applied","ok",5200);
+}
+
+Object.assign(window,{nsOpenV31PackBuilder,nsBuildV31Pack,nsOpenOrganisationReview,nsSaveOrganisationReview});
+})();
+
+</script>

@@ -1,0 +1,313 @@
+<body>
+<div id="syncBoot" class="sync-boot" aria-label="Starting Sync" role="status">
+  <div class="sync-boot-panel">
+    <div class="sync-mark sync-boot-mark" aria-hidden="true">
+      <svg viewBox="0 0 120 120">
+        <path class="sync-frame" d="M28 32 60 14 92 32M28 88l32 18 32-18M28 32v18M92 32v18M28 88V70M92 88V70"></path>
+        <path class="sync-link" d="M30 49h22l20-11 21 11M31 72h22l18 11 21-11M52 49v23M72 38v45"></path>
+        <path class="sync-link-alt" d="M36 58h26l22 14M84 49 62 58 52 72M60 14v24M60 106V83"></path>
+        <path class="sync-spine" d="M82 37H54L41 49l41 24-13 11H39"></path>
+        <circle class="sync-node" cx="28" cy="32" r="4.6"></circle>
+        <circle class="sync-node" cx="92" cy="32" r="4.6"></circle>
+        <circle class="sync-node" cx="28" cy="88" r="4.6"></circle>
+        <circle class="sync-node" cx="92" cy="88" r="4.6"></circle>
+        <circle class="sync-node-accent" cx="52" cy="49" r="4"></circle>
+        <circle class="sync-node-alt" cx="72" cy="38" r="4"></circle>
+        <circle class="sync-node-alt" cx="53" cy="72" r="4"></circle>
+        <circle class="sync-node-accent" cx="71" cy="83" r="4"></circle>
+        <circle class="sync-node" cx="60" cy="60" r="4.7"></circle>
+      </svg>
+    </div>
+    <div>
+      <div class="sync-boot-title">Sync</div>
+      <div class="sync-boot-sub">Workflow intelligence</div>
+    </div>
+    <div class="sync-boot-bar"></div>
+  </div>
+</div>
+<div class="app">
+<div id="mobOv" class="mob-overlay" onclick="S.tbOpen=false;ren()"></div>
+<div id="toasts" class="toast-wrap"></div>
+<!-- v50D: legacy .hd chrome removed — masthead lives in #mfMasthead below -->
+<div id="deptStrip" class="dept-strip"></div>
+<input type="file" id="fiAdd" accept=".xlsx,.xls,.csv" style="display:none" onchange="hFile(this)">
+<div class="uz" id="us"
+  ondragover="event.preventDefault();document.getElementById('dz').classList.add('dov')"
+  ondragleave="document.getElementById('dz').classList.remove('dov')"
+  ondrop="handleRosterDrop(event,document.getElementById('dz'))">
+
+  <input type="file" id="fi" accept=".xlsx,.xls,.csv" style="display:none" onchange="hFile(this)">
+
+  <!-- Landing card — scales to fit viewport, no scroll -->
+  <div id="landingCard" class="lc-root">
+
+    <!-- Theme-aware decorative layers -->
+    <div class="lc-grid"></div>
+    <div class="lc-glow"></div>
+
+    <!-- LEFT: Identity + features -->
+    <div class="lc-left">
+
+      <!-- Eyebrow -->
+      <div class="lc-eyebrow">
+        <div class="lc-rule"></div>
+        <div class="lc-eyebrow-text">7th Order Systems · Universal Operations System</div>
+        <div class="lc-rule lc-rule-r"></div>
+      </div>
+
+      <!-- Title -->
+      <div class="lc-title-block">
+        <div class="lc-brand-lockup">
+          <div class="lc-sigil sync-mark sync-mark--launch" aria-hidden="true">
+            <span id="syncSaveDot" class="sync-save-dot" aria-hidden="true"></span>
+            <svg viewBox="0 0 120 120" role="img" aria-label="Sync node network mark">
+              <path class="sync-frame" d="M28 32 60 14 92 32M28 88l32 18 32-18M28 32v18M92 32v18M28 88V70M92 88V70"></path>
+              <path class="sync-link" d="M30 49h22l20-11 21 11M31 72h22l18 11 21-11M52 49v23M72 38v45"></path>
+              <path class="sync-link-alt" d="M36 58h26l22 14M84 49 62 58 52 72M60 14v24M60 106V83"></path>
+              <path class="sync-spine" d="M82 37H54L41 49l41 24-13 11H39"></path>
+              <circle class="sync-node" cx="28" cy="32" r="4.6"></circle>
+              <circle class="sync-node" cx="92" cy="32" r="4.6"></circle>
+              <circle class="sync-node" cx="28" cy="88" r="4.6"></circle>
+              <circle class="sync-node" cx="92" cy="88" r="4.6"></circle>
+              <circle class="sync-node-accent" cx="52" cy="49" r="4"></circle>
+              <circle class="sync-node-alt" cx="72" cy="38" r="4"></circle>
+              <circle class="sync-node-alt" cx="53" cy="72" r="4"></circle>
+              <circle class="sync-node-accent" cx="71" cy="83" r="4"></circle>
+              <circle class="sync-node" cx="60" cy="60" r="4.7"></circle>
+            </svg>
+          </div>
+          <div class="lc-brand-copy">
+            <div class="lc-kicker">Workflow intelligence</div>
+            <div class="lc-title">Sync</div>
+            <div class="lc-title-sub">Workflow intelligence</div>
+            <div class="lc-system-badge">7th Order Systems</div>
+          </div>
+        </div>
+        <div id="lcDesc" class="lc-desc">Schedules, people and operational decisions brought together in one trusted workflow intelligence system.</div>
+      </div>
+
+      <!-- Signed-in project picker — replaces the marketing features/stats below whenever a signed-in
+           user has any saved project (see _syncRenderProjectPicker). This is the signed-in
+           destination: a single project still shows here as one choice to open, rather than
+           auto-resuming silently, so "sign in → choose what to continue" holds even with one
+           project. Only an explicit "always jump to my most recent project" preference (or having
+           zero projects at all) skips straight past it. -->
+      <div id="lcProjectPicker" class="lc-projects" style="display:none"></div>
+
+      <!-- Features -->
+      <div class="lc-features">
+        <div id="lcFeatI" class="lc-feature">
+          <div class="lc-feat-num">I</div>
+          <div><div class="lc-feat-head">Native SyncSheets detection</div><div class="lc-feat-body">PeopleHub, ScheduleHub, DepartmentHub, Save+ and OT+ are recognised alongside general roster layouts.</div></div>
+        </div>
+        <div id="lcFeatII" class="lc-feature">
+          <div class="lc-feat-num">II</div>
+          <div><div class="lc-feat-head">Canonical trust layer</div><div class="lc-feat-body">Source authority, identities, duplicates and write decisions stay visible, reviewable and reversible.</div></div>
+        </div>
+        <div id="lcFeatIII" class="lc-feature">
+          <div class="lc-feat-num">III</div>
+          <div><div class="lc-feat-head">People and organisation</div><div class="lc-feat-body">Teams, reporting lines, YATs, acting leaders and supervisors share one people record.</div></div>
+        </div>
+        <div id="lcFeatIV" class="lc-feature">
+          <div class="lc-feat-num">IV</div>
+          <div><div class="lc-feat-head">Operations workflows</div><div class="lc-feat-body">OT, leave, coverage, decisions, handoffs and publish-ready exports live in one workspace.</div></div>
+        </div>
+      </div>
+
+      <!-- Stats bar -->
+      <div class="lc-stats">
+        <div class="lc-stat"><div id="lcStatParse" class="lc-stat-n">5+</div><div class="lc-stat-l">Source engines</div></div>
+        <div class="lc-stat"><div class="lc-stat-n">0</div><div class="lc-stat-l">Server uploads</div></div>
+        <div class="lc-stat"><div class="lc-stat-n">1</div><div class="lc-stat-l">Trusted workspace</div></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Upload panel -->
+    <div class="lc-right">
+
+      <div class="lc-right-label">Load source<span class="lc-right-rule"></span></div>
+
+      <!-- Collapsed by default whenever the signed-in project picker is showing (any saved
+           project) — see _syncSetNewSourceCollapsed. Continuing an existing project is the
+           prominent action there; starting something new stays available but becomes a deliberate
+           secondary click instead of competing with it. Signed out, or signed in with no saved
+           projects at all, this stays expanded and nothing here changes. -->
+      <button id="lcNewSourceToggle" class="lc-new-source-toggle" style="display:none" onclick="_syncSetNewSourceCollapsed(false)">
+        <span class="lc-new-icon">+</span>Start or import a new project
+      </button>
+      <div id="lcNewSourceGroup">
+
+      <!-- Mode toggle -->
+      <div class="lc-mode-toggle">
+        <button id="lcModeStd" class="lc-mode-btn active" onclick="setLCMode('standard')">
+          <span class="lc-mbtn-icon">⊞</span>Standard roster
+        </button>
+        <button id="lcModeWfm" class="lc-mode-btn" onclick="setLCMode('wfm')">
+          <span class="lc-mbtn-icon">📆</span>WFM Calendar
+        </button>
+      </div>
+
+      <!-- Drop zone -->
+      <div id="dz" class="lc-dz"
+        onclick="browseScheduleFile()"
+        ondragover="event.preventDefault();event.stopPropagation();this.classList.add('dov')"
+        ondragleave="event.stopPropagation();this.classList.remove('dov')"
+        ondrop="handleRosterDrop(event,this)">
+        <div class="lc-dz-arrow">↓</div>
+        <div id="lcDzHead" class="lc-dz-head">Drop your roster here</div>
+        <div id="lcDzSub" class="lc-dz-sub">or click to browse</div>
+        <div class="lc-dz-types">
+          <span class="lc-type">.xlsx</span>
+          <span class="lc-type">.xls</span>
+          <span class="lc-type">.csv</span>
+        </div>
+      </div>
+
+      <!-- Paste -->
+      <button onclick="pasteFromClip()" class="lc-paste-btn">
+        <span class="lc-paste-label">Paste schedule data</span>
+        <span class="lc-paste-kbd">Ctrl+V</span>
+      </button>
+
+      <!-- Or -->
+      <div class="lc-or"><span class="lc-or-rule"></span>or<span class="lc-or-rule"></span></div>
+
+      <!-- New schedule -->
+      <button onclick="startBuildWizard()" class="lc-new-btn">
+        <span class="lc-new-icon">+</span>
+        <div><div class="lc-new-head">Create planning blueprint</div><div class="lc-new-sub">Define teams, shifts, rotation anchors</div></div>
+      </button>
+
+      <!-- Agent roster -->
+      <button onclick="triggerRosterUpload()" class="lc-roster-btn">
+        <span style="font-size:13px;opacity:.5">👥</span>
+        <span class="lc-roster-label">Add agent roster</span>
+      </button>
+
+      <!-- First run only: every other route in requires the user to already have a roster
+           spreadsheet in hand, which makes the product impossible to evaluate before committing
+           real data to it. Shown only while there are genuinely no saved projects — see
+           _syncRenderSampleOffer. -->
+      <button id="lcSampleBtn" onclick="_syncCreateSampleProject()" class="lc-roster-btn" style="display:none">
+        <span style="font-size:13px;opacity:.5">✨</span>
+        <span class="lc-roster-label">Explore with a sample project</span>
+      </button>
+
+      </div>
+
+      <!-- Cloud sync (Supabase) -->
+      <div id="syncLcWidget" class="lc-sync-widget"></div>
+
+      <!-- Footer: privacy + theme switcher -->
+      <div class="lc-footer">
+        <div class="lc-privacy">
+          <span class="lc-diamond"></span>
+          <span>File never leaves this browser</span>
+          <span class="lc-diamond"></span>
+          <button class="clr-data-sm lc-clear" onclick="clearAllData()">Clear data</button>
+        </div>
+        <!-- Theme switcher circles -->
+        <div class="lc-themes" title="Switch theme">
+          <button class="th-dot lc-th-dot" id="lcThSurge" onclick="setThLanding('surge')"     title="Surge — violet dark"      style="background:#0e0a14;border-color:#c349ee"></button>
+          <button class="th-dot lc-th-dot" id="lcThTide"  onclick="setThLanding('tide')"      title="Tide — teal graphite"     style="background:#1a1e1e;border-color:#4db8c8"></button>
+          <button class="th-dot lc-th-dot" id="lcThPress" onclick="setThLanding('press')"     title="Press — warm editorial"   style="background:#EBD3BB;border-color:#6B4C2A"></button>
+          <button class="th-dot lc-th-dot" id="lcThNews"  onclick="setThLanding('newsprint')" title="Newsprint — cool editorial" style="background:#FAF0CA;border-color:#9381FF"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Build wizard overlay -->
+<div id="buildWizard" style="display:none;position:fixed;inset:0;z-index:900;background:var(--bg);overflow-y:auto"></div>
+<div id="mv" class="hid" style="flex:1;display:flex;flex-direction:column"><div class="mf-masthead" id="mfMasthead"><div class="mf-mh-left"><span class="mf-mh-brand">7OS Sync</span><span class="mf-mh-sep" id="mhDeptSep" style="display:none"></span><span class="mf-mh-dept" id="fl" style="display:none"></span><span class="mf-mh-stat" id="mhLeaderCount"></span><span class="mf-mh-sep"></span><span class="mf-mh-stat" id="mhHealth"></span></div><div class="mf-mh-center" id="mfMastheadMonthNav" style="display:none"></div><div class="mf-mh-right" id="ha" style="display:none"><div class="mf-mh-ticker" id="mhTicker"></div></div></div><div class="mf-body"><div class="mf-rail" id="mfRail"><button class="mf-nav-toggle" id="mfNavToggle" data-testid="rail-toggle" title="Toggle sidebar" aria-label="Toggle sidebar"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="2" width="5" height="12" rx="1.5" fill="currentColor" opacity=".5"/><line x1="8.5" y1="5" x2="15" y2="5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="8.5" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="8.5" y1="11" x2="15" y2="11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button><div class="mf-rail-nav" id="mfRailNav"></div><div class="mf-rail-bottom" id="mfRailBottom"></div></div><div class="mf-content-col"><div class="mf-subbar" id="mfSubbar"></div><div id="contBar"></div><div class="ct" id="ca"></div></div></div></div>
+<!-- WFM View Panel — v59 integration -->
+<div id="wfmv" style="flex:1;flex-direction:column;min-height:0">
+  <!-- WFM Masthead -->
+  <div class="wv-mh">
+  <div class="wv-brand">Sync · WFM</div>
+    <div class="wv-sep"></div>
+    <div class="wv-meta" id="wvMeta"></div>
+    <div class="wv-mh-r">
+      <button class="wv-btn wv-merge" onclick="document.getElementById('fiWfmMerge').click()" title="Load another week's WFM file">+ Week</button>
+      <input type="file" id="fiWfmMerge" accept=".xlsx,.xls" style="display:none" onchange="if(this.files[0]){wvMergeFile(this.files[0]);this.value=''}">
+      <button class="wv-btn" onclick="wvExportXLSX()">↓ XLSX</button>
+      <button class="wv-btn" onclick="wvCopyTSV()">⊞ TSV</button>
+      <div style="display:flex;gap:4px;align-items:center" title="Colourway">
+        <button class="th-dot wv-th-dot on" data-th="surge"     onclick="setThLanding('surge')"     style="background:#0e0a14;border-color:#c349ee" title="Surge — violet dark"></button>
+        <button class="th-dot wv-th-dot"    data-th="tide"      onclick="setThLanding('tide')"      style="background:#1a1e1e;border-color:#4db8c8" title="Tide — teal graphite"></button>
+        <button class="th-dot wv-th-dot"    data-th="press"     onclick="setThLanding('press')"     style="background:#EBD3BB;border-color:#6B4C2A" title="Press — warm editorial"></button>
+        <button class="th-dot wv-th-dot"    data-th="newsprint" onclick="setThLanding('newsprint')" style="background:#FAF0CA;border-color:#9381FF" title="Newsprint — cool editorial"></button>
+      </div>
+    </div>
+  </div>
+  <!-- WFM Toolbar -->
+  <div class="wv-tb">
+    <div class="wv-tabs">
+      <button class="wv-tab on" id="wvt-calendar" onclick="wvSetTab('calendar')">Calendar</button>
+      <button class="wv-tab" id="wvt-cards" onclick="wvSetTab('cards')">Cards</button>
+      <button class="wv-tab" id="wvt-schedule" onclick="wvSetTab('schedule')">Schedule</button>
+    </div>
+    <input class="wv-srch" id="wvSrch" type="text" placeholder="Search agent…" oninput="wvOnSearch()" autocomplete="off">
+    <span class="wv-lbl">Team</span>
+    <select class="wv-sel" id="wvTeamSel" onchange="wvOnTeamFilter()">
+      <option value="all">All teams</option>
+    </select>
+    <div class="wv-sp"></div>
+    <div class="wv-wnav">
+      <button class="wv-wb" id="wvPrev" onclick="wvNavWeek(-1)">◀</button>
+      <div class="wv-wlbl" id="wvWlbl">—</div>
+      <button class="wv-wb" id="wvNext" onclick="wvNavWeek(1)">▶</button>
+    </div>
+  </div>
+  <!-- WFM Body -->
+  <div class="wv-body" id="wvBody"></div>
+</div>
+<!-- Export menu overlay — fixed, positioned by togExpRail() -->
+<div class="em" id="exm" style="display:none;position:fixed;z-index:900"><div class="em-section">Quick</div><button class="ei" onclick="expSavePlus('month')">💾 Save session</button><button class="ei" onclick="genEmail()">✉ Share today's roster</button><div class="em-section">Export</div><button class="ei" onclick="expCurrentMonth()">📋 Styled Report</button><button class="ei" onclick="expSavePlus('all')">📦 Full dataset</button><button class="ei" onclick="expPNG()">🖼 Save as image</button><div class="em-section">Advanced</div><button class="ei" onclick="expAIcsv()">🤖 AI-Ready Data</button><button class="ei" onclick="genWeeklyDigest()">📋 Weekly digest</button><button class="ei" onclick="expTLDayPack()">📋 TL Day Pack</button><button class="ei" onclick="copyEOD()">📋 Copy EOD report</button></div>
+<div class="kb-hint" id="kbh" style="display:none"><span><kbd>←</kbd><kbd>→</kbd> month <kbd>↑</kbd><kbd>↓</kbd> person <kbd>T</kbd> today <kbd>C</kbd> calendar <kbd>W</kbd> digest <kbd>?</kbd> help</span><span class="wm-inline">© 7th Order Systems · Sel K. Naicker · 2026</span></div>
+<div class="wm-print">© 7th Order Systems · Sel K. Naicker · 2026 · All rights reserved</div>
+<!-- Agent Drawer — Phase A -->
+<div class="agent-drawer-overlay" id="agentDrawerOverlay">
+  <div class="agent-drawer-bg" onclick="closeAgentDrawer()"></div>
+  <div class="agent-drawer" id="agentDrawer" role="dialog" aria-modal="true" aria-label="Agent details" aria-hidden="true">
+    <div id="agentDrawerContent"></div>
+  </div>
+</div>
+<!-- Help overlay drawer -->
+
+<div class="help-overlay" id="helpOverlay" role="dialog" aria-modal="true" aria-label="Help" aria-hidden="true">
+  <div class="help-overlay-bg" onclick="closeHelp()"></div>
+  <div class="help-drawer" id="helpDrawer"><div id="helpContent"></div></div>
+</div>
+<!-- Context help panel (anchored to click position) -->
+<div class="ctx-panel" id="ctxPanel" style="display:none">
+  <div class="ctx-panel-hd"><span id="ctxTitle">?</span><button onclick="closeCtx()">✕</button></div>
+  <div id="ctxBody"></div>
+</div>
+<!-- First-load splash -->
+<div class="load-splash" id="loadSplash" style="display:none">
+  <div class="load-splash-card">
+    <h2 id="splashTitle">File loaded ✓</h2>
+    <div class="ls-sub" id="splashSub">Where do you want to start?</div>
+    <div id="splashCacheStrip" style="display:none;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;background:var(--al);border:1px solid var(--bdr);margin-bottom:12px"></div>
+    <div class="ls-quickstarts">
+      <button class="ls-qs" onclick="closeSplash();setTab('calendar')">
+        <span class="qs-ico">📅</span>
+        <div><div class="qs-text">Today's roster</div><div class="qs-sub">Calendar → see who's on, share to Teams</div></div>
+      </button>
+      <button class="ls-qs" onclick="closeSplash();railNavAnalytics('dashboard')">
+        <span class="qs-ico">⚡</span>
+        <div><div class="qs-text">Team intelligence</div><div class="qs-sub">Ops → Dashboard → signals, coaching, risk</div></div>
+      </button>
+      <button class="ls-qs" onclick="closeSplash();railNavAnalytics('blueprint')">
+        <span class="qs-ico">🔮</span>
+        <div><div class="qs-text">Project forward</div><div class="qs-sub">Ops → Blueprint → rotations, leave, scenarios</div></div>
+      </button>
+    </div>
+    <div class="ls-actions">
+      <button class="btn bp" onclick="closeSplash()">Got it</button>
+      <button class="btn" style="background:var(--al);color:var(--accent)" onclick="closeSplash();openHelp()">Show me around →</button>
+    </div>
+  </div>
+</div>
+</div>
