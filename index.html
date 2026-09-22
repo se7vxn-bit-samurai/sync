@@ -33126,7 +33126,7 @@ const NS_PERFORMANCE_BUDGETS={
 };
 const NS_SCHEMA="sync.northstar.canonical";
 const NS_VERSION=1;
-const NS=window.NorthStar={pendingNative:null,pendingShared:null,persistWarningShown:false,persistence:"localStorage",dbWriteTimer:null,importWorker:null,templateWorker:null,templateExport:null,templateAdapter:"",performanceBudgets:NS_PERFORMANCE_BUDGETS,deferPersist:false,persistPending:false,hydrating:false,eventLoopLag:0};
+const NS=window.NorthStar={pendingNative:null,pendingShared:null,persistWarningShown:false,persistence:"localStorage",dbWriteTimer:null,importWorker:null,templateWorker:null,templateExport:null,templateAdapter:"",performanceBudgets:NS_PERFORMANCE_BUDGETS,deferPersist:false,persistPending:false,hydrating:false,hydrated:false,eventLoopLag:0};
 
 const nsEsc=value=>typeof X==="function"?X(String(value??"")):String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
 const nsJs=value=>typeof XJS==="function"?XJS(String(value??"")):String(value??"").replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/[\r\n]+/g," ");
@@ -33597,13 +33597,39 @@ async function nsDatabaseWrite(model){
   finally{db.close();}
 }
 
+// Never let a write that lands before hydration erase a stored schedule. Boot seeds the model
+// from localStorage, whose copy deliberately stores schedule:[], and persists it; unguarded, that
+// write overwrote the IndexedDB record ~180ms into every reload, before hydration had read it
+// back. A model that actually carries rows always writes.
+function nsCanWriteSnapshot(snapshot){
+  return NS.hydrated||!!(snapshot&&(snapshot.schedule||[]).length);
+}
+function nsSnapshotCanonical(){
+  const current=nsCanonical();
+  return typeof structuredClone==="function"?structuredClone(current):JSON.parse(JSON.stringify(current));
+}
 function nsQueueDatabaseWrite(model){
   clearTimeout(NS.dbWriteTimer);
   NS.dbWriteTimer=setTimeout(()=>{
-    const current=nsCanonical(),snapshot=typeof structuredClone==="function"?structuredClone(current):JSON.parse(JSON.stringify(current));
+    NS.dbWriteTimer=null;
+    const snapshot=nsSnapshotCanonical();
+    if(!nsCanWriteSnapshot(snapshot))return;
     nsDatabaseWrite(snapshot).catch(()=>{NS.persistence="localStorage fallback";});
   },180);
 }
+// The write is debounced, so a tab closed straight after an import would lose it. Flush on the
+// way out.
+function nsFlushDatabaseWrite(){
+  if(!NS.dbWriteTimer)return;
+  clearTimeout(NS.dbWriteTimer);NS.dbWriteTimer=null;
+  try{
+    const snapshot=nsSnapshotCanonical();
+    if(!nsCanWriteSnapshot(snapshot))return;
+    nsDatabaseWrite(snapshot).catch(()=>{});
+  }catch(err){}
+}
+window.addEventListener("pagehide",nsFlushDatabaseWrite);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")nsFlushDatabaseWrite();});
 
 // Bridges the canonical layer (people/schedule/etc, restored from IndexedDB or pulled from
 // Supabase) into S.entries — the flat runtime rows the calendar/dashboard actually render, and
@@ -34055,7 +34081,14 @@ async function nsHydrateDatabase(){
   NS.hydrating=true;
   try{
     const db=await nsOpenDatabase(),stored=await new Promise((resolve,reject)=>{const tx=db.transaction(NS_DB_STORE,"readonly"),request=tx.objectStore(NS_DB_STORE).get(NS_DB_KEY);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});db.close();
-    if(stored&&nsIsNewerTimestamp(stored.updated_at,nsCanonical().updated_at)){S.nsCanonical=nsNormalizeCanonical(stored);nsSanitizeCanonicalIdentities();nsSyncPeopleToRuntime();}
+    // Adopt the stored copy when it is newer — or when it holds schedule rows the live model lacks.
+    // The IndexedDB and localStorage copies are written by the same nsPersist call and carry the
+    // same updated_at, so "strictly newer" alone never adopted the IndexedDB copy, and the
+    // localStorage one never has rows: memory ended up with no schedule to restore.
+    const current=nsCanonical();
+    const storedNewer=stored&&nsIsNewerTimestamp(stored.updated_at,current.updated_at);
+    const storedHasScheduleWeLack=stored&&(stored.schedule||[]).length&&!(current.schedule||[]).length;
+    if(storedNewer||storedHasScheduleWeLack){S.nsCanonical=nsNormalizeCanonical(stored);nsSanitizeCanonicalIdentities();nsSyncPeopleToRuntime();}
     // S.entries (unlike S.nsCanonical) is never itself persisted — rebuild it from whatever
     // canonical schedule data is now in memory whenever it's currently empty, regardless of
     // whether the block above just ran, so a normal page reload resumes straight into the
@@ -34063,7 +34096,8 @@ async function nsHydrateDatabase(){
     if((!S.entries||!S.entries.length))nsRestoreEntriesFromCanonical();
     NS.persistence="indexeddb";return true;
   }catch(err){NS.persistence="localStorage fallback";return false;}
-  finally{NS.hydrating=false;}
+  // Set even when hydration failed, so a broken IndexedDB cannot block writes forever.
+  finally{NS.hydrating=false;NS.hydrated=true;}
 }
 
 function nsSheetName(wb,wanted){
@@ -35675,8 +35709,13 @@ let nsLagExpected=performance.now()+1000;setInterval(()=>{const now=performance.
     const userId=typeof _syncGetUserId==="function"?await _syncGetUserId():null;
     if(userId&&typeof _syncPostSignInFlow==="function"){
       await _syncPostSignInFlow();
-    }else if(localHydrated&&typeof _restoreViewportFromState==="function"){
-      _restoreViewportFromState();
+    }else if(localHydrated){
+      // Signed out, nothing picks a project, and S.activeDept is not persisted — so the restored
+      // schedule stayed out of scope (nsScopedRows filters by the active department) and a reload
+      // landed on the empty import card with every row still on disk. Resume the most recent
+      // project the same way the signed-in flow does when there is no picker to show.
+      if((!S.entries||!S.entries.length)&&typeof _syncResumeMostRecentProject==="function")_syncResumeMostRecentProject();
+      else if(typeof _restoreViewportFromState==="function")_restoreViewportFromState();
     }
     if(document.getElementById("ca"))try{ren();}catch(err){}
   });
