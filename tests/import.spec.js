@@ -128,8 +128,12 @@ test.describe('import safety net', () => {
     await page.locator(`${NATIVE_OVERLAY} button.primary`).click();
     await expect.poll(() => page.evaluate(() => nsListCanonicalProjects().length), { timeout: 30_000 }).toBeGreaterThan(0);
 
-    const snapshots = await page.evaluate(() => nsListSnapshots());
-    expect(snapshots.some((s) => s.reason === 'auto-import')).toBe(true);
+    // nsConfirmNativeImport deliberately does not await the snapshot: its IndexedDB write settles
+    // after the commit, and the index entry is only written once that put completes. Reading the
+    // index the moment the projects appear races that write under load.
+    await expect
+      .poll(() => page.evaluate(() => nsListSnapshots().some((s) => s.reason === 'auto-import')), { timeout: 30_000 })
+      .toBe(true);
   });
 
   test('the restore point holds the workspace as it was BEFORE the import', async ({ page }) => {
@@ -160,6 +164,10 @@ test.describe('import safety net', () => {
     await page.locator(`${NATIVE_OVERLAY} button.primary`).click();
     await expect.poll(() => page.evaluate(() => nsListCanonicalProjects().length), { timeout: 30_000 }).toBeGreaterThan(0);
 
+    // Wait for the restore point to land (see the first test in this block for why it is async).
+    await expect
+      .poll(() => page.evaluate(() => nsListSnapshots().some((s) => s.reason === 'auto-import')), { timeout: 30_000 })
+      .toBe(true);
     const id = await page.evaluate(() => nsListSnapshots().find((s) => s.reason === 'auto-import').id);
     const result = await page.evaluate((snapId) => nsRestoreSnapshot(snapId), id);
     expect(result.ok).toBe(true);
