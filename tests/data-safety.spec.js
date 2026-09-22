@@ -125,6 +125,73 @@ test.describe('boot safety', () => {
     expect(remotePeople).toBe(6);
     expect(await projectNames(page)).toHaveLength(3);
   });
+
+  test('a real local schedule already in IndexedDB survives a normal page reload', async ({ page }) => {
+    // The regression this guards: a top-level boot statement called nsPersist() synchronously,
+    // before nsHydrateDatabase() (deferred to an idle callback) ever read IndexedDB. nsPersist()
+    // stamps updated_at to "now" and queues an unconditional IndexedDB put() of whatever
+    // nsCanonical() currently holds — which, read from localStorage at that point, is always
+    // schedule-less (nsPersist's own localStorage copy strips `schedule` for quota reasons; only
+    // IndexedDB ever holds the real rows). That queued write fired ~180ms later regardless of what
+    // hydration decided, permanently overwriting IndexedDB's real schedule with an empty one — a
+    // purely local-device bug, no sign-in or cloud involved. This is the exact "project is there
+    // but the schedule is empty" report: people survive (the localStorage copy keeps them), the
+    // schedule does not.
+    await openApp(page);
+    await page.waitForTimeout(500); // let this first boot's own writes, buggy or not, settle first
+
+    const seededAt = new Date(Date.now() - 60_000).toISOString();
+    await page.evaluate(
+      async ({ storageKey, seededAt }) => {
+        const lean = {
+          schema: 'sync.northstar.canonical', version: 1, updated_at: seededAt,
+          sources: [{ source_id: 'src-0', source_name: 'Project A.xlsx', department_name: 'Project A' }],
+          people: [{ person_id: 'p-0', full_name: 'Project A Person 1', home_department: 'Project A', source_id: 'src-0' }],
+          schedule: [], syncLog: [],
+        };
+        const full = Object.assign({}, lean, {
+          schedule: [{ schedule_id: 's-0', person_name: 'Project A Person 1', department: 'Project A', source_id: 'src-0', date: '2026-02-01', shift: '09:00-17:00' }],
+        });
+        localStorage.setItem(storageKey, JSON.stringify(lean));
+        await new Promise((resolve, reject) => {
+          const req = indexedDB.open('sync-northstar', 1);
+          req.onupgradeneeded = () => { if (!req.result.objectStoreNames.contains('workspace')) req.result.createObjectStore('workspace'); };
+          req.onsuccess = () => {
+            const db = req.result;
+            const tx = db.transaction('workspace', 'readwrite');
+            tx.objectStore('workspace').put(full, 'canonical');
+            tx.oncomplete = () => { db.close(); resolve(); };
+            tx.onerror = () => reject(tx.error);
+          };
+          req.onerror = () => reject(req.error);
+        });
+      },
+      { storageKey: 'sc_northstar_canonical_v1', seededAt }
+    );
+
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => !!window.sb, null, { timeout: 30_000 });
+    // Cover both the 180ms debounced IndexedDB write and the up-to-1200ms idle-callback hydration.
+    await page.waitForTimeout(1500);
+
+    const stored = await page.evaluate(
+      () =>
+        new Promise((resolve, reject) => {
+          const req = indexedDB.open('sync-northstar', 1);
+          req.onsuccess = () => {
+            const db = req.result;
+            const tx = db.transaction('workspace', 'readonly');
+            const getReq = tx.objectStore('workspace').get('canonical');
+            getReq.onsuccess = () => { resolve(getReq.result); db.close(); };
+            getReq.onerror = () => reject(getReq.error);
+          };
+          req.onerror = () => reject(req.error);
+        })
+    );
+
+    expect(stored).toBeTruthy();
+    expect(stored.schedule.length).toBe(1);
+  });
 });
 
 test.describe('settings', () => {

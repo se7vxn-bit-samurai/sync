@@ -34553,7 +34553,19 @@ function nsInstallStyle(){
   `;document.head.appendChild(style);
 }
 
-nsInstallStyle();nsCanonical();nsSanitizeRuntimeIdentities();nsPersist();
+// Do NOT call nsPersist() here. This line runs synchronously at script-parse time, long before
+// nsHydrateDatabase() (deferred to a requestIdleCallback/setTimeout further down this file) ever
+// reads IndexedDB. nsCanonical() at this point is whatever localStorage holds — and nsPersist()'s
+// own localStorage copy always strips `schedule` (kept out for quota reasons; the full data lives
+// in IndexedDB only) — so calling nsPersist() here re-stamped that schedule-less snapshot with
+// updated_at=now() and queued an unconditional IndexedDB put() of it. That queued write always
+// fires ~180ms later regardless of what hydration decides, permanently overwriting the real
+// schedule IndexedDB was holding — the exact "project is there but the schedule is empty" report.
+// nsSanitizeRuntimeIdentities() itself is safe to run early: it mutates in-memory S.entries/S.people
+// (the legacy runtime state, already populated by nsBootApp() before this file even runs) and its
+// nsSanitizeCanonicalIdentities() call re-runs on the real data anyway, inside both
+// nsHydrateDatabase() and syncPullWorkspace(), once real data actually loads.
+nsInstallStyle();nsCanonical();nsSanitizeRuntimeIdentities();
 
 function nsImportWorkerSource(){return `
 self.onmessage=function(event){
