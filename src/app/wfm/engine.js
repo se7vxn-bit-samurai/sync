@@ -1680,7 +1680,7 @@ function proc(f,opts){
   r.onload=async function(e){
     try{const identity=await _syncFingerprintBuffer(e.target.result);
     if(S.currentSource&&S.currentSource.fingerprint&&S.currentSource.fingerprint===identity.fingerprint&&S.entries&&S.entries.length){_recordQoLChange("Duplicate schedule source skipped");toast("This exact workbook is already active — no rows were reloaded","info",3600);return;}
-    const wb=XLSX.read(new Uint8Array(e.target.result),XLSX_STANDARD_READ_OPTS),sourceMeta=_syncSourceRecord(f,wb,identity);
+    const wb=XLSX.read(new Uint8Array(e.target.result),_readOptsForFile(f)),sourceMeta=_syncSourceRecord(f,wb,identity);
     if(isSaveFile(wb)){
       // Save+ files restore immediately — they ARE the user's saved state
       restoreFromSaveFile(wb,f.name,sourceMeta,opts);

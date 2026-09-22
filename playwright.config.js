@@ -16,6 +16,9 @@ module.exports = defineConfig({
     baseURL: 'http://127.0.0.1:4173',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    // Sandboxes that ship Chromium at a fixed path (instead of Playwright's own download) point
+    // at it here. CI leaves this unset and uses the browser `npx playwright install` fetched.
+    ...(process.env.PW_CHROMIUM_PATH ? { launchOptions: { executablePath: process.env.PW_CHROMIUM_PATH } } : {}),
   },
   projects: [
     { name: 'desktop-chromium', use: { ...devices['Desktop Chrome'] } },

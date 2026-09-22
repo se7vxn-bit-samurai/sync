@@ -265,6 +265,21 @@ function classifyCell(raw){
 }
 
 const XLSX_STANDARD_READ_OPTS={type:"array",cellDates:true,cellStyles:true,sheetStubs:true};
+// CSV carries no cell types, so SheetJS parses date-looking text itself and
+// resolves dd/mm vs mm/dd month-first: a 28-day September rota came back spread
+// across twelve months. pDt() reads day-first correctly but never saw the text,
+// because it short-circuits on Date objects. raw:true hands pDt the text;
+// cellDates:false alone is not enough, the CSV reader still returns Dates.
+// .xlsx is unaffected (its dates are real serials) and keeps the standard opts.
+function _isCsvFile(f){
+  if(!f)return false;
+  const name=String(f.name||f||"");
+  if(/\.csv$/i.test(name))return true;
+  return /^text\/csv$/i.test(String(f.type||""));
+}
+function _readOptsForFile(f){
+  return _isCsvFile(f)?Object.assign({},XLSX_STANDARD_READ_OPTS,{cellDates:false,raw:true}):XLSX_STANDARD_READ_OPTS;
+}
 function _styleColorHex(c){
   if(!c)return"";
   if(c.rgb){

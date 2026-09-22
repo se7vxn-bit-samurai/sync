@@ -880,11 +880,28 @@ function _sheetParserFeatures(data,sheetName){
     if(pDt(row[0]))firstColDates++;
     if(r>0&&(dates>=3||shifts>=3))alternatingRows++;
   }
-  const orientation=cols>=Math.max(12,rows*2)?"horizontal":rows>=Math.max(12,cols*2)?"vertical":"";
-  return{rows,cols,maxDatesInRow,dayHeaderRows,firstColDays,firstColDates,alternatingRows,monthDividerRows,orientation,
+  // Orientation says which axis the dates run along. Deciding that from the
+  // sheet's aspect ratio is wrong: a 31-day month is 32 columns, so a roster of
+  // more than ~13 people is taller than half its width and gets called
+  // "vertical" despite every date sitting in a header row. That misread costs
+  // the horizontal parsers their affinity bonus and hands the file to a parser
+  // that reads one person. Decide from where the dates actually are, and keep
+  // the aspect-ratio rule only for sheets that show no date evidence either way.
+  const horizDateEvidence=maxDatesInRow>=5;
+  const vertDateEvidence=(firstColDates>=5||firstColDays>=5);
+  const orientation=(horizDateEvidence&&!vertDateEvidence)?"horizontal"
+    :(vertDateEvidence&&!horizDateEvidence)?"vertical"
+    :cols>=Math.max(12,rows*2)?"horizontal":rows>=Math.max(12,cols*2)?"vertical":"";
+  // How many rows look like they belong to a person. Used by _entrySetQuality
+  // to tell "parsed the whole roster" apart from "parsed one row of it".
+  let plausibleNameRows=0;
+  for(let r=0;r<Math.min(rows,400);r++){
+    try{if(extractRowPeopleNames(data[r]||[],1).length)plausibleNameRows++;}catch(e){}
+  }
+  return{rows,cols,maxDatesInRow,dayHeaderRows,firstColDays,firstColDates,alternatingRows,monthDividerRows,orientation,plausibleNameRows,
     nameHoriz:isHorizSheetName(sheetName),nameVert:isVertSheetName(sheetName)};
 }
-function _entrySetQuality(entries){
+function _entrySetQuality(entries,features){
   const list=(entries||[]).filter(Boolean),seen=new Set(),names=new Set(),dates=new Set(),counts={};
   let complete=0,duplicates=0,implausible=0;
   list.forEach(e=>{
@@ -900,8 +917,16 @@ function _entrySetQuality(entries){
   const values=Object.values(counts).sort((a,b)=>a-b),median=values.length?values[Math.floor(values.length/2)]:0;
   const balance=values.length&&median?Math.min(1,values[0]/median):0;
   const total=Math.max(1,list.length),completeRatio=complete/total,duplicateRatio=duplicates/total,plausibleRatio=1-implausible/total;
-  const score=completeRatio*35+(1-duplicateRatio)*10+balance*10+(names.size?5:0)+Math.min(5,dates.size/7*5)+Math.min(5,Math.log10(list.length+1)*2)+plausibleRatio*5;
-  return{score:Math.round(score*10)/10,total:list.length,complete,completeRatio,duplicates,duplicateRatio,names:names.size,dates:dates.size,balance,implausible};
+  // Coverage: what share of the sheet's person-rows this parse actually
+  // accounted for. Without it the score is nearly blind to data loss — the only
+  // size term saturates around 316 entries, so extracting 59 rows of a 13,500
+  // row roster scored within 1.4 points of extracting all of them, and a parse
+  // that found one person could outrank one that found a hundred and fifty.
+  // Weight comes out of completeRatio so the ceiling stays 75 and the existing
+  // confidence bands (82 high / 62 medium / 52 reject) stay calibrated.
+  const coverage=(features&&features.plausibleNameRows)?Math.min(1,names.size/features.plausibleNameRows):1;
+  const score=completeRatio*20+coverage*15+(1-duplicateRatio)*10+balance*10+(names.size?5:0)+Math.min(5,dates.size/7*5)+Math.min(5,Math.log10(list.length+1)*2)+plausibleRatio*5;
+  return{score:Math.round(score*10)/10,total:list.length,complete,completeRatio,duplicates,duplicateRatio,names:names.size,dates:dates.size,balance,implausible,coverage};
 }
 function _parserAffinity(parser,features){
   const f=features||{};let score=0;
@@ -939,7 +964,7 @@ function _runParserCandidate(parser,data,sheetName,features){
     else if(parser==="parseBlocks")entries=parseBlocks(data);
     else if(parser==="parsePerson")entries=parsePerson(data,sheetName);
     else if(parser==="parseRotatingRoleCalendar")entries=parseRotatingRoleCalendar(data,sheetName);
-    const quality=_entrySetQuality(entries),affinity=_parserAffinity(parser,features);
+    const quality=_entrySetQuality(entries,features),affinity=_parserAffinity(parser,features);
     return{parser,entries,quality,affinity,score:Math.round((quality.score+affinity)*10)/10,detail,error:""};
   }catch(err){return{parser,entries:[],quality:_entrySetQuality([]),affinity:0,score:0,detail:"",error:String(err&&err.message||err)};}
 }
@@ -973,8 +998,16 @@ function autoParse(data,sn){
     return[];
   }
   const best=candidates[0],runner=candidates.find((candidate,index)=>index>0&&!_candidateEquivalent(best,candidate)),margin=runner?best.score-runner.score:best.score;
-  const confidence=best.score>=82&&margin>=4?"high":best.score>=62?"medium":"low";
+  // Backstop against the failure this scoring layer has already had once: a
+  // parse that reads a fraction of the people another parser found must never
+  // be presented as trustworthy, whatever it scored. Scoring changes can
+  // reintroduce that silently; this cannot.
+  const richest=candidates.reduce((a,b)=>b.quality.names>a.quality.names?b:a,best);
+  const lossy=richest!==best&&best.quality.names*2<=richest.quality.names;
+  let confidence=best.score>=82&&margin>=4?"high":best.score>=62?"medium":"low";
+  if(lossy)confidence="low";
   const warnings=[];
+  if(lossy)warnings.push(`${best.parser} read ${best.quality.names} ${best.quality.names===1?"person":"people"} but ${richest.parser} found ${richest.quality.names} on this sheet — most of the roster may be missing`);
   if(best.score<52)warnings.push("Parser confidence is below the automatic-load threshold");
   if(runner&&margin<4)warnings.push(`Ambiguous structure: ${best.parser} and ${runner.parser} scored within ${Math.round(margin*10)/10} points`);
   if(best.quality.completeRatio<1)warnings.push(`${best.quality.total-best.quality.complete} rows failed canonical schedule validation`);
