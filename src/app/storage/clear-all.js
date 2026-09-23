@@ -11,6 +11,8 @@ function clearAllData(){
   const keysToClear=_clearAllDataStorageKeys();
   _registerUndoState("clear all data",{localStorageKeys:keysToClear});
   _persistCritical(()=>{try{keysToClear.forEach(k=>_persistRemove(k,{critical:true}));}catch(e){}});
+  if(typeof window.nsClearLocalWorkspaceCache==="function")window.nsClearLocalWorkspaceCache();
+  S.workspace={};S.activeDept=null;S.entries=[];S.months=[];S.month=null;S.mIdx=0;S.wb=null;S.fn="";S.shs=[];
   S.att={};S.hc={};S.notes={};S.people={};S.shiftLib={};S.rosterFile=null;S.coachQuality={};S.coverageReq=null;S.forecast=null;
   S.plOverrides={};S.plLeave=[];S.plHires=[];S.plRemoved={};S.plMonths=2;S.plBlueprints={};S.plPositions={};
   _setExceptions([]);_setLeaveRequests([]);S.dayClosed={};
@@ -23,6 +25,7 @@ function clearAllData(){
   S.otPlan={targetDate:null,lookbackDays:14,autoExclude:true,exclusionRules:getDefaultOTRules(),selections:{},defaultShift:{start:"09:00",end:"17:30",lunchMins:30},history:[]};
   invalidateDerivedCache();
   _persistSig="";
+  if(typeof _syncShowProjectPicker==="function")_syncShowProjectPicker({clearActive:true});
   ren();
   toast("All stored data cleared","ok");
 }

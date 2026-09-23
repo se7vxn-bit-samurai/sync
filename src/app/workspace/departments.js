@@ -82,6 +82,12 @@ function removeDept(name,opts){
   if(!name)return;
   if(typeof syncFlushPendingPush==="function")syncFlushPendingPush();
   if(!opts.skipUndo)_registerUndoState(`close dept: ${name}`);
+  // The tab close control is a true close, not merely a change of viewport. Remove the matching
+  // canonical project as well, otherwise IndexedDB reconstructs it after a browser refresh.
+  if(typeof window.nsDepartmentKey==="function"&&typeof window.nsRemoveDepartmentEverywhere==="function"){
+    window.nsRemoveDepartmentEverywhere(window.nsDepartmentKey(name));
+    if(typeof window.nsFlushLocalPersistence==="function")window.nsFlushLocalPersistence();
+  }
   delete S.workspace[name];
   const remaining=Object.keys(S.workspace);
   if(remaining.length===0){

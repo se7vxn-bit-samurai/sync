@@ -63,4 +63,22 @@ test.describe('local persistence', () => {
     await expect(page.locator('#lcProjectPicker .lc-project-row')).toHaveCount(0);
     expect(await page.evaluate(() => S.entries.length)).toBe(0);
   });
+
+  test('closing a project removes it rather than letting it return on refresh', async ({ page }) => {
+    await importRoster(page);
+    await page.evaluate(() => removeDept(S.activeDept));
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => !!window.sb);
+    await page.waitForTimeout(500);
+    await expect(page.locator('#lcProjectPicker .lc-project-row')).toHaveCount(0);
+  });
+
+  test('Clear data also clears the canonical IndexedDB cache', async ({ page }) => {
+    await importRoster(page);
+    await page.evaluate(() => { window.confirm = () => true; clearAllData(); });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => !!window.sb);
+    await page.waitForTimeout(500);
+    await expect(page.locator('#lcProjectPicker .lc-project-row')).toHaveCount(0);
+  });
 });

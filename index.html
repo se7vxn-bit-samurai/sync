@@ -11734,7 +11734,7 @@ function showParsePreview(wb,filename,manualOverride,sourceMeta,opts){
   // Right: flags + actions
   h+=`<div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0">`;
   const previewDiagnosticsInSmartReview=true;
-  h+=`<label style="display:flex;align-items:flex-start;gap:8px;padding:10px;border:1px solid var(--bdr);border-radius:8px;background:var(--bg2);cursor:pointer"><input id="parseOfflineCopy" type="checkbox" checked style="margin-top:2px"><span><b style="font-size:11px;color:var(--text)">Keep an offline project copy</b><span style="display:block;margin-top:3px;font-size:10px;color:var(--tm);line-height:1.45">Open this loaded file from Projects while signed out. It stays on this device and is not a cloud save.</span></span></label>`;
+  h+=`<label style="display:flex;align-items:flex-start;gap:8px;padding:12px;border:1px solid var(--accent);border-radius:8px;background:var(--al);cursor:pointer"><input id="parseOfflineCopy" type="checkbox" checked style="margin-top:2px;accent-color:var(--accent)"><span><b style="font-size:12px;color:var(--text)">Save offline project copy on this device</b><span style="display:block;margin-top:4px;font-size:10px;color:var(--tm);line-height:1.45">Keeps this loaded file in Projects for use while signed out. It is stored in this browser, not in a folder, and is not a cloud save.</span></span></label>`;
   h+=`<div style="padding:12px;border-radius:8px;background:var(--al);border:1px solid var(--bdr)"><div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">Ready to load</div><div style="font-size:10px;color:var(--tm);line-height:1.5">Detailed checks and source diagnostics are available from Smart Review.</div></div>`;
   if(!previewDiagnosticsInSmartReview){
 
@@ -11970,7 +11970,7 @@ function confirmParsePreview(){
   }
   const focusNames=focusStats.names<focusStats.totalNames?[..._pendingFocusNames]:[];
   const keepOfflineCopy=document.getElementById("parseOfflineCopy")?.checked!==false;
-  if(typeof nsSetLocalPersistenceEnabled==="function")nsSetLocalPersistenceEnabled(keepOfflineCopy);
+  if(typeof window.nsSetLocalPersistenceEnabled==="function")window.nsSetLocalPersistenceEnabled(keepOfflineCopy);
   const isAdditional=pending.mode==="add";
   const departmentName=isAdditional?_nextAvailableDepartmentName(pending.departmentName||pending.scan.deptName):(pending.departmentName||pending.scan.deptName);
   const overlay=document.getElementById("parsePreviewOverlay");
@@ -12558,6 +12558,12 @@ function removeDept(name,opts){
   if(!name)return;
   if(typeof syncFlushPendingPush==="function")syncFlushPendingPush();
   if(!opts.skipUndo)_registerUndoState(`close dept: ${name}`);
+  // The tab close control is a true close, not merely a change of viewport. Remove the matching
+  // canonical project as well, otherwise IndexedDB reconstructs it after a browser refresh.
+  if(typeof window.nsDepartmentKey==="function"&&typeof window.nsRemoveDepartmentEverywhere==="function"){
+    window.nsRemoveDepartmentEverywhere(window.nsDepartmentKey(name));
+    if(typeof window.nsFlushLocalPersistence==="function")window.nsFlushLocalPersistence();
+  }
   delete S.workspace[name];
   const remaining=Object.keys(S.workspace);
   if(remaining.length===0){
@@ -28606,8 +28612,8 @@ window.addEventListener('online',()=>{
 window.addEventListener('offline',_syncRenderStatusEverywhere);
 async function _syncManualSave(){
   if(typeof _syncPushWorkspaceNow!=='function')return;
-  if(typeof nsSetLocalPersistenceEnabled==='function')nsSetLocalPersistenceEnabled(true);
-  if(typeof nsPersist==='function')nsPersist();
+  if(typeof window.nsSetLocalPersistenceEnabled==='function')window.nsSetLocalPersistenceEnabled(true);
+  if(typeof window.nsPersist==='function')window.nsPersist();
   const saved=await _syncPushWorkspaceNow();
   if(saved)_syncWorkspaceDirty=false;
   return saved;
@@ -29876,6 +29882,8 @@ function clearAllData(){
   const keysToClear=_clearAllDataStorageKeys();
   _registerUndoState("clear all data",{localStorageKeys:keysToClear});
   _persistCritical(()=>{try{keysToClear.forEach(k=>_persistRemove(k,{critical:true}));}catch(e){}});
+  if(typeof window.nsClearLocalWorkspaceCache==="function")window.nsClearLocalWorkspaceCache();
+  S.workspace={};S.activeDept=null;S.entries=[];S.months=[];S.month=null;S.mIdx=0;S.wb=null;S.fn="";S.shs=[];
   S.att={};S.hc={};S.notes={};S.people={};S.shiftLib={};S.rosterFile=null;S.coachQuality={};S.coverageReq=null;S.forecast=null;
   S.plOverrides={};S.plLeave=[];S.plHires=[];S.plRemoved={};S.plMonths=2;S.plBlueprints={};S.plPositions={};
   _setExceptions([]);_setLeaveRequests([]);S.dayClosed={};
@@ -29888,6 +29896,7 @@ function clearAllData(){
   S.otPlan={targetDate:null,lookbackDays:14,autoExclude:true,exclusionRules:getDefaultOTRules(),selections:{},defaultShift:{start:"09:00",end:"17:30",lunchMins:30},history:[]};
   invalidateDerivedCache();
   _persistSig="";
+  if(typeof _syncShowProjectPicker==="function")_syncShowProjectPicker({clearActive:true});
   ren();
   toast("All stored data cleared","ok");
 }
@@ -33298,6 +33307,21 @@ function nsSetLocalPersistenceEnabled(enabled){
   if(NS.sessionOnly&&NS.dbWriteTimer){clearTimeout(NS.dbWriteTimer);NS.dbWriteTimer=null;}
 }
 window.nsSetLocalPersistenceEnabled=nsSetLocalPersistenceEnabled;
+window.nsPersist=nsPersist;
+window.nsFlushLocalPersistence=nsFlushDatabaseWrite;
+
+// Clear the canonical cache as well as the application's smaller settings keys. This is kept
+// separate so the landing-page Clear data action cannot leave an IndexedDB workspace behind to
+// reappear after the next refresh.
+function nsClearLocalWorkspaceCache(){
+  clearTimeout(NS.dbWriteTimer);NS.dbWriteTimer=null;NS.sessionOnly=false;
+  S.nsCanonical=nsEmptyCanonical();
+  try{if(typeof _persistRemove==="function")_persistRemove(NS_STORAGE_KEY,{critical:true});else localStorage.removeItem(NS_STORAGE_KEY);}catch(err){}
+  try{localStorage.removeItem("sync_last_opened");localStorage.removeItem("sc_view_state");localStorage.removeItem("sc_snapshots");}catch(err){}
+  if(!window.indexedDB)return;
+  try{const request=indexedDB.deleteDatabase(NS_DB_NAME);request.onerror=()=>{};}catch(err){}
+}
+window.nsClearLocalWorkspaceCache=nsClearLocalWorkspaceCache;
 
 /* ═══════════════════════════════════════════════════════════════
    CLOUD SYNC (Supabase) — personal workspace push/pull

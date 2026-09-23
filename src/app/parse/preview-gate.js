@@ -1169,7 +1169,7 @@ function showParsePreview(wb,filename,manualOverride,sourceMeta,opts){
   // Right: flags + actions
   h+=`<div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0">`;
   const previewDiagnosticsInSmartReview=true;
-  h+=`<label style="display:flex;align-items:flex-start;gap:8px;padding:10px;border:1px solid var(--bdr);border-radius:8px;background:var(--bg2);cursor:pointer"><input id="parseOfflineCopy" type="checkbox" checked style="margin-top:2px"><span><b style="font-size:11px;color:var(--text)">Keep an offline project copy</b><span style="display:block;margin-top:3px;font-size:10px;color:var(--tm);line-height:1.45">Open this loaded file from Projects while signed out. It stays on this device and is not a cloud save.</span></span></label>`;
+  h+=`<label style="display:flex;align-items:flex-start;gap:8px;padding:12px;border:1px solid var(--accent);border-radius:8px;background:var(--al);cursor:pointer"><input id="parseOfflineCopy" type="checkbox" checked style="margin-top:2px;accent-color:var(--accent)"><span><b style="font-size:12px;color:var(--text)">Save offline project copy on this device</b><span style="display:block;margin-top:4px;font-size:10px;color:var(--tm);line-height:1.45">Keeps this loaded file in Projects for use while signed out. It is stored in this browser, not in a folder, and is not a cloud save.</span></span></label>`;
   h+=`<div style="padding:12px;border-radius:8px;background:var(--al);border:1px solid var(--bdr)"><div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">Ready to load</div><div style="font-size:10px;color:var(--tm);line-height:1.5">Detailed checks and source diagnostics are available from Smart Review.</div></div>`;
   if(!previewDiagnosticsInSmartReview){
 
@@ -1405,7 +1405,7 @@ function confirmParsePreview(){
   }
   const focusNames=focusStats.names<focusStats.totalNames?[..._pendingFocusNames]:[];
   const keepOfflineCopy=document.getElementById("parseOfflineCopy")?.checked!==false;
-  if(typeof nsSetLocalPersistenceEnabled==="function")nsSetLocalPersistenceEnabled(keepOfflineCopy);
+  if(typeof window.nsSetLocalPersistenceEnabled==="function")window.nsSetLocalPersistenceEnabled(keepOfflineCopy);
   const isAdditional=pending.mode==="add";
   const departmentName=isAdditional?_nextAvailableDepartmentName(pending.departmentName||pending.scan.deptName):(pending.departmentName||pending.scan.deptName);
   const overlay=document.getElementById("parsePreviewOverlay");

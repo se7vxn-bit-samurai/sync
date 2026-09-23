@@ -152,6 +152,21 @@ function nsSetLocalPersistenceEnabled(enabled){
   if(NS.sessionOnly&&NS.dbWriteTimer){clearTimeout(NS.dbWriteTimer);NS.dbWriteTimer=null;}
 }
 window.nsSetLocalPersistenceEnabled=nsSetLocalPersistenceEnabled;
+window.nsPersist=nsPersist;
+window.nsFlushLocalPersistence=nsFlushDatabaseWrite;
+
+// Clear the canonical cache as well as the application's smaller settings keys. This is kept
+// separate so the landing-page Clear data action cannot leave an IndexedDB workspace behind to
+// reappear after the next refresh.
+function nsClearLocalWorkspaceCache(){
+  clearTimeout(NS.dbWriteTimer);NS.dbWriteTimer=null;NS.sessionOnly=false;
+  S.nsCanonical=nsEmptyCanonical();
+  try{if(typeof _persistRemove==="function")_persistRemove(NS_STORAGE_KEY,{critical:true});else localStorage.removeItem(NS_STORAGE_KEY);}catch(err){}
+  try{localStorage.removeItem("sync_last_opened");localStorage.removeItem("sc_view_state");localStorage.removeItem("sc_snapshots");}catch(err){}
+  if(!window.indexedDB)return;
+  try{const request=indexedDB.deleteDatabase(NS_DB_NAME);request.onerror=()=>{};}catch(err){}
+}
+window.nsClearLocalWorkspaceCache=nsClearLocalWorkspaceCache;
 
 /* ═══════════════════════════════════════════════════════════════
    CLOUD SYNC (Supabase) — personal workspace push/pull
