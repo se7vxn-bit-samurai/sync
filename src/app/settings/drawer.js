@@ -4,7 +4,7 @@
    ═══════════════════════════════════════════════════════════════ */
 
 function toggleSettings(){S._settingsOpen?closeSettings():openSettings('workspace');}
-function openSettings(section){S._settingsOpen=true;S._settingsSection=section||S._settingsSection||'workspace';renderSettings();}
+function openSettings(section){S._settingsOpen=true;S._settingsSection=section||S._settingsSection||'account';renderSettings();}
 function openAccountSettings(){openSettings('account');}
 function selectSettingsSection(section){S._settingsSection=section;renderSettings();}
 function closeSettings(){S._settingsOpen=false;const el=document.getElementById("settingsOverlay");if(el)el.remove();}
