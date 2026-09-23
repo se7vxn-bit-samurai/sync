@@ -1169,6 +1169,7 @@ function showParsePreview(wb,filename,manualOverride,sourceMeta,opts){
   // Right: flags + actions
   h+=`<div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0">`;
   const previewDiagnosticsInSmartReview=true;
+  h+=`<label style="display:flex;align-items:flex-start;gap:8px;padding:10px;border:1px solid var(--bdr);border-radius:8px;background:var(--bg2);cursor:pointer"><input id="parseOfflineCopy" type="checkbox" checked style="margin-top:2px"><span><b style="font-size:11px;color:var(--text)">Keep an offline project copy</b><span style="display:block;margin-top:3px;font-size:10px;color:var(--tm);line-height:1.45">Open this loaded file from Projects while signed out. It stays on this device and is not a cloud save.</span></span></label>`;
   h+=`<div style="padding:12px;border-radius:8px;background:var(--al);border:1px solid var(--bdr)"><div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">Ready to load</div><div style="font-size:10px;color:var(--tm);line-height:1.5">Detailed checks and source diagnostics are available from Smart Review.</div></div>`;
   if(!previewDiagnosticsInSmartReview){
 
@@ -1403,6 +1404,8 @@ function confirmParsePreview(){
     return;
   }
   const focusNames=focusStats.names<focusStats.totalNames?[..._pendingFocusNames]:[];
+  const keepOfflineCopy=document.getElementById("parseOfflineCopy")?.checked!==false;
+  if(typeof nsSetLocalPersistenceEnabled==="function")nsSetLocalPersistenceEnabled(keepOfflineCopy);
   const isAdditional=pending.mode==="add";
   const departmentName=isAdditional?_nextAvailableDepartmentName(pending.departmentName||pending.scan.deptName):(pending.departmentName||pending.scan.deptName);
   const overlay=document.getElementById("parsePreviewOverlay");
@@ -1448,7 +1451,7 @@ function confirmParsePreview(){
   _cacheMode=null;
   const rangeFix=rangeGuard&&rangeGuard.accepted&&rangeGuard.fix?rangeGuard.fix:null;
   try{
-    loadIntoWorkspace(wb,filename,{cacheKept,rangeFix,focusNames,ghostNames:[..._pendingGhosts],merges:[..._pendingMerges],scan:pending.scan,manualOverride:pending.manualOverride||null,sourceMeta:pending.sourceMeta||null,departmentName});
+    loadIntoWorkspace(wb,filename,{cacheKept,keepOfflineCopy,rangeFix,focusNames,ghostNames:[..._pendingGhosts],merges:[..._pendingMerges],scan:pending.scan,manualOverride:pending.manualOverride||null,sourceMeta:pending.sourceMeta||null,departmentName});
     _pendingGhosts=new Set();_pendingMerges=[];_pendingFocusNames=new Set();
   }catch(err){
     console.error("Load failed:",err);

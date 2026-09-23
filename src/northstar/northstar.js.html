@@ -124,7 +124,7 @@ function nsScopedRows(table){
 }
 
 function nsPersist(){
-  if(NS.cleanReload)return;
+  if(NS.cleanReload||NS.sessionOnly)return;
   if(NS.deferPersist){NS.persistPending=true;return;}
   const model=nsCanonical();model.updated_at=nsNow();
   NS.persistPending=false;
@@ -145,6 +145,13 @@ function nsPersist(){
   // Local persistence is immediate; cloud writes are an explicit user decision.
   if(NS.trackLocalChanges&&typeof window._syncMarkLocalChange==="function")window._syncMarkLocalChange();
 }
+// A file can be opened for a one-off session without becoming a browser project. This remains
+// entirely local: enabling persistence never sends anything to the cloud.
+function nsSetLocalPersistenceEnabled(enabled){
+  NS.sessionOnly=!enabled;
+  if(NS.sessionOnly&&NS.dbWriteTimer){clearTimeout(NS.dbWriteTimer);NS.dbWriteTimer=null;}
+}
+window.nsSetLocalPersistenceEnabled=nsSetLocalPersistenceEnabled;
 
 /* ═══════════════════════════════════════════════════════════════
    CLOUD SYNC (Supabase) — personal workspace push/pull
@@ -1527,7 +1534,7 @@ function nsShowNativePreview(wb,filename,sourceMeta,detection,opts,prepared){
     <div class="ns-native-body"><div class="ns-native-stats">
       <div class="ns-native-stat"><b>${c.people||0}</b><span>People rows</span></div><div class="ns-native-stat"><b>${c.schedule||0}</b><span>Schedule rows</span></div><div class="ns-native-stat"><b>${(c.roles||0)+(c.acting||0)}</b><span>Role records</span></div><div class="ns-native-stat"><b>${c.sheets||0}</b><span>Sheets</span></div>
     </div><div class="ns-native-types">${typePills}</div>
-    <div style="border-top:1px solid var(--bdr);padding-top:11px;font-size:11px;color:var(--tm);line-height:1.55">Records will merge into the NorthStar workspace by stable ID and source authority. Conflicts are held for review; the workbook is not changed.${prepared&&prepared.timing?`<br><span style="font:9px var(--mono)">Background extraction ${prepared.timing.prepare_ms}ms | ${prepared.timing.materialized_rows} materialized rows</span>`:""}</div></div>
+    <div style="border-top:1px solid var(--bdr);padding-top:11px;font-size:11px;color:var(--tm);line-height:1.55">Records will merge into the NorthStar workspace by stable ID and source authority. Conflicts are held for review; the workbook is not changed.${prepared&&prepared.timing?`<br><span style="font:9px var(--mono)">Background extraction ${prepared.timing.prepare_ms}ms | ${prepared.timing.materialized_rows} materialized rows</span>`:""}</div><label style="display:flex;align-items:flex-start;gap:8px;margin-top:12px;padding:10px;border:1px solid var(--bdr);border-radius:7px;background:var(--al);cursor:pointer"><input id="nsOfflineImportCopy" type="checkbox" checked style="margin-top:2px"><span><b style="font-size:11px;color:var(--text)">Keep an offline project copy</b><small style="display:block;margin-top:3px;font-size:10px;line-height:1.45">Open this imported project later from Projects, even while signed out. This does not sync it to the cloud.</small></span></label></div>
     <div class="ns-native-actions"><button class="ns-btn" onclick="nsCancelNativeImport()">Cancel</button><button class="ns-btn" onclick="openImportReview()">Review sources</button><button class="ns-btn primary" onclick="nsConfirmNativeImport()">Import ${nsEsc(detection.label)}</button></div>
   </div></div>`;
   document.getElementById("nsNativeImport")?.remove();
@@ -1571,6 +1578,8 @@ function nsRecordImportPerformance(pending,result){
 
 function nsConfirmNativeImport(){
   const pending=NS.pendingNative;if(!pending)return;
+  const keepOfflineCopy=document.getElementById("nsOfflineImportCopy")?.checked!==false;
+  nsSetLocalPersistenceEnabled(keepOfflineCopy);
   // A restore point before the merge. nsCommitWorkbook rewrites canonical records in place by
   // stable ID and source authority, so a workbook that is subtly wrong (a re-exported file with
   // shifted IDs, a stale copy) silently rewrites real history with no way back.
@@ -1600,7 +1609,7 @@ function nsConfirmNativeImport(){
     document.getElementById("nsNativeImport")?.remove();NS.pendingNative=null;
     nsOpenCanonicalWorkspace(result,pending);
     const total=Object.values(result.summary).reduce((sum,value)=>sum+Number(value||0),0);
-    toast(result.detection.label+" imported | "+total+" canonical records | "+pending.timing.total_ms+"ms",performanceResult.status==="FAIL"?"warn":"ok",5200);
+    toast(result.detection.label+" imported | "+total+" canonical records"+(keepOfflineCopy?" | available offline":" | this session only")+" | "+pending.timing.total_ms+"ms",performanceResult.status==="FAIL"?"warn":"ok",5200);
   }catch(err){NS.deferPersist=false;NS.activePrepared=null;console.error("NorthStar native import failed",err);toast("Could not import this SyncSheets workbook: "+err.message,"err",6200);}
 }
 

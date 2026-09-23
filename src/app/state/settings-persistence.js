@@ -624,6 +624,8 @@ window.addEventListener('online',()=>{
 window.addEventListener('offline',_syncRenderStatusEverywhere);
 async function _syncManualSave(){
   if(typeof _syncPushWorkspaceNow!=='function')return;
+  if(typeof nsSetLocalPersistenceEnabled==='function')nsSetLocalPersistenceEnabled(true);
+  if(typeof nsPersist==='function')nsPersist();
   const saved=await _syncPushWorkspaceNow();
   if(saved)_syncWorkspaceDirty=false;
   return saved;
