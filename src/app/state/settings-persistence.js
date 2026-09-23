@@ -623,16 +623,16 @@ window.addEventListener('online',()=>{
 });
 window.addEventListener('offline',_syncRenderStatusEverywhere);
 async function _syncManualSave(){
-  if(typeof _syncPushWorkspaceNow!=='function')return;
+  if(typeof window._syncPushWorkspaceNow!=='function')return false;
   if(typeof window.nsSetLocalPersistenceEnabled==='function')window.nsSetLocalPersistenceEnabled(true);
   if(typeof window.nsPersist==='function')window.nsPersist();
-  const saved=await _syncPushWorkspaceNow();
+  const saved=await window._syncPushWorkspaceNow();
   if(saved)_syncWorkspaceDirty=false;
   return saved;
 }
 async function _syncManualPull(){
-  if(typeof syncPullWorkspace!=='function')return false;
-  const pulled=await syncPullWorkspace();
+  if(typeof window.syncPullWorkspace!=='function')return false;
+  const pulled=await window.syncPullWorkspace();
   if(window._syncLastPullFailed){toast('Could not reach the cloud copy.','err');return false;}
   // A manual cloud refresh updates the local project list; it never selects or opens a sheet.
   if(typeof _syncShowProjectPicker==='function')_syncShowProjectPicker({clearActive:true});
@@ -1266,16 +1266,16 @@ function _syncSetDeleteModalError(name,message){
   }
 }
 async function _syncDeleteProject(key,name){
-  if(!key||typeof nsRemoveDepartmentEverywhere!=='function')return;
+  if(!key||typeof window.nsRemoveDepartmentEverywhere!=='function')return;
   _syncSetDeleteModalBusy(name,'Removing');
   // A restore point BEFORE the records are stripped — deletion is permanent everywhere else by
   // design, and this is the only thing standing between "wrong project" and "gone".
   await _syncAutoSnapshot('Before deleting '+name,'auto-delete');
-  const result=nsRemoveDepartmentEverywhere(key);
+  const result=window.nsRemoveDepartmentEverywhere(key);
   // nsPersist() (called inside nsRemoveDepartmentEverywhere) already debounce-queues a push;
   // flush it now and wait for confirmation before treating the deletion as done.
   let flushOk=true;
-  try{flushOk=typeof syncFlushPendingPush==='function'?await syncFlushPendingPush():true;}
+  try{flushOk=typeof window.syncFlushPendingPush==='function'?await window.syncFlushPendingPush():true;}
   catch(err){flushOk=false;}
   if(!flushOk){
     _syncSetDeleteModalError(name,'Could not confirm the cloud copy. Check your connection and try again.');
@@ -1424,9 +1424,10 @@ function _syncOnSignedIn(session){
   const user=session&&session.user||{};
   _syncProfileCache={email:user.email||'',full_name:(user.user_metadata&&user.user_metadata.full_name)||'',organization:'',role:'',preferred_colorway:'',continuation_pref:''};
   _syncProfileResolved=true;
-  // Account availability may change at sign-in, but workspace data never changes until the user
-  // explicitly chooses “Sync from cloud”.
-  _syncShowProjectPicker({clearActive:true});
+  // Sign-in adds account capabilities; it must not discard a live local/session-only file. At
+  // a passive launch there is no active workspace, so the normal project landing remains intact.
+  const hasLiveWorkspace=!!(S.activeDept||(S.entries&&S.entries.length));
+  if(!hasLiveWorkspace)_syncShowProjectPicker({clearActive:true});
   _syncRenderAccountUI();
   _syncRenderLandingWidget();
 }

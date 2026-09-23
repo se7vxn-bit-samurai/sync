@@ -107,7 +107,7 @@ test.describe('sample project', () => {
     await page.evaluate(() => window.__fakeSupabase.signIn());
     await page.evaluate(() => _syncCreateSampleProject());
     await page.evaluate(() => _syncShowProjectPicker());
-    await waitForPicker(page);
+    await waitForPicker(page, { sync: false });
     expect(await projectNames(page)).toEqual(['Sample Team']);
     await expect(page.locator(picker.renameBtn).first()).toBeVisible();
     await expect(page.locator(picker.deleteBtn).first()).toBeVisible();
@@ -199,7 +199,7 @@ test.describe('command palette', () => {
     await expect(page.locator('#mv')).toBeVisible();
     await page.evaluate(() => _syncShowProjectPicker());
     await expect(page.locator('#mv')).toBeHidden();
-    await waitForPicker(page);
+    await waitForPicker(page, { sync: false });
     // Still loaded underneath, so coming back is immediate.
     expect(await page.evaluate(() => S.entries.length)).toBeGreaterThan(0);
   });
