@@ -347,7 +347,7 @@ async function _syncRenderAccountUI(){
     badge.className='lc-sync-icon-btn';
     badge.title='Account & sync — '+profile.email;
     badge.style.cssText='display:flex;align-items:center;gap:6px;margin-left:8px;font-size:11px;color:var(--tm,#888);border:none;background:none;cursor:pointer;padding:2px 6px;font-family:inherit';
-    badge.onclick=()=>{openSettings();};
+    badge.onclick=()=>{openAccountSettings();};
     badge.innerHTML=`<span id="syncSaveDotMasthead" class="sync-save-dot" style="display:none"></span><span style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(first)}</span>${_syncStatusPillHtml()}`;
     // TODO(teams): once team creation/invite/switching exists, this is where a team-switcher
     // dropdown would extend S.activeDept / the existing department-switcher logic to also list
@@ -540,7 +540,7 @@ function _syncSetSaveDot(state){
     dot.className='sync-save-dot '+state;
     if(state==='saved'||state==='error')setTimeout(()=>{if(dot.className==='sync-save-dot '+state)dot.className='sync-save-dot';},2500);
   });
-  if(state==='saved'){_syncLastSyncedAt=new Date().toISOString();try{localStorage.setItem('sync_last_synced_at',_syncLastSyncedAt);}catch(err){}}
+  if(state==='saved'){_syncWorkspaceDirty=false;_syncLastSyncedAt=new Date().toISOString();try{localStorage.setItem('sync_last_synced_at',_syncLastSyncedAt);}catch(err){}}
   _syncSetStatus(state);
 }
 
@@ -554,6 +554,7 @@ function _syncSetSaveDot(state){
    and says "needs attention" when a push genuinely failed.
    ═══════════════════════════════════════════════════════════════ */
 let _syncStatusState='idle';
+let _syncWorkspaceDirty=false;
 function _syncRelativeTime(iso){
   if(!iso)return'';
   const then=Date.parse(iso);
@@ -578,7 +579,9 @@ function _syncStatusInfo(){
   if(_syncStatusState==='conflict')return{kind:'attention',label:'Needs attention — newer copy on another device'};
   if(!online)return{kind:'offline',label:'Offline — saved on this device'};
   if(_syncStatusState==='error')return{kind:'attention',label:'Needs attention — not backed up to the cloud'};
+  if(_syncStatusState==='pulled')return{kind:'saved',label:'Cloud copy loaded'};
   if(!signedIn)return{kind:'local',label:'Saved on this device'};
+  if(_syncWorkspaceDirty)return{kind:'local',label:'Changes saved on this device — save to cloud when ready'};
   const rel=_syncRelativeTime(_syncLastSyncedAt);
   if(!rel)return{kind:'local',label:'Saved on this device — not synced yet'};
   return{kind:'saved',label:'Saved to cloud '+rel};
@@ -600,17 +603,27 @@ function _syncSetStatus(state){
   _syncStatusState=state||'idle';
   _syncRenderStatusEverywhere();
 }
+function _syncMarkLocalChange(){
+  _syncWorkspaceDirty=true;
+  if(_syncStatusState!=='saving')_syncSetStatus('local-changes');
+}
+function _syncSetPulledFromCloud(){
+  _syncWorkspaceDirty=false;
+  _syncSetStatus('pulled');
+}
+window._syncMarkLocalChange=_syncMarkLocalChange;
+window._syncSetPulledFromCloud=_syncSetPulledFromCloud;
 // "just now" has to stop being true on its own, or the pill quietly lies as time passes.
 setInterval(_syncRenderStatusEverywhere,60000);
 window.addEventListener('online',()=>{
   _syncRenderStatusEverywhere();
-  // Coming back from offline is exactly when a pending local-only change should reach the cloud.
-  if(typeof syncFlushPendingPush==='function')syncFlushPendingPush();
 });
 window.addEventListener('offline',_syncRenderStatusEverywhere);
 async function _syncManualSave(){
   if(typeof _syncPushWorkspaceNow!=='function')return;
-  await _syncPushWorkspaceNow();
+  const saved=await _syncPushWorkspaceNow();
+  if(saved)_syncWorkspaceDirty=false;
+  return saved;
 }
 
 // Escalation for repeated save failures / a detected cross-device conflict — the save dot alone
@@ -707,17 +720,13 @@ function _syncExportBackup(){
     toast('Could not create the backup file','err');
   }
 }
-// Best-effort: flush any pending debounced cloud push the moment the tab is hidden or about to
-// unload, so switching apps/tabs or closing the browser doesn't leave the cloud copy lagging behind
-// whatever was just typed. Local (IndexedDB) persistence is unaffected either way.
+// Preserve local view context on tab changes; cloud writes remain manual.
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState!=='hidden')return;
   if(typeof _syncSaveViewState==='function')_syncSaveViewState(undefined,{withCounts:true});
-  if(typeof syncFlushPendingPush==='function')syncFlushPendingPush();
 });
 window.addEventListener('beforeunload',()=>{
   if(typeof _syncSaveViewState==='function')_syncSaveViewState(undefined,{withCounts:true});
-  if(typeof syncFlushPendingPush==='function')syncFlushPendingPush();
 });
 function _syncLastSyncedLabel(){
   if(!_syncLastSyncedAt)return'never';
@@ -737,8 +746,9 @@ function _syncConfirmSignOut(){
 async function _syncSaveThenSignOut(){
   const modal=document.getElementById('syncSignOutModal');
   if(modal)modal.remove();
-  try{if(typeof _syncPushWorkspaceNow==='function')await _syncPushWorkspaceNow();}catch(err){}
-  _syncSignOut();
+  const saved=await _syncManualSave();
+  if(saved)_syncSignOut();
+  else toast('Could not save to the cloud. You are still signed in.','err');
 }
 async function _syncSignOut(){
   const modal=document.getElementById('syncSignOutModal');
@@ -766,7 +776,7 @@ async function _syncRenderLandingWidget(){
       const first=_syncFirstName(profile);
       // Status only, not a second copy of save/sign-out — those live once, in Settings' Account
       // section (see _syncRenderSettingsAccountSection). Clicking here opens straight to it.
-      host.innerHTML=`<button class="lc-sync-signed-in" onclick="openSettings()" title="Account & sync settings" style="all:unset;display:flex;align-items:center;gap:8px;cursor:pointer;width:100%;flex-wrap:wrap"><span class="lc-sync-email" title="${X(profile.email)}">Hi ${X(first)}</span><span id="syncSaveDotLc" class="sync-save-dot" style="display:none"></span>${_syncStatusPillHtml('margin-left:auto')}</button>`;
+      host.innerHTML=`<div class="lc-sync-signed-in" style="display:flex;align-items:center;gap:8px;width:100%;flex-wrap:wrap"><button onclick="openAccountSettings()" title="Account & sync settings" style="all:unset;display:flex;align-items:center;gap:8px;cursor:pointer"><span class="lc-sync-email" title="${X(profile.email)}">Hi ${X(first)}</span><span id="syncSaveDotLc" class="sync-save-dot" style="display:none"></span>${_syncStatusPillHtml()}</button><button class="btn" onclick="_syncShowProjectPicker()" style="margin-left:auto;padding:5px 9px;font-size:10px">Projects &amp; Ops</button></div>`;
     }else{
       host.innerHTML=`
         <div class="lc-sync-caption">Continue with Google to sync across devices — connects your existing account, or creates one if you're new</div>
@@ -1054,14 +1064,13 @@ function _syncCreateSampleProject(){
   toast(`Sample project ready — ${result.people} people, ${result.schedule} shifts`,'ok');
   _syncOpenProject(result.name);
   _syncRenderProjectPicker();
-  if(typeof syncPushWorkspace==='function')syncPushWorkspace();
+  _syncMarkLocalChange();
 }
 // Back to the project splash from inside the app — the palette's "Switch project…" and the
 // counterpart to _syncOpenProject. Keeps the loaded project in memory (nothing is cleared) so
 // coming straight back is instant; only the viewport changes.
 function _syncShowProjectPicker(){
   if(S.activeDept)_syncSaveViewState(typeof nsActiveDepartmentKey==='function'?nsActiveDepartmentKey():'',{withCounts:true});
-  if(typeof syncFlushPendingPush==='function')syncFlushPendingPush();
   const us=document.getElementById('us'),mv=document.getElementById('mv'),ha=document.getElementById('ha');
   if(us)us.style.display='flex';
   if(mv){mv.classList.add('hid');mv.style.display='none';}

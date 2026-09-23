@@ -3,12 +3,16 @@
    One ⚙ button → one drawer → all preferences
    ═══════════════════════════════════════════════════════════════ */
 
-function toggleSettings(){S._settingsOpen?closeSettings():openSettings();}
-function openSettings(){S._settingsOpen=true;renderSettings();}
+function toggleSettings(){S._settingsOpen?closeSettings():openSettings('workspace');}
+function openSettings(section){S._settingsOpen=true;S._settingsSection=section||S._settingsSection||'workspace';renderSettings();}
+function openAccountSettings(){openSettings('account');}
+function selectSettingsSection(section){S._settingsSection=section;renderSettings();}
 function closeSettings(){S._settingsOpen=false;const el=document.getElementById("settingsOverlay");if(el)el.remove();}
 
 function renderSettings(){
   S._settingsOpen=true;
+  const section=S._settingsSection||'workspace';
+  const tab=(id,label)=>`<button onclick="selectSettingsSection('${id}')" style="flex:0 0 auto;padding:7px 9px;border:1px solid ${section===id?'var(--accent)':'var(--bdr)'};border-radius:7px;background:${section===id?'var(--al)':'transparent'};color:${section===id?'var(--accent)':'var(--tm)'};font:11px inherit;cursor:pointer;white-space:nowrap">${label}</button>`;
   const r=S.rules||{};const br=r.breaks||{};
   const existing=document.getElementById("settingsOverlay");
   const panelEl=existing?existing.querySelector('#settingsPanel'):null;
@@ -19,33 +23,41 @@ function renderSettings(){
   // Header
   inner+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--bdr);position:sticky;top:0;background:var(--hbg);z-index:2">`;
   inner+=`<h2 style="font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px">⚙ Settings</h2>`;
-  inner+=`<button onclick="closeSettings()" style="background:none;border:1px solid var(--bdr);color:var(--text);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">✕</button>`;
+  inner+=`<button onclick="closeSettings()" aria-label="Close settings" style="background:none;border:1px solid var(--bdr);color:var(--text);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">✕</button>`;
   inner+=`</div>`;
+  inner+=`<nav aria-label="Settings groups" style="display:flex;gap:6px;overflow-x:auto;padding:10px 20px;border-bottom:1px solid var(--bdr);scrollbar-width:thin">${tab('account','Account')}${tab('workspace','Workspace')}${tab('preferences','Preferences')}${tab('data','Data & exports')}${tab('advanced','Advanced')}</nav>`;
   inner+=`<div style="padding:16px 20px;display:flex;flex-direction:column;gap:20px;flex:1">`;
 
   // If overlay already exists, just update panel content in place
   const h_ref={val:inner};
   // Use h variable for the rest of the building (alias)
   let h='';
+  if(section==='account')h+=_syncRenderSettingsAccountSection()+_syncRenderSettingsSnapshotSection();
+  if(section==='workspace')h+=`<section><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Workspace</div><p style="font-size:12px;color:var(--tm);line-height:1.5;margin:0 0 12px">Keep your working context close to the schedule. Filters and notes are saved on this device.</p><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();_syncShowProjectPicker()">Projects &amp; Ops</button><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();triggerRosterUpload()">Add roster</button><textarea id="syncSettingsScratchpad" placeholder="Quick notes, reminders, todos…" oninput="S.scratchpad=this.value;_saveScratchpad()" style="width:100%;box-sizing:border-box;min-height:110px;padding:8px 10px;border-radius:7px;border:1px solid var(--bdr);background:var(--card);color:var(--text);font-size:12px;font-family:inherit;resize:vertical">${X(S.scratchpad||'')}</textarea><div style="font-size:10px;color:var(--tm);margin-top:4px">Saved locally</div></section>`;
+  if(section==='preferences')h+=`<section><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Appearance</div><div style="display:flex;gap:6px;margin-bottom:12px">${Object.entries(TH).map(([k,t])=>`<button onclick="setTh('${k}');renderSettings()" style="flex:1;padding:8px 4px;border:1px solid ${S.th===k?'var(--accent)':'var(--bdr)'};border-radius:8px;background:${S.th===k?'var(--al)':'none'};color:var(--text);font:11px inherit;cursor:pointer"><span style="display:block;width:12px;height:12px;border-radius:50%;background:${t.d};margin:0 auto 4px"></span>${t.n}</button>`).join('')}</div><div style="display:flex;gap:4px;margin-bottom:10px">${['compact','comfortable','spacious'].map(d=>`<button onclick="setDensity('${d}');renderSettings()" style="flex:1;padding:7px;border:1px solid ${S.density===d?'var(--accent)':'var(--bdr)'};border-radius:6px;background:${S.density===d?'var(--al)':'none'};color:var(--text);font:11px inherit;cursor:pointer">${d[0].toUpperCase()+d.slice(1)}</button>`).join('')}</div><label style="display:block;font-size:12px;margin:8px 0"><input type="checkbox" ${S.cbMode?'checked':''} onchange="setCbMode(this.checked);renderSettings()"> Colour-blind mode</label><label style="display:block;font-size:12px;margin:8px 0"><input type="checkbox" ${S.tz?'checked':''} onchange="setTimezoneEnabled(this.checked);renderSettings()"> UK → SA timezone</label><label style="display:block;font-size:12px;margin:8px 0"><input type="checkbox" ${S.hlToday?'checked':''} onchange="setTodayHighlight(this.checked);renderSettings()"> Highlight today in calendar</label></section>`;
+  if(section==='data')h+=`<section><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Data &amp; exports</div><p style="font-size:12px;color:var(--tm);line-height:1.5;margin:0 0 12px">Create a portable export or open the dedicated data views without crowding your daily workspace.</p><button class="btn bp" style="margin:0 8px 8px 0" onclick="closeSettings();expSavePlus('all')">Save+ export</button><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();expCurrentMonth()">Styled report</button><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();S.anView='rawdata';setTab('analytics')">Raw data</button><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();runRulesValidation()">Validate</button></section>`;
+  if(section==='advanced')h+=`<section><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Advanced</div><p style="font-size:12px;color:var(--tm);line-height:1.5;margin:0 0 12px">Destructive actions are separated from everyday settings.</p><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();if(S.activeDept)removeDept(S.activeDept)">Close workspace</button><button class="btn" style="margin:0 8px 8px 0;color:#dc2626;border-color:rgba(220,38,38,.3)" onclick="if(confirm('Clear all stored data?')){closeSettings();clearAllData()}">Clear all data</button><div style="font-size:11px;color:var(--tm);margin-top:12px">${APP_BUILD}</div></section>`;
+
+  if(false){
 
   // ── Account ── the one place save/sign-out/profile live now, replacing the separate controls
   // that used to be duplicated in the masthead badge and the landing widget (see
   // _syncRenderAccountUI/_syncRenderLandingWidget — both now just show a status indicator that
   // opens this panel instead of their own copy of the same buttons).
-  h+=_syncRenderSettingsAccountSection();
+  if(section==='account')h+=_syncRenderSettingsAccountSection();
 
   // ── Backups & history ──
-  h+=_syncRenderSettingsSnapshotSection();
+  if(section==='account')h+=_syncRenderSettingsSnapshotSection();
 
   // ── Appearance ──
-  h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Appearance</div>`;
+  if(section==='preferences')h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Appearance</div>`;
   h+=`<div style="display:flex;gap:6px;margin-bottom:10px">`;
   Object.entries(TH).forEach(([k,t])=>{
     const isActive=S.th===k;
     const vLabel=isActive?_currentVariantLabel():'';
     h+=`<button onclick="setTh('${k}');renderSettings()" style="flex:1;padding:8px 4px;border:1px solid ${isActive?'var(--accent)':'var(--bdr)'};border-radius:8px;background:${isActive?'var(--al)':'none'};color:${isActive?'var(--accent)':'var(--tm)'};font-family:inherit;font-size:11px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px"><span style="width:12px;height:12px;border-radius:50%;background:${t.d}"></span>${t.n}${isActive?'<span style="font-size:9px;opacity:.7;text-transform:capitalize">'+vLabel+'</span>':''}</button>`;
   });
-  h+=`</div>`;
+  if(section==='preferences')h+=`</div>`;
 
   // ── Variant picker (collapsible, grouped by category) ──
   const activeThemeKey=S.th||'surge';
@@ -87,7 +99,7 @@ function renderSettings(){
   // ── Sheet & Team filters — moved here from the toolbar's Filters popover (same S.sh/S.team/
   // S.allMonths state, same swSh()/setTeam() calls) so the mobile toolbar isn't crowded with an
   // icon that only mattered when multiple sheets/teams were actually loaded.
-  {
+  if(section==='workspace'){
     const _teams=gT();
     if((S.shs&&S.shs.length>1)||(_teams&&_teams.length>1)){
       h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Sheet &amp; Team Filter</div>`;
@@ -100,12 +112,12 @@ function renderSettings(){
 
   // ── Quick notes — moved here from the toolbar's popover (same S.scratchpad state and
   // _saveScratchpad(), just reachable from Settings instead of a dedicated mobile toolbar icon).
-  h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Quick Notes</div>`;
+  if(section==='workspace')h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Quick Notes</div>`;
   h+=`<textarea id="syncSettingsScratchpad" placeholder="Quick notes, reminders, todos...&#10;&#10;Persisted across sessions." oninput="S.scratchpad=this.value;_saveScratchpad()" style="width:100%;box-sizing:border-box;min-height:80px;padding:8px 10px;border-radius:7px;border:1px solid var(--bdr);background:var(--card);color:var(--text);font-size:12px;font-family:inherit;resize:vertical">${X(S.scratchpad||'')}</textarea>`;
-  h+=`<div style="font-size:10px;color:var(--tm);margin-top:4px">Auto-saved locally</div></div>`;
+  if(section==='workspace')h+=`<div style="font-size:10px;color:var(--tm);margin-top:4px">Auto-saved locally</div></div>`;
 
   // ── Schedule Rules ──
-  h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Schedule Rules</div>`;
+  if(section==='workspace')h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Schedule Rules</div>`;
   const ruleRows=[
     {label:"Max hours / week",key:"maxHoursWeek",val:r.maxHoursWeek||45,type:"number",min:20,max:80,sync:"S.hrsMax=+this.value;invalidateDerivedCache();if(S.tab==='analytics')rerenderAnalyticsSurface('view');"},
     {label:"Max consecutive days",key:"maxConsecutiveDays",val:r.maxConsecutiveDays||6,type:"number",min:3,max:14,sync:"invalidateDerivedCache();if(S.tab==='analytics')rerenderAnalyticsSurface('view');"},
@@ -127,19 +139,20 @@ function renderSettings(){
   h+=`<select onchange="S.rules.breaks.lunch=+this.value" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-size:12px">`;
   [0,15,30,45,60].forEach(m=>{h+=`<option value="${m}"${(br.lunch||30)===m?" selected":""}>${m}min</option>`;});
   h+=`</select></div>`;
-  h+=`</div>`;
+  if(section==='workspace')h+=`</div>`;
   
   // ── Coaching ──
-  h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Coaching</div>`;
+  if(section==='workspace')h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Coaching</div>`;
   h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0"><span style="font-size:12px">Session duration</span>`;
   h+=`<select onchange="S.coachDuration=+this.value" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-size:12px">`;
   [15,30,45,60].forEach(m=>{h+=`<option value="${m}"${(S.coachDuration||30)===m?" selected":""}>${m}min</option>`;});
   h+=`</select></div>`;
   h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0"><span style="font-size:12px">Daily target</span>`;
   h+=`<input type="number" min="0" max="10" value="${S.coachTargetDaily||1}" onchange="S.coachTargetDaily=+this.value" style="width:56px;padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;text-align:center">`;
-  h+=`</div></div>`;
+  if(section==='workspace')h+=`</div></div>`;
   
   // ── Exports ──
+  if(section==='data'){
   const xSel=S.exportSelection||{};
   const xSheets=[
     {k:'overview',   l:'Overview & stats',    d:'Summary table, HC averages, key metrics'},
@@ -194,23 +207,26 @@ function renderSettings(){
   const selectedCount=xSheets.filter(s=>xSel[s.k]!==false).length;
   h+=`<button onclick="closeSettings();expCustomSelection()" style="width:100%;padding:8px 12px;border:none;border-radius:7px;background:var(--accent);color:#fff;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;letter-spacing:.2px">Export ${selectedCount} of ${xSheets.length} sheets →</button>`;
   h+=`</div>`;
+  }
   h+=`</div>`;
+  }
 
   // ── Quick links ──
-  h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Quick Links</div>`;
+  if(section==='data')h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Quick Links</div>`;
   h+=`<div style="display:flex;flex-wrap:wrap;gap:6px">`;
   h+=`<button onclick="closeSettings();showPeoplePanel()" style="padding:6px 12px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--text);font-family:inherit;font-size:11px;cursor:pointer">👥 People</button>`;
   h+=`<button onclick="closeSettings();triggerRosterUpload()" style="padding:6px 12px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--text);font-family:inherit;font-size:11px;cursor:pointer">📋 Add roster</button>`;
   h+=`<button onclick="closeSettings();S.anView='rawdata';setTab('analytics')" style="padding:6px 12px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--text);font-family:inherit;font-size:11px;cursor:pointer">🧪 Raw data</button>`;
   h+=`<button onclick="closeSettings();runRulesValidation()" style="padding:6px 12px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--text);font-family:inherit;font-size:11px;cursor:pointer">✓ Validate</button>`;
-  h+=`</div></div>`;
+  if(section==='data')h+=`</div></div>`;
   
   // ── Data ──
-  h+=`<div style="border-top:1px solid var(--bdr);padding-top:12px;display:flex;gap:8px;flex-wrap:wrap">`;
-  h+=`<button onclick="closeSettings();if(S.activeDept)removeDept(S.activeDept)" style="padding:6px 12px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">Close workspace</button>`;
-  h+=`<button onclick="if(confirm('Clear all stored data?')){closeSettings();clearAllData()}" style="padding:6px 12px;border:1px solid rgba(220,38,38,.3);border-radius:6px;background:none;color:#dc2626;font-family:inherit;font-size:11px;cursor:pointer;opacity:.7">Clear all data</button>`;
-  h+=`<div style="font-size:11px;color:var(--tm);margin-top:8px">${APP_BUILD}</div>`;
-  h+=`</div>`;
+  if(section==='advanced'){
+    h+=`<div style="border-top:1px solid var(--bdr);padding-top:12px;display:flex;gap:8px;flex-wrap:wrap">`;
+    h+=`<button onclick="closeSettings();if(S.activeDept)removeDept(S.activeDept)" style="padding:6px 12px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">Close workspace</button>`;
+    h+=`<button onclick="if(confirm('Clear all stored data?')){closeSettings();clearAllData()}" style="padding:6px 12px;border:1px solid rgba(220,38,38,.3);border-radius:6px;background:none;color:#dc2626;font-family:inherit;font-size:11px;cursor:pointer;opacity:.7">Clear all data</button>`;
+    h+=`<div style="font-size:11px;color:var(--tm);margin-top:8px">${APP_BUILD}</div></div>`;
+  }
   
   h+=`</div>`;
   

@@ -1,6 +1,7 @@
 /* ═══ KEYBOARD ═══ */
 document.addEventListener("keydown",e=>{
   const key=(e.key||"").toLowerCase();
+  if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&key==="s"){e.preventDefault();if(typeof _syncManualSave==='function')_syncManualSave();return;}
   if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&key==="k"){e.preventDefault();openCommandPalette();return;}
   if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&key==="z"){e.preventDefault();undoLastAction();return;}
   if(!S.wb||e.target.tagName==="INPUT"||e.target.tagName==="SELECT"||e.target.tagName==="TEXTAREA")return;

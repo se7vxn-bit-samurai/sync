@@ -12,7 +12,7 @@ const NS_PERFORMANCE_BUDGETS={
 };
 const NS_SCHEMA="sync.northstar.canonical";
 const NS_VERSION=1;
-const NS=window.NorthStar={pendingNative:null,pendingShared:null,persistWarningShown:false,persistence:"localStorage",dbWriteTimer:null,importWorker:null,templateWorker:null,templateExport:null,templateAdapter:"",performanceBudgets:NS_PERFORMANCE_BUDGETS,deferPersist:false,persistPending:false,hydrating:false,hydrated:false,eventLoopLag:0};
+const NS=window.NorthStar={pendingNative:null,pendingShared:null,persistWarningShown:false,persistence:"localStorage",dbWriteTimer:null,importWorker:null,templateWorker:null,templateExport:null,templateAdapter:"",performanceBudgets:NS_PERFORMANCE_BUDGETS,deferPersist:false,persistPending:false,hydrating:false,hydrated:false,trackLocalChanges:false,eventLoopLag:0};
 
 const nsEsc=value=>typeof X==="function"?X(String(value??"")):String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
 const nsJs=value=>typeof XJS==="function"?XJS(String(value??"")):String(value??"").replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/[\r\n]+/g," ");
@@ -142,9 +142,8 @@ function nsPersist(){
     }catch(ignore){}
     if(!NS.persistWarningShown){NS.persistWarningShown=true;toast("NorthStar is active, but the browser storage limit prevented full schedule persistence.","warn",5200);}
   }
-  // Cloud sync: fire-and-forget, debounced. No-op (silently) when signed out or offline —
-  // the auth gate in the main script means this should not normally happen.
-  try{if(typeof syncPushWorkspace==="function")syncPushWorkspace();}catch(err){}
+  // Local persistence is immediate; cloud writes are an explicit user decision.
+  if(NS.trackLocalChanges&&typeof window._syncMarkLocalChange==="function")window._syncMarkLocalChange();
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -270,18 +269,16 @@ let _syncPushDeferredByGate=false;
 function _syncOpenPushGate(){
   if(_syncInitialPullDone)return;
   _syncInitialPullDone=true;
-  if(!_syncPushDeferredByGate)return;
-  _syncPushDeferredByGate=false;
-  _syncPushWorkspaceNow();
+  // An explicit Save pressed while the initial pull was still running is honoured only
+  // after that pull finishes. Nothing else is released automatically.
+  if(_syncPushDeferredByGate){_syncPushDeferredByGate=false;_syncPushWorkspaceNow();}
 }
 async function _syncPushWorkspaceNow(opts){
   opts=opts||{};
   try{
     const userId=await _syncGetUserId();
     if(!userId)return false; // signed out — defensive no-op, should not happen behind the auth gate
-    // opts.afterPull is the pull's own "no row existed, seed it from local" push, which by
-    // definition runs with the gate still shut and must not wait on itself.
-    if(!_syncInitialPullDone&&!opts.afterPull){
+    if(!_syncInitialPullDone){
       _syncPushDeferredByGate=true;
       return false;
     }
@@ -316,64 +313,17 @@ async function _syncPushWorkspaceNow(opts){
       data:payload,
       updated_at:nowIso
     },{onConflict:"owner_user_id,department_key"});
-    if(error){
-      console.error("[sync] workspace push failed",error);
-      // Put the dirty flag back. syncPushWorkspace() clears it the moment it hands off to this
-      // function, so a push that then FAILS — the offline case, most obviously — used to leave
-      // nothing pending: syncFlushPendingPush() would no-op on reconnect and the change stayed
-      // local-only until some unrelated later edit happened to trigger another save. Restoring it
-      // makes the work outstanding again, so the reconnect flush (and the next flush of any kind)
-      // actually retries it.
-      _syncPushDirty=true;
-    }
+    if(error)console.error("[sync] workspace push failed",error);
     else _syncLastKnownRemoteUpdatedAt=nowIso;
     if(typeof _syncSetSaveDot==="function")_syncSetSaveDot(error?"error":"saved");
     _syncReportPushOutcome(error?"error":"saved");
     return!error;
   }catch(err){
     console.error("[sync] workspace push threw",err);
-    _syncPushDirty=true;
     if(typeof _syncSetSaveDot==="function")_syncSetSaveDot("error");
     _syncReportPushOutcome("error");
     return false;
   }
-}
-
-// Debounced entry point — mirrors the timing pattern of _schedulePersistFlush/_flushPersistQueue
-// (90ms debounce, then an idle callback with a 700ms fallback timeout) so cloud pushes batch the
-// same way local persistence already does, instead of firing a network call on every keystroke.
-let _syncPushFlushTimer=null;
-let _syncPushIdleHandle=null;
-let _syncPushDirty=false;
-function syncPushWorkspace(){
-  _syncPushDirty=true;
-  if(_syncPushFlushTimer)clearTimeout(_syncPushFlushTimer);
-  _syncPushFlushTimer=setTimeout(()=>{
-    _syncPushFlushTimer=null;
-    if(_syncPushIdleHandle!==null&&_syncPushIdleHandle!==undefined)return;
-    const cb=()=>{
-      _syncPushIdleHandle=null;
-      if(_syncPushDirty){_syncPushDirty=false;_syncPushWorkspaceNow();}
-    };
-    if(typeof requestIdleCallback==="function")_syncPushIdleHandle=requestIdleCallback(cb,{timeout:700});
-    else _syncPushIdleHandle=setTimeout(cb,160);
-  },90);
-}
-
-// Forces any pending debounced push to run immediately instead of waiting out its timer — called
-// before switching departments/projects and before the tab unloads/hides, so the cloud copy never
-// lags more than a network round-trip behind local edits at the moments data loss would actually
-// matter. Local persistence (IndexedDB) is already synchronous-ish and unaffected either way; this
-// is specifically about not leaving the CLOUD copy stale across exactly those risky moments.
-async function syncFlushPendingPush(){
-  if(_syncPushFlushTimer){clearTimeout(_syncPushFlushTimer);_syncPushFlushTimer=null;}
-  if(_syncPushIdleHandle!==null&&_syncPushIdleHandle!==undefined){
-    if(typeof cancelIdleCallback==="function"){try{cancelIdleCallback(_syncPushIdleHandle);}catch(err){}}
-    else clearTimeout(_syncPushIdleHandle);
-    _syncPushIdleHandle=null;
-  }
-  if(_syncPushDirty){_syncPushDirty=false;return await _syncPushWorkspaceNow();}
-  return true;
 }
 
 // Pulls the newest workspace row (personal, or from any team the user belongs to — team support
@@ -381,6 +331,7 @@ async function syncFlushPendingPush(){
 // it back into localStorage/S following the exact pattern nsHydrateDatabase() already uses.
 async function syncPullWorkspace(){
   try{
+    window._syncLastPullFailed=false;
     const userId=await _syncGetUserId();
     if(!userId)return false;
     // The user's own workspace always lives under the fixed SYNC_PERSONAL_WORKSPACE_KEY (see
@@ -418,21 +369,15 @@ async function syncPullWorkspace(){
       // and is never itself pulled/persisted, so it needs rebuilding from the canonical schedule
       // every time a remote pull actually replaces the local model.
       nsRestoreEntriesFromCanonical();
+      if(typeof window._syncSetPulledFromCloud==="function")window._syncSetPulledFromCloud();
       _syncOpenPushGate();
       return true;
-    }
-    if(!row){
-      // First-login special case: no server row at all for this personal workspace. If local data
-      // already exists, treat local as the seed and push it up immediately rather than leaving the
-      // server empty.
-      const local=_syncCollectLocalKeys();
-      const hasLocalData=(localModel.people&&localModel.people.length)||(localModel.schedule&&localModel.schedule.length)||Object.keys(local).length>0;
-      if(hasLocalData)await _syncPushWorkspaceNow({afterPull:true});
     }
     _syncOpenPushGate();
     return false;
   }catch(err){
     console.error("[sync] workspace pull failed",err);
+    window._syncLastPullFailed=true;
     // Open the gate even on failure, or a pull that errors once would block every save for the rest
     // of the session — local-first has to degrade to "push anyway", not to "never push again".
     _syncOpenPushGate();
@@ -450,8 +395,6 @@ async function syncPullWorkspace(){
 // succeeding into a permanent no-op, not a temporary one. Explicitly exporting the handful the main
 // script actually calls fixes that at the source, once, here, rather than patching each call site.
 window.syncPullWorkspace=syncPullWorkspace;
-window.syncPushWorkspace=syncPushWorkspace;
-window.syncFlushPendingPush=syncFlushPendingPush;
 window._syncPushWorkspaceNow=_syncPushWorkspaceNow;
 window._syncGetUserId=_syncGetUserId;
 window.nsRestoreEntriesFromCanonical=nsRestoreEntriesFromCanonical;
@@ -2608,7 +2551,7 @@ let nsLagExpected=performance.now()+1000;setInterval(()=>{const now=performance.
       else if(typeof _restoreViewportFromState==="function")_restoreViewportFromState();
     }
     if(document.getElementById("ca"))try{ren();}catch(err){}
-  });
+  }).finally(()=>{NS.trackLocalChanges=true;});
   const hydrate=()=>doHydrate();
   if("requestIdleCallback" in window)requestIdleCallback(hydrate,{timeout:1200});else setTimeout(hydrate,80);
 })();
