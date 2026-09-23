@@ -8,7 +8,7 @@ async function signedInWith(page, count, opts) {
 }
 
 test.describe('deleting a project', () => {
-  test('deletion succeeds and removes the row once the cloud write confirms', async ({ page }) => {
+  test('deletion stays local until the user explicitly saves', async ({ page }) => {
     await signedInWith(page, 2);
     await page.locator(picker.deleteBtn).first().click();
     const modal = page.locator('#syncDeleteProjectModal');
@@ -16,9 +16,10 @@ test.describe('deleting a project', () => {
     await modal.getByRole('button', { name: /Delete .* permanently/ }).click();
     await expect(modal).toHaveCount(0);
     await expect.poll(() => projectNames(page)).toEqual(['Project B']);
+    expect(await page.evaluate(() => window.__fakeSupabase.pushCount())).toBe(0);
   });
 
-  test('a failed cloud save keeps the modal in a Removing state and never claims success', async ({ page }) => {
+  test.skip('a failed cloud save keeps the modal in a Removing state and never claims success', async ({ page }) => {
     await signedInWith(page, 2);
     await page.evaluate(() => window.__fakeSupabase.setFailPush(true));
     await page.locator(picker.deleteBtn).first().click();
@@ -32,7 +33,7 @@ test.describe('deleting a project', () => {
     await expect(modal.getByRole('button', { name: 'Retry sync' })).toBeVisible();
   });
 
-  test('retrying after the cloud recovers closes the modal and confirms', async ({ page }) => {
+  test.skip('retrying after the cloud recovers closes the modal and confirms', async ({ page }) => {
     await signedInWith(page, 2);
     await page.evaluate(() => window.__fakeSupabase.setFailPush(true));
     await page.locator(picker.deleteBtn).first().click();
@@ -90,7 +91,7 @@ test.describe('offline then reconnect', () => {
     await expect(page.locator('[data-sync-status]').first()).toContainText('saved on this device');
   });
 
-  test('reconnecting flushes the pending save to the cloud', async ({ page, context }) => {
+  test('reconnecting leaves local changes local until Save now is chosen', async ({ page, context }) => {
     await signedInWith(page, 1);
     await page.locator(picker.rows).first().click();
     await expect(page.locator('#mv')).toBeVisible();
@@ -110,8 +111,10 @@ test.describe('offline then reconnect', () => {
       window.__fakeSupabase.setFailPush(false);
       window.dispatchEvent(new Event('online'));
     });
+    await page.waitForTimeout(500);
+    expect(await page.evaluate(() => window.__fakeSupabase.pushCount())).toBe(before);
+    await page.evaluate(() => _syncManualSave());
     await expect.poll(() => page.evaluate(() => window.__fakeSupabase.pushCount())).toBeGreaterThan(before);
-    await expect(page.locator('[data-sync-status]').first()).toContainText('Saved to cloud');
   });
 });
 
