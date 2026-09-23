@@ -388,6 +388,7 @@ function _syncRenderSettingsAccountSection(){
     h+=`<button class="btn" style="padding:5px 12px;font-size:11px" onclick="_syncManualSave()">Save now</button>`;
     h+=`</div>`;
     h+=`<div style="font-size:11px;color:var(--tm);margin-bottom:10px">Last cloud save: ${X(_syncLastSyncedLabel())}</div>`;
+    h+=`<button class="btn" style="width:100%;justify-content:center;margin-bottom:8px" onclick="_syncManualPull()">Sync from cloud</button>`;
     h+=`<button class="btn" style="width:100%;justify-content:center;margin-bottom:8px" onclick="_syncExportBackup()">Export backup file</button>`;
     h+=`<button class="btn" style="width:100%;justify-content:center;color:#e5484d;border:1px solid rgba(229,72,77,.3)" onclick="closeSettings();_syncConfirmSignOut()">Sign out</button>`;
   }
@@ -624,6 +625,14 @@ async function _syncManualSave(){
   const saved=await _syncPushWorkspaceNow();
   if(saved)_syncWorkspaceDirty=false;
   return saved;
+}
+async function _syncManualPull(){
+  if(typeof syncPullWorkspace!=='function')return false;
+  const pulled=await syncPullWorkspace();
+  if(window._syncLastPullFailed){toast('Could not reach the cloud copy.','err');return false;}
+  if(typeof _syncRenderProjectPicker==='function')_syncRenderProjectPicker();
+  toast(pulled?'Cloud copy loaded':'Cloud copy is already up to date','ok');
+  return pulled;
 }
 
 // Escalation for repeated save failures / a detected cross-device conflict — the save dot alone
@@ -1513,13 +1522,15 @@ function _syncOnSignedIn(session){
   // (SIGNED_IN or INITIAL_SESSION) can fire for the same session — only act once per token.
   const token=session&&session.access_token;
   if(!token||token===_syncHandledSessionToken)return;
-  _syncPostSignInFlow().catch(err=>{console.error('[sync] post-sign-in flow failed',err);});
+  _syncHandledSessionToken=token;
+  // Account availability may change at sign-in, but workspace data never changes until the user
+  // explicitly chooses “Sync from cloud”.
+  _syncShowProjectPicker();
 }
 async function _syncAuthGate(){
   // The app is fully usable offline/local-only, so boot unconditionally — auth only adds
   // cross-device sync on top, it never gates access to the app itself.
   nsBootApp();
-  _syncRenderLandingWidget();
   // Register the listener before the initial getSession() check (Supabase's own recommended
   // order) so a session established while getSession() is still resolving isn't missed.
   sb.auth.onAuthStateChange((event,session)=>{

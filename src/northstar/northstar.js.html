@@ -2539,17 +2539,9 @@ let nsLagExpected=performance.now()+1000;setInterval(()=>{const now=performance.
   // whichever of the two triggers (this idle callback, or the auth event) runs first does the
   // work and the second just awaits the same result.
   const doHydrate=()=>nsHydrateDatabase().then(async localHydrated=>{
-    const userId=typeof _syncGetUserId==="function"?await _syncGetUserId():null;
-    if(userId&&typeof _syncPostSignInFlow==="function"){
-      await _syncPostSignInFlow();
-    }else if(localHydrated){
-      // Signed out, nothing picks a project, and S.activeDept is not persisted — so the restored
-      // schedule stayed out of scope (nsScopedRows filters by the active department) and a reload
-      // landed on the empty import card with every row still on disk. Resume the most recent
-      // project the same way the signed-in flow does when there is no picker to show.
-      if((!S.entries||!S.entries.length)&&typeof _syncResumeMostRecentProject==="function")_syncResumeMostRecentProject();
-      else if(typeof _restoreViewportFromState==="function")_restoreViewportFromState();
-    }
+    // Launch is passive: use local cache only and let the user choose a project. Never pull
+    // remote data or reopen a previous project as a side effect of visiting the app.
+    if(typeof _syncShowProjectPicker==="function")_syncShowProjectPicker();
     if(document.getElementById("ca"))try{ren();}catch(err){}
   }).finally(()=>{NS.trackLocalChanges=true;});
   const hydrate=()=>doHydrate();
