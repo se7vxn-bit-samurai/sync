@@ -28,10 +28,16 @@ test.describe('first sign-in', () => {
     await expect(page.locator('#syncOnboardModal')).toHaveCount(0);
   });
 
-  test('signing in pulls the cloud workspace and lands on the project picker', async ({ page }) => {
-    // The new-device case: nothing stored locally, everything in the cloud.
+  test('signing in stays on the landing screen until the user explicitly syncs', async ({ page }) => {
+    // A returning session is not permission to pull a cloud workspace or reopen a prior sheet.
     await openApp(page, { profile: PROFILE, workspaceRow: workspaceRow(buildWorkspace(3)) });
     await page.evaluate(() => window.__fakeSupabase.signIn());
+    await page.waitForTimeout(200);
+    await expect(page.locator(picker.root)).toBeHidden();
+    await expect(page.locator('#mv')).toBeHidden();
+    expect(await page.evaluate(() => ({ active: S.activeDept, entries: S.entries.length }))).toEqual({ active: null, entries: 0 });
+
+    // The new-device case becomes available only after this intentional action.
     await waitForPicker(page);
     expect(await projectNames(page)).toEqual(['Project A', 'Project B', 'Project C']);
     // Starting something new stays available, but as the secondary action.
@@ -39,10 +45,24 @@ test.describe('first sign-in', () => {
     await expect(page.locator(picker.newSourceToggle)).toContainText('Start or import a new project');
   });
 
-  test('an existing session on page load lands on the picker without a second sign-in', async ({ page }) => {
+  test('an existing session can manually load cloud projects without a second sign-in', async ({ page }) => {
     await openApp(page, { signedIn: true, profile: PROFILE, workspaceRow: workspaceRow(buildWorkspace(2)) });
     await waitForPicker(page);
     expect(await projectNames(page)).toHaveLength(2);
     expect(await page.evaluate(() => window.__fakeSupabase.oauthCalls())).toBe(0);
+  });
+
+  test('signing out closes the active sheet and leaves cached projects offline', async ({ page }) => {
+    await openApp(page, { profile: PROFILE, workspaceRow: workspaceRow(buildWorkspace(1)) });
+    await page.evaluate(() => window.__fakeSupabase.signIn());
+    await waitForPicker(page);
+    await page.locator(picker.rows).first().click();
+    await expect(page.locator('#mv')).toBeVisible();
+
+    await page.evaluate(() => _syncSignOut());
+    await expect(page.locator('#mv')).toBeHidden();
+    expect(await page.evaluate(() => ({ active: S.activeDept, entries: S.entries.length }))).toEqual({ active: null, entries: 0 });
+    await expect(page.locator('#syncLcWidget')).toContainText('Continue with Google');
+    await expect(page.locator(picker.rows)).toHaveCount(1);
   });
 });

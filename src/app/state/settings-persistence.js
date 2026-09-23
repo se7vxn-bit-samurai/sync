@@ -339,7 +339,9 @@ async function _syncRenderAccountUI(){
     if(!host)return;
     const existing=document.getElementById('syncAccountBadge');
     if(existing)existing.remove();
-    const profile=await _syncGetProfile();
+    // Rendering chrome is never a reason to contact the auth service. A session identity is
+    // populated locally at sign-in; the fuller account record is fetched only from Account settings.
+    const profile=_syncProfileCache;
     if(!profile)return; // nothing to show in the masthead when signed out — the landing widget covers it
     const first=_syncFirstName(profile);
     const badge=document.createElement('button');
@@ -630,7 +632,9 @@ async function _syncManualPull(){
   if(typeof syncPullWorkspace!=='function')return false;
   const pulled=await syncPullWorkspace();
   if(window._syncLastPullFailed){toast('Could not reach the cloud copy.','err');return false;}
-  if(typeof _syncRenderProjectPicker==='function')_syncRenderProjectPicker();
+  // A manual cloud refresh updates the local project list; it never selects or opens a sheet.
+  if(typeof _syncShowProjectPicker==='function')_syncShowProjectPicker({clearActive:true});
+  else if(typeof _syncRenderProjectPicker==='function')_syncRenderProjectPicker();
   toast(pulled?'Cloud copy loaded':'Cloud copy is already up to date','ok');
   return pulled;
 }
@@ -763,7 +767,12 @@ async function _syncSignOut(){
   const modal=document.getElementById('syncSignOutModal');
   if(modal)modal.remove();
   try{await sb.auth.signOut();}catch(err){}
-  location.reload();
+  _syncProfileCache=null;
+  _syncProfileResolved=true;
+  _syncHandledSessionToken=null;
+  _syncCloseWorkspaceToLanding();
+  _syncRenderAccountUI();
+  _syncRenderLandingWidget();
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -780,7 +789,9 @@ async function _syncRenderLandingWidget(){
   const host=document.getElementById('syncLcWidget');
   if(!host)return;
   try{
-    const profile=await _syncGetProfile();
+    // Startup never asks the network who the visitor is. _syncOnSignedIn supplies the local
+    // session identity; Account settings may explicitly fetch the fuller profile when opened.
+    const profile=_syncProfileCache;
     if(profile){
       const first=_syncFirstName(profile);
       // Status only, not a second copy of save/sign-out — those live once, in Settings' Account
@@ -795,12 +806,8 @@ async function _syncRenderLandingWidget(){
   }catch(err){}
   _syncRenderProjectPicker();
 }
-// Signed-in landing state: with any known projects (from the department tags already on synced
-// canonical data — real across every device, not just locally-opened tabs), the marketing feature
-// list/stats give way to a picker so signing in on a new device means "choose where to continue,"
-// not "load a file all over again." A single project still shows here — as one row to open — so
-// the same "choose what to continue" moment holds every time there's something to continue. Only
-// 0 projects (genuinely nothing to pick from) or the explicit always-auto-resume preference skips it.
+// Landing state: cached projects, whether local or manually synced from cloud, are always opened
+// from this picker. Nothing is resumed simply because the app was launched or an account exists.
 //
 // Rows beyond the first 6 are hidden behind search/"Show all" rather than dropped — the department
 // switcher inside the app was a circular fallback (the user hasn't entered the app yet at this
@@ -853,34 +860,20 @@ function _syncProjectPickerHtml(projects){
   let h='<div class="lc-projects-label">Continue a project</div>';
   if(projects.length>6)h+=`<input type="search" id="lcProjectSearch" class="lc-project-search" placeholder="Search projects…" aria-label="Search projects" oninput="_syncFilterProjectPicker(this.value)">`;
   h+='<div id="lcProjectRows"></div><div id="lcProjectMore" style="display:none"></div>';
-  h+=`<button type="button" class="lc-project-auto-resume" onclick="_syncSetAlwaysAutoResume()">Always jump straight to my most recent project — skip this screen</button>`;
   return h;
-}
-// The picker's replacement for the retired Welcome Back modal's "don't ask again" checkbox — sets
-// the same profiles.continuation_pref='last' preference, then immediately acts on it (jumps into
-// the most recent project now) instead of requiring a separate confirmation step.
-async function _syncSetAlwaysAutoResume(){
-  try{
-    const{data:userData}=await sb.auth.getUser();
-    const userId=userData&&userData.user&&userData.user.id;
-    if(userId){
-      await sb.from('profiles').update({continuation_pref:'last'}).eq('id',userId);
-      _syncInvalidateProfileCache();
-    }
-  }catch(err){console.error('[sync] setting always-auto-resume failed',err);}
-  if(typeof _syncResumeMostRecentProject==='function')_syncResumeMostRecentProject();
 }
 async function _syncRenderProjectPicker(){
   const host=document.getElementById('lcProjectPicker');
   if(!host)return;
   const featuresEl=document.querySelector('.lc-features'),statsEl=document.querySelector('.lc-stats');
   try{
-    const profile=await _syncGetProfile();
-    const projects=(profile&&typeof nsListCanonicalProjects==='function')?nsListCanonicalProjects():[];
-    // Signed out, the sample offer still depends on whether this device has anything of its own.
-    const anyProjects=projects.length?true:((typeof nsListCanonicalProjects==='function'?nsListCanonicalProjects():[]).length>0);
+    const profile=_syncProfileCache;
+    // Cached projects are deliberately available offline too. The picker is the only route that
+    // can activate one, regardless of whether it originally came from a cloud sync or a file.
+    const projects=(typeof nsListCanonicalProjects==='function')?nsListCanonicalProjects():[];
+    const anyProjects=projects.length>0;
     _syncRenderSampleOffer(anyProjects);
-    if(profile&&projects.length>=1){
+    if(projects.length>=1){
       host.innerHTML=_syncProjectPickerHtml(projects);
       _syncRenderProjectRows();
       host.style.display='flex';
@@ -1078,13 +1071,25 @@ function _syncCreateSampleProject(){
 // Back to the project splash from inside the app — the palette's "Switch project…" and the
 // counterpart to _syncOpenProject. Keeps the loaded project in memory (nothing is cleared) so
 // coming straight back is instant; only the viewport changes.
-function _syncShowProjectPicker(){
-  if(S.activeDept)_syncSaveViewState(typeof nsActiveDepartmentKey==='function'?nsActiveDepartmentKey():'',{withCounts:true});
+function _syncShowProjectPicker(options){
+  const clearActive=!!(options&&options.clearActive);
+  if(S.activeDept&&!clearActive)_syncSaveViewState(typeof nsActiveDepartmentKey==='function'?nsActiveDepartmentKey():'',{withCounts:true});
+  if(clearActive){
+    // Do not erase cached canonical projects. This only terminates the in-memory sheet session,
+    // preventing a browser refresh, sign-in, or sign-out from reopening prior work.
+    S.activeDept=null;S.entries=[];S.months=[];S.month=null;S.mIdx=0;S.wb=null;S.fn='';S.shs=[];
+    S.workspace={};S.currentSource=null;S.parseInfo=[];S._universalWorkspace=false;
+    document.body.classList.remove('sync-universal-active');
+  }
   const us=document.getElementById('us'),mv=document.getElementById('mv'),ha=document.getElementById('ha');
   if(us)us.style.display='flex';
   if(mv){mv.classList.add('hid');mv.style.display='none';}
   if(ha)ha.style.display='none';
   _syncRenderProjectPicker();
+  _syncRenderLandingWidget();
+}
+function _syncCloseWorkspaceToLanding(){
+  _syncShowProjectPicker({clearActive:true});
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1133,7 +1138,7 @@ function _syncOpenProject(name){
   if(deptKey)_syncRecordProjectOpened(deptKey);
   if(typeof nsRestoreEntriesFromCanonical==='function')nsRestoreEntriesFromCanonical();
   if(!S.workspace||typeof S.workspace!=='object')S.workspace={};
-  if(!S.workspace[name]&&typeof saveDeptSnap==='function')saveDeptSnap(name);
+  if(!S.workspace[name])S.workspace[name]={};
   // After the data is loaded (so month/sheet validation has something real to check against) and
   // before the first paint, so the project opens directly on the right screen rather than flashing
   // the default one first.
@@ -1301,26 +1306,6 @@ async function _syncRetryDeleteFlush(name){
   _syncRenderProjectPicker();
   if(typeof updateDeptStrip==='function')updateDeptStrip();
 }
-// Shared by every "just resume" path — a signed-in reload, and the continuation_pref==='last'
-// auto-resume preference set from the picker's own link. Always routes through _syncOpenProject()
-// when at least one real project exists (whichever the active department already matches, or
-// falling back to the most recently updated one) so the force-reveal fix there applies uniformly —
-// previously this short-circuited straight to _restoreViewportFromState() when the active
-// department already matched a real project, which reintroduced the exact "people but no schedule
-// silently fails to reveal" bug _syncOpenProject() now avoids. Only falls through to the plain
-// landing-screen check when there is truly no synced project at all.
-function _syncResumeMostRecentProject(){
-  try{
-    const projects=(typeof nsListCanonicalProjects==='function')?nsListCanonicalProjects():[];
-    if(projects.length){
-      const activeKey=(typeof nsActiveDepartmentKey==='function')?nsActiveDepartmentKey():'';
-      const match=projects.find(p=>p.key===activeKey)||projects[0];
-      _syncOpenProject(match.name);
-      return;
-    }
-  }catch(err){console.error('[sync] resuming most recent project failed',err);}
-  if(typeof _restoreViewportFromState==='function')_restoreViewportFromState();
-}
 async function _syncSignInWithGoogle(){
   const errEl=document.getElementById('syncLcError');
   const btn=document.getElementById('syncLcGoogleBtn')||document.getElementById('syncLcSignInBtn');
@@ -1427,105 +1412,21 @@ async function _syncSaveOnboarding(){
   }
 }
 
-// "Welcome back" chooser — shown only when a sign-in actually pulled down cloud data the
-// browser didn't already have (a fresh device, or after clearing local data). Local-only
-// returning visits already resume silently via the existing boot-time _restoreViewportFromState
-// check, so a separate prompt would be redundant there.
-//
-// Retired 2026-09-15: the "Welcome back — continue / show me my options" modal used to be the
-// only mechanism for this decision, back before the project picker existed. Once the picker
-// shipped, both existed at once: a sign-in with 2+ projects would pop this modal ON TOP OF the
-// picker, which was already fully rendered underneath — a binary choice stacked in front of the
-// real, better choice. The picker now owns this job outright (see _syncRenderProjectPicker /
-// _syncPostSignInFlow below); its own "always resume my most recent project automatically" link
-// replaces this modal's "don't ask again" checkbox, writing the same profiles.continuation_pref.
 let _syncHandledSessionToken=null;
-
-// The one place a successful sign-in's follow-up work happens — pull, profile, colourway,
-// onboarding, then resume-or-picker. Two different triggers used to each run this independently
-// (the auth-state-change event, and northstar-core.js's own boot-time idle callback), meaning two
-// separate network pulls and two separate decision trees that could disagree. Now both call this
-// same function; the in-flight/completed promise is cached per session token so the second caller
-// just awaits the first instead of repeating the work.
-let _syncPostSignInPromise=null;
-let _syncPostSignInPromiseToken=null;
-async function _syncPostSignInFlow(){
-  let token=null;
-  try{const{data}=await sb.auth.getSession();token=data&&data.session&&data.session.access_token;}catch(err){}
-  if(!token)return false; // signed out
-  if(_syncPostSignInPromise&&_syncPostSignInPromiseToken===token)return _syncPostSignInPromise;
-  _syncPostSignInPromiseToken=token;
-  _syncHandledSessionToken=token;
-  // syncPullWorkspace lives in the LAST <script> block in this file; _syncAuthGate runs at the end
-  // of THIS one, which is parsed earlier. So on a returning visit — a session that already exists
-  // at first paint — this flow fires before the sync layer exists, the `typeof` guard below quietly
-  // skips the pull, and the run still cached itself as complete under this session token. The
-  // northstar boot callback then called back in, got the cached "done" promise, and the cloud pull
-  // never happened at all: a returning user saw only whatever was already on this device, with
-  // their synced projects invisible until a manual re-sign-in. A run that could not pull is not a
-  // real run, so it releases its claim at the end and lets the next caller redo it properly.
-  const syncLayerReady=typeof syncPullWorkspace==='function';
-  _syncPostSignInPromise=(async()=>{
-    const pulled=await(syncLayerReady?syncPullWorkspace():Promise.resolve(false));
-    ren();
-    let profile=null;
-    try{profile=await _syncGetProfile(true);}catch(err){console.error('[sync] profile fetch after sign-in failed',err);}
-    if(profile&&profile.preferred_colorway&&typeof setThemeColorway==='function'){
-      setThemeColorway(profile.preferred_colorway);
-    }
-    const decideResume=()=>{
-      const projects=(typeof nsListCanonicalProjects==='function')?nsListCanonicalProjects():[];
-      const alwaysAutoResume=profile&&profile.continuation_pref==='last';
-      if(projects.length>=1&&!alwaysAutoResume){
-        // Leave the picker showing — it's already rendered (_syncRenderLandingWidget calls
-        // _syncRenderProjectPicker on every sign-in state change), so there's nothing further to do.
-        // This is the signed-in destination for ANY saved project now, including exactly one.
-        return;
-      }
-      // 0 projects (or the user opted into always-auto-resume): resume regardless of whether THIS
-      // pull found anything new — this is the only place that resumes a signed-in user now
-      // (northstar-core.js's boot-time hydrate defers to this same flow), so it can't skip just
-      // because nothing changed since last time; a plain same-device reload needs this to run every
-      // time, same as it always silently worked for local-only users.
-      if(typeof _syncResumeMostRecentProject==='function')_syncResumeMostRecentProject();
-    };
-    // Profile completion (name/org/role) never blocks this decision — it's optional, available any
-    // time from Settings' Account section (_syncRenderSettingsAccountSection), which already has
-    // the same fields inline. The old "Finish setting up your profile" modal used to pop up here
-    // BEFORE this ran, ahead of even the project picker — for a fresh Google account that meant
-    // profile details always came before "which project," blocking the one choice sign-in exists to
-    // offer. decideResume now always goes first; _syncMaybeShowOnboarding/_syncOnboardModal are kept
-    // around but are no longer invoked automatically from here.
-    //
-    // The picker MUST be re-rendered here, after the pull. The pair of render calls below this IIFE
-    // run synchronously, while the pull is still in flight — on a device with no local data yet
-    // (the entire point of signing in on a new machine) the project list is still empty at that
-    // moment, so the picker renders as "nothing to show" and hides itself. Nothing re-rendered it
-    // once the projects actually arrived, and decideResume() then returned early believing a picker
-    // was on screen, leaving the user on a bare drop-zone with their saved projects invisible.
-    await _syncRenderAccountUI();
-    await _syncRenderLandingWidget();
-    decideResume();
-    if(!syncLayerReady){
-      _syncPostSignInPromise=null;
-      _syncPostSignInPromiseToken=null;
-      _syncHandledSessionToken=null;
-    }
-    return pulled;
-  })();
-  _syncRenderAccountUI();
-  _syncRenderLandingWidget();
-  return _syncPostSignInPromise;
-}
 function _syncOnSignedIn(session){
   // Cheap de-dupe: both the initial getSession() check and onAuthStateChange
   // (SIGNED_IN or INITIAL_SESSION) can fire for the same session — only act once per token.
   const token=session&&session.access_token;
   if(!token||token===_syncHandledSessionToken)return;
   _syncHandledSessionToken=token;
+  const user=session&&session.user||{};
+  _syncProfileCache={email:user.email||'',full_name:(user.user_metadata&&user.user_metadata.full_name)||'',organization:'',role:'',preferred_colorway:'',continuation_pref:''};
+  _syncProfileResolved=true;
   // Account availability may change at sign-in, but workspace data never changes until the user
   // explicitly chooses “Sync from cloud”.
-  _syncShowProjectPicker();
+  _syncShowProjectPicker({clearActive:true});
+  _syncRenderAccountUI();
+  _syncRenderLandingWidget();
 }
 async function _syncAuthGate(){
   // The app is fully usable offline/local-only, so boot unconditionally — auth only adds
@@ -1535,6 +1436,11 @@ async function _syncAuthGate(){
   // order) so a session established while getSession() is still resolving isn't missed.
   sb.auth.onAuthStateChange((event,session)=>{
     if((event==='SIGNED_IN'||event==='INITIAL_SESSION')&&session)_syncOnSignedIn(session);
+    if(event==='SIGNED_OUT'){
+      _syncProfileCache=null;_syncProfileResolved=true;_syncHandledSessionToken=null;
+      _syncCloseWorkspaceToLanding();
+      _syncRenderAccountUI();_syncRenderLandingWidget();
+    }
   });
   try{
     const{data}=await sb.auth.getSession();

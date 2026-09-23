@@ -98,7 +98,10 @@ const picker = {
   newSourceToggle: '#lcNewSourceToggle',
 };
 
-async function waitForPicker(page) {
+// Existing picker-focused tests model the explicit user action that makes cloud projects
+// available. Passing { sync: false } asserts the passive launch state instead.
+async function waitForPicker(page, options = {}) {
+  if (options.sync !== false) await page.evaluate(() => _syncManualPull());
   await page.waitForSelector(`${picker.root} ${picker.rows}`, { state: 'visible', timeout: 20_000 });
 }
 

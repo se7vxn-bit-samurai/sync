@@ -918,11 +918,8 @@ async function nsHydrateDatabase(){
     const storedNewer=stored&&nsIsNewerTimestamp(stored.updated_at,current.updated_at);
     const storedHasScheduleWeLack=stored&&(stored.schedule||[]).length&&!(current.schedule||[]).length;
     if(storedNewer||storedHasScheduleWeLack){S.nsCanonical=nsNormalizeCanonical(stored);nsSanitizeCanonicalIdentities();nsSyncPeopleToRuntime();}
-    // S.entries (unlike S.nsCanonical) is never itself persisted — rebuild it from whatever
-    // canonical schedule data is now in memory whenever it's currently empty, regardless of
-    // whether the block above just ran, so a normal page reload resumes straight into the
-    // dashboard instead of the landing screen. Never overwrites entries already in progress.
-    if((!S.entries||!S.entries.length))nsRestoreEntriesFromCanonical();
+    // Keep cached canonical data available to the project picker, but never turn it into an
+    // active sheet during startup. Opening a project is an explicit user action only.
     NS.persistence="indexeddb";return true;
   }catch(err){NS.persistence="localStorage fallback";return false;}
   // Set even when hydration failed, so a broken IndexedDB cannot block writes forever.
@@ -2529,19 +2526,12 @@ function nsBrandSweep(){
 document.addEventListener("DOMContentLoaded",nsBrandSweep);setTimeout(nsBrandSweep,0);
 let nsLagExpected=performance.now()+1000;setInterval(()=>{const now=performance.now();NS.eventLoopLag=Math.max(0,now-nsLagExpected);nsLagExpected=now+1000;},1000);
 (()=>{
-  // Local IndexedDB hydration always runs regardless of sign-in state — the app is fully usable
-  // signed out and local restore must not depend on auth. What happens AFTER hydration differs:
-  // signed-in users delegate entirely to _syncPostSignInFlow() (the main script's single
-  // pull-then-decide flow, also triggered by the auth-state-change event) rather than this file
-  // doing its own separate pull and resume decision — two independent pulls used to run on every
-  // sign-in, sometimes reaching different conclusions about whether to auto-resume or show the
-  // picker. _syncPostSignInFlow() caches its in-flight/completed promise per session token, so
-  // whichever of the two triggers (this idle callback, or the auth event) runs first does the
-  // work and the second just awaits the same result.
+  // Hydration reads the local cache so offline projects can be listed, but launch remains passive:
+  // it neither fetches cloud data nor restores a prior sheet into the active workspace.
   const doHydrate=()=>nsHydrateDatabase().then(async localHydrated=>{
     // Launch is passive: use local cache only and let the user choose a project. Never pull
     // remote data or reopen a previous project as a side effect of visiting the app.
-    if(typeof _syncShowProjectPicker==="function")_syncShowProjectPicker();
+    if(typeof _syncShowProjectPicker==="function")_syncShowProjectPicker({clearActive:true});
     if(document.getElementById("ca"))try{ren();}catch(err){}
   }).finally(()=>{NS.trackLocalChanges=true;});
   const hydrate=()=>doHydrate();

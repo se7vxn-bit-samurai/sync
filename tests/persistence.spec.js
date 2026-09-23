@@ -2,10 +2,8 @@ const { test, expect } = require('@playwright/test');
 const path = require('path');
 const { openApp } = require('./helpers');
 
-// A schedule imported with no account must survive a reload. It used not to: boot wrote the
-// localStorage-seeded model (which deliberately carries schedule:[]) over the IndexedDB copy
-// ~180ms in, before hydration had read it back, so every reload erased the rows it was about to
-// restore — while people, which live in both copies, survived and made the loss easy to miss.
+// An offline schedule must survive a reload without being reopened. The local cache is a project
+// library; activating its sheet remains a deliberate project-picker action.
 const ROSTER = path.join(__dirname, 'fixtures', 'rosters', 'r_20x31.csv');
 
 function storedCanonical(page) {
@@ -33,25 +31,26 @@ async function importRoster(page) {
 }
 
 test.describe('local persistence', () => {
-  test('an imported schedule survives a reload', async ({ page }) => {
+  test('an imported schedule survives a reload without reopening itself', async ({ page }) => {
     await importRoster(page);
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => !!window.sb);
 
-    await expect.poll(() => page.evaluate(() => (S.entries || []).length), { timeout: 15_000 }).toBe(620);
-    // Resumed into the workspace, not the empty import card.
-    await expect(page.locator('#mv')).toBeVisible();
-    // And stays stored: the boot-time write must not have erased it underneath.
+    await expect.poll(() => page.locator('#lcProjectPicker .lc-project-row').count(), { timeout: 15_000 }).toBe(1);
+    expect(await page.evaluate(() => ({ active: S.activeDept, entries: S.entries.length }))).toEqual({ active: null, entries: 0 });
+    await expect(page.locator('#mv')).toBeHidden();
+    // It remains cached, ready for an explicit offline-project selection.
     await page.waitForTimeout(1000);
     expect(await storedCanonical(page)).toEqual({ schedule: 620, people: 20 });
   });
 
-  test('a second reload still finds the schedule', async ({ page }) => {
+  test('repeated reloads keep the schedule in the offline project library', async ({ page }) => {
     await importRoster(page);
     for (let i = 0; i < 2; i++) {
       await page.reload({ waitUntil: 'domcontentloaded' });
       await page.waitForFunction(() => !!window.sb);
-      await expect.poll(() => page.evaluate(() => (S.entries || []).length), { timeout: 15_000 }).toBe(620);
+      await expect.poll(() => page.locator('#lcProjectPicker .lc-project-row').count(), { timeout: 15_000 }).toBe(1);
+      expect(await page.evaluate(() => S.entries.length)).toBe(0);
     }
   });
 });
