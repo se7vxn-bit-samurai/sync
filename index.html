@@ -6057,10 +6057,30 @@ function _noteStorageFailure(key,err){
       "err",8000);
   }catch(e){}
 }
+// Tells cloud sync that a synced key really changed (see _syncNoteKeyWrite), so a re-save of an
+// unchanged value does not count as unsaved work. Two kinds of difference are not changes either:
+// timestamps alone (several stores stamp updatedAt on every save, the QoL state on each background
+// persist), and where the user is looking — sc_settings carries the current tab and sub-views next
+// to real settings, and moving around the app must not ask them to save.
+const _PERSIST_VIEW_ONLY_FIELDS={sc_settings:["tab","peopleSubTab","peopleDashView","peopleView","peopleLogFilter","sumMode","anView","focusMode"]};
+function _persistComparable(k,v){
+  if(v===null)return null;
+  let text=String(v);
+  const viewOnly=_PERSIST_VIEW_ONLY_FIELDS[k];
+  if(viewOnly){try{const obj=JSON.parse(text);viewOnly.forEach(field=>{delete obj[field];});text=JSON.stringify(obj);}catch(e){}}
+  return text.replace(/"(?:updatedAt|updated_at)":"[^"]*"/g,"");
+}
+function _persistNoteChange(k,next){
+  if(typeof window._syncNoteKeyWrite!=="function")return;
+  let prev=null;
+  try{prev=_persistPendingSet.has(k)?_persistPendingSet.get(k):(_persistPendingRemove.has(k)?null:localStorage.getItem(k));}catch(e){}
+  if(_persistComparable(k,prev)!==_persistComparable(k,next))window._syncNoteKeyWrite(k);
+}
 function _persistSet(key,val,opts){
   const k=String(key);
   const v=String(val);
   const critical=opts&&opts.critical;
+  _persistNoteChange(k,v);
   if(critical||_persistCriticalDepth>0){
     try{localStorage.setItem(k,v);}catch(e){_noteStorageFailure(k,e);}
     return;
@@ -6072,6 +6092,7 @@ function _persistSet(key,val,opts){
 function _persistRemove(key,opts){
   const k=String(key);
   const critical=opts&&opts.critical;
+  _persistNoteChange(k,null);
   if(critical||_persistCriticalDepth>0){
     try{localStorage.removeItem(k);}catch(e){_noteStorageFailure(k,e);}
     return;
@@ -28303,6 +28324,26 @@ function nsBootApp(){
   _syncRenderAccountUI();
 }
 
+// The loaders nsBootApp runs, re-run after a cloud copy has replaced the keys they read, so memory
+// matches storage again. Without this, S kept this device's old settings, notes and plans, and the
+// next background persist wrote them back over the copy that had just been loaded.
+function _syncReloadLocalStores(){
+  const tab=S.tab;
+  loadSettings();
+  S.tab=tab;
+  loadAtt();
+  loadHc();
+  loadNotes();
+  loadPeople();
+  loadShiftLib();
+  loadCoachQuality();
+  loadCoverageReq();
+  loadForecast();
+  loadLeaderPlanner();
+  loadQoLState();
+  _persistSig=getPersistSignature();
+}
+
 let _syncProfileCache=null;
 // null means two different things — "never fetched" and "fetched, and there is no profile because
 // nobody is signed in" — and the Settings account section keys its background refetch off exactly
@@ -28563,7 +28604,7 @@ function _syncSetSaveDot(state){
     dot.className='sync-save-dot '+state;
     if(state==='saved'||state==='error')setTimeout(()=>{if(dot.className==='sync-save-dot '+state)dot.className='sync-save-dot';},2500);
   });
-  if(state==='saved'){_syncWorkspaceDirty=false;_syncLastSyncedAt=new Date().toISOString();try{localStorage.setItem('sync_last_synced_at',_syncLastSyncedAt);}catch(err){}}
+  if(state==='saved'){_syncLastSyncedAt=new Date().toISOString();try{localStorage.setItem('sync_last_synced_at',_syncLastSyncedAt);}catch(err){}}
   _syncSetStatus(state);
 }
 
@@ -28577,7 +28618,10 @@ function _syncSetSaveDot(state){
    and says "needs attention" when a push genuinely failed.
    ═══════════════════════════════════════════════════════════════ */
 let _syncStatusState='idle';
-let _syncWorkspaceDirty=false;
+// Whether this device has changes the cloud copy lacks. Owned by the sync engine and kept in
+// localStorage, so it survives a reload and is what decides between loading a newer cloud copy and
+// asking the user to compare.
+function _syncHasUnsavedChanges(){return typeof window._syncIsDirty==='function'&&window._syncIsDirty();}
 function _syncRelativeTime(iso){
   if(!iso)return'';
   const then=Date.parse(iso);
@@ -28603,8 +28647,9 @@ function _syncStatusInfo(){
   if(!online)return{kind:'offline',label:'Offline — saved on this device'};
   if(_syncStatusState==='error')return{kind:'attention',label:'Needs attention — not backed up to the cloud'};
   if(_syncStatusState==='pulled')return{kind:'saved',label:'Cloud copy loaded'};
+  if(_syncStatusState==='cloud-newer')return{kind:'attention',label:'Newer copy in the cloud — use Sync from cloud to load it'};
   if(!signedIn)return{kind:'local',label:'Saved on this device'};
-  if(_syncWorkspaceDirty)return{kind:'local',label:'Changes saved on this device — save to cloud when ready'};
+  if(_syncHasUnsavedChanges())return{kind:'local',label:'Changes saved on this device — save to cloud when ready'};
   const rel=_syncRelativeTime(_syncLastSyncedAt);
   if(!rel)return{kind:'local',label:'Saved on this device — not synced yet'};
   return{kind:'saved',label:'Saved to cloud '+rel};
@@ -28627,11 +28672,10 @@ function _syncSetStatus(state){
   _syncRenderStatusEverywhere();
 }
 function _syncMarkLocalChange(){
-  _syncWorkspaceDirty=true;
+  if(typeof window._syncMarkDirty==='function')window._syncMarkDirty();
   if(_syncStatusState!=='saving')_syncSetStatus('local-changes');
 }
 function _syncSetPulledFromCloud(){
-  _syncWorkspaceDirty=false;
   _syncSetStatus('pulled');
 }
 window._syncMarkLocalChange=_syncMarkLocalChange;
@@ -28644,21 +28688,44 @@ window.addEventListener('online',()=>{
 window.addEventListener('offline',_syncRenderStatusEverywhere);
 async function _syncManualSave(){
   if(typeof window._syncPushWorkspaceNow!=='function')return false;
-  if(typeof window.nsSetLocalPersistenceEnabled==='function')window.nsSetLocalPersistenceEnabled(true);
-  if(typeof window.nsPersist==='function')window.nsPersist();
-  const saved=await window._syncPushWorkspaceNow();
-  if(saved)_syncWorkspaceDirty=false;
-  return saved;
+  // A file opened for a one-off session becomes a kept project once it is saved to the cloud.
+  // Everything else is already persisted locally, and re-persisting it here would record a change
+  // this device never made.
+  if(window.NorthStar&&window.NorthStar.sessionOnly){
+    if(typeof window.nsSetLocalPersistenceEnabled==='function')window.nsSetLocalPersistenceEnabled(true);
+    if(typeof window.nsPersist==='function')window.nsPersist();
+  }
+  return window._syncPushWorkspaceNow();
 }
 async function _syncManualPull(){
   if(typeof window.syncPullWorkspace!=='function')return false;
-  const pulled=await window.syncPullWorkspace();
-  if(window._syncLastPullFailed){toast('Could not reach the cloud copy.','err');return false;}
+  const result=await window.syncPullWorkspace();
+  if(result==='error'){toast('Could not reach the cloud copy.','err');return false;}
+  // Both sides changed: the comparison is already open and nothing was replaced.
+  if(result==='conflict')return false;
   // A manual cloud refresh updates the local project list; it never selects or opens a sheet.
   if(typeof _syncShowProjectPicker==='function')_syncShowProjectPicker({clearActive:true});
   else if(typeof _syncRenderProjectPicker==='function')_syncRenderProjectPicker();
-  toast(pulled?'Cloud copy loaded':'Cloud copy is already up to date','ok');
-  return pulled;
+  toast(result==='applied'?'Cloud copy loaded':result==='empty'?'Nothing saved to the cloud yet':'Cloud copy is already up to date','ok');
+  return result==='applied';
+}
+// Runs once per sign-in (including a session restored at launch). A newer cloud copy is loaded
+// only when this device has nothing unsaved; otherwise the comparison opens. Either way no
+// project is opened — the picker just lists what is now available.
+async function _syncAutoPull(){
+  // A session restored at launch is reported before the sync engine's script has run; that script
+  // announces itself with ns:boot-settled once local data has loaded.
+  if(typeof window.syncPullWorkspace!=='function')await new Promise(resolve=>window.addEventListener('ns:boot-settled',resolve,{once:true}));
+  if(typeof window.syncPullWorkspace!=='function')return;
+  const result=await window.syncPullWorkspace({auto:true});
+  if(result==='applied'){
+    if(S.activeDept||(S.entries&&S.entries.length))_syncRenderProjectPicker();
+    else _syncShowProjectPicker({clearActive:true});
+    toast('Loaded your latest cloud save','ok');
+  }else if(result==='held'){
+    _syncSetStatus('cloud-newer');
+    toast('A newer copy is in the cloud — open Settings and choose Sync from cloud to load it.','warn',6000);
+  }
 }
 
 // Escalation for repeated save failures / a detected cross-device conflict — the save dot alone
@@ -28702,14 +28769,33 @@ function _syncShowConflictComparison(){
   const row=(heading,detail,accent)=>`<div style="border:1px solid ${accent};border-radius:8px;padding:10px 12px;margin-bottom:8px"><div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px">${heading}</div><div style="font-size:11px;color:var(--tm);line-height:1.5">${detail}</div></div>`;
   const body=`<div id="syncConflictBody">
     <p style="margin:0 0 12px;color:var(--tx2,#888);font-size:13px;line-height:1.5">Two devices changed <b>${X(project)}</b>. Nothing has been overwritten — choose which copy to keep.</p>
-    ${row('This device',`Has changes made since its last cloud save${localRel?` (${X(localRel)})`:''}. Still safe on this device.`,'var(--bdr,#3a3a3a)')}
+    ${row('This device',`Has changes that are not in the cloud copy${localRel?` (last saved to the cloud from here ${X(localRel)})`:''}. Still safe on this device.`,'var(--bdr,#3a3a3a)')}
     ${row('Another device',`Saved to the cloud${remoteRel?` ${X(remoteRel)}`:' more recently'}. This is the copy the cloud currently holds.`,'rgba(245,166,35,.45)')}
-    <button class="btn bp" style="width:100%;margin-bottom:8px" onclick="location.reload()">Reload and use the other device's copy</button>
+    <button class="btn bp" style="width:100%;margin-bottom:8px" onclick="_syncTakeCloudCopy()">Use the cloud copy</button>
     <button class="btn" style="width:100%;margin-bottom:8px" onclick="_syncExportBackup()">Download this device's version first</button>
     <button class="btn" style="width:100%;margin-bottom:8px;color:#e5484d;border:1px solid rgba(229,72,77,.3)" onclick="_syncForceOverwriteCloud()">Overwrite the cloud with this device's version</button>
     <button class="btn" style="width:100%;background:transparent" onclick="document.getElementById('syncConflictModal')?.remove()">Decide later</button>
   </div>`;
   _qolModal('syncConflictModal','Two versions of this workspace','',body,'');
+}
+// Replaces this device's copy with the cloud's. Offered next to "Download this device's version
+// first", so the local copy can be kept as a file before it goes.
+async function _syncTakeCloudCopy(){
+  const bodyEl=document.getElementById('syncConflictBody');
+  if(bodyEl)bodyEl.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px;color:var(--tm)"><span class="sync-save-dot saving" style="position:relative;top:0;right:0;flex-shrink:0"></span>Loading the cloud copy…</div>`;
+  let result='error';
+  try{result=typeof window.syncPullWorkspace==='function'?await window.syncPullWorkspace({takeCloud:true}):'error';}catch(err){result='error';}
+  if(result==='applied'||result==='empty'){
+    document.getElementById('syncConflictModal')?.remove();
+    document.getElementById('syncIssueBanner')?.remove();
+    if(result==='applied')_syncShowProjectPicker({clearActive:true});
+    toast(result==='applied'?'Cloud copy loaded':'The cloud copy is gone — this device\'s copy is unchanged','ok');
+    return;
+  }
+  if(bodyEl)bodyEl.innerHTML=`
+    <p style="margin:0 0 12px;color:#e5484d;font-size:13px;line-height:1.5">Could not load the cloud copy. Nothing on this device was changed.</p>
+    <button class="btn bp" style="width:100%;margin-bottom:8px" onclick="_syncTakeCloudCopy()">Try again</button>
+    <button class="btn" style="width:100%;background:transparent" onclick="document.getElementById('syncConflictModal')?.remove()">Close</button>`;
 }
 async function _syncForceOverwriteCloud(){
   const bodyEl=document.getElementById('syncConflictBody');
@@ -28788,7 +28874,8 @@ async function _syncSaveThenSignOut(){
 async function _syncSignOut(){
   const modal=document.getElementById('syncSignOutModal');
   if(modal)modal.remove();
-  try{await sb.auth.signOut();}catch(err){}
+  // Local scope: the default ('global') revokes the session on every other device as well.
+  try{await sb.auth.signOut({scope:'local'});}catch(err){}
   _syncProfileCache=null;
   _syncProfileResolved=true;
   _syncHandledSessionToken=null;
@@ -29486,6 +29573,7 @@ function _syncOnSignedIn(session){
   if(!hasLiveWorkspace)_syncShowProjectPicker({clearActive:true});
   _syncRenderAccountUI();
   _syncRenderLandingWidget();
+  _syncAutoPull();
 }
 async function _syncAuthGate(){
   // The app is fully usable offline/local-only, so boot unconditionally — auth only adds
@@ -33367,7 +33455,7 @@ function nsPersist(){
     if(!NS.persistWarningShown){NS.persistWarningShown=true;toast("NorthStar is active, but the browser storage limit prevented full schedule persistence.","warn",5200);}
   }
   // Local persistence is immediate; cloud writes are an explicit user decision.
-  if(NS.trackLocalChanges&&typeof window._syncMarkLocalChange==="function")window._syncMarkLocalChange();
+  if(NS.trackLocalChanges&&!NS.applyingRemote&&typeof window._syncMarkLocalChange==="function")window._syncMarkLocalChange();
 }
 // A file can be opened for a one-off session without becoming a browser project. This remains
 // entirely local: enabling persistence never sends anything to the cloud.
@@ -33449,29 +33537,16 @@ async function _syncGetUserId(){
 // a real, separate concept.
 const SYNC_PERSONAL_WORKSPACE_KEY="__personal__";
 
-// Numeric comparison, not string: every "is this newer" decision in the sync/hydrate paths below
-// compares a JS toISOString() timestamp ("...376Z") against one round-tripped through PostgREST
-// ("...376+00:00") — different-but-equal-value representations that do NOT reliably compare as
-// plain strings. Confirmed as a real, repeated data-loss cause: a device's local canonical model
-// could have a chronologically OLDER updated_at that nonetheless string-compared as "newer" than a
-// genuinely newer remote row, causing syncPullWorkspace() to skip applying the clean remote data —
-// leaving stale local data in place, which a subsequent auto-save would then push back up,
-// silently reverting a remote fix/cleanup. Fixed here once; used everywhere a timestamp comparison
-// decides whether to overwrite local or remote state.
+// Numeric comparison, not string: timestamps arrive as JS toISOString() ("...376Z") and as
+// round-tripped Postgres values ("...376+00:00") — equal values that do NOT compare reliably as
+// plain strings. Used by local hydration only; cloud sync compares server versions instead (see
+// CROSS-DEVICE SYNC STATE below), because two devices' clocks never agree.
 function nsIsNewerTimestamp(a,b){
   const ta=Date.parse(a||""),tb=Date.parse(b||"");
   if(isNaN(ta))return false;
   if(isNaN(tb))return true;
   return ta>tb;
 }
-
-// The last remote updated_at we know about — set after every successful pull AND every successful
-// push (to the timestamp we just wrote). Used by _syncPushWorkspaceNow as an optimistic-concurrency
-// check: if another device has written a newer row than the last one we observed, this device's
-// full-canonical-blob upsert would silently clobber it (last-write-wins across the WHOLE dataset,
-// not just whatever this device was editing) — now, instead, that push is refused and surfaced as a
-// conflict so nothing is lost. Null until the first pull/push this session.
-let _syncLastKnownRemoteUpdatedAt=null;
 
 // Consecutive push failures — a single failed save fades from view (the dot) in 2.5s, easy to miss
 // entirely. On the 2nd consecutive failure this escalates to a persistent, dismiss-requiring banner
@@ -33493,142 +33568,222 @@ function _syncReportPushOutcome(state){
 }
 
 /* ───────────────────────────────────────────────────────────────
-   FIRST-PULL GATE
+   CROSS-DEVICE SYNC STATE
 
-   Boot pushes an auto-save on a timer (nsPersist → syncPushWorkspace,
-   ~90ms debounce + idle callback) while the sign-in flow is still
-   fetching the cloud copy. On a device with nothing stored locally —
-   a new machine, a cleared browser, a fresh profile — that push
-   carries an EMPTY canonical model, and the upsert is last-write-wins
-   across the whole workspace: it can land first and replace the
-   user's real cloud data with nothing, after which the pull finds
-   only the empty row it just created and there is nothing left to
-   restore. The optimistic-concurrency check cannot catch this,
-   because _syncLastKnownRemoteUpdatedAt is still null at that point.
+   Every save bumps a server-owned `version` on the workspace row (a
+   trigger in the database; clients never write it). Each device
+   remembers, in localStorage, the version it last saved or loaded and
+   whether it has changed anything since:
 
-   So: no push reaches the cloud until this session has completed its
-   first pull. A push that arrives early is remembered and released
-   once the gate opens, so nothing is dropped — only reordered.
+     unsaved here?  cloud moved on?   pull does       save does
+     no             no                nothing         write
+     no             yes               load the cloud  refused → compare
+     yes            no                nothing         write
+     yes            yes               compare         refused → compare
+
+   This replaces comparing updated_at between devices, which failed in
+   both directions: a fresh device stamps its empty model with "now" at
+   boot, so every older cloud save looked stale and was never loaded;
+   and two device clocks never agree exactly. A save is an UPDATE ...
+   WHERE version = <what this device last saw>, so the check and the
+   write are one statement and cannot interleave with another device.
+
+   A device that has never synced for this account has no version. It
+   may load the cloud copy only if it holds no projects of its own, and
+   may only create the row, never replace one — so an empty or unrelated
+   local model can never overwrite real cloud data without the user
+   choosing that in the comparison.
    ─────────────────────────────────────────────────────────────── */
-let _syncInitialPullDone=false;
-let _syncPushDeferredByGate=false;
-function _syncOpenPushGate(){
-  if(_syncInitialPullDone)return;
-  _syncInitialPullDone=true;
-  // An explicit Save pressed while the initial pull was still running is honoured only
-  // after that pull finishes. Nothing else is released automatically.
-  if(_syncPushDeferredByGate){_syncPushDeferredByGate=false;_syncPushWorkspaceNow();}
+const SYNC_STATE_KEY="sc_cloud_sync";
+function _syncReadState(){
+  try{const value=JSON.parse(localStorage.getItem(SYNC_STATE_KEY)||"null");return value&&typeof value==="object"?value:{};}
+  catch(err){return{};}
 }
+function _syncWriteState(patch){
+  const next=Object.assign(_syncReadState(),patch);
+  try{localStorage.setItem(SYNC_STATE_KEY,JSON.stringify(next));}catch(err){}
+  return next;
+}
+// The cloud version this device last matched for this account: null when it never has, 0 when the
+// cloud held no row at the time.
+function _syncBaseVersion(userId){
+  const state=_syncReadState();
+  return state.uid===userId&&Number.isFinite(state.version)?state.version:null;
+}
+function _syncIsDirty(){return _syncReadState().dirty===true;}
+
+// Bumped on every local change, so a save that was in flight while the user kept editing does not
+// mark those later edits as saved.
+let _syncChangeSeq=0;
+function _syncMarkDirty(){
+  _syncChangeSeq++;
+  if(!_syncIsDirty())_syncWriteState({dirty:true});
+}
+function _syncRecordSynced(userId,version,updatedAt,seqAtStart){
+  const stillClean=seqAtStart===undefined||seqAtStart===_syncChangeSeq;
+  _syncWriteState({uid:userId,version,updated_at:updatedAt||null,dirty:stillClean?false:_syncIsDirty()});
+}
+
+// NS.applyingRemote: writing the pulled copy into local storage must not count as a local edit.
+// Per-device view context syncs with the payload but is not work worth a conflict prompt.
+const SYNC_DIRTY_KEYS=new Set(SYNC_LOCAL_KEYS.filter(key=>key!=="sc_view_state"));
+// Called by _persistSet/_persistRemove for every key they write.
+function _syncNoteKeyWrite(key){
+  if(!NS.trackLocalChanges||NS.applyingRemote||!SYNC_DIRTY_KEYS.has(key))return;
+  if(typeof window._syncMarkLocalChange==="function")window._syncMarkLocalChange();
+  else _syncMarkDirty();
+}
+
+// Resolves true once local hydration has finished: until then the in-memory model came from the
+// lean localStorage copy, which deliberately holds no schedule rows. Saving that would upload a
+// workspace with every shift missing; loading a cloud copy before it would let hydration replace
+// the loaded copy a moment later.
+function nsWhenBootSettled(timeoutMs){
+  if(NS.bootSettled)return Promise.resolve(true);
+  return new Promise(resolve=>{
+    const timer=setTimeout(()=>resolve(false),timeoutMs||15000);
+    window.addEventListener("ns:boot-settled",()=>{clearTimeout(timer);resolve(true);},{once:true});
+  });
+}
+
+function _syncHasLocalProjects(){
+  try{return nsListCanonicalProjects().length>0;}catch(err){return false;}
+}
+function _syncWorkspaceIsOpen(){
+  return!!(S.activeDept||(S.entries&&S.entries.length)||S.wb);
+}
+
+async function _syncReportConflict(userId){
+  // Best effort: the comparison can say when the other device saved, instead of only that it did.
+  try{
+    const{data}=await sb.from("workspaces").select("updated_at").eq("owner_user_id",userId).eq("department_key",SYNC_PERSONAL_WORKSPACE_KEY).maybeSingle();
+    if(data&&typeof _syncConflictRemoteAt!=="undefined")_syncConflictRemoteAt=data.updated_at;
+  }catch(err){}
+  if(typeof _syncSetSaveDot==="function")_syncSetSaveDot("conflict");
+  _syncReportPushOutcome("conflict");
+}
+
 async function _syncPushWorkspaceNow(opts){
   opts=opts||{};
   try{
     const userId=await _syncGetUserId();
     if(!userId)return false; // signed out — defensive no-op, should not happen behind the auth gate
-    if(!_syncInitialPullDone){
-      _syncPushDeferredByGate=true;
-      return false;
-    }
     if(typeof _syncSetSaveDot==="function")_syncSetSaveDot("saving");
-    // Optimistic-concurrency guard: check whether another device has written since we last knew
-    // about this row, BEFORE blindly overwriting it with our own full snapshot. Cheap (one indexed
-    // column) relative to the upsert itself, and this is the one thing standing between "two
-    // devices, two different projects open" and one of them silently losing work.
-    // opts.force skips it — reached only from the conflict comparison's explicit "overwrite the
-    // cloud with this device's version" choice, never from an automatic save.
-    if(_syncLastKnownRemoteUpdatedAt&&!opts.force){
-      const{data:existing}=await sb.from("workspaces").select("updated_at").eq("owner_user_id",userId).eq("department_key",SYNC_PERSONAL_WORKSPACE_KEY).maybeSingle();
-      // Numeric comparison, not string: one side is a JS toISOString() ("...376Z"), the other a
-      // Postgres timestamptz round-tripped through PostgREST ("...376+00:00") — different but
-      // equal-value representations that don't compare correctly as plain strings.
-      if(existing&&existing.updated_at&&Date.parse(existing.updated_at)>Date.parse(_syncLastKnownRemoteUpdatedAt)){
-        // Hand the real remote timestamp to the conflict comparison so it can say when the other
-        // device actually saved, instead of vaguely asserting that one did.
-        if(typeof _syncConflictRemoteAt!=="undefined")_syncConflictRemoteAt=existing.updated_at;
-        if(typeof _syncSetSaveDot==="function")_syncSetSaveDot("conflict");
-        _syncReportPushOutcome("conflict");
-        return false;
+    if(!await nsWhenBootSettled())throw new Error("this device's workspace has not finished loading");
+    const seq=_syncChangeSeq;
+    const data=Object.assign({},nsCanonical(),_syncCollectLocalKeys());
+    const mine={owner_user_id:userId,department_key:SYNC_PERSONAL_WORKSPACE_KEY};
+    const base=_syncBaseVersion(userId);
+    let result;
+    if(opts.force){
+      // Only from the comparison's explicit "overwrite the cloud with this device's version".
+      result=await sb.from("workspaces").upsert(Object.assign({team_id:null,data},mine),{onConflict:"owner_user_id,department_key"}).select("version,updated_at").single();
+    }else if(base){
+      result=await sb.from("workspaces").update({data}).eq("owner_user_id",userId).eq("department_key",SYNC_PERSONAL_WORKSPACE_KEY).eq("version",base).select("version,updated_at").maybeSingle();
+      if(!result.error&&!result.data){
+        // No row matched: another device saved since this one last synced, or the row is gone.
+        const{data:remote,error}=await sb.from("workspaces").select("version").eq("owner_user_id",userId).eq("department_key",SYNC_PERSONAL_WORKSPACE_KEY).maybeSingle();
+        if(error)throw error;
+        if(remote){await _syncReportConflict(userId);return false;}
+        result=await sb.from("workspaces").insert(Object.assign({team_id:null,data},mine)).select("version,updated_at").single();
       }
+    }else{
+      // Never synced from here (or the cloud was empty when this device last looked): create the row.
+      // If one exists after all, the unique key refuses the insert and the user gets the comparison.
+      result=await sb.from("workspaces").insert(Object.assign({team_id:null,data},mine)).select("version,updated_at").single();
     }
-    const model=nsCanonical();
-    const payload=Object.assign({},model,_syncCollectLocalKeys());
-    const nowIso=new Date().toISOString();
-    const {error}=await sb.from("workspaces").upsert({
-      owner_user_id:userId,
-      team_id:null,
-      department_key:SYNC_PERSONAL_WORKSPACE_KEY,
-      data:payload,
-      updated_at:nowIso
-    },{onConflict:"owner_user_id,department_key"});
-    if(error)console.error("[sync] workspace push failed",error);
-    else _syncLastKnownRemoteUpdatedAt=nowIso;
-    if(typeof _syncSetSaveDot==="function")_syncSetSaveDot(error?"error":"saved");
-    _syncReportPushOutcome(error?"error":"saved");
-    return!error;
+    if(result.error){
+      if(result.error.code==="23505"){await _syncReportConflict(userId);return false;}
+      throw result.error;
+    }
+    _syncRecordSynced(userId,Number(result.data.version),result.data.updated_at,seq);
+    if(typeof _syncSetSaveDot==="function")_syncSetSaveDot("saved");
+    _syncReportPushOutcome("saved");
+    return true;
   }catch(err){
-    console.error("[sync] workspace push threw",err);
+    console.error("[sync] workspace push failed",err);
     if(typeof _syncSetSaveDot==="function")_syncSetSaveDot("error");
     _syncReportPushOutcome("error");
     return false;
   }
 }
 
-// Pulls the newest workspace row (personal, or from any team the user belongs to — team support
-// is minimal for now, see TODO(teams) below) and, if newer than the local canonical model, writes
-// it back into localStorage/S following the exact pattern nsHydrateDatabase() already uses.
-async function syncPullWorkspace(){
+function _syncApplyRemote(remote){
+  NS.applyingRemote=true;
   try{
-    window._syncLastPullFailed=false;
+    S.nsCanonical=nsNormalizeCanonical(remote);
+    _syncWriteLocalKeys(remote);
+    // Same order as launch: the stores load from storage first, then the canonical people are
+    // mapped onto them.
+    if(typeof _syncReloadLocalStores==="function")_syncReloadLocalStores();
+    if(typeof nsSanitizeCanonicalIdentities==="function")nsSanitizeCanonicalIdentities();
+    if(typeof nsSyncPeopleToRuntime==="function")nsSyncPeopleToRuntime();
+    // Written through to localStorage/IndexedDB, so a reload finds the loaded copy rather than
+    // whatever this device held before it.
+    nsSetLocalPersistenceEnabled(true);
+    nsPersist();
+  }finally{NS.applyingRemote=false;}
+  // See nsHydrateDatabase's matching call: S.entries drives the calendar/dashboard directly and is
+  // never itself pulled/persisted, so it needs rebuilding whenever the canonical model is replaced.
+  nsRestoreEntriesFromCanonical();
+}
+
+// Reads the personal workspace row and applies it per the table above. Resolves to one of:
+//   "applied"     the cloud copy replaced this device's copy
+//   "current"     this device already matches the cloud
+//   "empty"       there is no cloud copy yet
+//   "conflict"    both sides changed; the comparison is showing
+//   "held"        (auto only) a newer cloud copy exists but a workspace is open here, so it waits
+//                 for the user to choose Sync from cloud
+//   "signed-out" / "error"
+// opts.auto: the automatic check after sign-in. opts.takeCloud: the user chose the cloud copy.
+async function _syncPullOnce(opts){
+  window._syncLastPullFailed=false;
+  try{
     const userId=await _syncGetUserId();
-    if(!userId)return false;
-    // The user's own workspace always lives under the fixed SYNC_PERSONAL_WORKSPACE_KEY (see
-    // _syncPushWorkspaceNow) — never nsActiveDepartmentKey(), so a new device landing on "default"
-    // still finds the latest save regardless of which department tab was active when it was made.
-    let row=null;
-    const personal=await sb.from("workspaces").select("*").eq("owner_user_id",userId).eq("department_key",SYNC_PERSONAL_WORKSPACE_KEY).maybeSingle();
-    if(personal&&personal.data)row=personal.data;
-    // Record what this device now knows about the personal row's remote state regardless of which
-    // branch runs below (including "no row yet") — this is what _syncPushWorkspaceNow's conflict
-    // check compares against, so it must stay current on every pull, not just the ones that apply.
-    _syncLastKnownRemoteUpdatedAt=(row&&row.updated_at)||null;
-    try{
-      const deptKey=(typeof nsActiveDepartmentKey==="function"&&nsActiveDepartmentKey())||"default";
-      const memberships=await sb.from("team_members").select("team_id").eq("user_id",userId);
-      const teamIds=((memberships&&memberships.data)||[]).map(m=>m.team_id).filter(Boolean);
-      if(teamIds.length){
-        const teamRows=await sb.from("workspaces").select("*").in("team_id",teamIds).eq("department_key",deptKey);
-        // TODO(teams): once the team switcher exists (extends S.activeDept / the department-switcher
-        // logic), this should pick the row for the team the user has active, not just "newest wins"
-        // across every team the user happens to belong to.
-        ((teamRows&&teamRows.data)||[]).forEach(r=>{
-          if(!row||nsIsNewerTimestamp(r.updated_at,row.updated_at))row=r;
-        });
-      }
-    }catch(err){}
-    const localModel=nsCanonical();
-    if(row&&row.data&&nsIsNewerTimestamp(row.updated_at,localModel.updated_at)){
-      const remote=row.data;
-      S.nsCanonical=nsNormalizeCanonical(remote);
-      if(typeof nsSanitizeCanonicalIdentities==="function")nsSanitizeCanonicalIdentities();
-      if(typeof nsSyncPeopleToRuntime==="function")nsSyncPeopleToRuntime();
-      _syncWriteLocalKeys(remote);
-      // See nsHydrateDatabase's matching call: S.entries drives the calendar/dashboard directly
-      // and is never itself pulled/persisted, so it needs rebuilding from the canonical schedule
-      // every time a remote pull actually replaces the local model.
-      nsRestoreEntriesFromCanonical();
-      if(typeof window._syncSetPulledFromCloud==="function")window._syncSetPulledFromCloud();
-      _syncOpenPushGate();
-      return true;
+    if(!userId)return"signed-out";
+    if(!await nsWhenBootSettled())throw new Error("this device's workspace has not finished loading");
+    // TODO(teams): team-shared rows (team_id + department_key) are not read here yet. They need
+    // their own version per row once the team switcher exists.
+    const{data:row,error}=await sb.from("workspaces").select("data,version,updated_at").eq("owner_user_id",userId).eq("department_key",SYNC_PERSONAL_WORKSPACE_KEY).maybeSingle();
+    if(error)throw error;
+    const base=_syncBaseVersion(userId);
+    if(!row||!row.data){
+      _syncWriteState({uid:userId,version:0,updated_at:null});
+      return"empty";
     }
-    _syncOpenPushGate();
-    return false;
+    const version=Number(row.version)||1;
+    if(!opts.takeCloud){
+      if(version===base)return"current";
+      const unsaved=_syncIsDirty()||(base===null&&_syncHasLocalProjects());
+      if(unsaved){
+        if(typeof _syncConflictRemoteAt!=="undefined")_syncConflictRemoteAt=row.updated_at;
+        if(typeof _syncSetSaveDot==="function")_syncSetSaveDot("conflict");
+        _syncReportPushOutcome("conflict");
+        return"conflict";
+      }
+      if(opts.auto&&_syncWorkspaceIsOpen())return"held";
+    }
+    _syncApplyRemote(row.data);
+    _syncRecordSynced(userId,version,row.updated_at);
+    if(typeof window._syncSetPulledFromCloud==="function")window._syncSetPulledFromCloud();
+    return"applied";
   }catch(err){
     console.error("[sync] workspace pull failed",err);
     window._syncLastPullFailed=true;
-    // Open the gate even on failure, or a pull that errors once would block every save for the rest
-    // of the session — local-first has to degrade to "push anyway", not to "never push again".
-    _syncOpenPushGate();
-    return false;
+    return"error";
   }
+}
+// One pull at a time: the automatic check after sign-in and a Sync from cloud click can overlap.
+let _syncPullInFlight=null;
+function syncPullWorkspace(opts){
+  opts=opts||{};
+  if(_syncPullInFlight){
+    // A plain request shares the running pull; choosing the cloud copy must still run after it.
+    return opts.takeCloud?_syncPullInFlight.then(()=>syncPullWorkspace(opts)):_syncPullInFlight;
+  }
+  _syncPullInFlight=_syncPullOnce(opts).finally(()=>{_syncPullInFlight=null;});
+  return _syncPullInFlight;
 }
 
 // This entire file is wrapped in one top-level IIFE (see the opening `(function(){` at the very
@@ -33642,6 +33797,9 @@ async function syncPullWorkspace(){
 // script actually calls fixes that at the source, once, here, rather than patching each call site.
 window.syncPullWorkspace=syncPullWorkspace;
 window._syncPushWorkspaceNow=_syncPushWorkspaceNow;
+window._syncMarkDirty=_syncMarkDirty;
+window._syncIsDirty=_syncIsDirty;
+window._syncNoteKeyWrite=_syncNoteKeyWrite;
 window._syncGetUserId=_syncGetUserId;
 window.nsRestoreEntriesFromCanonical=nsRestoreEntriesFromCanonical;
 window.nsListCanonicalProjects=nsListCanonicalProjects;
@@ -35808,7 +35966,11 @@ let nsLagExpected=performance.now()+1000;setInterval(()=>{const now=performance.
       if(typeof _syncRenderProjectPicker==="function")_syncRenderProjectPicker();
     }
     if(document.getElementById("ca"))try{ren();}catch(err){}
-  }).finally(()=>{NS.trackLocalChanges=true;});
+  }).finally(()=>{
+    NS.trackLocalChanges=true;
+    NS.bootSettled=true;
+    window.dispatchEvent(new Event("ns:boot-settled"));
+  });
   const hydrate=()=>doHydrate();
   if("requestIdleCallback" in window)requestIdleCallback(hydrate,{timeout:1200});else setTimeout(hydrate,80);
 })();

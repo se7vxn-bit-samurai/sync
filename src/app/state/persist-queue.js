@@ -22,10 +22,30 @@ function _noteStorageFailure(key,err){
       "err",8000);
   }catch(e){}
 }
+// Tells cloud sync that a synced key really changed (see _syncNoteKeyWrite), so a re-save of an
+// unchanged value does not count as unsaved work. Two kinds of difference are not changes either:
+// timestamps alone (several stores stamp updatedAt on every save, the QoL state on each background
+// persist), and where the user is looking — sc_settings carries the current tab and sub-views next
+// to real settings, and moving around the app must not ask them to save.
+const _PERSIST_VIEW_ONLY_FIELDS={sc_settings:["tab","peopleSubTab","peopleDashView","peopleView","peopleLogFilter","sumMode","anView","focusMode"]};
+function _persistComparable(k,v){
+  if(v===null)return null;
+  let text=String(v);
+  const viewOnly=_PERSIST_VIEW_ONLY_FIELDS[k];
+  if(viewOnly){try{const obj=JSON.parse(text);viewOnly.forEach(field=>{delete obj[field];});text=JSON.stringify(obj);}catch(e){}}
+  return text.replace(/"(?:updatedAt|updated_at)":"[^"]*"/g,"");
+}
+function _persistNoteChange(k,next){
+  if(typeof window._syncNoteKeyWrite!=="function")return;
+  let prev=null;
+  try{prev=_persistPendingSet.has(k)?_persistPendingSet.get(k):(_persistPendingRemove.has(k)?null:localStorage.getItem(k));}catch(e){}
+  if(_persistComparable(k,prev)!==_persistComparable(k,next))window._syncNoteKeyWrite(k);
+}
 function _persistSet(key,val,opts){
   const k=String(key);
   const v=String(val);
   const critical=opts&&opts.critical;
+  _persistNoteChange(k,v);
   if(critical||_persistCriticalDepth>0){
     try{localStorage.setItem(k,v);}catch(e){_noteStorageFailure(k,e);}
     return;
@@ -37,6 +57,7 @@ function _persistSet(key,val,opts){
 function _persistRemove(key,opts){
   const k=String(key);
   const critical=opts&&opts.critical;
+  _persistNoteChange(k,null);
   if(critical||_persistCriticalDepth>0){
     try{localStorage.removeItem(k);}catch(e){_noteStorageFailure(k,e);}
     return;

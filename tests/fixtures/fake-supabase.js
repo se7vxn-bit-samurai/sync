@@ -8,7 +8,12 @@
  *
  * The surface implemented here is exactly what the app calls and nothing more:
  *   auth: getSession, getUser, onAuthStateChange, signInWithOAuth, signOut
- *   from(table): select().eq().eq().maybeSingle(), select().in().eq(), upsert(), update().eq()
+ *   from(table): select().eq().eq().maybeSingle(), update().eq()…[.select().maybeSingle()],
+ *                insert().select().single(), upsert().select().single()
+ *
+ * The workspace row behaves like the real table: every write gets a new server `version` (the
+ * database trigger), an update only applies when all its .eq() filters match (so a stale version
+ * matches nothing), and inserting over an existing row fails with Postgres' unique-violation code.
  *
  * Tests drive it through window.__fakeSupabase (see tests/helpers.js), which can flip the network
  * offline, force pushes to fail, and simulate another device writing a newer row.
@@ -35,6 +40,7 @@ function installFakeSupabase(config) {
     pushes: [],
     profileUpdates: [],
     oauthCalls: 0,
+    signOutCalls: [],
   };
 
   function makeSession(user) {
@@ -50,12 +56,14 @@ function installFakeSupabase(config) {
     return ms > 0 ? new Promise((r) => setTimeout(r, ms)) : Promise.resolve();
   }
 
-  // Deliberately permissive: the app only ever filters by owner/department/id, and the double holds
-  // a single personal workspace row, so filters are recorded for assertions but not used to select.
+  // Reads are deliberately permissive: the double holds a single personal workspace row, so read
+  // filters are recorded for assertions but not used to select. Writes honour their filters.
   function makeQuery(table) {
     const q = {
       _table: table,
       _filters: [],
+      _op: 'select',
+      _patch: null,
       select() {
         return q;
       },
@@ -67,36 +75,70 @@ function installFakeSupabase(config) {
         q._filters.push([col, vals]);
         return q;
       },
-      async maybeSingle() {
-        if (table === 'profiles') return ok(state.cfg.profile);
-        if (table === 'workspaces') return ok(state.cfg.workspaceRow);
-        return ok(null);
-      },
-      async upsert(row) {
-        await delay(state.cfg.pushLatencyMs);
-        if (state.cfg.failPush) return fail(state.cfg.failPushMessage);
-        state.pushes.push(row);
-        state.cfg.workspaceRow = Object.assign({}, row);
-        return ok(row);
-      },
       update(patch) {
-        const applied = {
-          async eq() {
-            if (table === 'profiles') {
-              state.profileUpdates.push(patch);
-              state.cfg.profile = Object.assign({}, state.cfg.profile || {}, patch);
-            }
-            return ok(patch);
-          },
-        };
-        return applied;
+        q._op = 'update';
+        q._patch = patch;
+        return q;
       },
-      // team_members reads are awaited directly, without maybeSingle()
+      insert(row) {
+        q._op = 'insert';
+        q._patch = row;
+        return q;
+      },
+      upsert(row) {
+        q._op = 'upsert';
+        q._patch = row;
+        return q;
+      },
+      maybeSingle() {
+        return run('maybeSingle');
+      },
+      single() {
+        return run('single');
+      },
+      // team_members reads and bare updates are awaited directly, without maybeSingle()
       then(resolve, reject) {
-        const result = table === 'team_members' ? { data: state.cfg.teamMemberships, error: null } : { data: null, error: null };
-        return Promise.resolve(result).then(resolve, reject);
+        return run('many').then(resolve, reject);
       },
     };
+
+    async function run(mode) {
+      if (table === 'profiles') {
+        if (q._op === 'update') {
+          state.profileUpdates.push(q._patch);
+          state.cfg.profile = Object.assign({}, state.cfg.profile || {}, q._patch);
+          return ok(q._patch);
+        }
+        return ok(state.cfg.profile);
+      }
+      if (table === 'team_members') return ok(state.cfg.teamMemberships);
+      if (table !== 'workspaces') return ok(null);
+
+      const current = state.cfg.workspaceRow;
+      if (q._op === 'select') return ok(mode === 'many' ? (current ? [current] : []) : current);
+
+      await delay(state.cfg.pushLatencyMs);
+      if (state.cfg.failPush) return fail(state.cfg.failPushMessage);
+      const now = new Date().toISOString();
+      let next = null;
+      if (q._op === 'update') {
+        const matches = current && q._filters.every(([col, val]) => current[col] === val);
+        if (matches) next = Object.assign({}, current, q._patch, { version: (current.version || 1) + 1, updated_at: now });
+      } else if (q._op === 'insert') {
+        if (current) return { data: null, error: { code: '23505', message: 'duplicate key value violates unique constraint "workspaces_owner_dept_unique"' } };
+        next = Object.assign({}, q._patch, { version: 1, updated_at: now });
+      } else if (q._op === 'upsert') {
+        next = Object.assign({}, current || {}, q._patch, { version: current ? (current.version || 1) + 1 : 1, updated_at: now });
+      }
+      if (next) {
+        state.pushes.push(next);
+        state.cfg.workspaceRow = next;
+      }
+      if (mode === 'many') return ok(next ? [next] : []);
+      if (mode === 'single' && !next) return fail('JSON object requested, multiple (or no) rows returned');
+      return ok(next);
+    }
+
     return q;
   }
 
@@ -120,7 +162,8 @@ function installFakeSupabase(config) {
         // drive the post-redirect state themselves via __fakeSupabase.signIn().
         return { data: { url: 'https://accounts.google.test/o/oauth2/auth' }, error: null };
       },
-      async signOut() {
+      async signOut(opts) {
+        state.signOutCalls.push(opts || null);
         state.session = null;
         state.authListeners.forEach((cb) => cb('SIGNED_OUT', null));
         return { error: null };
@@ -149,15 +192,15 @@ function installFakeSupabase(config) {
       state.cfg.failPush = !!flag;
       if (message) state.cfg.failPushMessage = message;
     },
-    // Simulates another device having saved a newer row than this one last observed, which is what
-    // the optimistic-concurrency guard in _syncPushWorkspaceNow compares against. The stamp must
-    // beat BOTH wall-clock now and whatever the seeded row already carries (helpers.workspaceRow
-    // deliberately dates rows ahead of now), or the guard correctly sees nothing newer and the
-    // conflict never triggers.
-    simulateRemoteWrite(updatedAt) {
-      const current = Date.parse((state.cfg.workspaceRow || {}).updated_at || '') || 0;
-      const stamp = updatedAt || new Date(Math.max(Date.now(), current) + 60_000).toISOString();
-      state.cfg.workspaceRow = Object.assign({}, state.cfg.workspaceRow || {}, { updated_at: stamp });
+    // Simulates another device saving: the server bumps the row's version, which is all a device
+    // holding the previous version needs in order to see it has fallen behind. `data`, when given,
+    // replaces the row's workspace payload.
+    simulateRemoteWrite(data) {
+      const current = state.cfg.workspaceRow || {};
+      state.cfg.workspaceRow = Object.assign({}, current, data ? { data } : {}, {
+        version: (current.version || 1) + 1,
+        updated_at: new Date().toISOString(),
+      });
     },
     pushCount() {
       return state.pushes.length;

@@ -48,6 +48,8 @@ Covers sign-in and the cloud pull, 0/1/2/7-project pickers, people-only projects
 project's exact view context, deletion when the cloud save fails, concurrent edits from two devices,
 offline then reconnect, the boot push gate, backup export, snapshots and restore, the sample
 project, the command palette, "what changed since last time", and keyboard/mobile project selection.
+`cross-device-sync.spec.js` covers a second device loading an older cloud save, keeping it across
+a reload, and both-sides-changed comparisons.
 
 Data-integrity regressions have their own specs: `parser.spec.js` (17 roster fixtures across the
 13/14-person boundary, dd/mm CSVs, and the lossy-parse guard), `persistence.spec.js` (a schedule
@@ -60,3 +62,13 @@ added.
 Supabase is replaced in-page by a double (`tests/fixtures/fake-supabase.js`) installed before the
 app's own scripts run — no network, no real account, no test data in the live project. Tests drive
 it through `window.__fakeSupabase` to sign in, fail a push, or simulate another device writing.
+
+## Cloud sync
+
+One `workspaces` row per account (`department_key = '__personal__'`) holds the whole workspace.
+A database trigger bumps its `version` on every write. Each device keeps the version it last
+matched, plus an "unsaved changes" flag, in `localStorage["sc_cloud_sync"]`. Signing in loads a
+newer cloud copy automatically when the device has no unsaved changes. When both sides changed, it
+opens the comparison instead. Saving stays explicit, and a save only succeeds if the cloud row is
+still at the version this device last saw. Schema changes made since this was introduced are in
+`supabase/migrations/`.
