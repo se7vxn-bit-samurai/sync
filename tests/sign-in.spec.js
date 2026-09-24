@@ -28,28 +28,31 @@ test.describe('first sign-in', () => {
     await expect(page.locator('#syncOnboardModal')).toHaveCount(0);
   });
 
-  test('signing in stays on the landing screen until the user explicitly syncs', async ({ page }) => {
-    // A returning session is not permission to pull a cloud workspace or reopen a prior sheet.
+  test('signing in lists the cloud projects without opening one', async ({ page }) => {
+    // The new-device case: whatever the account saved elsewhere is listed as soon as sign-in
+    // completes. A returning session is still not permission to reopen a prior sheet.
     await openApp(page, { profile: PROFILE, workspaceRow: workspaceRow(buildWorkspace(3)) });
     await page.evaluate(() => window.__fakeSupabase.signIn());
-    await page.waitForTimeout(200);
-    await expect(page.locator(picker.root)).toBeHidden();
-    await expect(page.locator('#mv')).toBeHidden();
-    expect(await page.evaluate(() => ({ active: S.activeDept, entries: S.entries.length }))).toEqual({ active: null, entries: 0 });
-
-    // The new-device case becomes available only after this intentional action.
     await waitForPicker(page);
     expect(await projectNames(page)).toEqual(['Project A', 'Project B', 'Project C']);
+    await expect(page.locator('#mv')).toBeHidden();
+    expect(await page.evaluate(() => ({ active: S.activeDept, entries: S.entries.length }))).toEqual({ active: null, entries: 0 });
     // Starting something new stays available, but as the secondary action.
     await expect(page.locator(picker.newSourceToggle)).toBeVisible();
     await expect(page.locator(picker.newSourceToggle)).toContainText('Start or import a new project');
   });
 
-  test('an existing session can manually load cloud projects without a second sign-in', async ({ page }) => {
+  test('a restored session lists cloud projects without a second sign-in', async ({ page }) => {
     await openApp(page, { signedIn: true, profile: PROFILE, workspaceRow: workspaceRow(buildWorkspace(2)) });
     await waitForPicker(page);
     expect(await projectNames(page)).toHaveLength(2);
     expect(await page.evaluate(() => window.__fakeSupabase.oauthCalls())).toBe(0);
+  });
+
+  test('Sync from cloud reports an up-to-date copy without reloading it', async ({ page }) => {
+    await openApp(page, { signedIn: true, profile: PROFILE, workspaceRow: workspaceRow(buildWorkspace(2)) });
+    await waitForPicker(page);
+    expect(await page.evaluate(() => window.syncPullWorkspace())).toBe('current');
   });
 
   test('signing out closes the active sheet and leaves cached projects offline', async ({ page }) => {
@@ -60,6 +63,8 @@ test.describe('first sign-in', () => {
     await expect(page.locator('#mv')).toBeVisible();
 
     await page.evaluate(() => _syncSignOut());
+    // Only this device: the default scope would end the session on every other device too.
+    expect(await page.evaluate(() => window.__fakeSupabase.state.signOutCalls)).toEqual([{ scope: 'local' }]);
     await expect(page.locator('#mv')).toBeHidden();
     expect(await page.evaluate(() => ({ active: S.activeDept, entries: S.entries.length }))).toEqual({ active: null, entries: 0 });
     await expect(page.locator('#syncLcWidget')).toContainText('Continue with Google');

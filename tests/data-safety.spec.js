@@ -64,7 +64,7 @@ test.describe('concurrent edits from two devices', () => {
     const modal = page.locator('#syncConflictModal');
     await expect(modal).toBeVisible();
     await expect(modal).toContainText('Two devices changed');
-    await expect(modal.getByRole('button', { name: /Reload and use the other/ })).toBeVisible();
+    await expect(modal.getByRole('button', { name: /Use the cloud copy/ })).toBeVisible();
     await expect(modal.getByRole('button', { name: /Download this device/ })).toBeVisible();
     await expect(modal.getByRole('button', { name: /Overwrite the cloud/ })).toBeVisible();
   });

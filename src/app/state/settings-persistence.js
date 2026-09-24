@@ -283,6 +283,26 @@ function nsBootApp(){
   _syncRenderAccountUI();
 }
 
+// The loaders nsBootApp runs, re-run after a cloud copy has replaced the keys they read, so memory
+// matches storage again. Without this, S kept this device's old settings, notes and plans, and the
+// next background persist wrote them back over the copy that had just been loaded.
+function _syncReloadLocalStores(){
+  const tab=S.tab;
+  loadSettings();
+  S.tab=tab;
+  loadAtt();
+  loadHc();
+  loadNotes();
+  loadPeople();
+  loadShiftLib();
+  loadCoachQuality();
+  loadCoverageReq();
+  loadForecast();
+  loadLeaderPlanner();
+  loadQoLState();
+  _persistSig=getPersistSignature();
+}
+
 let _syncProfileCache=null;
 // null means two different things — "never fetched" and "fetched, and there is no profile because
 // nobody is signed in" — and the Settings account section keys its background refetch off exactly
@@ -543,7 +563,7 @@ function _syncSetSaveDot(state){
     dot.className='sync-save-dot '+state;
     if(state==='saved'||state==='error')setTimeout(()=>{if(dot.className==='sync-save-dot '+state)dot.className='sync-save-dot';},2500);
   });
-  if(state==='saved'){_syncWorkspaceDirty=false;_syncLastSyncedAt=new Date().toISOString();try{localStorage.setItem('sync_last_synced_at',_syncLastSyncedAt);}catch(err){}}
+  if(state==='saved'){_syncLastSyncedAt=new Date().toISOString();try{localStorage.setItem('sync_last_synced_at',_syncLastSyncedAt);}catch(err){}}
   _syncSetStatus(state);
 }
 
@@ -557,7 +577,10 @@ function _syncSetSaveDot(state){
    and says "needs attention" when a push genuinely failed.
    ═══════════════════════════════════════════════════════════════ */
 let _syncStatusState='idle';
-let _syncWorkspaceDirty=false;
+// Whether this device has changes the cloud copy lacks. Owned by the sync engine and kept in
+// localStorage, so it survives a reload and is what decides between loading a newer cloud copy and
+// asking the user to compare.
+function _syncHasUnsavedChanges(){return typeof window._syncIsDirty==='function'&&window._syncIsDirty();}
 function _syncRelativeTime(iso){
   if(!iso)return'';
   const then=Date.parse(iso);
@@ -583,8 +606,9 @@ function _syncStatusInfo(){
   if(!online)return{kind:'offline',label:'Offline — saved on this device'};
   if(_syncStatusState==='error')return{kind:'attention',label:'Needs attention — not backed up to the cloud'};
   if(_syncStatusState==='pulled')return{kind:'saved',label:'Cloud copy loaded'};
+  if(_syncStatusState==='cloud-newer')return{kind:'attention',label:'Newer copy in the cloud — use Sync from cloud to load it'};
   if(!signedIn)return{kind:'local',label:'Saved on this device'};
-  if(_syncWorkspaceDirty)return{kind:'local',label:'Changes saved on this device — save to cloud when ready'};
+  if(_syncHasUnsavedChanges())return{kind:'local',label:'Changes saved on this device — save to cloud when ready'};
   const rel=_syncRelativeTime(_syncLastSyncedAt);
   if(!rel)return{kind:'local',label:'Saved on this device — not synced yet'};
   return{kind:'saved',label:'Saved to cloud '+rel};
@@ -607,11 +631,10 @@ function _syncSetStatus(state){
   _syncRenderStatusEverywhere();
 }
 function _syncMarkLocalChange(){
-  _syncWorkspaceDirty=true;
+  if(typeof window._syncMarkDirty==='function')window._syncMarkDirty();
   if(_syncStatusState!=='saving')_syncSetStatus('local-changes');
 }
 function _syncSetPulledFromCloud(){
-  _syncWorkspaceDirty=false;
   _syncSetStatus('pulled');
 }
 window._syncMarkLocalChange=_syncMarkLocalChange;
@@ -624,21 +647,44 @@ window.addEventListener('online',()=>{
 window.addEventListener('offline',_syncRenderStatusEverywhere);
 async function _syncManualSave(){
   if(typeof window._syncPushWorkspaceNow!=='function')return false;
-  if(typeof window.nsSetLocalPersistenceEnabled==='function')window.nsSetLocalPersistenceEnabled(true);
-  if(typeof window.nsPersist==='function')window.nsPersist();
-  const saved=await window._syncPushWorkspaceNow();
-  if(saved)_syncWorkspaceDirty=false;
-  return saved;
+  // A file opened for a one-off session becomes a kept project once it is saved to the cloud.
+  // Everything else is already persisted locally, and re-persisting it here would record a change
+  // this device never made.
+  if(window.NorthStar&&window.NorthStar.sessionOnly){
+    if(typeof window.nsSetLocalPersistenceEnabled==='function')window.nsSetLocalPersistenceEnabled(true);
+    if(typeof window.nsPersist==='function')window.nsPersist();
+  }
+  return window._syncPushWorkspaceNow();
 }
 async function _syncManualPull(){
   if(typeof window.syncPullWorkspace!=='function')return false;
-  const pulled=await window.syncPullWorkspace();
-  if(window._syncLastPullFailed){toast('Could not reach the cloud copy.','err');return false;}
+  const result=await window.syncPullWorkspace();
+  if(result==='error'){toast('Could not reach the cloud copy.','err');return false;}
+  // Both sides changed: the comparison is already open and nothing was replaced.
+  if(result==='conflict')return false;
   // A manual cloud refresh updates the local project list; it never selects or opens a sheet.
   if(typeof _syncShowProjectPicker==='function')_syncShowProjectPicker({clearActive:true});
   else if(typeof _syncRenderProjectPicker==='function')_syncRenderProjectPicker();
-  toast(pulled?'Cloud copy loaded':'Cloud copy is already up to date','ok');
-  return pulled;
+  toast(result==='applied'?'Cloud copy loaded':result==='empty'?'Nothing saved to the cloud yet':'Cloud copy is already up to date','ok');
+  return result==='applied';
+}
+// Runs once per sign-in (including a session restored at launch). A newer cloud copy is loaded
+// only when this device has nothing unsaved; otherwise the comparison opens. Either way no
+// project is opened — the picker just lists what is now available.
+async function _syncAutoPull(){
+  // A session restored at launch is reported before the sync engine's script has run; that script
+  // announces itself with ns:boot-settled once local data has loaded.
+  if(typeof window.syncPullWorkspace!=='function')await new Promise(resolve=>window.addEventListener('ns:boot-settled',resolve,{once:true}));
+  if(typeof window.syncPullWorkspace!=='function')return;
+  const result=await window.syncPullWorkspace({auto:true});
+  if(result==='applied'){
+    if(S.activeDept||(S.entries&&S.entries.length))_syncRenderProjectPicker();
+    else _syncShowProjectPicker({clearActive:true});
+    toast('Loaded your latest cloud save','ok');
+  }else if(result==='held'){
+    _syncSetStatus('cloud-newer');
+    toast('A newer copy is in the cloud — open Settings and choose Sync from cloud to load it.','warn',6000);
+  }
 }
 
 // Escalation for repeated save failures / a detected cross-device conflict — the save dot alone
@@ -682,14 +728,33 @@ function _syncShowConflictComparison(){
   const row=(heading,detail,accent)=>`<div style="border:1px solid ${accent};border-radius:8px;padding:10px 12px;margin-bottom:8px"><div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px">${heading}</div><div style="font-size:11px;color:var(--tm);line-height:1.5">${detail}</div></div>`;
   const body=`<div id="syncConflictBody">
     <p style="margin:0 0 12px;color:var(--tx2,#888);font-size:13px;line-height:1.5">Two devices changed <b>${X(project)}</b>. Nothing has been overwritten — choose which copy to keep.</p>
-    ${row('This device',`Has changes made since its last cloud save${localRel?` (${X(localRel)})`:''}. Still safe on this device.`,'var(--bdr,#3a3a3a)')}
+    ${row('This device',`Has changes that are not in the cloud copy${localRel?` (last saved to the cloud from here ${X(localRel)})`:''}. Still safe on this device.`,'var(--bdr,#3a3a3a)')}
     ${row('Another device',`Saved to the cloud${remoteRel?` ${X(remoteRel)}`:' more recently'}. This is the copy the cloud currently holds.`,'rgba(245,166,35,.45)')}
-    <button class="btn bp" style="width:100%;margin-bottom:8px" onclick="location.reload()">Reload and use the other device's copy</button>
+    <button class="btn bp" style="width:100%;margin-bottom:8px" onclick="_syncTakeCloudCopy()">Use the cloud copy</button>
     <button class="btn" style="width:100%;margin-bottom:8px" onclick="_syncExportBackup()">Download this device's version first</button>
     <button class="btn" style="width:100%;margin-bottom:8px;color:#e5484d;border:1px solid rgba(229,72,77,.3)" onclick="_syncForceOverwriteCloud()">Overwrite the cloud with this device's version</button>
     <button class="btn" style="width:100%;background:transparent" onclick="document.getElementById('syncConflictModal')?.remove()">Decide later</button>
   </div>`;
   _qolModal('syncConflictModal','Two versions of this workspace','',body,'');
+}
+// Replaces this device's copy with the cloud's. Offered next to "Download this device's version
+// first", so the local copy can be kept as a file before it goes.
+async function _syncTakeCloudCopy(){
+  const bodyEl=document.getElementById('syncConflictBody');
+  if(bodyEl)bodyEl.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px;color:var(--tm)"><span class="sync-save-dot saving" style="position:relative;top:0;right:0;flex-shrink:0"></span>Loading the cloud copy…</div>`;
+  let result='error';
+  try{result=typeof window.syncPullWorkspace==='function'?await window.syncPullWorkspace({takeCloud:true}):'error';}catch(err){result='error';}
+  if(result==='applied'||result==='empty'){
+    document.getElementById('syncConflictModal')?.remove();
+    document.getElementById('syncIssueBanner')?.remove();
+    if(result==='applied')_syncShowProjectPicker({clearActive:true});
+    toast(result==='applied'?'Cloud copy loaded':'The cloud copy is gone — this device\'s copy is unchanged','ok');
+    return;
+  }
+  if(bodyEl)bodyEl.innerHTML=`
+    <p style="margin:0 0 12px;color:#e5484d;font-size:13px;line-height:1.5">Could not load the cloud copy. Nothing on this device was changed.</p>
+    <button class="btn bp" style="width:100%;margin-bottom:8px" onclick="_syncTakeCloudCopy()">Try again</button>
+    <button class="btn" style="width:100%;background:transparent" onclick="document.getElementById('syncConflictModal')?.remove()">Close</button>`;
 }
 async function _syncForceOverwriteCloud(){
   const bodyEl=document.getElementById('syncConflictBody');
@@ -768,7 +833,8 @@ async function _syncSaveThenSignOut(){
 async function _syncSignOut(){
   const modal=document.getElementById('syncSignOutModal');
   if(modal)modal.remove();
-  try{await sb.auth.signOut();}catch(err){}
+  // Local scope: the default ('global') revokes the session on every other device as well.
+  try{await sb.auth.signOut({scope:'local'});}catch(err){}
   _syncProfileCache=null;
   _syncProfileResolved=true;
   _syncHandledSessionToken=null;
@@ -1466,6 +1532,7 @@ function _syncOnSignedIn(session){
   if(!hasLiveWorkspace)_syncShowProjectPicker({clearActive:true});
   _syncRenderAccountUI();
   _syncRenderLandingWidget();
+  _syncAutoPull();
 }
 async function _syncAuthGate(){
   // The app is fully usable offline/local-only, so boot unconditionally — auth only adds

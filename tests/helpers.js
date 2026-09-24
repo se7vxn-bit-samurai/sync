@@ -43,22 +43,20 @@ function buildWorkspace(count, opts = {}) {
 }
 
 /**
- * Wraps a model as the `workspaces` row the pull reads.
+ * Wraps a model as the `workspaces` row the pull reads, at server version `version` (default 1).
  *
- * The timestamp defaults to a few minutes ahead of now on purpose. syncPullWorkspace only applies a
- * remote row that is strictly newer than the local canonical model, and simply booting the app
- * stamps the (empty) local model with the current time — so a row built "now" loses the comparison
- * by a few milliseconds and is silently ignored. Being clearly ahead models the real case under
- * test: a cloud copy that genuinely postdates anything this device has.
+ * Deliberately dated a day in the past by default: a cloud save always predates the device reading
+ * it, and the pull must load it anyway. It compares server versions, never timestamps.
  */
-function workspaceRow(model, updatedAt) {
-  const stamp = updatedAt || new Date(Date.now() + 5 * 60 * 1000).toISOString();
+function workspaceRow(model, updatedAt, version) {
+  const stamp = updatedAt || new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   return {
     owner_user_id: 'user-test-1',
     team_id: null,
     department_key: '__personal__',
     data: Object.assign({}, model, { updated_at: stamp }),
     updated_at: stamp,
+    version: version || 1,
   };
 }
 
@@ -98,10 +96,10 @@ const picker = {
   newSourceToggle: '#lcNewSourceToggle',
 };
 
-// Existing picker-focused tests model the explicit user action that makes cloud projects
-// available. Passing { sync: false } asserts the passive launch state instead.
+// Signing in loads the cloud copy by itself; this waits for the picker it produces. Passing
+// { sync: true } also presses Sync from cloud, for tests about that button.
 async function waitForPicker(page, options = {}) {
-  if (options.sync !== false) await page.evaluate(() => _syncManualPull());
+  if (options.sync === true) await page.evaluate(() => _syncManualPull());
   await page.waitForSelector(`${picker.root} ${picker.rows}`, { state: 'visible', timeout: 20_000 });
 }
 
