@@ -523,10 +523,7 @@ function rSyncDashboard(el){
   const leaders=typeof _peopleScopeLeaders==="function"?_peopleScopeLeaders():[...new Set(all.map(e=>e.name).filter(Boolean))];
   const issueOpen=buildIssueInboxItems().filter(x=>x.status==="open").length;
   const attention=getPeopleAttentionCount();
-  const health=S.month?computeTeamHealthScore(S.month):null;
   const todayHours=Math.round(working.reduce((sum,e)=>sum+calcHrs(e.saS||e.ukS,e.saE||e.ukE),0)*10)/10;
-  const saNow=new Date().toLocaleTimeString("en-ZA",{timeZone:"Africa/Johannesburg",hour:"2-digit",minute:"2-digit",hour12:false});
-  const ukNow=new Date().toLocaleTimeString("en-GB",{timeZone:"Europe/London",hour:"2-digit",minute:"2-digit",hour12:false});
   const dashWeekOffset=Number(S.dashWeekOffset)||0;
   const weekStart=new Date(today);weekStart.setDate(weekStart.getDate()-((weekStart.getDay()+6)%7)+(dashWeekOffset*7));
   const weekEnd=new Date(weekStart);weekEnd.setDate(weekStart.getDate()+6);
@@ -540,11 +537,11 @@ function rSyncDashboard(el){
   }
   const workingHtml=working.length?working.map(e=>'<div class="sd-list-row"><span class="name">'+X(e.name)+'</span><span class="meta">'+X((S.tz&&e.saS?e.saS:e.ukS)||"")+'-'+X((S.tz&&e.saE?e.saE:e.ukE)||"")+'</span></div>').join(""):'<div class="sd-list-row"><span class="name">No one scheduled today</span><span class="meta">--</span></div>';
   const issueHtml=issueOpen?'<div class="sd-list-row"><span class="name">Open issues</span><span class="meta">'+issueOpen+'</span></div>':'<div class="sd-list-row"><span class="name">Clean queue</span><span class="meta">0</span></div>';
-  const blueprintHtml=S.month?'<div class="sd-list-row"><span class="name">'+X(monthLabel())+'</span><span class="meta">'+(health?X(health.grade+" "+health.avg):"--")+'</span></div>':'<div class="sd-list-row"><span class="name">No month selected</span><span class="meta">--</span></div>';
   const peopleIntel=typeof peopleOpsIntel==="function"?peopleOpsIntel(leaders):null;
   const peopleLine=peopleIntel?peopleIntel.ready+' OT ready - '+peopleIntel.issues.length+' structure':'people signals '+attention;
   const calendarLine=working.length+' working - '+off.length+' off - '+todayHours+'h';
-  const blueprintLine=health?'Health '+health.grade+' '+health.avg:'No month score';
+  const sourceRows=typeof _opsSourceRows==="function"?_opsSourceRows():[];
+  const sourceLine=sourceRows.length+(sourceRows.length===1?' file':' files')+' - '+sourceRows.reduce((n,r)=>n+(Number(r.rows)||0),0)+' rows';
   const calendarMini='<div class="sd-list-row"><span class="name">Today</span><span class="meta">'+working.length+' / '+people.length+'</span></div><div class="sd-list-row"><span class="name">Window</span><span class="meta">'+X((S.tz?"SA":"UK")+' floor')+'</span></div>';
   const peopleMini='<div class="sd-list-row"><span class="name">People</span><span class="meta">'+people.length+'</span></div><div class="sd-list-row"><span class="name">OT readiness</span><span class="meta">'+(peopleIntel?peopleIntel.ready+' ready':'--')+'</span></div>';
   const monthParts=S.month?S.month.split("-").map(Number):[today.getFullYear(),today.getMonth()];
@@ -559,30 +556,6 @@ function rSyncDashboard(el){
     calCells.push('<div class="sd-cal-d '+(stat.work?'work ':'')+(stat.off?'off ':'')+((isToday||isSelected)?'today':'')+'" onclick="setCalendarDay('+calY+','+calM+','+d+')" title="'+stat.work+' working, '+stat.off+' off">'+d+'</div>');
   }
   const miniCalendarHtml=calCells.join("");
-  const swatches=[
-    {k:"surge",l:"Surge",a:"#10121c",b:"#c349ee",c:"#6ab7ff",fg:"#eef6ff"},
-    {k:"tide",l:"Tide",a:"#0b1620",b:"#4db8c8",c:"#7fcf93",fg:"#e9fbff"},
-    {k:"press",l:"Press",a:"#f3d9bd",b:"#8a6337",c:"#2d2015",fg:"#fff4df"},
-    {k:"newsprint",l:"News",a:"#fff5c7",b:"#9381ff",c:"#ff8fab",fg:"#fff8fe"}
-  ];
-  const liveThemeColors=typeof getComputedStyle==="function"?getComputedStyle(document.body):null;
-  const liveColor=(name,fallback)=>liveThemeColors?(liveThemeColors.getPropertyValue(name).trim()||fallback):fallback;
-  const colorwayHtml='<div class="sd-colorway-grid">'+swatches.map(s=>{
-    const active=S.th===s.k;
-    const a=active?liveColor("--bg2",s.a):s.a,b=active?liveColor("--accent",s.b):s.b,c=active?liveColor("--mid-col",s.c):s.c,fg=active?liveColor("--text",s.fg):s.fg;
-    return '<button class="sd-colorway '+(active?'active':'')+'" style="--swatch-a:'+a+';--swatch-b:'+b+';--swatch-c:'+c+';--swatch-label:'+fg+'" onclick="setThemeColorway(&quot;'+s.k+'&quot;)" title="'+X(s.l)+(active?' · active variant':'')+' colourway"><i></i><span>'+X(s.l)+'</span></button>';
-  }).join("")+'</div>';
-  const floorStart=working.map(e=>S.tz?e.saS:e.ukS).filter(Boolean).sort()[0]||"--";
-  const floorEnd=working.map(e=>S.tz?e.saE:e.ukE).filter(Boolean).sort().pop()||"--";
-  const themeName=(TH[S.th]&&TH[S.th].n)||S.th||"Theme";
-  const variantName=typeof _themeVariantName==="function"?_themeVariantName(S.th||"surge",S.thVariant||0):"";
-  const variantLabel=typeof _themeVariantLabel==="function"?_themeVariantLabel(variantName):X(variantName||"Core");
-  const dicePips='<i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>';
-  // Faces persist in S so a shuffle's result survives the dashboard rerender it triggers
-  // (shuffleThemeColorway rebuilds this whole button) instead of snapping back to a default.
-  const diceFaces=Array.isArray(S._diceFaces)&&S._diceFaces.length===2?S._diceFaces:[3,4];
-  const clockExtras='<div class="sd-clock-extras"><div class="sd-clock-extra"><b>'+X(floorStart+'-'+floorEnd)+'</b><span>Floor window</span></div><button class="sd-clock-extra" onclick="openSettings()" title="Open settings"><b>Settings</b><span>Open panel</span></button><div class="sd-clock-extra"><b>'+X(themeName)+'</b><span>'+X(variantLabel)+'</span></div><button class="sd-clock-extra shuffle" onclick="shuffleDashboardColorway(this)" title="Throw dice and shuffle colourway (they always add up to 7)"><span class="sd-dice-pair" aria-label="Shuffle colourway"><b class="sd-dice-icon" data-face="'+diceFaces[0]+'">'+dicePips+'</b><b class="sd-dice-icon" data-face="'+diceFaces[1]+'">'+dicePips+'</b></span><span>Shuffle colourway</span></button></div>';
-  const clockHtml='<div class="sd-clock-panel"><div class="sd-clock-grid"><div class="sd-clock"><b>'+saNow+'</b><span>South Africa</span></div><div class="sd-clock"><b>'+ukNow+'</b><span>United Kingdom</span></div></div>'+colorwayHtml+clockExtras+'</div>';
   const gotoHtml='<div class="sd-jump-grid"><button onclick="railNavToday()">Today</button><button onclick="railNavCalendar(&quot;cards&quot;)">Cards</button><button onclick="railNavCalendar(&quot;overtime&quot;)">OT</button><button onclick="railNavPeople(&quot;dashboard&quot;)">People</button><button onclick="railNavAnalytics(&quot;blueprint&quot;)">Blueprint</button><button onclick="railNavAnalytics(&quot;data&quot;)">Data</button></div>';
   const dept=S.activeDept||"default";
   if(typeof normalizeBlueprintStore==="function")normalizeBlueprintStore();
@@ -610,7 +583,10 @@ function rSyncDashboard(el){
     return '<div class="sd-bp-cell h">W'+w+'</div>'+cells.join("");
   }).join("");
   const bpCycle=personBp&&personBp.cycleLen?personBp.cycleLen:bpWeekKeys.length;
-  const blueprintScheduleHtml=(personBp&&bpWeekKeys.length)?'<div class="sd-blueprint-preview"><div class="sd-blueprint-person"><b>Rotation blueprint</b><span>'+X(bpCycle+'w · '+(personBp.confirmed?'confirmed':'review')+' · '+(health?health.grade+" "+health.avg:""))+'</span></div><div class="sd-blueprint-table"><div class="sd-bp-cell h"></div>'+bpDayHeads.join("")+bpRows+'</div></div>':'<div class="sd-blueprint-preview"><div class="sd-blueprint-person"><b>No blueprint loaded</b><span>Planner</span></div><div class="sd-list-row"><span class="name">Open Ops Blueprint</span><span class="meta">Review</span></div></div>';
+  const hasBlueprint=!!(personBp&&bpWeekKeys.length);
+  const planLine=hasBlueprint?bpCycle+'-week rotation · '+(personBp.confirmed?'confirmed':'in review'):'No blueprint yet';
+  const planRowHtml='<div class="sd-list-row"><span class="name">'+X(hasBlueprint?'Rotation':'Blueprint')+'</span><span class="meta">'+X(hasBlueprint?bpCycle+'w · '+(personBp.confirmed?'confirmed':'in review'):'not set up')+'</span></div>';
+  const blueprintScheduleHtml=(personBp&&bpWeekKeys.length)?'<div class="sd-blueprint-preview"><div class="sd-blueprint-person"><b>Rotation blueprint</b><span>'+X(bpCycle+'w · '+(personBp.confirmed?'confirmed':'in review'))+'</span></div><div class="sd-blueprint-table"><div class="sd-bp-cell h"></div>'+bpDayHeads.join("")+bpRows+'</div></div>':'<div class="sd-blueprint-preview"><div class="sd-blueprint-person"><b>No blueprint yet</b><span>not set up</span></div><button type="button" class="sd-list-row" style="width:100%;cursor:pointer;font-family:inherit;color:inherit;text-align:left" onclick="railNavAnalytics(&quot;blueprint&quot;)"><span class="name">Set up blueprint</span><span class="meta">Open editor →</span></button></div>';
   const universalNote=isUniversalWorkspace()?'<div class="sync-universal-note"><b>Universal workspace</b><span>Read-only combined view · department records remain isolated until you deliberately review them together.</span></div>':"";
   const birthdayList=Object.values(S.people||{}).filter(p=>p&&p.birthday&&/^\d{2}-\d{2}$/.test(p.birthday)).map(p=>{
     const[mm,dd]=p.birthday.split("-").map(Number);
@@ -623,9 +599,16 @@ function rSyncDashboard(el){
   el.innerHTML='<div class="sync-dashboard" data-testid="dashboard-workspace">'+
     '<div class="sd-main">'+
       universalNote+
-      '<section class="sd-hero"><div class="sd-hero-copy"><div class="sd-eyebrow">7OS Sync - Operations Suite</div><div class="sd-title">Sync<br>Dashboard</div><div class="sd-sub">Your operation at a glance - parsed, mapped, and ready before the day starts.</div><div class="sd-actions"><button class="sd-btn" onclick="browseScheduleFile()">Drop / browse files</button><button class="sd-btn" onclick="railNavToday()">Calendar</button><button class="sd-btn" onclick="railNavPeople(&quot;dashboard&quot;)">People</button></div></div><div class="sd-ledger"><div class="sd-ledger-row"><b>On floor</b><span>'+working.length+' / '+people.length+'</span></div><div class="sd-ledger-row"><b>Off / leave</b><span>'+off.length+' / '+people.length+'</span></div><div class="sd-ledger-row"><b>Alerts</b><span>'+issueOpen+' open</span></div><div class="sd-ledger-row"><b>Scope</b><span>'+people.length+' people - '+leaders.length+' leaders</span></div><div class="sd-ledger-row"><b>Sources</b><span>'+(S.shs||[]).length+' sheets - '+(S.raw?S.raw.length:all.length)+' rows</span></div></div></section>'+
-      '<div class="sd-command-grid"><section class="sd-panel span-6"><div class="sd-panel-head"><h4>Working Today</h4><span>'+X(fDF(today))+'</span></div><div class="sd-panel-body"><div class="sd-list scroll">'+workingHtml+'</div></div></section><section class="sd-panel span-6"><div class="sd-panel-head"><h4>'+X(weekTitle)+'<small>'+X(weekRange)+'</small></h4><div class="sd-week-tools"><button aria-label="Previous week" onclick="S.dashWeekOffset=(Number(S.dashWeekOffset)||0)-1;rSyncDashboard($(\'ca\'))">‹</button><span>'+people.length+' people</span><button aria-label="Next week" onclick="S.dashWeekOffset=(Number(S.dashWeekOffset)||0)+1;rSyncDashboard($(\'ca\'))">›</button></div></div><div class="sd-panel-body"><div class="sd-cover">'+weekRows.join("")+'</div></div></section><section class="sd-panel span-4"><div class="sd-panel-head"><h4>Mini Calendar</h4><span>'+X(monthLabel())+'</span></div><div class="sd-panel-body"><div class="sd-mini-cal">'+miniCalendarHtml+'</div>'+gotoHtml+'</div></section><section class="sd-panel span-3"><div class="sd-panel-head"><h4>Shift time</h4><span>SA / UK</span></div><div class="sd-panel-body">'+clockHtml+'</div></section><section class="sd-panel span-5"><div class="sd-panel-head"><h4>Schedule plan</h4><span>'+X(blueprintLine)+'</span></div><div class="sd-panel-body">'+blueprintScheduleHtml+'</div></section>'+birthdayWidgetHtml+'</div>'+
-      '<div class="sd-focus-grid"><section class="sd-focus-card" onclick="railNavToday()"><div><h3>Calendar</h3></div><div class="sd-mini-list">'+calendarMini+'</div><div class="sd-focus-kpi"><b>'+working.length+'</b><span>'+X(calendarLine)+'</span></div></section><section class="sd-focus-card" onclick="railNavPeople(&quot;dashboard&quot;)"><div><h3>People</h3></div><div class="sd-mini-list">'+peopleMini+'</div><div class="sd-focus-kpi"><b>'+people.length+'</b><span>'+X(peopleLine)+'</span></div></section><section class="sd-focus-card blueprint" onclick="railNavAnalytics(&quot;blueprint&quot;)"><div><h3>Blueprint</h3></div><div class="sd-mini-list">'+blueprintHtml+issueHtml+'</div><div class="sd-focus-kpi"><b>'+(health?X(health.grade):"--")+'</b><span>'+X(blueprintLine)+'</span></div></section></div>'+
+      '<section class="sd-status" aria-label="Today at a glance">'+
+        '<div class="sd-ledger-row"><b>On floor</b><span>'+working.length+' / '+people.length+'</span></div>'+
+        '<div class="sd-ledger-row"><b>Off / leave</b><span>'+off.length+' / '+people.length+'</span></div>'+
+        '<div class="sd-ledger-row"><b>Alerts</b><span>'+issueOpen+' open</span></div>'+
+        '<div class="sd-ledger-row"><b>Scope</b><span>'+people.length+' people - '+leaders.length+' leaders</span></div>'+
+        '<div class="sd-ledger-row"><b>Sources</b><span>'+X(sourceLine)+'</span></div>'+
+        '<button class="sd-btn primary" onclick="browseScheduleFile()">Import file</button>'+
+      '</section>'+
+      '<div class="sd-command-grid"><section class="sd-panel span-6"><div class="sd-panel-head"><h4>Working Today</h4><span>'+X(fDF(today))+'</span></div><div class="sd-panel-body"><div class="sd-list scroll">'+workingHtml+'</div></div></section><section class="sd-panel span-6"><div class="sd-panel-head"><h4>'+X(weekTitle)+'<small>'+X(weekRange)+'</small></h4><div class="sd-week-tools"><button aria-label="Previous week" onclick="S.dashWeekOffset=(Number(S.dashWeekOffset)||0)-1;rSyncDashboard($(\'ca\'))">‹</button><span>'+people.length+' people</span><button aria-label="Next week" onclick="S.dashWeekOffset=(Number(S.dashWeekOffset)||0)+1;rSyncDashboard($(\'ca\'))">›</button></div></div><div class="sd-panel-body"><div class="sd-cover">'+weekRows.join("")+'</div></div></section><section class="sd-panel span-4"><div class="sd-panel-head"><h4>Mini Calendar</h4><span>'+X(monthLabel())+'</span></div><div class="sd-panel-body"><div class="sd-mini-cal">'+miniCalendarHtml+'</div>'+gotoHtml+'</div></section><section class="sd-panel span-8"><div class="sd-panel-head"><h4>Schedule plan</h4><span>'+X(planLine)+'</span></div><div class="sd-panel-body">'+blueprintScheduleHtml+'</div></section>'+birthdayWidgetHtml+'</div>'+
+      '<div class="sd-focus-grid"><section class="sd-focus-card" onclick="railNavToday()"><div><h3>Calendar</h3></div><div class="sd-mini-list">'+calendarMini+'</div><div class="sd-focus-kpi"><b>'+working.length+'</b><span>'+X(calendarLine)+'</span></div></section><section class="sd-focus-card" onclick="railNavPeople(&quot;dashboard&quot;)"><div><h3>People</h3></div><div class="sd-mini-list">'+peopleMini+'</div><div class="sd-focus-kpi"><b>'+people.length+'</b><span>'+X(peopleLine)+'</span></div></section><section class="sd-focus-card blueprint" onclick="railNavAnalytics(&quot;blueprint&quot;)"><div><h3>Blueprint</h3></div><div class="sd-mini-list">'+planRowHtml+issueHtml+'</div><div class="sd-focus-kpi"><b>'+X(hasBlueprint?bpCycle+'w':'--')+'</b><span>'+X(planLine)+'</span></div></section></div>'+
     '</div>'+
   '</div>';
 }

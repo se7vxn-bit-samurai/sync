@@ -547,7 +547,7 @@ function rPeople(el){
   // Sub-tab nav
   h+=`<div class="people-subtab-nav">`;
   const subtabs=[
-    {id:"dashboard",l:"Dashboard"},
+    {id:"dashboard",l:"People overview"},
     {id:"team",l:"Team"},
     {id:"agents",l:"Agents"},
     {id:"logbook",l:"Logbook"},

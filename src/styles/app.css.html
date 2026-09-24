@@ -1288,21 +1288,29 @@ body[data-theme="tide"]:is([data-variant="seafoam-day"],[data-variant="ice-sheet
 .sync-dashboard .sd-ledger{padding:26px 22px;display:flex;flex-direction:column;justify-content:center;gap:8px;border-left:1px solid var(--rule,var(--bdr));background:color-mix(in srgb,var(--bg2) 72%,transparent)}
 .sync-dashboard .sd-ledger-row{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--bdr);border-radius:6px;padding:7px 9px;background:color-mix(in srgb,var(--bg) 78%,transparent);font-size:11px}
 .sync-dashboard .sd-ledger-row b{color:var(--text)}
+/* Home status strip: replaced the 252px hero. Numbers first, one action. */
+.sync-dashboard .sd-status{display:grid;grid-template-columns:repeat(5,minmax(0,1fr)) auto;gap:8px;align-items:stretch}
+.sync-dashboard .sd-status .sd-ledger-row{flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;padding:9px 11px;background:var(--card);border-color:var(--card-border)}
+.sync-dashboard .sd-status .sd-ledger-row b{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--tm);font-weight:600}
+.sync-dashboard .sd-status .sd-ledger-row span{font-family:'JetBrains Mono','DM Mono',monospace;font-size:13px;font-weight:700;color:var(--text)}
+.sync-dashboard .sd-btn.primary{border-color:var(--accent);color:var(--accent);font-weight:600;white-space:nowrap}
+@media(max-width:900px){.sync-dashboard .sd-status{grid-template-columns:repeat(2,minmax(0,1fr))}.sync-dashboard .sd-status .sd-btn{grid-column:1/-1;min-height:42px}}
 .sync-dashboard .sd-ledger-row span{font-family:'DM Mono',monospace;color:var(--accent)}
-.sync-dashboard .sd-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:14px}
-.sync-dashboard .sd-kpi{border:1px solid var(--card-border);border-radius:10px;background:var(--card);box-shadow:var(--sh);padding:15px 14px}
-.sync-dashboard .sd-kpi .n{font-family:'JetBrains Mono','DM Mono',monospace;font-size:26px;font-weight:800;color:var(--accent);line-height:1}
-.sync-dashboard .sd-kpi .l{margin-top:6px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--tm)}
-.sync-dashboard .sd-kpi .s{margin-top:5px;font-size:11px;color:var(--ink3,var(--tm))}
+/* The Ops workspace overview (_opsMetric) uses the same KPI tiles; unscoped there it rendered as plain stacked text. */
+.sync-dashboard .sd-kpis,.ops-hq .sd-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:14px}
+.sync-dashboard .sd-kpi,.ops-hq .sd-kpi{border:1px solid var(--card-border);border-radius:10px;background:var(--card);box-shadow:var(--sh);padding:15px 14px}
+.sync-dashboard .sd-kpi .n,.ops-hq .sd-kpi .n{font-family:'JetBrains Mono','DM Mono',monospace;font-size:26px;font-weight:800;color:var(--accent);line-height:1}
+.sync-dashboard .sd-kpi .l,.ops-hq .sd-kpi .l{margin-top:6px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--tm)}
+.sync-dashboard .sd-kpi .s,.ops-hq .sd-kpi .s{margin-top:5px;font-size:11px;color:var(--ink3,var(--tm))}
 .sync-dashboard .sd-side,.sync-dashboard .sd-main{min-width:0;display:flex;flex-direction:column;gap:10px}
 .sync-dashboard .an-card{border-radius:8px}
 .sync-dashboard .an-card-hd{min-height:34px;padding:10px 14px}
 .sync-dashboard .an-card-body{padding:10px 14px}
-.sync-dashboard .sd-list{display:flex;flex-direction:column;gap:6px}
-.sync-dashboard .sd-list.scroll{max-height:174px;overflow-y:auto;padding-right:3px}
-.sync-dashboard .sd-list-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--bdr);border-radius:6px;background:color-mix(in srgb,var(--bg) 78%,transparent);padding:7px 9px;font-size:11px}
-.sync-dashboard .sd-list-row .name{font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sync-dashboard .sd-list-row .meta{font-family:'DM Mono',monospace;color:var(--accent);white-space:nowrap}
+.sync-dashboard .sd-list,.ops-hq .sd-list{display:flex;flex-direction:column;gap:6px}
+.sync-dashboard .sd-list.scroll,.ops-hq .sd-list.scroll{max-height:174px;overflow-y:auto;padding-right:3px}
+.sync-dashboard .sd-list-row,.ops-hq .sd-list-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--bdr);border-radius:6px;background:color-mix(in srgb,var(--bg) 78%,transparent);padding:7px 9px;font-size:11px}
+.sync-dashboard .sd-list-row .name,.ops-hq .sd-list-row .name{font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sync-dashboard .sd-list-row .meta,.ops-hq .sd-list-row .meta{font-family:'DM Mono',monospace;color:var(--accent);white-space:nowrap}
 .sync-dashboard .sd-cover{display:flex;flex-direction:column;gap:7px}
 .sync-dashboard .sd-cover-row{display:grid;grid-template-columns:34px 1fr auto;gap:8px;align-items:center;font-size:11px}
 .sync-dashboard .sd-bar{height:5px;border-radius:6px;background:var(--bg3);overflow:hidden}
@@ -1411,7 +1419,7 @@ body.sync-universal-active .ns-ops-main .ns-cross-department-action{pointer-even
   .sync-dashboard .sd-hero-copy{padding:24px 22px}
   .sync-dashboard .sd-title{font-size:36px}
   .sync-dashboard .sd-ledger{border-left:0;border-top:1px solid var(--rule,var(--bdr));padding:18px 20px}
-  .sync-dashboard .sd-kpis,.sd-health-strip,.sync-dashboard .sd-focus-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sync-dashboard .sd-kpis,.ops-hq .sd-kpis,.sd-health-strip,.sync-dashboard .sd-focus-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .sync-dashboard .sd-focus-card.blueprint{grid-column:span 2}
   .sync-dashboard .sd-panel.span-3,.sync-dashboard .sd-panel.span-4,.sync-dashboard .sd-panel.span-5,.sync-dashboard .sd-panel.span-6,.sync-dashboard .sd-panel.span-7,.sync-dashboard .sd-panel.span-8{grid-column:span 6}
 }
@@ -1927,6 +1935,11 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .pst-btn{padding:7px 14px;font-size:11px;font-weight:600;cursor:pointer;background:none;border:none;border-bottom:2px solid transparent;color:var(--tm);font-family:inherit;transition:all .12s;letter-spacing:.4px;text-transform:uppercase}
 .pst-btn:hover{color:var(--text)}
 .pst-btn.a{color:var(--accent);border-bottom-color:var(--accent)}
+/* Ops section tabs (renderOpsSectionNav) sit above #ca and scroll sideways on narrow screens. */
+#opsSectionNav{flex-shrink:0}
+.ops-section-nav{overflow-x:auto;scrollbar-width:none}
+.ops-section-nav::-webkit-scrollbar{display:none}
+.ops-section-nav .pst-btn{white-space:nowrap;padding:11px 14px}
 /* Quick event form */
 .quick-event-form{background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
 .qef-type-btn{padding:5px 10px;border:1px solid var(--bdr);border-radius:20px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer;transition:all .1s}
@@ -2410,7 +2423,7 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
   .sync-dashboard .sd-hero-copy{padding:24px 18px}
   .sync-dashboard .sd-title{font-size:34px}
   .sync-dashboard .sd-ledger{border-left:0;border-top:1px solid var(--rule,var(--bdr));padding:16px}
-  .sync-dashboard .sd-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .sync-dashboard .sd-kpis,.ops-hq .sd-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
   .sync-dashboard .sd-focus-grid{grid-template-columns:1fr;gap:8px}
   .sync-dashboard .sd-focus-card,.sync-dashboard .sd-focus-card.blueprint{min-height:126px;grid-column:auto}
   .sync-dashboard .sd-command-grid{grid-template-columns:1fr;gap:8px}
@@ -2490,4 +2503,10 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
   .ec:hover,.mc:hover,.phq-card:hover,.plg-card:hover,.pw-block:hover,.an-card:hover,.wv-card2:hover{transform:none}
 }
 .parser-disabled{opacity:.58;filter:saturate(.65);cursor:not-allowed!important}
+.lc-more{margin-top:10px;border:1px solid var(--rule,var(--bdr));border-radius:8px}
+.lc-more-summary{cursor:pointer;list-style:none;padding:11px 14px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3,var(--tm));display:flex;align-items:center;justify-content:space-between}
+.lc-more-summary::-webkit-details-marker{display:none}
+.lc-more-summary::after{content:"+";font-size:14px}
+.lc-more[open] .lc-more-summary::after{content:"−"}
+.lc-more-body{display:flex;flex-direction:column;gap:8px;padding:0 10px 10px}
 </style>

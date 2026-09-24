@@ -381,22 +381,16 @@ function rAnalytics(el){
   if(S.anView==="forecast"||S.anView==="capacity")S.anView="dashboard";
   if(!["dashboard","coverage","alerts","absence","rawdata","blueprint","ops"].includes(S.anView))S.anView="dashboard";
 
-  const flagCount=computeFlags().filter(f=>f.category==="operational"||f.category==="blueprint").length;
-  const alertsBadge=flagCount>0?` <span style="font-size:10px;padding:1px 5px;border-radius:8px;background:rgba(220,38,38,.15);color:#dc2626;font-weight:700">${flagCount}</span>`:"";
-
   let h=`<div id="analyticsSurface">`;
-  h+=`<div id="analyticsModeControls" class="an-mode-toggle">`;
-  h+=`<button class="an-mode-btn${S.anView==="dashboard"?" active":""}" data-anview="dashboard" onclick="setAnalyticsView('dashboard')">Dashboard</button>`;
-  h+=`<button class="an-mode-btn${S.anView==="ops"?" active":""}" data-anview="ops" onclick="setAnalyticsView('ops')">Workspace</button>`;
-  h+=`<button class="an-mode-btn${S.anView==="coverage"?" active":""}" data-anview="coverage" onclick="setAnalyticsView('coverage')">Coverage</button>`;
-  h+=`<button class="an-mode-btn${S.anView==="blueprint"?" active":""}" data-anview="blueprint" onclick="setAnalyticsView('blueprint')">Blueprint</button>`;
-  h+=`<button class="an-mode-btn${S.anView==="absence"?" active":""}" data-anview="absence" onclick="setAnalyticsView('absence')">Absence</button>`;
-  h+=`<button class="an-mode-btn${S.anView==="alerts"?" active":""}" data-anview="alerts" onclick="setAnalyticsView('alerts')">Alerts${alertsBadge}</button>`;
-  h+=`<button class="an-mode-btn${S.anView==="rawdata"?" active":""}" data-anview="rawdata" onclick="setAnalyticsView('rawdata')">Data</button>`;
+  // The rail's Ops group is the only navigation for these views. This bar used to repeat it with
+  // its own Dashboard/Workspace/Coverage/... buttons, and its Workspace button never reset
+  // S.opsView, so it could land on whichever Ops sub-view was open last. Only the scope toggle,
+  // which the rail has no equivalent for, remains.
+  const scopeVisible=['dashboard','coverage','absence'].includes(S.anView);
+  h+=`<div id="analyticsModeControls" class="an-mode-toggle" style="border:none;display:${scopeVisible?'flex':'none'}">`;
   // Scope toggle
   if(!S.anScope)S.anScope='month';
-  const scopeVisible=['dashboard','coverage','absence'].includes(S.anView);
-  h+=`<div id="analyticsScopeToggle" style="margin-left:auto;display:${scopeVisible?'flex':'none'};align-items:center;gap:0;border:1px solid var(--bdr);border-radius:6px;overflow:hidden">`;
+  h+=`<div id="analyticsScopeToggle" style="margin-left:auto;display:flex;align-items:center;gap:0;border:1px solid var(--bdr);border-radius:6px;overflow:hidden">`;
   [{k:'today',l:'Today'},{k:'week',l:'Week'},{k:'month',l:'Month'}].forEach(sc=>{
     const isSel=S.anScope===sc.k;
     h+=`<button onclick="S.anScope='${sc.k}';_anDataCache=null;rerenderAnalyticsSurface('view')" style="padding:3px 10px;border:none;border-right:1px solid var(--bdr);background:${isSel?'var(--accent)':'none'};color:${isSel?'#000':'var(--tm)'};font-family:inherit;font-size:11px;font-weight:${isSel?'700':'400'};cursor:pointer;transition:all .12s">${sc.l}</button>`;

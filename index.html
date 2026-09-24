@@ -1441,21 +1441,29 @@ body[data-theme="tide"]:is([data-variant="seafoam-day"],[data-variant="ice-sheet
 .sync-dashboard .sd-ledger{padding:26px 22px;display:flex;flex-direction:column;justify-content:center;gap:8px;border-left:1px solid var(--rule,var(--bdr));background:color-mix(in srgb,var(--bg2) 72%,transparent)}
 .sync-dashboard .sd-ledger-row{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--bdr);border-radius:6px;padding:7px 9px;background:color-mix(in srgb,var(--bg) 78%,transparent);font-size:11px}
 .sync-dashboard .sd-ledger-row b{color:var(--text)}
+/* Home status strip: replaced the 252px hero. Numbers first, one action. */
+.sync-dashboard .sd-status{display:grid;grid-template-columns:repeat(5,minmax(0,1fr)) auto;gap:8px;align-items:stretch}
+.sync-dashboard .sd-status .sd-ledger-row{flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;padding:9px 11px;background:var(--card);border-color:var(--card-border)}
+.sync-dashboard .sd-status .sd-ledger-row b{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--tm);font-weight:600}
+.sync-dashboard .sd-status .sd-ledger-row span{font-family:'JetBrains Mono','DM Mono',monospace;font-size:13px;font-weight:700;color:var(--text)}
+.sync-dashboard .sd-btn.primary{border-color:var(--accent);color:var(--accent);font-weight:600;white-space:nowrap}
+@media(max-width:900px){.sync-dashboard .sd-status{grid-template-columns:repeat(2,minmax(0,1fr))}.sync-dashboard .sd-status .sd-btn{grid-column:1/-1;min-height:42px}}
 .sync-dashboard .sd-ledger-row span{font-family:'DM Mono',monospace;color:var(--accent)}
-.sync-dashboard .sd-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:14px}
-.sync-dashboard .sd-kpi{border:1px solid var(--card-border);border-radius:10px;background:var(--card);box-shadow:var(--sh);padding:15px 14px}
-.sync-dashboard .sd-kpi .n{font-family:'JetBrains Mono','DM Mono',monospace;font-size:26px;font-weight:800;color:var(--accent);line-height:1}
-.sync-dashboard .sd-kpi .l{margin-top:6px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--tm)}
-.sync-dashboard .sd-kpi .s{margin-top:5px;font-size:11px;color:var(--ink3,var(--tm))}
+/* The Ops workspace overview (_opsMetric) uses the same KPI tiles; unscoped there it rendered as plain stacked text. */
+.sync-dashboard .sd-kpis,.ops-hq .sd-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:14px}
+.sync-dashboard .sd-kpi,.ops-hq .sd-kpi{border:1px solid var(--card-border);border-radius:10px;background:var(--card);box-shadow:var(--sh);padding:15px 14px}
+.sync-dashboard .sd-kpi .n,.ops-hq .sd-kpi .n{font-family:'JetBrains Mono','DM Mono',monospace;font-size:26px;font-weight:800;color:var(--accent);line-height:1}
+.sync-dashboard .sd-kpi .l,.ops-hq .sd-kpi .l{margin-top:6px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--tm)}
+.sync-dashboard .sd-kpi .s,.ops-hq .sd-kpi .s{margin-top:5px;font-size:11px;color:var(--ink3,var(--tm))}
 .sync-dashboard .sd-side,.sync-dashboard .sd-main{min-width:0;display:flex;flex-direction:column;gap:10px}
 .sync-dashboard .an-card{border-radius:8px}
 .sync-dashboard .an-card-hd{min-height:34px;padding:10px 14px}
 .sync-dashboard .an-card-body{padding:10px 14px}
-.sync-dashboard .sd-list{display:flex;flex-direction:column;gap:6px}
-.sync-dashboard .sd-list.scroll{max-height:174px;overflow-y:auto;padding-right:3px}
-.sync-dashboard .sd-list-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--bdr);border-radius:6px;background:color-mix(in srgb,var(--bg) 78%,transparent);padding:7px 9px;font-size:11px}
-.sync-dashboard .sd-list-row .name{font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sync-dashboard .sd-list-row .meta{font-family:'DM Mono',monospace;color:var(--accent);white-space:nowrap}
+.sync-dashboard .sd-list,.ops-hq .sd-list{display:flex;flex-direction:column;gap:6px}
+.sync-dashboard .sd-list.scroll,.ops-hq .sd-list.scroll{max-height:174px;overflow-y:auto;padding-right:3px}
+.sync-dashboard .sd-list-row,.ops-hq .sd-list-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--bdr);border-radius:6px;background:color-mix(in srgb,var(--bg) 78%,transparent);padding:7px 9px;font-size:11px}
+.sync-dashboard .sd-list-row .name,.ops-hq .sd-list-row .name{font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sync-dashboard .sd-list-row .meta,.ops-hq .sd-list-row .meta{font-family:'DM Mono',monospace;color:var(--accent);white-space:nowrap}
 .sync-dashboard .sd-cover{display:flex;flex-direction:column;gap:7px}
 .sync-dashboard .sd-cover-row{display:grid;grid-template-columns:34px 1fr auto;gap:8px;align-items:center;font-size:11px}
 .sync-dashboard .sd-bar{height:5px;border-radius:6px;background:var(--bg3);overflow:hidden}
@@ -1564,7 +1572,7 @@ body.sync-universal-active .ns-ops-main .ns-cross-department-action{pointer-even
   .sync-dashboard .sd-hero-copy{padding:24px 22px}
   .sync-dashboard .sd-title{font-size:36px}
   .sync-dashboard .sd-ledger{border-left:0;border-top:1px solid var(--rule,var(--bdr));padding:18px 20px}
-  .sync-dashboard .sd-kpis,.sd-health-strip,.sync-dashboard .sd-focus-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sync-dashboard .sd-kpis,.ops-hq .sd-kpis,.sd-health-strip,.sync-dashboard .sd-focus-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .sync-dashboard .sd-focus-card.blueprint{grid-column:span 2}
   .sync-dashboard .sd-panel.span-3,.sync-dashboard .sd-panel.span-4,.sync-dashboard .sd-panel.span-5,.sync-dashboard .sd-panel.span-6,.sync-dashboard .sd-panel.span-7,.sync-dashboard .sd-panel.span-8{grid-column:span 6}
 }
@@ -2080,6 +2088,11 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .pst-btn{padding:7px 14px;font-size:11px;font-weight:600;cursor:pointer;background:none;border:none;border-bottom:2px solid transparent;color:var(--tm);font-family:inherit;transition:all .12s;letter-spacing:.4px;text-transform:uppercase}
 .pst-btn:hover{color:var(--text)}
 .pst-btn.a{color:var(--accent);border-bottom-color:var(--accent)}
+/* Ops section tabs (renderOpsSectionNav) sit above #ca and scroll sideways on narrow screens. */
+#opsSectionNav{flex-shrink:0}
+.ops-section-nav{overflow-x:auto;scrollbar-width:none}
+.ops-section-nav::-webkit-scrollbar{display:none}
+.ops-section-nav .pst-btn{white-space:nowrap;padding:11px 14px}
 /* Quick event form */
 .quick-event-form{background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
 .qef-type-btn{padding:5px 10px;border:1px solid var(--bdr);border-radius:20px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer;transition:all .1s}
@@ -2563,7 +2576,7 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
   .sync-dashboard .sd-hero-copy{padding:24px 18px}
   .sync-dashboard .sd-title{font-size:34px}
   .sync-dashboard .sd-ledger{border-left:0;border-top:1px solid var(--rule,var(--bdr));padding:16px}
-  .sync-dashboard .sd-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .sync-dashboard .sd-kpis,.ops-hq .sd-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
   .sync-dashboard .sd-focus-grid{grid-template-columns:1fr;gap:8px}
   .sync-dashboard .sd-focus-card,.sync-dashboard .sd-focus-card.blueprint{min-height:126px;grid-column:auto}
   .sync-dashboard .sd-command-grid{grid-template-columns:1fr;gap:8px}
@@ -2643,6 +2656,12 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
   .ec:hover,.mc:hover,.phq-card:hover,.plg-card:hover,.pw-block:hover,.an-card:hover,.wv-card2:hover{transform:none}
 }
 .parser-disabled{opacity:.58;filter:saturate(.65);cursor:not-allowed!important}
+.lc-more{margin-top:10px;border:1px solid var(--rule,var(--bdr));border-radius:8px}
+.lc-more-summary{cursor:pointer;list-style:none;padding:11px 14px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3,var(--tm));display:flex;align-items:center;justify-content:space-between}
+.lc-more-summary::-webkit-details-marker{display:none}
+.lc-more-summary::after{content:"+";font-size:14px}
+.lc-more[open] .lc-more-summary::after{content:"−"}
+.lc-more-body{display:flex;flex-direction:column;gap:8px;padding:0 10px 10px}
 </style>
 
 <style id="sync-dashboard-workspace-styles">
@@ -2671,6 +2690,9 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
 @media(max-width:768px){.ct.dashboard-fixed{padding:8px}.sdw-core{grid-template-columns:repeat(2,minmax(0,1fr))}.sdw-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.sdw-widget.size-compact,.sdw-widget.size-medium{grid-column:span 1}.sdw-widget.size-wide,.sdw-widget.size-full{grid-column:span 2}.sdw-widget-head{min-height:30px;padding:5px 7px}.sdw-widget-body{padding:6px 7px}.sdw-toolbar{min-height:30px}.sdw-title small{display:none}.sdw-core-item{padding:6px 7px}.sdw-row{padding:4px 5px}.sdw-widget .sdw-row:nth-child(n+3){display:none}}
 @media(max-width:768px){.sdw-widget[data-widget-id="today"]{min-height:220px}.sdw-widget[data-widget-id="today"] .sdw-list{max-height:154px;overflow-y:auto}.sdw-widget[data-widget-id="today"] .sdw-row:nth-child(n){display:flex}.sdw-widget[data-widget-id="blueprint"]{min-height:205px}.sdw-widget[data-widget-id="blueprint"] .sdw-blueprint{overflow-x:auto;padding-bottom:3px}.sdw-widget[data-widget-id="blueprint"] .sdw-bp-head,.sdw-widget[data-widget-id="blueprint"] .sdw-bp-row{min-width:370px;grid-template-columns:30px repeat(7,minmax(44px,1fr))}.sdw-widget[data-widget-id="blueprint"] .sdw-bp-row b,.sdw-widget[data-widget-id="blueprint"] .sdw-bp-cell{height:25px;font-size:10px}.bp-editor{overflow-x:auto;padding-bottom:6px}.bp-grid{min-width:540px}.rot-grid{min-width:540px}.pl-section{border-radius:8px}.pl-hd{padding:10px}.pl-controls{width:100%}.pl-controls select{max-width:100%}.bp-actions{flex-wrap:wrap}.pl-save-bar{align-items:flex-start;flex-wrap:wrap;padding:10px}.pl-save-bar .ps-info{flex-basis:100%}}
 @media(max-width:820px),(hover:none) and (pointer:coarse){html,body{height:auto;min-height:100dvh;overflow-x:hidden}body{overscroll-behavior-y:auto}.app{min-height:100dvh;width:100%;max-width:100vw}.ct,.uz{overflow-y:auto!important;-webkit-overflow-scrolling:touch}.mf-masthead{height:auto;min-height:40px;padding:5px 8px;gap:5px;flex-wrap:wrap}.mf-mh-brand{font-size:15px}.mf-mh-dept{max-width:38vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mf-mh-stat,.mf-mh-ticker{font-size:9px}.mf-subbar{position:sticky;top:40px;z-index:92;gap:6px;padding:7px 8px;overflow-x:auto;scrollbar-width:none}.mf-subbar::-webkit-scrollbar,.tabs::-webkit-scrollbar,.rail::-webkit-scrollbar{display:none}.tabs{overflow-x:auto;white-space:nowrap;padding-bottom:2px;scrollbar-width:none}.tab{flex:0 0 auto}.rail{max-width:70vw;overflow:auto;-webkit-overflow-scrolling:touch}table{max-width:100%}.et,.data-table,.schedule-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}#parsePreviewOverlay,#wfmPreviewOverlay,#rosterPreviewOverlay{align-items:stretch!important;justify-content:flex-start!important;padding:8px!important;overflow:auto!important}#parsePreviewOverlay>div,#wfmPreviewOverlay>div,#rosterPreviewOverlay>div{width:100%!important;max-width:none!important;max-height:none!important;min-height:calc(100dvh - 16px)!important;border-radius:10px!important}#parsePreviewOverlay [style*="grid-template-columns:repeat(6"],#wfmPreviewOverlay [style*="grid-template-columns:repeat(6"]{grid-template-columns:repeat(3,minmax(0,1fr))!important}#parsePreviewOverlay [style*="grid-template-columns:minmax(0,1.15fr)"],#wfmPreviewOverlay [style*="grid-template-columns:minmax"]{grid-template-columns:1fr!important}#parsePreviewOverlay [style*="border-right:1px solid var(--bdr)"],#wfmPreviewOverlay [style*="border-right:1px solid var(--bdr)"]{border-right:0!important;border-bottom:1px solid var(--bdr)!important}#parsePreviewOverlay [style*="padding:14px 16px"],#wfmPreviewOverlay [style*="padding:14px 16px"],#rosterPreviewOverlay [style*="padding:14px 16px"]{padding:10px!important}#parsePreviewOverlay button,#wfmPreviewOverlay button,#rosterPreviewOverlay button{min-height:34px}#notifTray{position:fixed!important;top:46px!important;right:8px!important;left:8px!important;width:auto!important;max-height:70dvh!important;overflow:auto!important}}
+/* At ≤768px the page does not scroll (#ca does) and .mf-content-col clips, so the sticky offset above
+   never sticks to anything: it only pushed the toolbar 40px down over the top of every screen. */
+@media(max-width:768px){.mf-subbar{top:0}}
 @media(max-width:820px),(hover:none) and (pointer:coarse){#parsePreviewOverlay>div{display:grid!important;grid-template-rows:auto auto minmax(0,1fr) auto auto!important;overflow:hidden!important}#parsePreviewOverlay>div>div:nth-child(1){padding:8px 10px!important;gap:6px!important;align-items:flex-start!important;flex-wrap:wrap!important}#parsePreviewOverlay>div>div:nth-child(1)>div{flex-basis:100%!important}#parsePreviewOverlay>div>div:nth-child(1) [style*="border-radius:5px"]{font-size:10px!important;padding:2px 7px!important}#parsePreviewOverlay>div>div:nth-child(2) [style*="padding:12px 8px"]{padding:8px 6px!important}#parsePreviewOverlay>div>div:nth-child(2) [style*="font-size:20px"]{font-size:18px!important}#parsePreviewOverlay>div>div:nth-child(3){overflow:auto!important;min-height:0!important}#parseLoadHint{padding:8px 10px 0!important;text-align:left!important;line-height:1.35!important;position:static!important}#parseLoadHint+div{position:static!important;display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;justify-content:stretch!important;align-items:stretch!important;padding:8px 10px 10px!important;background:var(--bg)!important;border-top:1px solid var(--bdr)!important;box-shadow:0 -8px 16px rgba(0,0,0,.08)!important}#parseLoadHint+div button{width:100%!important;min-width:0!important;white-space:normal!important;padding:8px 10px!important}#parseLoadBtn{grid-column:1/-1!important}}
 @media(max-width:520px){.sdw-core,.sdw-kpis,.sdw-grid{grid-template-columns:1fr!important}.sdw-widget.size-compact,.sdw-widget.size-medium,.sdw-widget.size-wide,.sdw-widget.size-full,.sdw-add-tile{grid-column:span 1!important}.sync-dashboard .sd-title,.sdw-hero h1{font-size:24px}.sdw-hero{grid-template-columns:1fr;min-height:auto}.sdw-hero-ledger{border-left:0;border-top:1px solid var(--rule,var(--bdr))}}
 /* Mobile parse preview: let the whole dialog grow and scroll so cache choices cannot be clipped. */
@@ -2831,16 +2853,6 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
       </button>
       <div id="lcNewSourceGroup">
 
-      <!-- Mode toggle -->
-      <div class="lc-mode-toggle">
-        <button id="lcModeStd" class="lc-mode-btn active" onclick="setLCMode('standard')">
-          <span class="lc-mbtn-icon">⊞</span>Standard roster
-        </button>
-        <button id="lcModeWfm" class="lc-mode-btn" onclick="setLCMode('wfm')">
-          <span class="lc-mbtn-icon">📆</span>WFM Calendar
-        </button>
-      </div>
-
       <!-- Drop zone -->
       <div id="dz" class="lc-dz"
         onclick="browseScheduleFile()"
@@ -2857,14 +2869,35 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
         </div>
       </div>
 
+      <!-- First run only: every other route in requires the user to already have a roster
+           spreadsheet in hand, which makes the product impossible to evaluate before committing
+           real data to it. Shown only while there are genuinely no saved projects — see
+           _syncRenderSampleOffer. -->
+      <button id="lcSampleBtn" onclick="_syncCreateSampleProject()" class="lc-roster-btn" style="display:none">
+        <span style="font-size:13px;opacity:.5">✨</span>
+        <span class="lc-roster-label">Explore with a sample project</span>
+      </button>
+
+      <!-- Two ways in up front: a file, or the sample. Everything else is for people who already
+           know they need it, so it waits one click away. -->
+      <details class="lc-more">
+        <summary class="lc-more-summary">More ways to start</summary>
+        <div class="lc-more-body">
+      <!-- Mode toggle -->
+      <div class="lc-mode-toggle">
+        <button id="lcModeStd" class="lc-mode-btn active" onclick="setLCMode('standard')">
+          <span class="lc-mbtn-icon">⊞</span>Standard roster
+        </button>
+        <button id="lcModeWfm" class="lc-mode-btn" onclick="setLCMode('wfm')">
+          <span class="lc-mbtn-icon">📆</span>WFM Calendar
+        </button>
+      </div>
+
       <!-- Paste -->
       <button onclick="pasteFromClip()" class="lc-paste-btn">
         <span class="lc-paste-label">Paste schedule data</span>
         <span class="lc-paste-kbd">Ctrl+V</span>
       </button>
-
-      <!-- Or -->
-      <div class="lc-or"><span class="lc-or-rule"></span>or<span class="lc-or-rule"></span></div>
 
       <!-- New schedule -->
       <button onclick="startBuildWizard()" class="lc-new-btn">
@@ -2877,15 +2910,8 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
         <span style="font-size:13px;opacity:.5">👥</span>
         <span class="lc-roster-label">Add agent roster</span>
       </button>
-
-      <!-- First run only: every other route in requires the user to already have a roster
-           spreadsheet in hand, which makes the product impossible to evaluate before committing
-           real data to it. Shown only while there are genuinely no saved projects — see
-           _syncRenderSampleOffer. -->
-      <button id="lcSampleBtn" onclick="_syncCreateSampleProject()" class="lc-roster-btn" style="display:none">
-        <span style="font-size:13px;opacity:.5">✨</span>
-        <span class="lc-roster-label">Explore with a sample project</span>
-      </button>
+        </div>
+      </details>
 
       </div>
 
@@ -2913,7 +2939,7 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
 </div>
 <!-- Build wizard overlay -->
 <div id="buildWizard" style="display:none;position:fixed;inset:0;z-index:900;background:var(--bg);overflow-y:auto"></div>
-<div id="mv" class="hid" style="flex:1;display:flex;flex-direction:column"><div class="mf-masthead" id="mfMasthead"><div class="mf-mh-left"><span class="mf-mh-brand">7OS Sync</span><span class="mf-mh-sep" id="mhDeptSep" style="display:none"></span><span class="mf-mh-dept" id="fl" style="display:none"></span><span class="mf-mh-stat" id="mhLeaderCount"></span><span class="mf-mh-sep"></span><span class="mf-mh-stat" id="mhHealth"></span></div><div class="mf-mh-center" id="mfMastheadMonthNav" style="display:none"></div><div class="mf-mh-right" id="ha" style="display:none"><div class="mf-mh-ticker" id="mhTicker"></div></div></div><div class="mf-body"><div class="mf-rail" id="mfRail"><button class="mf-nav-toggle" id="mfNavToggle" data-testid="rail-toggle" title="Toggle sidebar" aria-label="Toggle sidebar"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="2" width="5" height="12" rx="1.5" fill="currentColor" opacity=".5"/><line x1="8.5" y1="5" x2="15" y2="5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="8.5" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="8.5" y1="11" x2="15" y2="11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button><div class="mf-rail-nav" id="mfRailNav"></div><div class="mf-rail-bottom" id="mfRailBottom"></div></div><div class="mf-content-col"><div class="mf-subbar" id="mfSubbar"></div><div id="contBar"></div><div class="ct" id="ca"></div></div></div></div>
+<div id="mv" class="hid" style="flex:1;display:flex;flex-direction:column"><div class="mf-masthead" id="mfMasthead"><div class="mf-mh-left"><span class="mf-mh-brand">7OS Sync</span><span class="mf-mh-sep" id="mhDeptSep" style="display:none"></span><span class="mf-mh-dept" id="fl" style="display:none"></span><span class="mf-mh-stat" id="mhLeaderCount"></span><span class="mf-mh-sep"></span><span class="mf-mh-stat" id="mhHealth"></span></div><div class="mf-mh-center" id="mfMastheadMonthNav" style="display:none"></div><div class="mf-mh-right" id="ha" style="display:none"><div class="mf-mh-ticker" id="mhTicker"></div></div></div><div class="mf-body"><div class="mf-rail" id="mfRail"><button class="mf-nav-toggle" id="mfNavToggle" data-testid="rail-toggle" title="Toggle sidebar" aria-label="Toggle sidebar"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="2" width="5" height="12" rx="1.5" fill="currentColor" opacity=".5"/><line x1="8.5" y1="5" x2="15" y2="5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="8.5" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="8.5" y1="11" x2="15" y2="11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button><div class="mf-rail-nav" id="mfRailNav"></div><div class="mf-rail-bottom" id="mfRailBottom"></div></div><div class="mf-content-col"><div class="mf-subbar" id="mfSubbar"></div><div id="contBar"></div><div id="opsSectionNav" style="display:none"></div><div class="ct" id="ca"></div></div></div></div>
 <!-- WFM View Panel — v59 integration -->
 <div id="wfmv" style="flex:1;flex-direction:column;min-height:0">
   <!-- WFM Masthead -->
@@ -4052,14 +4078,10 @@ function _rerenderAnalyticsSurfaceNow(mode){
       host.appendChild(opsHost);
       rIntel(opsHost);
     }
-    // Update scope toggle visibility
-    const scopeWrap=$("analyticsScopeToggle");
-    if(scopeWrap)scopeWrap.style.display=['dashboard','coverage','capacity','absence'].includes(S.anView)?'flex':'none';
-    // Update active tab button
+    // The bar holds only the scope toggle now; hide it on views the scope does not apply to.
     const bar=$("analyticsModeControls");
-    if(bar)bar.querySelectorAll('.an-mode-btn').forEach(b=>{
-      b.classList.toggle('active',b.getAttribute('data-anview')===S.anView);
-    });
+    if(bar)bar.style.display=['dashboard','coverage','capacity','absence'].includes(S.anView)?'flex':'none';
+    if(typeof syncOpsChrome==="function")syncOpsChrome();
     return true;
   }
   // Fallback: full re-render
@@ -4596,10 +4618,7 @@ function rSyncDashboard(el){
   const leaders=typeof _peopleScopeLeaders==="function"?_peopleScopeLeaders():[...new Set(all.map(e=>e.name).filter(Boolean))];
   const issueOpen=buildIssueInboxItems().filter(x=>x.status==="open").length;
   const attention=getPeopleAttentionCount();
-  const health=S.month?computeTeamHealthScore(S.month):null;
   const todayHours=Math.round(working.reduce((sum,e)=>sum+calcHrs(e.saS||e.ukS,e.saE||e.ukE),0)*10)/10;
-  const saNow=new Date().toLocaleTimeString("en-ZA",{timeZone:"Africa/Johannesburg",hour:"2-digit",minute:"2-digit",hour12:false});
-  const ukNow=new Date().toLocaleTimeString("en-GB",{timeZone:"Europe/London",hour:"2-digit",minute:"2-digit",hour12:false});
   const dashWeekOffset=Number(S.dashWeekOffset)||0;
   const weekStart=new Date(today);weekStart.setDate(weekStart.getDate()-((weekStart.getDay()+6)%7)+(dashWeekOffset*7));
   const weekEnd=new Date(weekStart);weekEnd.setDate(weekStart.getDate()+6);
@@ -4613,11 +4632,11 @@ function rSyncDashboard(el){
   }
   const workingHtml=working.length?working.map(e=>'<div class="sd-list-row"><span class="name">'+X(e.name)+'</span><span class="meta">'+X((S.tz&&e.saS?e.saS:e.ukS)||"")+'-'+X((S.tz&&e.saE?e.saE:e.ukE)||"")+'</span></div>').join(""):'<div class="sd-list-row"><span class="name">No one scheduled today</span><span class="meta">--</span></div>';
   const issueHtml=issueOpen?'<div class="sd-list-row"><span class="name">Open issues</span><span class="meta">'+issueOpen+'</span></div>':'<div class="sd-list-row"><span class="name">Clean queue</span><span class="meta">0</span></div>';
-  const blueprintHtml=S.month?'<div class="sd-list-row"><span class="name">'+X(monthLabel())+'</span><span class="meta">'+(health?X(health.grade+" "+health.avg):"--")+'</span></div>':'<div class="sd-list-row"><span class="name">No month selected</span><span class="meta">--</span></div>';
   const peopleIntel=typeof peopleOpsIntel==="function"?peopleOpsIntel(leaders):null;
   const peopleLine=peopleIntel?peopleIntel.ready+' OT ready - '+peopleIntel.issues.length+' structure':'people signals '+attention;
   const calendarLine=working.length+' working - '+off.length+' off - '+todayHours+'h';
-  const blueprintLine=health?'Health '+health.grade+' '+health.avg:'No month score';
+  const sourceRows=typeof _opsSourceRows==="function"?_opsSourceRows():[];
+  const sourceLine=sourceRows.length+(sourceRows.length===1?' file':' files')+' - '+sourceRows.reduce((n,r)=>n+(Number(r.rows)||0),0)+' rows';
   const calendarMini='<div class="sd-list-row"><span class="name">Today</span><span class="meta">'+working.length+' / '+people.length+'</span></div><div class="sd-list-row"><span class="name">Window</span><span class="meta">'+X((S.tz?"SA":"UK")+' floor')+'</span></div>';
   const peopleMini='<div class="sd-list-row"><span class="name">People</span><span class="meta">'+people.length+'</span></div><div class="sd-list-row"><span class="name">OT readiness</span><span class="meta">'+(peopleIntel?peopleIntel.ready+' ready':'--')+'</span></div>';
   const monthParts=S.month?S.month.split("-").map(Number):[today.getFullYear(),today.getMonth()];
@@ -4632,30 +4651,6 @@ function rSyncDashboard(el){
     calCells.push('<div class="sd-cal-d '+(stat.work?'work ':'')+(stat.off?'off ':'')+((isToday||isSelected)?'today':'')+'" onclick="setCalendarDay('+calY+','+calM+','+d+')" title="'+stat.work+' working, '+stat.off+' off">'+d+'</div>');
   }
   const miniCalendarHtml=calCells.join("");
-  const swatches=[
-    {k:"surge",l:"Surge",a:"#10121c",b:"#c349ee",c:"#6ab7ff",fg:"#eef6ff"},
-    {k:"tide",l:"Tide",a:"#0b1620",b:"#4db8c8",c:"#7fcf93",fg:"#e9fbff"},
-    {k:"press",l:"Press",a:"#f3d9bd",b:"#8a6337",c:"#2d2015",fg:"#fff4df"},
-    {k:"newsprint",l:"News",a:"#fff5c7",b:"#9381ff",c:"#ff8fab",fg:"#fff8fe"}
-  ];
-  const liveThemeColors=typeof getComputedStyle==="function"?getComputedStyle(document.body):null;
-  const liveColor=(name,fallback)=>liveThemeColors?(liveThemeColors.getPropertyValue(name).trim()||fallback):fallback;
-  const colorwayHtml='<div class="sd-colorway-grid">'+swatches.map(s=>{
-    const active=S.th===s.k;
-    const a=active?liveColor("--bg2",s.a):s.a,b=active?liveColor("--accent",s.b):s.b,c=active?liveColor("--mid-col",s.c):s.c,fg=active?liveColor("--text",s.fg):s.fg;
-    return '<button class="sd-colorway '+(active?'active':'')+'" style="--swatch-a:'+a+';--swatch-b:'+b+';--swatch-c:'+c+';--swatch-label:'+fg+'" onclick="setThemeColorway(&quot;'+s.k+'&quot;)" title="'+X(s.l)+(active?' · active variant':'')+' colourway"><i></i><span>'+X(s.l)+'</span></button>';
-  }).join("")+'</div>';
-  const floorStart=working.map(e=>S.tz?e.saS:e.ukS).filter(Boolean).sort()[0]||"--";
-  const floorEnd=working.map(e=>S.tz?e.saE:e.ukE).filter(Boolean).sort().pop()||"--";
-  const themeName=(TH[S.th]&&TH[S.th].n)||S.th||"Theme";
-  const variantName=typeof _themeVariantName==="function"?_themeVariantName(S.th||"surge",S.thVariant||0):"";
-  const variantLabel=typeof _themeVariantLabel==="function"?_themeVariantLabel(variantName):X(variantName||"Core");
-  const dicePips='<i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>';
-  // Faces persist in S so a shuffle's result survives the dashboard rerender it triggers
-  // (shuffleThemeColorway rebuilds this whole button) instead of snapping back to a default.
-  const diceFaces=Array.isArray(S._diceFaces)&&S._diceFaces.length===2?S._diceFaces:[3,4];
-  const clockExtras='<div class="sd-clock-extras"><div class="sd-clock-extra"><b>'+X(floorStart+'-'+floorEnd)+'</b><span>Floor window</span></div><button class="sd-clock-extra" onclick="openSettings()" title="Open settings"><b>Settings</b><span>Open panel</span></button><div class="sd-clock-extra"><b>'+X(themeName)+'</b><span>'+X(variantLabel)+'</span></div><button class="sd-clock-extra shuffle" onclick="shuffleDashboardColorway(this)" title="Throw dice and shuffle colourway (they always add up to 7)"><span class="sd-dice-pair" aria-label="Shuffle colourway"><b class="sd-dice-icon" data-face="'+diceFaces[0]+'">'+dicePips+'</b><b class="sd-dice-icon" data-face="'+diceFaces[1]+'">'+dicePips+'</b></span><span>Shuffle colourway</span></button></div>';
-  const clockHtml='<div class="sd-clock-panel"><div class="sd-clock-grid"><div class="sd-clock"><b>'+saNow+'</b><span>South Africa</span></div><div class="sd-clock"><b>'+ukNow+'</b><span>United Kingdom</span></div></div>'+colorwayHtml+clockExtras+'</div>';
   const gotoHtml='<div class="sd-jump-grid"><button onclick="railNavToday()">Today</button><button onclick="railNavCalendar(&quot;cards&quot;)">Cards</button><button onclick="railNavCalendar(&quot;overtime&quot;)">OT</button><button onclick="railNavPeople(&quot;dashboard&quot;)">People</button><button onclick="railNavAnalytics(&quot;blueprint&quot;)">Blueprint</button><button onclick="railNavAnalytics(&quot;data&quot;)">Data</button></div>';
   const dept=S.activeDept||"default";
   if(typeof normalizeBlueprintStore==="function")normalizeBlueprintStore();
@@ -4683,7 +4678,10 @@ function rSyncDashboard(el){
     return '<div class="sd-bp-cell h">W'+w+'</div>'+cells.join("");
   }).join("");
   const bpCycle=personBp&&personBp.cycleLen?personBp.cycleLen:bpWeekKeys.length;
-  const blueprintScheduleHtml=(personBp&&bpWeekKeys.length)?'<div class="sd-blueprint-preview"><div class="sd-blueprint-person"><b>Rotation blueprint</b><span>'+X(bpCycle+'w · '+(personBp.confirmed?'confirmed':'review')+' · '+(health?health.grade+" "+health.avg:""))+'</span></div><div class="sd-blueprint-table"><div class="sd-bp-cell h"></div>'+bpDayHeads.join("")+bpRows+'</div></div>':'<div class="sd-blueprint-preview"><div class="sd-blueprint-person"><b>No blueprint loaded</b><span>Planner</span></div><div class="sd-list-row"><span class="name">Open Ops Blueprint</span><span class="meta">Review</span></div></div>';
+  const hasBlueprint=!!(personBp&&bpWeekKeys.length);
+  const planLine=hasBlueprint?bpCycle+'-week rotation · '+(personBp.confirmed?'confirmed':'in review'):'No blueprint yet';
+  const planRowHtml='<div class="sd-list-row"><span class="name">'+X(hasBlueprint?'Rotation':'Blueprint')+'</span><span class="meta">'+X(hasBlueprint?bpCycle+'w · '+(personBp.confirmed?'confirmed':'in review'):'not set up')+'</span></div>';
+  const blueprintScheduleHtml=(personBp&&bpWeekKeys.length)?'<div class="sd-blueprint-preview"><div class="sd-blueprint-person"><b>Rotation blueprint</b><span>'+X(bpCycle+'w · '+(personBp.confirmed?'confirmed':'in review'))+'</span></div><div class="sd-blueprint-table"><div class="sd-bp-cell h"></div>'+bpDayHeads.join("")+bpRows+'</div></div>':'<div class="sd-blueprint-preview"><div class="sd-blueprint-person"><b>No blueprint yet</b><span>not set up</span></div><button type="button" class="sd-list-row" style="width:100%;cursor:pointer;font-family:inherit;color:inherit;text-align:left" onclick="railNavAnalytics(&quot;blueprint&quot;)"><span class="name">Set up blueprint</span><span class="meta">Open editor →</span></button></div>';
   const universalNote=isUniversalWorkspace()?'<div class="sync-universal-note"><b>Universal workspace</b><span>Read-only combined view · department records remain isolated until you deliberately review them together.</span></div>':"";
   const birthdayList=Object.values(S.people||{}).filter(p=>p&&p.birthday&&/^\d{2}-\d{2}$/.test(p.birthday)).map(p=>{
     const[mm,dd]=p.birthday.split("-").map(Number);
@@ -4696,9 +4694,16 @@ function rSyncDashboard(el){
   el.innerHTML='<div class="sync-dashboard" data-testid="dashboard-workspace">'+
     '<div class="sd-main">'+
       universalNote+
-      '<section class="sd-hero"><div class="sd-hero-copy"><div class="sd-eyebrow">7OS Sync - Operations Suite</div><div class="sd-title">Sync<br>Dashboard</div><div class="sd-sub">Your operation at a glance - parsed, mapped, and ready before the day starts.</div><div class="sd-actions"><button class="sd-btn" onclick="browseScheduleFile()">Drop / browse files</button><button class="sd-btn" onclick="railNavToday()">Calendar</button><button class="sd-btn" onclick="railNavPeople(&quot;dashboard&quot;)">People</button></div></div><div class="sd-ledger"><div class="sd-ledger-row"><b>On floor</b><span>'+working.length+' / '+people.length+'</span></div><div class="sd-ledger-row"><b>Off / leave</b><span>'+off.length+' / '+people.length+'</span></div><div class="sd-ledger-row"><b>Alerts</b><span>'+issueOpen+' open</span></div><div class="sd-ledger-row"><b>Scope</b><span>'+people.length+' people - '+leaders.length+' leaders</span></div><div class="sd-ledger-row"><b>Sources</b><span>'+(S.shs||[]).length+' sheets - '+(S.raw?S.raw.length:all.length)+' rows</span></div></div></section>'+
-      '<div class="sd-command-grid"><section class="sd-panel span-6"><div class="sd-panel-head"><h4>Working Today</h4><span>'+X(fDF(today))+'</span></div><div class="sd-panel-body"><div class="sd-list scroll">'+workingHtml+'</div></div></section><section class="sd-panel span-6"><div class="sd-panel-head"><h4>'+X(weekTitle)+'<small>'+X(weekRange)+'</small></h4><div class="sd-week-tools"><button aria-label="Previous week" onclick="S.dashWeekOffset=(Number(S.dashWeekOffset)||0)-1;rSyncDashboard($(\'ca\'))">‹</button><span>'+people.length+' people</span><button aria-label="Next week" onclick="S.dashWeekOffset=(Number(S.dashWeekOffset)||0)+1;rSyncDashboard($(\'ca\'))">›</button></div></div><div class="sd-panel-body"><div class="sd-cover">'+weekRows.join("")+'</div></div></section><section class="sd-panel span-4"><div class="sd-panel-head"><h4>Mini Calendar</h4><span>'+X(monthLabel())+'</span></div><div class="sd-panel-body"><div class="sd-mini-cal">'+miniCalendarHtml+'</div>'+gotoHtml+'</div></section><section class="sd-panel span-3"><div class="sd-panel-head"><h4>Shift time</h4><span>SA / UK</span></div><div class="sd-panel-body">'+clockHtml+'</div></section><section class="sd-panel span-5"><div class="sd-panel-head"><h4>Schedule plan</h4><span>'+X(blueprintLine)+'</span></div><div class="sd-panel-body">'+blueprintScheduleHtml+'</div></section>'+birthdayWidgetHtml+'</div>'+
-      '<div class="sd-focus-grid"><section class="sd-focus-card" onclick="railNavToday()"><div><h3>Calendar</h3></div><div class="sd-mini-list">'+calendarMini+'</div><div class="sd-focus-kpi"><b>'+working.length+'</b><span>'+X(calendarLine)+'</span></div></section><section class="sd-focus-card" onclick="railNavPeople(&quot;dashboard&quot;)"><div><h3>People</h3></div><div class="sd-mini-list">'+peopleMini+'</div><div class="sd-focus-kpi"><b>'+people.length+'</b><span>'+X(peopleLine)+'</span></div></section><section class="sd-focus-card blueprint" onclick="railNavAnalytics(&quot;blueprint&quot;)"><div><h3>Blueprint</h3></div><div class="sd-mini-list">'+blueprintHtml+issueHtml+'</div><div class="sd-focus-kpi"><b>'+(health?X(health.grade):"--")+'</b><span>'+X(blueprintLine)+'</span></div></section></div>'+
+      '<section class="sd-status" aria-label="Today at a glance">'+
+        '<div class="sd-ledger-row"><b>On floor</b><span>'+working.length+' / '+people.length+'</span></div>'+
+        '<div class="sd-ledger-row"><b>Off / leave</b><span>'+off.length+' / '+people.length+'</span></div>'+
+        '<div class="sd-ledger-row"><b>Alerts</b><span>'+issueOpen+' open</span></div>'+
+        '<div class="sd-ledger-row"><b>Scope</b><span>'+people.length+' people - '+leaders.length+' leaders</span></div>'+
+        '<div class="sd-ledger-row"><b>Sources</b><span>'+X(sourceLine)+'</span></div>'+
+        '<button class="sd-btn primary" onclick="browseScheduleFile()">Import file</button>'+
+      '</section>'+
+      '<div class="sd-command-grid"><section class="sd-panel span-6"><div class="sd-panel-head"><h4>Working Today</h4><span>'+X(fDF(today))+'</span></div><div class="sd-panel-body"><div class="sd-list scroll">'+workingHtml+'</div></div></section><section class="sd-panel span-6"><div class="sd-panel-head"><h4>'+X(weekTitle)+'<small>'+X(weekRange)+'</small></h4><div class="sd-week-tools"><button aria-label="Previous week" onclick="S.dashWeekOffset=(Number(S.dashWeekOffset)||0)-1;rSyncDashboard($(\'ca\'))">‹</button><span>'+people.length+' people</span><button aria-label="Next week" onclick="S.dashWeekOffset=(Number(S.dashWeekOffset)||0)+1;rSyncDashboard($(\'ca\'))">›</button></div></div><div class="sd-panel-body"><div class="sd-cover">'+weekRows.join("")+'</div></div></section><section class="sd-panel span-4"><div class="sd-panel-head"><h4>Mini Calendar</h4><span>'+X(monthLabel())+'</span></div><div class="sd-panel-body"><div class="sd-mini-cal">'+miniCalendarHtml+'</div>'+gotoHtml+'</div></section><section class="sd-panel span-8"><div class="sd-panel-head"><h4>Schedule plan</h4><span>'+X(planLine)+'</span></div><div class="sd-panel-body">'+blueprintScheduleHtml+'</div></section>'+birthdayWidgetHtml+'</div>'+
+      '<div class="sd-focus-grid"><section class="sd-focus-card" onclick="railNavToday()"><div><h3>Calendar</h3></div><div class="sd-mini-list">'+calendarMini+'</div><div class="sd-focus-kpi"><b>'+working.length+'</b><span>'+X(calendarLine)+'</span></div></section><section class="sd-focus-card" onclick="railNavPeople(&quot;dashboard&quot;)"><div><h3>People</h3></div><div class="sd-mini-list">'+peopleMini+'</div><div class="sd-focus-kpi"><b>'+people.length+'</b><span>'+X(peopleLine)+'</span></div></section><section class="sd-focus-card blueprint" onclick="railNavAnalytics(&quot;blueprint&quot;)"><div><h3>Blueprint</h3></div><div class="sd-mini-list">'+planRowHtml+issueHtml+'</div><div class="sd-focus-kpi"><b>'+X(hasBlueprint?bpCycle+'w':'--')+'</b><span>'+X(planLine)+'</span></div></section></div>'+
     '</div>'+
   '</div>';
 }
@@ -4730,7 +4735,7 @@ function _opsIssueRows(limit){
 }
 function _opsSourceRows(){
   const sheets=(S.shs||[]).map((s,i)=>({name:s.name||s.sheetName||("Sheet "+(i+1)),rows:s.rows||s.data?.length||0,type:"sheet"}));
-  if(!sheets.length&&S.raw)sheets.push({name:"Parsed schedule rows",rows:S.raw.length,type:"parsed"});
+  if(!sheets.length&&S.raw&&S.raw.length)sheets.push({name:"Parsed schedule rows",rows:S.raw.length,type:"parsed"});
   return sheets;
 }
 function _opsSourceCards(){
@@ -4751,28 +4756,33 @@ function _opsEventRows(limit){
 function rOps(el){
   const view=S.opsView||"overview",ctx=_opsScope();
   const handoff=typeof buildTodayHandoffText==="function"?buildTodayHandoffText():"No handoff builder available.";
-  const blueprint=ctx.health?ctx.health.grade+" "+ctx.health.avg:"--";
+  const health=ctx.health?ctx.health.grade+" "+ctx.health.avg:"--";
   const ready=ctx.intel?ctx.intel.ready:0,structure=ctx.intel?ctx.intel.issues.length:0;
   let body="";
   if(view==="overview"){
+    // OT+ and cross-department review were reachable only from one import path and from nowhere,
+    // respectively. Surface both where the data that needs them exists.
+    const otWishCount=(typeof nsScopedRows==="function"?nsScopedRows("otWishes"):[]).length;
+    const otCard=otWishCount?'<section class="an-card"><div class="an-card-hd"><h4>Overtime planning</h4><span>'+otWishCount+' wish'+(otWishCount===1?"":"es")+'</span></div><div class="an-card-body"><div class="qol-filterbar"><span style="font-size:11px;color:var(--tm)">Availability, fairness history, and allocation for imported OT wishes.</span><button class="qol-row-btn primary" style="margin-left:auto" onclick="railNavOps(&quot;otplus&quot;)">Open OT+ workbench</button></div></div></section>':"";
+    const universalCard=(typeof isUniversalWorkspace==="function"&&isUniversalWorkspace())?'<section class="an-card"><div class="an-card-hd"><h4>Universal workspace</h4><span>read-only combined view</span></div><div class="an-card-body"><div class="qol-filterbar"><span style="font-size:11px;color:var(--tm)">Department records stay isolated until you deliberately review them together.</span><button class="qol-row-btn primary ns-cross-department-action" style="margin-left:auto" onclick="railNavOps(&quot;cross-department&quot;)">Review across departments</button></div></div></section>':"";
     body='<div class="sd-kpis" style="margin:0">'+
       _opsMetric("On floor",ctx.working.length+" / "+ctx.people.length,ctx.off.length+" off / leave")+
       _opsMetric("Decision queue",ctx.issues.length,ctx.flags.length+" ops/blueprint flags",ctx.issues.length?"warn":"")+
       _opsMetric("People readiness",ready+" ready",structure+" structure signals")+
-      _opsMetric("Blueprint",blueprint,(S.shs||[]).length+" sources")+
-    '</div><div class="qol-two-col" style="margin-top:12px"><section class="an-card"><div class="an-card-hd"><h4>Decision Queue</h4><span>Ops Hub port</span></div><div class="an-card-body">'+_opsIssueRows(5)+'</div></section><section class="an-card"><div class="an-card-hd"><h4>Sources Hub</h4><span>'+_opsSourceRows().length+' sources</span></div><div class="an-card-body"><div class="sd-list">'+_opsSourceCards()+'</div></div></section><section class="an-card"><div class="an-card-hd"><h4>Logbook</h4><span>people memory</span></div><div class="an-card-body">'+_opsLogbookRows(5)+'</div></section><section class="an-card"><div class="an-card-hd"><h4>Events</h4><span>current scope</span></div><div class="an-card-body">'+_opsEventRows(5)+'</div></section></div>';
+      _opsMetric("Team health",health,ctx.health?(ctx.health.personScores||[]).length+" people scored":"no schedule this month")+
+    '</div><div class="qol-two-col" style="margin-top:12px"><section class="an-card"><div class="an-card-hd"><h4>Decision Queue</h4><span>'+ctx.issues.length+' open</span></div><div class="an-card-body">'+_opsIssueRows(5)+'</div></section><section class="an-card"><div class="an-card-hd"><h4>Sources</h4><span>'+_opsSourceRows().length+' loaded</span></div><div class="an-card-body"><div class="sd-list">'+_opsSourceCards()+'</div></div></section><section class="an-card"><div class="an-card-hd"><h4>Logbook</h4><span>notes and follow-ups</span></div><div class="an-card-body">'+_opsLogbookRows(5)+'</div></section><section class="an-card"><div class="an-card-hd"><h4>Events</h4><span>current scope</span></div><div class="an-card-body">'+_opsEventRows(5)+'</div></section>'+otCard+universalCard+'</div>';
   }else if(view==="decisions"){
-    body='<section class="an-card"><div class="an-card-hd"><h4>Decision Queue</h4><span>'+ctx.issues.length+' open</span></div><div class="an-card-body"><div class="qol-filterbar"><span style="font-size:11px;color:var(--tm)">Ops Hub pattern: every signal should have owner, evidence, status, and next action.</span><button class="qol-row-btn primary" style="margin-left:auto" onclick="openIssueInbox()">Open Issue Inbox</button></div>'+_opsIssueRows(80)+'</div></section>';
+    body='<section class="an-card"><div class="an-card-hd"><h4>Decision Queue</h4><span>'+ctx.issues.length+' open</span></div><div class="an-card-body"><div class="qol-filterbar"><span style="font-size:11px;color:var(--tm)">Each item has an owner, evidence, a status and a next action.</span><button class="qol-row-btn primary" style="margin-left:auto" onclick="openIssueInbox()">Open Issue Inbox</button></div>'+_opsIssueRows(80)+'</div></section>';
   }else if(view==="sources"){
-    body='<section class="an-card"><div class="an-card-hd"><h4>Sources Hub</h4><span>'+_opsSourceRows().length+' loaded</span></div><div class="an-card-body"><div class="qol-filterbar"><span style="font-size:11px;color:var(--tm)">Port target: confidence, authority, row count, date range, and conflict status for every file.</span><button class="qol-row-btn primary" style="margin-left:auto" onclick="openImportReview()">Import Review</button></div><div class="sd-list">'+_opsSourceCards()+'</div></div></section>';
+    body='<section class="an-card"><div class="an-card-hd"><h4>Sources</h4><span>'+_opsSourceRows().length+' loaded</span></div><div class="an-card-body"><div class="qol-filterbar"><span style="font-size:11px;color:var(--tm)">Every file loaded into this project, with its row count.</span><button class="qol-row-btn primary" style="margin-left:auto" onclick="openImportReview()">Import Review</button></div><div class="sd-list">'+_opsSourceCards()+'</div></div></section>';
   }else if(view==="logbook"){
     body='<section class="an-card"><div class="an-card-hd"><h4>Operational Logbook</h4><span>'+(S.peopleLogbook||[]).length+' entries</span></div><div class="an-card-body"><div class="qol-filterbar"><span style="font-size:11px;color:var(--tm)">Aggregates People notes, follow-ups, summaries, and future Ops actions.</span><button class="qol-row-btn primary" style="margin-left:auto" onclick="railNavPeople(&quot;logbook&quot;)">Add Entry</button></div>'+_opsLogbookRows(120)+'</div></section>';
   }else if(view==="events"){
-    body='<section class="an-card"><div class="an-card-hd"><h4>Events Stream</h4><span>absence / OT / acting / coaching</span></div><div class="an-card-body"><div class="qol-filterbar"><span style="font-size:11px;color:var(--tm)">Ops Hub pattern: upcoming operational moments in one sortable stream.</span><button class="qol-row-btn primary" style="margin-left:auto" onclick="railNavPeople(&quot;events&quot;)">People Events</button></div>'+_opsEventRows(140)+'</div></section>';
+    body='<section class="an-card"><div class="an-card-hd"><h4>Events Stream</h4><span>absence / OT / acting / coaching</span></div><div class="an-card-body"><div class="qol-filterbar"><span style="font-size:11px;color:var(--tm)">Upcoming absence, overtime, acting and coaching, in date order.</span><button class="qol-row-btn primary" style="margin-left:auto" onclick="railNavPeople(&quot;events&quot;)">People Events</button></div>'+_opsEventRows(140)+'</div></section>';
   }else{
     body='<section class="an-card"><div class="an-card-hd"><h4>Today Handoff</h4><span>'+X(fDF(ctx.today))+'</span></div><div class="an-card-body"><div class="qol-filterbar"><button class="qol-row-btn primary" onclick="copyTodayHandoff()">Copy Handoff</button><button class="qol-row-btn" onclick="openTodayHandoff()">Open Handoff</button><button class="qol-row-btn" onclick="openExportPresets()">Export Presets</button></div><textarea class="agent-note-area" readonly style="min-height:360px">'+X(handoff)+'</textarea></div></section>';
   }
-  el.innerHTML='<div class="people-hq ops-hq">'+_opsSubtabNav(view)+'<div class="people-context"><span class="ctx-label">Ops scope</span><span class="ctx-pill">'+X(S.activeDept||"Current department")+'</span><span class="ctx-label">Month</span><span class="ctx-pill">'+X(monthLabel()||"--")+'</span><span class="ctx-label">Port map</span><span class="ctx-pill">Decision Queue - Sources Hub - Logbook - Events - Handoff</span></div><div style="flex:1;overflow:auto;padding:12px">'+body+'</div></div>';
+  el.innerHTML='<div class="people-hq ops-hq">'+_opsSubtabNav(view)+'<div class="people-context"><span class="ctx-label">Ops scope</span><span class="ctx-pill">'+X(S.activeDept||"Current department")+'</span><span class="ctx-label">Month</span><span class="ctx-pill">'+X(monthLabel()||"--")+'</span></div><div style="flex:1;overflow:auto;padding:12px">'+body+'</div></div>';
 }
 function _rerenderCurrentSurfaceNow(){
   normalizeTabState();
@@ -5933,13 +5943,7 @@ function setAnalyticsView(view){
   if(resolved===S.anView)return; // v56: no-op if already on this view
   S.anView=resolved;
   if(S.tab==="analytics"){
-    // v56: fast-path — update tab bar active state in-place, swap content only
-    const bar=$("analyticsModeControls");
-    if(bar){
-      bar.querySelectorAll('.an-mode-btn').forEach(b=>{
-        b.classList.toggle('active',b.getAttribute('data-anview')===S.anView);
-      });
-    }
+    // v56: fast-path — swap content only
     // v56: debounce rapid clicks (16ms = 1 frame)
     clearTimeout(_anViewTimer);
     _anViewTimer=setTimeout(()=>rerenderAnalyticsSurface("view"),16);
@@ -13149,13 +13153,12 @@ function toggleRailGroup(group){
   if(compact){
     const onGroupHome=(group==="calendar"&&S.tab==="calendar"&&S.calSubTab==="day")
       ||(group==="people"&&S.tab==="people"&&S.peopleSubTab==="dashboard")
-      ||(group==="analytics"&&S.tab==="analytics"&&(S.anView||"dashboard")==="dashboard");
+      ||(group==="analytics"&&S.tab==="analytics"&&S.anView==="ops"&&(S.opsView||"overview")==="overview");
     if(!onGroupHome){
       S._mobileRailGroup=null;
       if(group==="calendar")railNavCalendar("day");
       else if(group==="people")railNavPeople("dashboard");
-      else if(group==="ops")railNavOps("overview");
-      else railNavAnalytics("dashboard");
+      else railNavOps("overview");
       return;
     }
     S._mobileRailGroup=S._mobileRailGroup===group?null:group;
@@ -13210,6 +13213,50 @@ function railNavOps(view){
   S.opsView=view||"overview";
   ren();
 }
+// Ops used to list 16 destinations in the rail. They are grouped into six sections; a section's
+// pages become tabs inside it (renderOpsSectionNav). One table drives both the rail and the tab
+// strip, so they cannot disagree. Each tab is [kind, view, label]: kind "an" is an S.anView, "ops"
+// an S.opsView. `also` lists pages reached from inside a section that have no tab of their own.
+const OPS_SECTIONS=[
+  {id:"overview",label:"Overview",tabs:[["ops","overview","Summary"],["ops","handoff","Handoff"]],also:["otplus","cross-department","logbook","events"]},
+  {id:"analytics",label:"Analytics",tabs:[["an","dashboard","Team"],["an","coverage","Coverage"],["an","absence","Absence"],["ops","schedule","Schedule window"]]},
+  {id:"alerts",label:"Alerts",badge:true,tabs:[["an","alerts","Alerts"],["ops","decisions","Decisions"]],also:["alerts"]},
+  {id:"blueprint",label:"Blueprint",tabs:[["an","blueprint","Editor"],["ops","blueprints","Library"]]},
+  {id:"organisation",label:"People & Org",tabs:[["ops","organisation","People & Org"]]},
+  {id:"data",label:"Data",tabs:[["an","rawdata","Records"],["ops","data-control","Data control"],["ops","exports","Exports"]],also:["sources","conflicts","governance","publish","performance"]}
+];
+function _opsCurrentPage(){
+  const an={signals:"alerts",flags:"alerts",issues:"alerts",history:"coverage",forecast:"dashboard",capacity:"dashboard",data:"rawdata"}[S.anView]||S.anView||"dashboard";
+  return an==="ops"?["ops",S.opsView||"overview"]:["an",an];
+}
+function opsSectionFor(page){
+  const[kind,view]=page||_opsCurrentPage();
+  return OPS_SECTIONS.find(sec=>sec.tabs.some(t=>t[0]===kind&&t[1]===view)||(kind==="ops"&&(sec.also||[]).includes(view)))||OPS_SECTIONS[0];
+}
+function _opsNavAction(kind,view){return kind==="ops"?`railNavOps('${view}')`:`railNavAnalytics('${view}')`;}
+// The strip sits above #ca, outside it, so the many Ops views that rewrite #ca on their own
+// (filters, inline actions) cannot wipe it.
+function renderOpsSectionNav(){
+  const host=$("opsSectionNav");
+  if(!host)return;
+  const sec=S.tab==="analytics"?opsSectionFor():null;
+  if(!sec||sec.tabs.length<2){host.innerHTML="";host.style.display="none";S._opsNavSig="";return;}
+  const[kind,view]=_opsCurrentPage();
+  const sig=sec.id+"|"+kind+"|"+view;
+  host.style.display="";
+  if(S._opsNavSig===sig&&host.firstChild)return;
+  S._opsNavSig=sig;
+  host.innerHTML=`<div class="people-subtab-nav ops-section-nav" role="tablist" aria-label="${X(sec.label)}">`+sec.tabs.map(t=>{
+    const on=t[0]===kind&&t[1]===view;
+    return `<button class="pst-btn${on?' a':''}" type="button" role="tab" aria-selected="${on}" data-testid="ops-tab-${t[1]}" onclick="${_opsNavAction(t[0],t[1])}">${X(t[2])}</button>`;
+  }).join("")+`</div>`;
+}
+// Ops views re-render themselves outside ren() (rOps($('ca')) from inline handlers). Keep the tab
+// strip in step, and the rail too when the section itself changed.
+function syncOpsChrome(){
+  renderOpsSectionNav();
+  if(S.tab==="analytics"&&S._railOpsSection!==opsSectionFor().id)renderTabs();
+}
 function renderTabs(){
   // v50D: Render tabs as rail nav items
   normalizeTabState();
@@ -13220,37 +13267,27 @@ function renderTabs(){
   const peopleBadge=_attentionCount>0?`<span class="mf-rail-badge">${_attentionLabel}</span>`:'';
   const flagCount=computeFlags().filter(f=>f.category==="operational"||f.category==="blueprint").length;
   const alertsBadge=flagCount>0?`<span class="mf-rail-badge">${flagCount>99?"99+":flagCount}</span>`:'';
-  const activeAnView={signals:"alerts",flags:"alerts",issues:"alerts",history:"coverage",forecast:"dashboard",capacity:"dashboard",data:"rawdata"}[S.anView]||S.anView||"dashboard";
+  const opsSection=opsSectionFor();
+  S._railOpsSection=S.tab==="analytics"?opsSection.id:null;
   const g=_ensureRailGroups();
   const groups=[
     {id:"dashboard",label:"Home",active:S.tab==="dashboard",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="1.5" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/><rect x="8" y="1.5" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/><rect x="1.5" y="8" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/><rect x="8" y="8" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/></svg>`,action:"railNavDashboard()",children:[]},
     {id:"calendar",label:"Calendar",active:S.tab==="calendar",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.2"/><line x1="1" y1="5" x2="13" y2="5" stroke="currentColor" stroke-width="1"/><line x1="4" y1="1" x2="4" y2="3" stroke="currentColor" stroke-width="1.2"/><line x1="10" y1="1" x2="10" y2="3" stroke="currentColor" stroke-width="1.2"/></svg>`,children:[
-      {id:"day",label:"Dashboard",active:S.tab==="calendar"&&S.calSubTab==="day",action:"railNavCalendar('day')"},
+      {id:"day",label:"Calendar",active:S.tab==="calendar"&&S.calSubTab==="day",action:"railNavCalendar('day')"},
       {id:"cards",label:"Cards",active:S.tab==="calendar"&&S.calSubTab==="cards",action:"railNavCalendar('cards')"},
       {id:"coaching",label:"Coaching",active:S.tab==="calendar"&&S.calSubTab==="coaching",action:"railNavCalendar('coaching')"},
       {id:"overtime",label:"Overtime",active:S.tab==="calendar"&&S.calSubTab==="overtime",action:"railNavCalendar('overtime')"},
       {id:"planner",label:"Planner",active:S.tab==="calendar"&&S.calSubTab==="schedule",action:"railNavCalendar('planner')"}
     ]},
     {id:"people",label:"People",badge:peopleBadge,active:S.tab==="people",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 13c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="currentColor" stroke-width="1.2"/></svg>`,children:[
-      {id:"dashboard",label:"Dashboard",active:S.tab==="people"&&S.peopleSubTab==="dashboard",action:"railNavPeople('dashboard')"},
+      {id:"dashboard",label:"People overview",active:S.tab==="people"&&S.peopleSubTab==="dashboard",action:"railNavPeople('dashboard')"},
       {id:"team",label:"Team",active:S.tab==="people"&&S.peopleSubTab==="team",action:"railNavPeople('team')"},
       {id:"agents",label:"Agents",active:S.tab==="people"&&S.peopleSubTab==="agents",action:"railNavPeople('agents')"},
       {id:"logbook",label:"Logbook",active:S.tab==="people"&&S.peopleSubTab==="logbook",action:"railNavPeople('logbook')"},
       {id:"events",label:"Events",active:S.tab==="people"&&S.peopleSubTab==="events",action:"railNavPeople('events')"}
     ]},
     {id:"analytics",label:"Ops",active:S.tab==="analytics",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="8" width="3" height="5" rx="0.5" stroke="currentColor" stroke-width="1"/><rect x="5.5" y="4" width="3" height="9" rx="0.5" stroke="currentColor" stroke-width="1"/><rect x="10" y="1" width="3" height="12" rx="0.5" stroke="currentColor" stroke-width="1"/></svg>`,children:[
-      {id:"dashboard",label:"Dashboard",active:S.tab==="analytics"&&activeAnView==="dashboard",action:"railNavAnalytics('dashboard')"},
-      {id:"workspace",label:"Workspace",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="overview",action:"railNavOps('overview')"},
-      {id:"schedule-window",label:"Schedule Window",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="schedule",action:"railNavOps('schedule')"},
-      {id:"coverage",label:"Coverage",active:S.tab==="analytics"&&activeAnView==="coverage",action:"railNavAnalytics('coverage')"},
-      {id:"blueprint",label:"Blueprint",active:S.tab==="analytics"&&activeAnView==="blueprint",action:"railNavAnalytics('blueprint')"},
-      {id:"organisation",label:"People & Org",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="organisation",action:"railNavOps('organisation')"},
-      {id:"absence",label:"Absence",active:S.tab==="analytics"&&activeAnView==="absence",action:"railNavAnalytics('absence')"},
-      {id:"alerts",label:"Alerts",badge:alertsBadge,active:S.tab==="analytics"&&activeAnView==="alerts",action:"railNavAnalytics('alerts')"},
-      {id:"data",label:"Data",active:S.tab==="analytics"&&activeAnView==="rawdata",action:"railNavAnalytics('data')"},
-      {id:"exports",label:"Export Centre",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="exports",action:"railNavOps('exports')"},
-      {id:"decisions",label:"Decisions",badge:alertsBadge,active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="decisions",action:"railNavOps('decisions')"},
-      {id:"handoff",label:"Handoff",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="handoff",action:"railNavOps('handoff')"}
+      ...OPS_SECTIONS.map(sec=>({id:sec.id,label:sec.label,badge:sec.badge?alertsBadge:"",active:S.tab==="analytics"&&opsSection.id===sec.id,action:_opsNavAction(sec.tabs[0][0],sec.tabs[0][1])}))
     ]}
   ];
   groups.forEach(group=>{if(group.active)g[group.id]=true;});
@@ -13279,6 +13316,7 @@ function renderTabs(){
   if(bottomEl){
     bottomEl.innerHTML='';
   }
+  renderOpsSectionNav();
 }
 function renderKeyboardHints(){
   const kbEl=$("kbh");if(!kbEl)return;
@@ -13384,7 +13422,7 @@ function renderInfoBar(){
   const hEl=$("mhHealth");
   if(hEl&&S.month){
     const ths=computeTeamHealthScore(S.month);
-    if(ths){hEl.innerHTML=`<span style="font-weight:700;color:${ths.gradeCol};background:${cssAlpha(ths.gradeCol,10)};padding:1px 5px;border-radius:3px;cursor:pointer" onclick="setTab('analytics');setAnalyticsView('dashboard')">${ths.grade} ${ths.avg}</span>${loadBit}`;
+    if(ths){hEl.innerHTML=`<span style="font-weight:700;color:${ths.gradeCol};background:${cssAlpha(ths.gradeCol,10)};padding:1px 5px;border-radius:3px;cursor:pointer" onclick="railNavAnalytics('dashboard')" title="Team health score for ${X(monthLabel())}">Health ${ths.grade} ${ths.avg}</span>${loadBit}`;
     }else hEl.innerHTML=loadBit;
   }else if(hEl)hEl.innerHTML=loadBit;
   // Ticker — floor window + exception count for today
@@ -13402,7 +13440,7 @@ function renderInfoBar(){
   const floorOpen=ukStarts.length?(S.tz?u2s(ukStarts[0],today):ukStarts[0]):null;
   const floorClose=ukEnds.length?(S.tz?u2s(ukEnds[ukEnds.length-1],today):ukEnds[ukEnds.length-1]):null;
   let tk='';
-  if(floorOpen&&floorClose)tk+=`<span class="tk-item"><span class="tk-label">floor</span><span class="tk-val">${floorOpen}-${floorClose}</span></span>`;
+  if(floorOpen&&floorClose)tk+=`<span class="tk-item"><span class="tk-label">floor ${S.tz?"SA":"UK"}</span><span class="tk-val" title="Floor hours in ${S.tz?"South African":"UK"} time. Switch in Settings.">${floorOpen}-${floorClose}</span></span>`;
   if(todayExcs.length)tk+=`<span class="tk-item"><span class="tk-label">exc</span><span class="tk-val" style="color:${todayExcs.length>0?'var(--flag,#c07070)':'var(--ink2)'}">${todayExcs.length}</span></span>`;
   const _agentTotal=getAllAgentCount();
   if(_agentTotal>0)tk+=`<span class="tk-item"><span class="tk-label">agents</span><span class="tk-val" style="color:var(--accent)">${_agentTotal}</span></span>`;
@@ -13540,7 +13578,7 @@ function ren(){_queueRenderTask("full",_renderNow);}
 function renderCalendarSubtabNav(active){
   var a=active||"day";
   var h='<div class="people-subtab-nav">';
-  h+='<button class="pst-btn'+(a==="day"?' a':'')+'" onclick="S.calSubTab=\'day\';ren()">Dashboard</button>';
+  h+='<button class="pst-btn'+(a==="day"?' a':'')+'" onclick="S.calSubTab=\'day\';ren()">Calendar</button>';
   h+='<button class="pst-btn'+(a==="cards"?' a':'')+'" onclick="S.calSubTab=\'cards\';S.plSubTab=\'cards\';ren()">Cards</button>';
   h+='<button class="pst-btn'+(a==="coaching"?' a':'')+'" onclick="S.calSubTab=\'coaching\';S.plSubTab=\'coaching\';ren()">Coaching</button>';
   h+='<button class="pst-btn'+(a==="overtime"?' a':'')+'" onclick="S.calSubTab=\'overtime\';S.plSubTab=\'overtime\';ren()">Overtime</button>';
@@ -19359,22 +19397,16 @@ function rAnalytics(el){
   if(S.anView==="forecast"||S.anView==="capacity")S.anView="dashboard";
   if(!["dashboard","coverage","alerts","absence","rawdata","blueprint","ops"].includes(S.anView))S.anView="dashboard";
 
-  const flagCount=computeFlags().filter(f=>f.category==="operational"||f.category==="blueprint").length;
-  const alertsBadge=flagCount>0?` <span style="font-size:10px;padding:1px 5px;border-radius:8px;background:rgba(220,38,38,.15);color:#dc2626;font-weight:700">${flagCount}</span>`:"";
-
   let h=`<div id="analyticsSurface">`;
-  h+=`<div id="analyticsModeControls" class="an-mode-toggle">`;
-  h+=`<button class="an-mode-btn${S.anView==="dashboard"?" active":""}" data-anview="dashboard" onclick="setAnalyticsView('dashboard')">Dashboard</button>`;
-  h+=`<button class="an-mode-btn${S.anView==="ops"?" active":""}" data-anview="ops" onclick="setAnalyticsView('ops')">Workspace</button>`;
-  h+=`<button class="an-mode-btn${S.anView==="coverage"?" active":""}" data-anview="coverage" onclick="setAnalyticsView('coverage')">Coverage</button>`;
-  h+=`<button class="an-mode-btn${S.anView==="blueprint"?" active":""}" data-anview="blueprint" onclick="setAnalyticsView('blueprint')">Blueprint</button>`;
-  h+=`<button class="an-mode-btn${S.anView==="absence"?" active":""}" data-anview="absence" onclick="setAnalyticsView('absence')">Absence</button>`;
-  h+=`<button class="an-mode-btn${S.anView==="alerts"?" active":""}" data-anview="alerts" onclick="setAnalyticsView('alerts')">Alerts${alertsBadge}</button>`;
-  h+=`<button class="an-mode-btn${S.anView==="rawdata"?" active":""}" data-anview="rawdata" onclick="setAnalyticsView('rawdata')">Data</button>`;
+  // The rail's Ops group is the only navigation for these views. This bar used to repeat it with
+  // its own Dashboard/Workspace/Coverage/... buttons, and its Workspace button never reset
+  // S.opsView, so it could land on whichever Ops sub-view was open last. Only the scope toggle,
+  // which the rail has no equivalent for, remains.
+  const scopeVisible=['dashboard','coverage','absence'].includes(S.anView);
+  h+=`<div id="analyticsModeControls" class="an-mode-toggle" style="border:none;display:${scopeVisible?'flex':'none'}">`;
   // Scope toggle
   if(!S.anScope)S.anScope='month';
-  const scopeVisible=['dashboard','coverage','absence'].includes(S.anView);
-  h+=`<div id="analyticsScopeToggle" style="margin-left:auto;display:${scopeVisible?'flex':'none'};align-items:center;gap:0;border:1px solid var(--bdr);border-radius:6px;overflow:hidden">`;
+  h+=`<div id="analyticsScopeToggle" style="margin-left:auto;display:flex;align-items:center;gap:0;border:1px solid var(--bdr);border-radius:6px;overflow:hidden">`;
   [{k:'today',l:'Today'},{k:'week',l:'Week'},{k:'month',l:'Month'}].forEach(sc=>{
     const isSel=S.anScope===sc.k;
     h+=`<button onclick="S.anScope='${sc.k}';_anDataCache=null;rerenderAnalyticsSurface('view')" style="padding:3px 10px;border:none;border-right:1px solid var(--bdr);background:${isSel?'var(--accent)':'none'};color:${isSel?'#000':'var(--tm)'};font-family:inherit;font-size:11px;font-weight:${isSel?'700':'400'};cursor:pointer;transition:all .12s">${sc.l}</button>`;
@@ -24758,7 +24790,7 @@ function computeFlags(){
           const id="longshift|"+name+"|"+excKey(e.date);
           flags.push({id,category:"operational",severity:hrs>=maxHrs+2?"high":"medium",
             title:"Long shift",
-            detail:`${name.split(" ")[0]}: ${Math.round(hrs*10)/10}h shift on ${fD(e.date)} (${e.ukS}–${e.ukE}) — threshold ${maxHrs}h`,
+            detail:`${name.split(" ")[0]}: ${Math.round(hrs*10)/10}h shift on ${fD(e.date)} (${S.tz?sAD(e):uD(e)}) — threshold ${maxHrs}h`,
             person:name,context:{date:excKey(e.date),shift:e.ukS+"–"+e.ukE,hours:Math.round(hrs*10)/10,limit:maxHrs},
             actions:["expected","ignore","note"]});
         }
@@ -26073,7 +26105,7 @@ function rIntel(el){
   const todayExcs=effExc().filter(x=>x.date===todayKey);
   const todayNames=[...new Set(todayEnt.map(e=>e.name))];
 
-  h+=`<div style="padding:12px 14px;background:var(--card);border:1px solid var(--bdr);border-radius:10px">`;
+  h+=`<div class="team-pulse" style="padding:12px 14px;background:var(--card);border:1px solid var(--bdr);border-radius:10px">`;
   h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">`;
   h+=`<div style="font-size:13px;font-weight:700">📋 Today's Team Pulse · ${DOW[now.getDay()]} ${fD(now)}</div>`;
   h+=`<div style="font-size:11px;color:var(--tm)">${todayWorking.length} working · ${todayOff.length} off${todayExcs.length?' · '+todayExcs.length+' event'+(todayExcs.length!==1?'s':''):''}</div>`;
@@ -26086,9 +26118,9 @@ function rIntel(el){
       const dayExc=todayExcs.filter(x=>x.person===e.name);
       const excBadge=dayExc.length?dayExc.map(x=>{const t=EXC_TYPES.find(t=>t.id===x.type);return t?t.icon:'⚠';}).join(''):'';
       const noteRaw=S.agentNotes&&S.agentNotes[e.name]?S.agentNotes[e.name].trim():'';
-      h+=`<div style="padding:6px 10px;border-radius:8px;background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.15);cursor:pointer" onclick="_navPush();S.emp='${XJS(e.name)}';S.tab='people';S.peopleSubTab='cards';ren()" title="${XA((e.name||'')+': '+(e.ukS||'')+'–'+(e.ukE||'')+(ac?' · '+ac+' agents':'')+(noteRaw?' · Note: '+noteRaw:''))}">`;
+      h+=`<div class="team-pulse-chip" style="padding:6px 10px;border-radius:8px;background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.15);cursor:pointer" onclick="_navPush();S.emp='${XJS(e.name)}';S.tab='people';S.peopleSubTab='cards';ren()" title="${XA((e.name||'')+': '+(e.ukS||'')+'–'+(e.ukE||'')+(ac?' · '+ac+' agents':'')+(noteRaw?' · Note: '+noteRaw:''))}">`;
       h+=`<div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;font-weight:600">${X(e.name.split(" ")[0])}</span>${ac>0?`<span style="font-size:9px;color:var(--tm)">👥${ac}</span>`:''}</div>`;
-      h+=`<div style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--early)">${e.ukS}–${e.ukE}</div>`;
+      h+=`<div style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--early)">${X(S.tz?sAD(e):uD(e))}</div>`;
       if(excBadge)h+=`<div style="font-size:11px">${excBadge}</div>`;
       if(noteRaw)h+=`<div style="font-size:9px;color:var(--accent);margin-top:2px">📝</div>`;
       h+=`</div>`;
@@ -28838,19 +28870,45 @@ function _syncRenderProjectRows(){
 function _syncFilterProjectPicker(value){
   _syncPickerQuery=value||'';
   _syncRenderProjectRows();
+  _syncStampPickerSig();
 }
 function _syncShowAllProjects(){
   _syncPickerShowAll=true;
   _syncRenderProjectRows();
+  _syncStampPickerSig();
+}
+function _syncStampPickerSig(){
+  const host=document.getElementById('lcProjectPicker');
+  if(host&&host.dataset.sig)host.dataset.sig=JSON.stringify([_syncPickerAllProjects,_syncPickerQuery,_syncPickerShowAll]);
 }
 function _syncProjectPickerHtml(projects){
   _syncPickerAllProjects=projects;
-  _syncPickerQuery='';
-  _syncPickerShowAll=false;
+  // The picker re-renders on its own (local hydration landing, a manual sync). Keep what the user
+  // typed or expanded; _syncOpenProject resets both once a project is chosen.
+  if(projects.length<=6){_syncPickerQuery='';_syncPickerShowAll=false;}
   let h='<div class="lc-projects-label">Continue a project</div>';
-  if(projects.length>6)h+=`<input type="search" id="lcProjectSearch" class="lc-project-search" placeholder="Search projects…" aria-label="Search projects" oninput="_syncFilterProjectPicker(this.value)">`;
+  if(projects.length>6)h+=`<input type="search" id="lcProjectSearch" class="lc-project-search" placeholder="Search projects…" aria-label="Search projects" value="${X(_syncPickerQuery)}" oninput="_syncFilterProjectPicker(this.value)">`;
   h+='<div id="lcProjectRows"></div><div id="lcProjectMore" style="display:none"></div>';
   return h;
+}
+// Replacing the picker's markup drops keyboard focus, so a re-render between focusing a row and
+// pressing Enter did nothing. Remember what had focus and put it back.
+function _syncPickerFocus(host){
+  const el=document.activeElement;
+  if(!el||!host.contains(el))return null;
+  const wrap=el.closest('.lc-project-row-wrap'),name=wrap&&wrap.querySelector('.lc-project-name');
+  return{id:el.id,cls:el.classList.contains('lc-project-delete')?'.lc-project-delete':el.classList.contains('lc-project-action')?'.lc-project-action:not(.lc-project-delete)':el.classList.contains('lc-project-row')?'.lc-project-row':'',name:name?name.textContent:null};
+}
+function _syncRestorePickerFocus(host,focus){
+  if(!focus)return;
+  let el=focus.id?document.getElementById(focus.id):null;
+  if(!el&&focus.cls&&focus.name!==null){
+    const wrap=[...host.querySelectorAll('.lc-project-row-wrap')].find(w=>{const n=w.querySelector('.lc-project-name');return n&&n.textContent===focus.name;});
+    el=wrap&&wrap.querySelector(focus.cls);
+  }
+  if(!el)return;
+  el.focus();
+  if(el.id==='lcProjectSearch')try{el.setSelectionRange(el.value.length,el.value.length);}catch(err){}
 }
 async function _syncRenderProjectPicker(){
   const host=document.getElementById('lcProjectPicker');
@@ -28864,8 +28922,17 @@ async function _syncRenderProjectPicker(){
     const anyProjects=projects.length>0;
     _syncRenderSampleOffer(anyProjects);
     if(projects.length>=1){
-      host.innerHTML=_syncProjectPickerHtml(projects);
-      _syncRenderProjectRows();
+      // Only touch the DOM when something changed. Swapping identical markup (hydration landing,
+      // a manual sync) could eat a tap that landed mid-swap.
+      const html=_syncProjectPickerHtml(projects);
+      const sig=JSON.stringify([projects,_syncPickerQuery,_syncPickerShowAll]);
+      if(host.dataset.sig!==sig||!document.getElementById('lcProjectRows')){
+        const focus=_syncPickerFocus(host);
+        host.innerHTML=html;
+        _syncRenderProjectRows();
+        _syncRestorePickerFocus(host,focus);
+        host.dataset.sig=sig;
+      }
       host.style.display='flex';
       if(featuresEl)featuresEl.style.display='none';
       if(statsEl)statsEl.style.display='none';
@@ -28873,7 +28940,7 @@ async function _syncRenderProjectPicker(){
       return;
     }
   }catch(err){console.error('[sync] project picker render failed',err);}
-  host.style.display='none';host.innerHTML='';
+  host.style.display='none';host.innerHTML='';delete host.dataset.sig;
   if(featuresEl)featuresEl.style.display='';
   if(statsEl)statsEl.style.display='';
   _syncSetNewSourceCollapsed(false);
@@ -29121,6 +29188,7 @@ function _syncShowChangedSince(name,previousView){
 }
 function _syncOpenProject(name){
   if(!name)return;
+  _syncPickerQuery='';_syncPickerShowAll=false;
   // Whatever project is open right now keeps its context before we switch away from it.
   if(S.activeDept&&S.activeDept!==name)_syncSaveViewState(typeof nsActiveDepartmentKey==='function'?nsActiveDepartmentKey():'',{withCounts:true});
   S.activeDept=name;
@@ -32556,7 +32624,7 @@ function rPeople(el){
   // Sub-tab nav
   h+=`<div class="people-subtab-nav">`;
   const subtabs=[
-    {id:"dashboard",l:"Dashboard"},
+    {id:"dashboard",l:"People overview"},
     {id:"team",l:"Team"},
     {id:"agents",l:"Agents"},
     {id:"logbook",l:"Logbook"},
@@ -33588,6 +33656,8 @@ window.nsDepartmentKey=nsDepartmentKey;
 window.nsActiveDepartmentKey=nsActiveDepartmentKey;
 window.nsDownloadBlob=nsDownloadBlob;
 window._syncCollectLocalKeys=_syncCollectLocalKeys;
+// The Ops overview counts scoped OT wishes to decide whether to offer the OT+ workbench.
+window.nsScopedRows=nsScopedRows;
 
 function nsOpenDatabase(){
   if(!window.indexedDB)return Promise.reject(new Error("IndexedDB unavailable"));
@@ -33648,6 +33718,10 @@ function nsRestoreEntriesFromCanonical(){
   try{
     const scoped=(typeof nsScopedRows==="function")?nsScopedRows("schedule"):(nsCanonical().schedule||[]);
     S.entries=(scoped||[]).map(nsRuntimeEntry).filter(row=>row.date&&!isNaN(row.date));
+    // Every indexed view (calendar, dashboard, analytics) caches by entriesVer. Without the bump a
+    // project opened here rendered whatever index was built before it: empty, or the last project.
+    S.entriesVer=(S.entriesVer||0)+1;
+    if(typeof invalidateDerivedCache==="function")invalidateDerivedCache();
     // S.entries drives the calendar/dashboard directly, but S.months/S.month/S.mIdx are a SEPARATE
     // derived index that every local import path (proc/loadIntoWorkspace, etc.) computes for itself
     // at load time — this function is the one entry point that rebuilds S.entries WITHOUT going
@@ -35230,8 +35304,11 @@ function nsCoverReady(person){
 }
 
 function nsOpsShell(view,body){
-  const scope=((typeof isUniversalWorkspace==="function"&&isUniversalWorkspace())||S._universalWorkspace===true)?"Universal":(S.activeDept||"NorthStar workspace"),sources=nsScopedRows("sources"),publish=nsScopedRows("publishQueue"),conflicts=nsScopedRows("conflicts");
-  return`<div class="people-hq ops-hq ns-ops"><div class="ns-ops-context"><span>Workspace</span><b>${nsEsc(scope)}</b><span>Sources</span><b>${sources.length}</b><span>Pending publish</span><b>${publish.filter(item=>item.status==="pending").length}</b><span>Open conflicts</span><b>${conflicts.filter(item=>item.status==="open").length}</b></div><div class="ns-ops-main">${body}</div></div>`;
+  const universal=((typeof isUniversalWorkspace==="function"&&isUniversalWorkspace())||S._universalWorkspace===true),scope=universal?"Universal":(S.activeDept||"NorthStar workspace"),sources=nsScopedRows("sources"),publish=nsScopedRows("publishQueue"),conflicts=nsScopedRows("conflicts");
+  // Universal mode disables every Ops control except .ns-cross-department-action (see the
+  // body.sync-universal-active .ns-ops-main rule); this is that action's entry point.
+  const crossDeptAction=universal&&view!=="cross-department"?`<button class="ns-btn ns-cross-department-action" onclick="railNavOps('cross-department')" style="margin-left:auto">Review across departments</button>`:"";
+  return`<div class="people-hq ops-hq ns-ops"><div class="ns-ops-context"><span>Workspace</span><b>${nsEsc(scope)}</b><span>Sources</span><b>${sources.length}</b><span>Pending publish</span><b>${publish.filter(item=>item.status==="pending").length}</b><span>Open conflicts</span><b>${conflicts.filter(item=>item.status==="open").length}</b>${crossDeptAction}</div><div class="ns-ops-main">${body}</div></div>`;
 }
 
 function nsOrgDepartments(){
@@ -35661,7 +35738,10 @@ function nsRenderCrossDepartment(el){
 const nsBaseOpsSourceRows=_opsSourceRows;
 _opsSourceRows=function(){
   const existing=nsBaseOpsSourceRows(),canonical=nsScopedRows("sources").map(source=>({name:source.source_name||source.source_id,rows:source.source_rows||0,type:source.source_label||source.source_kind||"source",source_id:source.source_id}));
-  const seen=new Set();return[...canonical,...existing].filter(row=>{const key=row.source_id||row.name;if(seen.has(key))return false;seen.add(key);return true;});
+  // Imported files are the sources. The sheet list describes the same file again, sheet by sheet,
+  // so merging both counted every import twice and disagreed with Data control's count.
+  if(canonical.length)return canonical;
+  const seen=new Set();return existing.filter(row=>{const key=row.source_id||row.name;if(seen.has(key))return false;seen.add(key);return true;});
 };
 
 const nsBaseROps=rOps;
@@ -35681,11 +35761,17 @@ rOps=function(el){
   if(view==="performance")return nsRenderPerformance(el);
   return nsBaseROps(el);
 };
+{
+  const nsROpsView=rOps;
+  rOps=function(el){const out=nsROpsView(el);if(typeof syncOpsChrome==="function")syncOpsChrome();return out;};
+}
 
 const nsBaseRAnalytics=rAnalytics;
 rAnalytics=function(el){
   if(S.anView==="ops")return rOps(el);
-  return nsBaseRAnalytics(el);
+  const out=nsBaseRAnalytics(el);
+  if(typeof syncOpsChrome==="function")syncOpsChrome();
+  return out;
 };
 
 const nsBaseRenderActiveTab=renderActiveTab;
@@ -35711,7 +35797,16 @@ let nsLagExpected=performance.now()+1000;setInterval(()=>{const now=performance.
   const doHydrate=()=>nsHydrateDatabase().then(async localHydrated=>{
     // Launch is passive: use local cache only and let the user choose a project. Never pull
     // remote data or reopen a previous project as a side effect of visiting the app.
-    if(typeof _syncShowProjectPicker==="function")_syncShowProjectPicker({clearActive:true});
+    // Hydration can land a second or more after load. Whatever the user opened, imported or is
+    // previewing by then is theirs, not launch state, so it is never closed underneath them.
+    const live=!!(S.activeDept||(S.entries&&S.entries.length)||S.wb);
+    if(!live){if(typeof _syncShowProjectPicker==="function")_syncShowProjectPicker({clearActive:true});}
+    else{
+      // A project opened before hydration was built from the lean localStorage copy, which holds
+      // no schedule rows. Rebuild it from the full copy that just loaded.
+      if(S.activeDept&&!(S.entries&&S.entries.length))nsRestoreEntriesFromCanonical();
+      if(typeof _syncRenderProjectPicker==="function")_syncRenderProjectPicker();
+    }
     if(document.getElementById("ca"))try{ren();}catch(err){}
   }).finally(()=>{NS.trackLocalChanges=true;});
   const hydrate=()=>doHydrate();

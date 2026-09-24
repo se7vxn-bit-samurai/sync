@@ -73,7 +73,7 @@ function rIntel(el){
   const todayExcs=effExc().filter(x=>x.date===todayKey);
   const todayNames=[...new Set(todayEnt.map(e=>e.name))];
 
-  h+=`<div style="padding:12px 14px;background:var(--card);border:1px solid var(--bdr);border-radius:10px">`;
+  h+=`<div class="team-pulse" style="padding:12px 14px;background:var(--card);border:1px solid var(--bdr);border-radius:10px">`;
   h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">`;
   h+=`<div style="font-size:13px;font-weight:700">📋 Today's Team Pulse · ${DOW[now.getDay()]} ${fD(now)}</div>`;
   h+=`<div style="font-size:11px;color:var(--tm)">${todayWorking.length} working · ${todayOff.length} off${todayExcs.length?' · '+todayExcs.length+' event'+(todayExcs.length!==1?'s':''):''}</div>`;
@@ -86,9 +86,9 @@ function rIntel(el){
       const dayExc=todayExcs.filter(x=>x.person===e.name);
       const excBadge=dayExc.length?dayExc.map(x=>{const t=EXC_TYPES.find(t=>t.id===x.type);return t?t.icon:'⚠';}).join(''):'';
       const noteRaw=S.agentNotes&&S.agentNotes[e.name]?S.agentNotes[e.name].trim():'';
-      h+=`<div style="padding:6px 10px;border-radius:8px;background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.15);cursor:pointer" onclick="_navPush();S.emp='${XJS(e.name)}';S.tab='people';S.peopleSubTab='cards';ren()" title="${XA((e.name||'')+': '+(e.ukS||'')+'–'+(e.ukE||'')+(ac?' · '+ac+' agents':'')+(noteRaw?' · Note: '+noteRaw:''))}">`;
+      h+=`<div class="team-pulse-chip" style="padding:6px 10px;border-radius:8px;background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.15);cursor:pointer" onclick="_navPush();S.emp='${XJS(e.name)}';S.tab='people';S.peopleSubTab='cards';ren()" title="${XA((e.name||'')+': '+(e.ukS||'')+'–'+(e.ukE||'')+(ac?' · '+ac+' agents':'')+(noteRaw?' · Note: '+noteRaw:''))}">`;
       h+=`<div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;font-weight:600">${X(e.name.split(" ")[0])}</span>${ac>0?`<span style="font-size:9px;color:var(--tm)">👥${ac}</span>`:''}</div>`;
-      h+=`<div style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--early)">${e.ukS}–${e.ukE}</div>`;
+      h+=`<div style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--early)">${X(S.tz?sAD(e):uD(e))}</div>`;
       if(excBadge)h+=`<div style="font-size:11px">${excBadge}</div>`;
       if(noteRaw)h+=`<div style="font-size:9px;color:var(--accent);margin-top:2px">📝</div>`;
       h+=`</div>`;
