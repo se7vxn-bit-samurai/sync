@@ -25,9 +25,9 @@ function _rRawDataContent(y,m,monthEnt){
   if(!S._rdSub)S._rdSub='entries';
   const sub=S._rdSub;
   const subs=[
-    {k:'entries',l:'Entries',c:()=>monthEnt.length},
+    {k:'entries',l:'Entries · '+(MO[m]||'month'),c:()=>monthEnt.length},
     {k:'exceptions',l:'Exceptions',c:()=>effExc().length},
-    {k:'people',l:'People',c:()=>Object.keys(S.people||{}).length},
+    {k:'people',l:'Directory',c:()=>Object.keys(S.people||{}).length},
     {k:'coaching',l:'Coaching',c:()=>(S.coachHistory||[]).length},
     {k:'notes',l:'Notes',c:()=>Object.keys(S.notes||{}).length+Object.keys(S.agentNotes||{}).length},
     {k:'parserAudit',l:'Parser Audit',c:()=>{const a=S.lastImportReview&&S.lastImportReview.parserAudit;return a?a.missing.length:0;}},

@@ -25,7 +25,7 @@ function renderSettings(){
   inner+=`<h2 style="font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px">⚙ Settings</h2>`;
   inner+=`<button onclick="closeSettings()" aria-label="Close settings" style="background:none;border:1px solid var(--bdr);color:var(--text);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">✕</button>`;
   inner+=`</div>`;
-  inner+=`<nav aria-label="Settings groups" style="display:flex;gap:6px;overflow-x:auto;padding:10px 20px;border-bottom:1px solid var(--bdr);scrollbar-width:thin">${tab('account','Account')}${tab('workspace','Workspace')}${tab('preferences','Preferences')}${tab('data','Data & exports')}${tab('advanced','Advanced')}</nav>`;
+  inner+=`<nav aria-label="Settings groups" style="display:flex;flex-wrap:wrap;gap:6px;padding:10px 20px;border-bottom:1px solid var(--bdr)">${tab('account','Account')}${tab('workspace','Workspace')}${tab('preferences','Preferences')}${tab('data','Data')}${tab('advanced','Advanced')}</nav>`;
   inner+=`<div style="padding:16px 20px;display:flex;flex-direction:column;gap:20px;flex:1">`;
 
   // If overlay already exists, just update panel content in place

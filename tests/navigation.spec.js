@@ -135,3 +135,46 @@ test.describe('fewer choices up front', () => {
     await expect.poll(async () => (await today.boundingBox() || {}).y).toBeLessThan(400);
   });
 });
+
+test.describe('one control per job', () => {
+  test('Calendar and People are single sidebar links; their pages are tabs in the page', async ({ page }) => {
+    test.skip(test.info().project.name !== 'desktop-chromium', 'the rail is collapsed into a bottom bar on phones');
+    await openSample(page);
+    for (const group of ['calendar', 'people']) {
+      await expect(page.locator(`[data-rail-group="${group}"] .mf-rail-child`)).toHaveCount(0);
+    }
+    await nav(page, () => railNavCalendar('cards'));
+    await nav(page, () => railNavDashboard());
+    await page.locator('[data-testid="rail-calendar"]').click();
+    expect(await page.evaluate(() => [S.tab, S.calSubTab])).toEqual(['calendar', 'cards']);
+    await page.locator('[data-testid="rail-people"]').click();
+    await expect(page.locator('#ca .people-subtab-nav')).toContainText('Team');
+  });
+
+  test('the landing page names the brand once', async ({ page }) => {
+    await openApp(page, { profile: PROFILE, workspaceRow: workspaceRow(buildWorkspace(0)) });
+    const text = await page.locator('#us').innerText();
+    expect(text.match(/workflow intelligence/gi) || []).toHaveLength(1);
+    expect(text.match(/7th order systems/gi) || []).toHaveLength(1);
+  });
+
+  test('every Settings tab fits inside the drawer', async ({ page }) => {
+    await openSample(page);
+    await nav(page, () => openSettings('account'));
+    const tabs = page.locator('nav[aria-label="Settings groups"] button');
+    await expect(tabs).toHaveCount(5);
+    const nav_ = await page.locator('nav[aria-label="Settings groups"]').boundingBox();
+    for (let i = 0; i < 5; i++) {
+      const b = await tabs.nth(i).boundingBox();
+      expect(b.x + b.width).toBeLessThanOrEqual(nav_.x + nav_.width + 1);
+    }
+  });
+
+  test('Records says which month its entry count covers', async ({ page }) => {
+    await openSample(page);
+    await nav(page, () => railNavAnalytics('rawdata'));
+    const month = await page.evaluate(() => MO[Number(S.month.split('-')[1])]);
+    await expect(page.locator('#ca')).toContainText(`Entries · ${month}`);
+    await expect(page.locator('#ca')).toContainText('Directory');
+  });
+});
