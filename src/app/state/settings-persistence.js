@@ -286,8 +286,22 @@ function nsBootApp(){
 // The loaders nsBootApp runs, re-run after a cloud copy has replaced the keys they read, so memory
 // matches storage again. Without this, S kept this device's old settings, notes and plans, and the
 // next background persist wrote them back over the copy that had just been loaded.
+//
+// The loaders only assign when their key exists, so every store the cloud copy may lack is emptied
+// first — otherwise this device's old records survived the load and were saved straight back.
+// The People-side stores (statuses, agent notes, logbook, home notes, OT plan, name remaps) were
+// missing from this list entirely: memory kept the empty boot copy, and the next background persist
+// (saveSettings saves them too) deleted what had just been loaded, then a cloud save pushed the loss.
 function _syncReloadLocalStores(){
   const tab=S.tab;
+  _setExceptions([]);
+  _setLeaveRequests([]);
+  S.dayClosed={};S.plBlueprints={};S.plPositions={};
+  S.people={};S.rosterFile=null;
+  S.agentStatuses={};S.agentNotes={};
+  S.peopleHomeNotes={};S.peopleLogbook=[];
+  S.nameRemaps=null;S._nameRemapsLoaded=false;
+  S.att={};S.hc={};S.notes={};S.coachQuality={};S.coverageReq=null;S.forecast=null;
   loadSettings();
   S.tab=tab;
   loadAtt();
@@ -299,7 +313,24 @@ function _syncReloadLocalStores(){
   loadCoverageReq();
   loadForecast();
   loadLeaderPlanner();
+  // loadQoLState takes the newer of sc_qol_state and the shared MirrorFlow key by timestamp, and
+  // the shared key still held this device's own copy — always stamped later than the one just
+  // loaded — so pinned people, saved views and inline notes from the cloud never appeared.
+  try{
+    const qol=localStorage.getItem('sc_qol_state');
+    if(qol!==null)_persistSet(QOL_SHARED_STORAGE_KEY,qol,{critical:true});
+    else _persistRemove(QOL_SHARED_STORAGE_KEY,{critical:true});
+  }catch(err){}
   loadQoLState();
+  loadAgentStatuses();
+  loadAgentNotes();
+  loadPeopleOps();
+  loadOTPlan();
+  if(typeof _ensureNameRemaps==='function')_ensureNameRemaps();
+  // Write what was just loaded back in the stores' own form, now — during a cloud load this is not
+  // counted as a local change. Left to the next background save, a store the cloud copy did not
+  // carry would be written then, as its defaults, and every load would end "unsaved changes".
+  _persistCritical(()=>{saveSettings();savePeople();saveShiftLib();saveCoachQuality();saveCoverageReq();saveOTPlan();saveQoLState();saveAtt();saveHc();saveNotes();});
   _persistSig=getPersistSignature();
 }
 
@@ -618,6 +649,7 @@ function _syncStatusPillHtml(extraStyle){
   return `<span class="sync-status-pill ${info.kind}" data-sync-status title="${X(info.label)}"${extraStyle?` style="${extraStyle}"`:''}><i class="sync-status-dot" aria-hidden="true"></i><span class="sync-status-text">${X(info.label)}</span></span>`;
 }
 function _syncRenderStatusEverywhere(){
+  if(typeof _syncProjectsPanelOpen==='function'&&_syncProjectsPanelOpen())_syncRenderProjectsPanel();
   const info=_syncStatusInfo();
   document.querySelectorAll('[data-sync-status]').forEach(el=>{
     el.className='sync-status-pill '+info.kind;
@@ -630,8 +662,8 @@ function _syncSetStatus(state){
   _syncStatusState=state||'idle';
   _syncRenderStatusEverywhere();
 }
-function _syncMarkLocalChange(){
-  if(typeof window._syncMarkDirty==='function')window._syncMarkDirty();
+function _syncMarkLocalChange(key){
+  if(typeof window._syncMarkDirty==='function')window._syncMarkDirty(key);
   if(_syncStatusState!=='saving')_syncSetStatus('local-changes');
 }
 function _syncSetPulledFromCloud(){
@@ -662,8 +694,9 @@ async function _syncManualPull(){
   if(result==='error'){toast('Could not reach the cloud copy.','err');return false;}
   // Both sides changed: the comparison is already open and nothing was replaced.
   if(result==='conflict')return false;
-  // A manual cloud refresh updates the local project list; it never selects or opens a sheet.
-  if(typeof _syncShowProjectPicker==='function')_syncShowProjectPicker({clearActive:true});
+  // A manual cloud refresh updates the local project list; it never selects or opens a sheet. It
+  // closes the open one only when the cloud copy replaced it — "already up to date" leaves it open.
+  if(result==='applied'&&typeof _syncShowProjectPicker==='function')_syncShowProjectPicker({clearActive:true});
   else if(typeof _syncRenderProjectPicker==='function')_syncRenderProjectPicker();
   toast(result==='applied'?'Cloud copy loaded':result==='empty'?'Nothing saved to the cloud yet':'Cloud copy is already up to date','ok');
   return result==='applied';
@@ -781,6 +814,7 @@ async function _syncForceOverwriteCloud(){
 // rows rather than the workspace itself.
 function _syncExportBackup(){
   try{
+    if(typeof _flushAllPendingPersist==='function')_flushAllPendingPersist();
     const model=(typeof nsCanonical==='function')?nsCanonical():{};
     const payload={
       format:'sync-workspace-backup',
@@ -864,7 +898,7 @@ async function _syncRenderLandingWidget(){
       const first=_syncFirstName(profile);
       // Status only, not a second copy of save/sign-out — those live once, in Settings' Account
       // section (see _syncRenderSettingsAccountSection). Clicking here opens straight to it.
-      host.innerHTML=`<div class="lc-sync-signed-in" style="display:flex;align-items:center;gap:8px;width:100%;flex-wrap:wrap"><button onclick="openAccountSettings()" title="Account & sync settings" style="all:unset;display:flex;align-items:center;gap:8px;cursor:pointer"><span class="lc-sync-email" title="${X(profile.email)}">Hi ${X(first)}</span><span id="syncSaveDotLc" class="sync-save-dot" style="display:none"></span>${_syncStatusPillHtml()}</button><button class="btn" onclick="_syncShowProjectPicker()" style="margin-left:auto;padding:5px 9px;font-size:10px">Projects &amp; Ops</button></div>`;
+      host.innerHTML=`<div class="lc-sync-signed-in" style="display:flex;align-items:center;gap:8px;width:100%;flex-wrap:wrap"><button onclick="openAccountSettings()" title="Account & sync settings" style="all:unset;display:flex;align-items:center;gap:8px;cursor:pointer;min-width:0;max-width:100%"><span class="lc-sync-email" title="${X(profile.email)}">Hi ${X(first)}</span><span id="syncSaveDotLc" class="sync-save-dot" style="display:none"></span>${_syncStatusPillHtml()}</button></div>`;
     }else{
       host.innerHTML=`
         <div class="lc-sync-caption">Continue with Google to sync across devices — connects your existing account, or creates one if you're new</div>
@@ -965,6 +999,10 @@ async function _syncRenderProjectPicker(){
     // Cached projects are deliberately available offline too. The picker is the only route that
     // can activate one, regardless of whether it originally came from a cloud sync or a file.
     const projects=(typeof nsListCanonicalProjects==='function')?nsListCanonicalProjects():[];
+    // One walk of the workspace feeds the picker, the Projects & Ops button and an open panel.
+    _syncKnownProjects=projects;
+    _syncRenderProjectsOpsButton();
+    if(_syncProjectsPanelOpen())_syncRenderProjectsPanel();
     const anyProjects=projects.length>0;
     _syncRenderSampleOffer(anyProjects);
     if(projects.length>=1){
@@ -1194,6 +1232,117 @@ function _syncShowProjectPicker(options){
 function _syncCloseWorkspaceToLanding(){
   _syncShowProjectPicker({clearActive:true});
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   PROJECTS & OPS PANEL
+
+   The old entry point was a small link that only existed signed in,
+   and all it did was re-render the landing screen — which, with no
+   project cached yet (a pull still running, or a held/compared cloud
+   copy), changed nothing visible, so it looked like it did nothing.
+   This is one panel that always opens, from the landing screen, the
+   app rail, Settings and the palette: every project on this device,
+   and — signed in — the cloud copy, what on this device it does not
+   have yet, and the save/sync actions with their progress shown.
+   ═══════════════════════════════════════════════════════════════ */
+let _syncKnownProjects=[];
+let _syncPanelBusy='';
+const SYNC_CHANGE_LABELS={canonical:'Project people & schedule',sc_people:'Agent details',sc_rosterfile:'Agent roster',sc_agentnotes:'Agent notes',sc_agentstatuses:'Agent statuses',sc_people_logbook:'Logbook',sc_people_home:'Home notes',sc_exceptions:'Exceptions & absences',sc_leaverequests:'Leave requests',sc_dayclosed:'Day close-outs',sc_notes:'Shift notes',sc_att:'Attendance',sc_hc:'Headcount',sc_planner:'Planner edits',sc_blueprints:'Blueprints',sc_positions:'Positions',sc_coaching:'Coaching plan',sc_coachquality:'Coaching sessions',sc_otplan:'OT plan',sc_leaderplanner:'Leader planner',sc_shiftlib:'Shift library',sc_coveragereq:'Coverage targets',sc_forecast:'Forecast',sc_name_remaps:'Name changes',sc_qol_state:'Saved views',sc_settings:'Settings'};
+function _syncChangeSummary(){
+  const keys=typeof window._syncChangedKeys==='function'?window._syncChangedKeys():[];
+  const labels=[...new Set(keys.map(key=>SYNC_CHANGE_LABELS[key]||'Workspace'))];
+  if(!labels.length&&_syncHasUnsavedChanges())labels.push('Workspace');
+  return labels;
+}
+function _syncProjectsPanelOpen(){return!!document.getElementById('syncProjectsPanelBody');}
+function _syncProjectCountLabel(n){return n===1?'1 project':n+' projects';}
+function _syncRenderProjectsOpsButton(){
+  const sub=document.getElementById('lcProjectsOpsSub');
+  if(!sub)return;
+  const n=_syncKnownProjects.length,signedIn=!!_syncProfileCache;
+  sub.textContent=n?_syncProjectCountLabel(n)+(signedIn?' · synced with your account':' · on this device'):(signedIn?'Your files and cloud sync':'Files saved on this device');
+}
+function _syncOpenProjectsPanel(){
+  try{if(typeof nsListCanonicalProjects==='function')_syncKnownProjects=nsListCanonicalProjects();}catch(err){}
+  if(typeof _qolModal!=='function'){_syncShowProjectPicker();return;}
+  _qolModal('syncProjectsPanel','Projects & Ops',_syncProfileCache?'Projects on this device and the copy in your account':'Projects saved on this device','<div id="syncProjectsPanelBody" class="spp"></div>','');
+  _syncRenderProjectsPanel();
+  _syncRenderProjectsOpsButton();
+}
+function _syncCloseProjectsPanel(){document.getElementById('syncProjectsPanel')?.remove();}
+function _syncRenderProjectsPanel(){
+  const host=document.getElementById('syncProjectsPanelBody');
+  if(!host)return;
+  const html=_syncProjectsPanelHtml();
+  // Status ticks re-render this; swapping identical markup would eat a tap landing mid-swap.
+  if(host._sppHtml===html)return;
+  host._sppHtml=html;
+  host.innerHTML=html;
+}
+function _syncProjectsPanelHtml(){
+  const signedIn=!!_syncProfileCache,online=(typeof navigator==='undefined')||navigator.onLine!==false;
+  const pulling=_syncPanelBusy==='pulling'||(typeof window._syncPullPending==='function'&&window._syncPullPending());
+  const saving=_syncPanelBusy==='saving'||_syncStatusState==='saving';
+  const busy=saving||pulling||!online?' disabled':'';
+  let h=`<section class="spp-sec"><div class="spp-head"><span class="spp-label">${signedIn?'Cloud':'Sync'}</span>${_syncStatusPillHtml()}</div>`;
+  if(signedIn){
+    const email=_syncProfileCache.email||'';
+    h+=`<div class="spp-line">${email?`Signed in as <b>${X(email)}</b> · `:''}Last cloud save: ${X(_syncLastSyncedLabel())}</div>`;
+    if(pulling)h+=`<div class="spp-loading" role="status"><span class="spp-spinner" aria-hidden="true"></span>Checking your account for newer files…</div>`;
+    const changes=_syncChangeSummary();
+    if(changes.length)h+=`<div class="spp-changes" data-testid="spp-changes"><div class="spp-changes-title">On this device, not in the cloud yet</div><div class="spp-chips">${changes.map(label=>`<span class="spp-chip">${X(label)}</span>`).join('')}</div></div>`;
+    else if(!pulling)h+=`<div class="spp-line spp-ok">Everything on this device is in your cloud copy.</div>`;
+    h+=`<div class="spp-actions"><button type="button" class="btn bp" data-testid="spp-save" onclick="_syncPanelSave()"${busy}>${saving?'Saving…':changes.length?'Save changes to cloud':'Save to cloud'}</button><button type="button" class="btn" data-testid="spp-pull" onclick="_syncPanelPull()"${busy}>${pulling?'Checking…':'Sync from cloud'}</button></div>`;
+    if(!online)h+=`<div class="spp-line">Offline — changes stay on this device until you are back online.</div>`;
+  }else{
+    h+=`<div class="spp-line">Projects are kept in this browser only. Sign in to save them to your account and open them on other devices.</div>`;
+    h+=`<div class="spp-actions"><button type="button" class="btn bp spp-google" onclick="_syncSignInWithGoogle()">${SYNC_GOOGLE_ICON_SVG}<span>Continue with Google</span></button></div>`;
+  }
+  h+='</section>';
+  const projects=_syncKnownProjects||[];
+  const activeKey=S.activeDept&&typeof nsActiveDepartmentKey==='function'?nsActiveDepartmentKey():'';
+  h+=`<section class="spp-sec"><div class="spp-head"><span class="spp-label">On this device</span><span class="spp-count">${projects.length?X(_syncProjectCountLabel(projects.length)):''}</span></div>`;
+  if(projects.length){
+    h+='<div class="spp-list">'+projects.map(p=>{
+      const bits=[p.peopleCount?p.peopleCount+' people':'',p.scheduleCount?p.scheduleCount+' schedule rows':''];
+      if(p.lastOpened)bits.push('opened '+new Date(p.lastOpened).toLocaleDateString());
+      const isOpen=!!activeKey&&p.key===activeKey;
+      return `<div class="spp-row-wrap"><button type="button" class="spp-row${isOpen?' open':''}" onclick="_syncPanelOpenProject('${XJS(p.name)}')"><span class="spp-row-main"><span class="spp-row-name">${X(p.name)}</span><span class="spp-row-meta">${X(bits.filter(Boolean).join(' · ')||'No data yet')}</span></span>${isOpen?'<span class="spp-open-tag">Open now</span>':'<span class="spp-row-arrow" aria-hidden="true">→</span>'}</button><button type="button" class="spp-icon-btn" title="Rename ${X(p.name)}" aria-label="Rename ${X(p.name)}" onclick="_syncPromptRenameProject('${XJS(p.key)}','${XJS(p.name)}')">✎</button><button type="button" class="spp-icon-btn spp-del" title="Remove ${X(p.name)} — deletes it everywhere, cannot be undone" aria-label="Delete ${X(p.name)}" onclick="_syncConfirmDeleteProject('${XJS(p.key)}','${XJS(p.name)}')">✕</button></div>`;
+    }).join('')+'</div>';
+  }else{
+    h+=`<div class="spp-empty">${signedIn&&pulling?'Looking for projects saved to your account…':'No projects saved on this device yet.'}</div>`;
+  }
+  h+=`<div class="spp-actions spp-actions-secondary"><button type="button" class="btn" onclick="_syncCloseProjectsPanel();browseScheduleFile()">+ Import a roster</button>`;
+  if(!projects.length)h+=`<button type="button" class="btn" onclick="_syncCloseProjectsPanel();_syncCreateSampleProject()">Try a sample project</button>`;
+  h+=`<button type="button" class="btn" onclick="_syncExportBackup()">Export backup file</button></div></section>`;
+  return h;
+}
+function _syncPanelOpenProject(name){
+  _syncCloseProjectsPanel();
+  const mv=document.getElementById('mv');
+  if(S.activeDept===name&&mv&&!mv.classList.contains('hid'))return;
+  _syncOpenProject(name);
+}
+async function _syncPanelSave(){
+  if(_syncPanelBusy)return;
+  _syncPanelBusy='saving';_syncRenderProjectsPanel();
+  let ok=false;
+  try{ok=await _syncManualSave();}catch(err){ok=false;}
+  _syncPanelBusy='';_syncRenderProjectsPanel();
+  if(ok)toast('Saved to your account','ok');
+  // A refused save because another device saved first opens the comparison on its own.
+  else if(_syncStatusState!=='conflict')toast('Could not save to the cloud — your changes are still on this device','err');
+}
+async function _syncPanelPull(){
+  if(_syncPanelBusy)return;
+  _syncPanelBusy='pulling';_syncRenderProjectsPanel();
+  try{await _syncManualPull();}catch(err){}
+  _syncPanelBusy='';
+  try{if(typeof nsListCanonicalProjects==='function')_syncKnownProjects=nsListCanonicalProjects();}catch(err){}
+  _syncRenderProjectsPanel();
+}
+window.addEventListener('sync:pull-started',()=>{if(_syncProjectsPanelOpen())_syncRenderProjectsPanel();});
+window.addEventListener('sync:pull-settled',()=>{if(_syncProjectsPanelOpen())_syncRenderProjectsPanel();});
 
 /* ═══════════════════════════════════════════════════════════════
    WHAT CHANGED SINCE LAST TIME

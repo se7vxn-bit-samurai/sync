@@ -111,11 +111,13 @@ function getPersistSignature(){
     flagSettings:S.flagSettings
   });
 }
+let _persistRun=null;
 function schedulePersist(force){
   const nextSig=getPersistSignature();
   if(!force&&nextSig===_persistSig)return;
   if(_persistTimer)clearTimeout(_persistTimer);
-  _persistTimer=setTimeout(()=>{
+  _persistRun=()=>{
+    _persistTimer=null;_persistRun=null;
     const latest=getPersistSignature();
     if(force||latest!==_persistSig){
       const commit=()=>{saveSettings();savePeople();saveShiftLib();saveCoachQuality();saveCoverageReq();saveOTPlan();saveQoLState();};
@@ -123,8 +125,19 @@ function schedulePersist(force){
       else{commit();_schedulePersistFlush(false);}
       _persistSig=latest;
     }
-  }, force?30:180);
+  };
+  _persistTimer=setTimeout(_persistRun, force?30:180);
 }
+// Writes everything still waiting on a timer — the debounced persist and the idle-time queue — to
+// storage now. A cloud save reads storage, and one pressed within a moment of an edit (or a tab
+// closed straight after one) otherwise went without it.
+function _flushAllPendingPersist(){
+  if(_persistTimer){clearTimeout(_persistTimer);if(_persistRun)_persistRun();}
+  _flushPersistQueue();
+}
+window._flushAllPendingPersist=_flushAllPendingPersist;
+window.addEventListener("pagehide",_flushAllPendingPersist);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")_flushAllPendingPersist();});
 // Each theme: d=dot color, bg=page bg, c=card bg, ac=accent, al=accent light, ah=accent hover,
 // t=text, tm=muted text, bd=border, hb=header bg, ht=header text,
 // g1/g2=glow orb colors, dot=dot pattern color, early/mid/late/wknd=shift colors

@@ -49,7 +49,9 @@ project's exact view context, deletion when the cloud save fails, concurrent edi
 offline then reconnect, the boot push gate, backup export, snapshots and restore, the sample
 project, the command palette, "what changed since last time", and keyboard/mobile project selection.
 `cross-device-sync.spec.js` covers a second device loading an older cloud save, keeping it across
-a reload, and both-sides-changed comparisons.
+a reload, and both-sides-changed comparisons. `projects-ops.spec.js` covers the Projects & Ops panel
+(signed in and out, from the landing screen and inside a project) and People edits — logbook, agent
+notes and statuses — reaching a second device and surviving its next save.
 
 Data-integrity regressions have their own specs: `parser.spec.js` (17 roster fixtures across the
 13/14-person boundary, dd/mm CSVs, and the lossy-parse guard), `persistence.spec.js` (a schedule
@@ -68,7 +70,8 @@ it through `window.__fakeSupabase` to sign in, fail a push, or simulate another 
 One `workspaces` row per account (`department_key = '__personal__'`) holds the whole workspace.
 A database trigger bumps its `version` on every write. Each device keeps the version it last
 matched, plus an "unsaved changes" flag, in `localStorage["sc_cloud_sync"]`. Signing in loads a
-newer cloud copy automatically when the device has no unsaved changes. When both sides changed, it
+newer cloud copy automatically when the device has no unsaved changes, and a loaded copy replaces
+this device's stores outright (a key it lacks was emptied on the device that saved it). When both sides changed, it
 opens the comparison instead. Saving stays explicit, and a save only succeeds if the cloud row is
 still at the version this device last saw. Schema changes made since this was introduced are in
 `supabase/migrations/`.
