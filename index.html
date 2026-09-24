@@ -14224,21 +14224,33 @@ function peopleAddAgentsToLeader(tlName,sourceId){
   const names=_parseAgentNameLines(el?el.value:"");
   if(!names.length){toast("Paste or type at least one agent name","warn");return;}
   let added=0,moved=0,skipped=0;
+  const assigned=[];
   names.forEach(name=>{
     if(name===tlName){skipped++;return;}
     const existing=S.people[name];
     if(existing&&existing.role==="leader"){skipped++;return;}
     if(existing&&existing.role==="agent"){
-      if(existing.teamLeader!==tlName){existing.teamLeader=tlName;existing.team=(S.people[tlName]||{}).team||existing.team||"Main";moved++;}
+      if(existing.teamLeader!==tlName){existing.teamLeader=tlName;existing.team=(S.people[tlName]||{}).team||existing.team||"Main";assigned.push(existing);moved++;}
       else skipped++;
       return;
     }
     S.people[name]={id:_personId(),name,aliases:[],role:"agent",team:(S.people[tlName]||{}).team||"Main",teamLeader:tlName,contractHours:0,contractType:null,fte:1,skills:[],platforms:[],restrictions:[],otEligible:true,otMaxWeekly:0,startDate:null,endDate:null,source:"manual",addedAt:new Date().toISOString()};
+    assigned.push(S.people[name]);
     added++;
   });
   if(el)el.value="";
   savePeople();
+  // A project person keeps the move only if the canonical record has it too; see nsApplyRuntimePersonEdit.
+  if(typeof nsApplyRuntimePersonEdit==="function")assigned.forEach(p=>nsApplyRuntimePersonEdit(p.name,{teamLeader:p.teamLeader,team:p.team}));
   toast(`${added} added${moved?`, ${moved} moved`:""}${skipped?`, ${skipped} skipped`:""}`,"ok");
+  rPeople($("ca"));
+}
+// People → Team: the "assign" select on an agent with no team leader.
+function peopleAssignTeamLeader(name,tlName){
+  const p=S.people[name];if(!p)return;
+  p.teamLeader=tlName;
+  savePeople();
+  if(typeof nsApplyRuntimePersonEdit==="function")nsApplyRuntimePersonEdit(name,{teamLeader:tlName});
   rPeople($("ca"));
 }
 function peopleRemoveAgent(name){
@@ -29282,6 +29294,9 @@ function _syncOpenProject(name){
   const deptKey=(typeof nsDepartmentKey==='function')?nsDepartmentKey(name):'';
   if(deptKey)_syncRecordProjectOpened(deptKey);
   if(typeof nsRestoreEntriesFromCanonical==='function')nsRestoreEntriesFromCanonical();
+  // Nothing else maps this project's people into S.people once it is active (a sample project
+  // mapped them before S.activeDept was set, so opened with nobody). Existing entries are kept.
+  if(typeof nsFillRuntimePeopleFromCanonical==='function')nsFillRuntimePeopleFromCanonical();
   if(!S.workspace||typeof S.workspace!=='object')S.workspace={};
   if(!S.workspace[name])S.workspace[name]={};
   // After the data is loaded (so month/sheet validation has something real to check against) and
@@ -30979,6 +30994,8 @@ function peopleSetRoleLabels(name,labels){
   if(!name)return;
   const p=S.people[name]||(S.people[name]={name,role:gN().includes(name)?"leader":"agent"});
   const clean=[...new Set((labels||[]).map(x=>String(x||"").trim()).filter(Boolean))];
+  // labels too: peopleRoleLabels reads it, so a removed label otherwise stayed on show.
+  p.labels=clean;
   p.roleLabels=clean;
   p.role_labels=clean;
   p.specialTag=clean.join("; ");
@@ -30990,6 +31007,8 @@ function peopleSetRoleLabels(name,labels){
   p.supervisor=clean.some(x=>/supervisor/i.test(x));
   savePeople();
   savePeopleOps();
+  // Held on the canonical person as well, or the next NorthStar sync puts removed labels back.
+  if(typeof nsApplyRuntimePersonEdit==="function")nsApplyRuntimePersonEdit(name,{labels:clean});
   invalidateDerivedCache();
 }
 function openPeopleRoleLabelsModal(name){
@@ -32833,7 +32852,7 @@ function rPeopleTeamView(){
       h+=`<div style="padding:5px 14px;display:flex;align-items:center;gap:6px;font-size:11px">`;
       h+=`<div class="tti-av" style="width:22px;height:22px;font-size:10px;flex-shrink:0">${X(ag.name.charAt(0))}</div>`;
       h+=`<span style="flex:1;color:var(--tm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(ag.name)}</span>`;
-      h+=`<select onchange="(function(tl){S.people['${XJS(ag.name)}'].teamLeader=tl;savePeople();rPeople($('ca'));})(this.value)" style="padding:2px 4px;border:1px solid var(--bdr);border-radius:4px;background:var(--card);color:var(--text);font-family:inherit;font-size:10px;max-width:80px">`;
+      h+=`<select onchange="peopleAssignTeamLeader('${XJS(ag.name)}',this.value)" style="padding:2px 4px;border:1px solid var(--bdr);border-radius:4px;background:var(--card);color:var(--text);font-family:inherit;font-size:10px;max-width:80px">`;
       h+=`<option value="">— assign —</option>`;
       leaderNames2.forEach(ln=>{h+=`<option value="${XA(ln)}">${X(ln.split(' ')[0])}</option>`;});
       h+=`</select>`;
@@ -33816,6 +33835,9 @@ window.nsDownloadBlob=nsDownloadBlob;
 window._syncCollectLocalKeys=_syncCollectLocalKeys;
 // The Ops overview counts scoped OT wishes to decide whether to offer the OT+ workbench.
 window.nsScopedRows=nsScopedRows;
+// People-view edits write through to the canonical person; opening a project fills S.people.
+window.nsApplyRuntimePersonEdit=nsApplyRuntimePersonEdit;
+window.nsFillRuntimePeopleFromCanonical=nsFillRuntimePeopleFromCanonical;
 
 function nsOpenDatabase(){
   if(!window.indexedDB)return Promise.reject(new Error("IndexedDB unavailable"));
@@ -34645,22 +34667,73 @@ function nsExtractSyncLog(wb,source){
 
 function nsRuntimeRole(roleTitle){return /agent/i.test(roleTitle||"")&&!/lead|supervisor|manager/i.test(roleTitle||"")?"agent":"leader";}
 
-function nsSyncPeopleToRuntime(){
+// opts.onlyMissing: add the scoped canonical people S.people lacks and leave every existing entry
+// alone. Opening a project uses it. The additions are a projection of the canonical model, not an
+// edit, so writing them does not mark the device as having unsaved work.
+function nsSyncPeopleToRuntime(opts){
   const model=nsCanonical(),scopedPeople=nsScopedRows("people"),scopedActing=nsScopedRows("acting");if(!S.people||typeof S.people!=="object")S.people={};
-  const byId=new Map(scopedPeople.map(person=>[person.person_id,person]));
+  const byId=new Map(scopedPeople.map(person=>[person.person_id,person])),kept=opts&&opts.onlyMissing?new Set(Object.keys(S.people)):null;
   scopedPeople.forEach(person=>{
-    const name=person.full_name;if(!name)return;
+    const name=person.full_name;if(!name||kept&&kept.has(name))return;
     const current=S.people[name]||{};
     const manager=person.manager_name||(byId.get(person.reports_to_person_id)||{}).full_name||current.teamLeader||"";
-    const labels=[...new Set([...(current.labels||[]),...(person.labels||[])])];
+    // A browser edit (NorthStar editor, or a People-view edit written through by
+    // nsApplyRuntimePersonEdit) holds the whole label set, so a label removed there stays removed.
+    // Imported records only ever add labels.
+    const labels=person.source_id==="NS-BROWSER"?nsNormalizeLabels(person.labels):[...new Set([...(current.labels||[]),...(person.labels||[])])];
     S.people[name]=Object.assign({},current,{name,personId:person.person_id,role:nsRuntimeRole(person.role_type),roleType:person.role_type,title:person.job_title||person.role_type,jobTitle:person.job_title||current.jobTitle||"",team:person.home_team||current.team||"",department:person.home_department||current.department||"",teamLeader:manager,status:person.status||current.status||"Active",labels,roleLabels:labels,notes:person.notes||current.notes||""});
   });
   scopedActing.filter(item=>String(item.status||"Active").toLowerCase()!=="inactive").forEach(item=>{
-    const person=byId.get(item.person_id);if(!person)return;
+    const person=byId.get(item.person_id);if(!person||kept&&kept.has(person.full_name))return;
     const label=/supervisor/i.test(item.acting_role)?"Acting Supervisor":"Acting Leader";
     const runtime=S.people[person.full_name];runtime.labels=[...new Set([...(runtime.labels||[]),label])];runtime.roleLabels=runtime.labels;runtime.acting=true;
   });
-  try{savePeople();}catch(err){}
+  if(!kept){try{savePeople();}catch(err){}return;}
+  if(Object.keys(S.people).length===kept.size)return;
+  const applying=NS.applyingRemote;NS.applyingRemote=true;
+  try{savePeople();}catch(err){}finally{NS.applyingRemote=applying;}
+}
+// The universal workspace keys S.people by "Name · Project", so unqualified names would duplicate.
+function nsFillRuntimePeopleFromCanonical(){
+  if((typeof isUniversalWorkspace==="function"&&isUniversalWorkspace())||S._universalWorkspace===true)return;
+  nsSyncPeopleToRuntime({onlyMissing:true});
+}
+
+// The People views edit S.people directly, and nsSyncPeopleToRuntime maps the canonical people back
+// over it on every NorthStar save, import, snapshot restore and cloud load, so an edit that stopped
+// at S.people was reverted the next time any of those ran. This writes it through to the canonical
+// person as a browser edit: rank 0 outranks every import, and its labels become authoritative.
+// patch uses the runtime field names: team, teamLeader, status, labels. Every scoped match is
+// updated, since the universal workspace can hold one name in more than one project and each would
+// otherwise map its stale values back. A match already holding the patched values is left as it is,
+// so the NorthStar editor's own call into peopleSetRoleLabels does not stage it twice. Returns the
+// canonical records it changed.
+function nsApplyRuntimePersonEdit(name,patch){
+  const key=nsNameKey(name);if(!key||!patch||typeof patch!=="object")return[];
+  const scoped=nsScopedRows("people"),matches=scoped.filter(person=>nsNameKey(person.full_name)===key);if(!matches.length)return[];
+  const model=nsCanonical(),sourceMap=nsSourceDepartmentMap(model),now=nsNow(),has=field=>Object.prototype.hasOwnProperty.call(patch,field),changed=[];
+  matches.forEach(person=>{
+    const department=nsRecordDepartmentKey(person,model,sourceMap),changes={};
+    if(has("team"))changes.home_team=nsClean(patch.team);
+    if(has("teamLeader")){
+      const leaderName=nsClean(patch.teamLeader),leaderKey=nsNameKey(leaderName),leaders=leaderKey?scoped.filter(item=>nsNameKey(item.full_name)===leaderKey):[];
+      const leader=leaders.find(item=>nsRecordDepartmentKey(item,model,sourceMap)===department)||leaders[0];
+      changes.manager_name=leaderName;changes.reports_to_person_id=leader?leader.person_id:"";
+    }
+    if(has("status"))changes.status=nsClean(patch.status)||"Active";
+    if(has("labels"))changes.labels=nsNormalizeLabels(patch.labels);
+    if(!Object.entries(changes).some(([field,value])=>JSON.stringify(field==="labels"?nsNormalizeLabels(person.labels):person[field]??"")!==JSON.stringify(value)))return;
+    // A person scoped only through its source keeps that scope once the source becomes NS-BROWSER.
+    if(!nsDirectDepartmentKey(person)&&department)changes.department_key=department;
+    // Its labels turn authoritative with the stamp, so the ones S.people gathered from earlier merges
+    // are carried over rather than dropped by a team leader edit.
+    if(!has("labels")&&person.source_id!=="NS-BROWSER"){const runtime=S.people&&S.people[person.full_name];if(runtime)changes.labels=nsNormalizeLabels([...nsNormalizeLabels(person.labels),...nsNormalizeLabels(runtime.labels)]);}
+    Object.assign(person,changes,{source_id:"NS-BROWSER",authority_rank:0,last_modified_utc:now,sync_status:"Staged"});
+    nsStageChange("PeopleHub","People",person.person_id,"update",Object.assign({},person));
+    changed.push(person);
+  });
+  if(changed.length)nsPersist();
+  return changed;
 }
 
 function nsEnsureOrgUnits(){

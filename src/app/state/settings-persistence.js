@@ -1241,6 +1241,9 @@ function _syncOpenProject(name){
   const deptKey=(typeof nsDepartmentKey==='function')?nsDepartmentKey(name):'';
   if(deptKey)_syncRecordProjectOpened(deptKey);
   if(typeof nsRestoreEntriesFromCanonical==='function')nsRestoreEntriesFromCanonical();
+  // Nothing else maps this project's people into S.people once it is active (a sample project
+  // mapped them before S.activeDept was set, so opened with nobody). Existing entries are kept.
+  if(typeof nsFillRuntimePeopleFromCanonical==='function')nsFillRuntimePeopleFromCanonical();
   if(!S.workspace||typeof S.workspace!=='object')S.workspace={};
   if(!S.workspace[name])S.workspace[name]={};
   // After the data is loaded (so month/sheet validation has something real to check against) and
