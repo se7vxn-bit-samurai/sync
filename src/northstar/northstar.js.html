@@ -2514,7 +2514,10 @@ function nsRenderCrossDepartment(el){
 const nsBaseOpsSourceRows=_opsSourceRows;
 _opsSourceRows=function(){
   const existing=nsBaseOpsSourceRows(),canonical=nsScopedRows("sources").map(source=>({name:source.source_name||source.source_id,rows:source.source_rows||0,type:source.source_label||source.source_kind||"source",source_id:source.source_id}));
-  const seen=new Set();return[...canonical,...existing].filter(row=>{const key=row.source_id||row.name;if(seen.has(key))return false;seen.add(key);return true;});
+  // Imported files are the sources. The sheet list describes the same file again, sheet by sheet,
+  // so merging both counted every import twice and disagreed with Data control's count.
+  if(canonical.length)return canonical;
+  const seen=new Set();return existing.filter(row=>{const key=row.source_id||row.name;if(seen.has(key))return false;seen.add(key);return true;});
 };
 
 const nsBaseROps=rOps;
@@ -2534,11 +2537,17 @@ rOps=function(el){
   if(view==="performance")return nsRenderPerformance(el);
   return nsBaseROps(el);
 };
+{
+  const nsROpsView=rOps;
+  rOps=function(el){const out=nsROpsView(el);if(typeof syncOpsChrome==="function")syncOpsChrome();return out;};
+}
 
 const nsBaseRAnalytics=rAnalytics;
 rAnalytics=function(el){
   if(S.anView==="ops")return rOps(el);
-  return nsBaseRAnalytics(el);
+  const out=nsBaseRAnalytics(el);
+  if(typeof syncOpsChrome==="function")syncOpsChrome();
+  return out;
 };
 
 const nsBaseRenderActiveTab=renderActiveTab;

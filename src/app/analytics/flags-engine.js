@@ -246,7 +246,7 @@ function computeFlags(){
           const id="longshift|"+name+"|"+excKey(e.date);
           flags.push({id,category:"operational",severity:hrs>=maxHrs+2?"high":"medium",
             title:"Long shift",
-            detail:`${name.split(" ")[0]}: ${Math.round(hrs*10)/10}h shift on ${fD(e.date)} (${e.ukS}–${e.ukE}) — threshold ${maxHrs}h`,
+            detail:`${name.split(" ")[0]}: ${Math.round(hrs*10)/10}h shift on ${fD(e.date)} (${S.tz?sAD(e):uD(e)}) — threshold ${maxHrs}h`,
             person:name,context:{date:excKey(e.date),shift:e.ukS+"–"+e.ukE,hours:Math.round(hrs*10)/10,limit:maxHrs},
             actions:["expected","ignore","note"]});
         }

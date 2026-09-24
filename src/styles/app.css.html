@@ -1928,6 +1928,11 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .pst-btn{padding:7px 14px;font-size:11px;font-weight:600;cursor:pointer;background:none;border:none;border-bottom:2px solid transparent;color:var(--tm);font-family:inherit;transition:all .12s;letter-spacing:.4px;text-transform:uppercase}
 .pst-btn:hover{color:var(--text)}
 .pst-btn.a{color:var(--accent);border-bottom-color:var(--accent)}
+/* Ops section tabs (renderOpsSectionNav) sit above #ca and scroll sideways on narrow screens. */
+#opsSectionNav{flex-shrink:0}
+.ops-section-nav{overflow-x:auto;scrollbar-width:none}
+.ops-section-nav::-webkit-scrollbar{display:none}
+.ops-section-nav .pst-btn{white-space:nowrap;padding:11px 14px}
 /* Quick event form */
 .quick-event-form{background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
 .qef-type-btn{padding:5px 10px;border:1px solid var(--bdr);border-radius:20px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer;transition:all .1s}

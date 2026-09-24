@@ -150,13 +150,12 @@ function toggleRailGroup(group){
   if(compact){
     const onGroupHome=(group==="calendar"&&S.tab==="calendar"&&S.calSubTab==="day")
       ||(group==="people"&&S.tab==="people"&&S.peopleSubTab==="dashboard")
-      ||(group==="analytics"&&S.tab==="analytics"&&(S.anView||"dashboard")==="dashboard");
+      ||(group==="analytics"&&S.tab==="analytics"&&S.anView==="ops"&&(S.opsView||"overview")==="overview");
     if(!onGroupHome){
       S._mobileRailGroup=null;
       if(group==="calendar")railNavCalendar("day");
       else if(group==="people")railNavPeople("dashboard");
-      else if(group==="ops")railNavOps("overview");
-      else railNavAnalytics("dashboard");
+      else railNavOps("overview");
       return;
     }
     S._mobileRailGroup=S._mobileRailGroup===group?null:group;
@@ -211,6 +210,50 @@ function railNavOps(view){
   S.opsView=view||"overview";
   ren();
 }
+// Ops used to list 16 destinations in the rail. They are grouped into six sections; a section's
+// pages become tabs inside it (renderOpsSectionNav). One table drives both the rail and the tab
+// strip, so they cannot disagree. Each tab is [kind, view, label]: kind "an" is an S.anView, "ops"
+// an S.opsView. `also` lists pages reached from inside a section that have no tab of their own.
+const OPS_SECTIONS=[
+  {id:"overview",label:"Overview",tabs:[["ops","overview","Summary"],["ops","handoff","Handoff"]],also:["otplus","cross-department","logbook","events"]},
+  {id:"analytics",label:"Analytics",tabs:[["an","dashboard","Team"],["an","coverage","Coverage"],["an","absence","Absence"],["ops","schedule","Schedule window"]]},
+  {id:"alerts",label:"Alerts",badge:true,tabs:[["an","alerts","Alerts"],["ops","decisions","Decisions"]],also:["alerts"]},
+  {id:"blueprint",label:"Blueprint",tabs:[["an","blueprint","Editor"],["ops","blueprints","Library"]]},
+  {id:"organisation",label:"People & Org",tabs:[["ops","organisation","People & Org"]]},
+  {id:"data",label:"Data",tabs:[["an","rawdata","Records"],["ops","data-control","Data control"],["ops","exports","Exports"]],also:["sources","conflicts","governance","publish","performance"]}
+];
+function _opsCurrentPage(){
+  const an={signals:"alerts",flags:"alerts",issues:"alerts",history:"coverage",forecast:"dashboard",capacity:"dashboard",data:"rawdata"}[S.anView]||S.anView||"dashboard";
+  return an==="ops"?["ops",S.opsView||"overview"]:["an",an];
+}
+function opsSectionFor(page){
+  const[kind,view]=page||_opsCurrentPage();
+  return OPS_SECTIONS.find(sec=>sec.tabs.some(t=>t[0]===kind&&t[1]===view)||(kind==="ops"&&(sec.also||[]).includes(view)))||OPS_SECTIONS[0];
+}
+function _opsNavAction(kind,view){return kind==="ops"?`railNavOps('${view}')`:`railNavAnalytics('${view}')`;}
+// The strip sits above #ca, outside it, so the many Ops views that rewrite #ca on their own
+// (filters, inline actions) cannot wipe it.
+function renderOpsSectionNav(){
+  const host=$("opsSectionNav");
+  if(!host)return;
+  const sec=S.tab==="analytics"?opsSectionFor():null;
+  if(!sec||sec.tabs.length<2){host.innerHTML="";host.style.display="none";S._opsNavSig="";return;}
+  const[kind,view]=_opsCurrentPage();
+  const sig=sec.id+"|"+kind+"|"+view;
+  host.style.display="";
+  if(S._opsNavSig===sig&&host.firstChild)return;
+  S._opsNavSig=sig;
+  host.innerHTML=`<div class="people-subtab-nav ops-section-nav" role="tablist" aria-label="${X(sec.label)}">`+sec.tabs.map(t=>{
+    const on=t[0]===kind&&t[1]===view;
+    return `<button class="pst-btn${on?' a':''}" type="button" role="tab" aria-selected="${on}" data-testid="ops-tab-${t[1]}" onclick="${_opsNavAction(t[0],t[1])}">${X(t[2])}</button>`;
+  }).join("")+`</div>`;
+}
+// Ops views re-render themselves outside ren() (rOps($('ca')) from inline handlers). Keep the tab
+// strip in step, and the rail too when the section itself changed.
+function syncOpsChrome(){
+  renderOpsSectionNav();
+  if(S.tab==="analytics"&&S._railOpsSection!==opsSectionFor().id)renderTabs();
+}
 function renderTabs(){
   // v50D: Render tabs as rail nav items
   normalizeTabState();
@@ -221,7 +264,8 @@ function renderTabs(){
   const peopleBadge=_attentionCount>0?`<span class="mf-rail-badge">${_attentionLabel}</span>`:'';
   const flagCount=computeFlags().filter(f=>f.category==="operational"||f.category==="blueprint").length;
   const alertsBadge=flagCount>0?`<span class="mf-rail-badge">${flagCount>99?"99+":flagCount}</span>`:'';
-  const activeAnView={signals:"alerts",flags:"alerts",issues:"alerts",history:"coverage",forecast:"dashboard",capacity:"dashboard",data:"rawdata"}[S.anView]||S.anView||"dashboard";
+  const opsSection=opsSectionFor();
+  S._railOpsSection=S.tab==="analytics"?opsSection.id:null;
   const g=_ensureRailGroups();
   const groups=[
     {id:"dashboard",label:"Home",active:S.tab==="dashboard",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="1.5" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/><rect x="8" y="1.5" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/><rect x="1.5" y="8" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/><rect x="8" y="8" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/></svg>`,action:"railNavDashboard()",children:[]},
@@ -240,20 +284,7 @@ function renderTabs(){
       {id:"events",label:"Events",active:S.tab==="people"&&S.peopleSubTab==="events",action:"railNavPeople('events')"}
     ]},
     {id:"analytics",label:"Ops",active:S.tab==="analytics",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="8" width="3" height="5" rx="0.5" stroke="currentColor" stroke-width="1"/><rect x="5.5" y="4" width="3" height="9" rx="0.5" stroke="currentColor" stroke-width="1"/><rect x="10" y="1" width="3" height="12" rx="0.5" stroke="currentColor" stroke-width="1"/></svg>`,children:[
-      {id:"dashboard",label:"Operational analytics",active:S.tab==="analytics"&&activeAnView==="dashboard",action:"railNavAnalytics('dashboard')"},
-      {id:"workspace",label:"Workspace",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="overview",action:"railNavOps('overview')"},
-      {id:"schedule-window",label:"Schedule Window",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="schedule",action:"railNavOps('schedule')"},
-      {id:"coverage",label:"Coverage",active:S.tab==="analytics"&&activeAnView==="coverage",action:"railNavAnalytics('coverage')"},
-      {id:"blueprint",label:"Blueprint",active:S.tab==="analytics"&&activeAnView==="blueprint",action:"railNavAnalytics('blueprint')"},
-      {id:"blueprint-library",label:"Blueprint library",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="blueprints",action:"railNavOps('blueprints')"},
-      {id:"organisation",label:"People & Org",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="organisation",action:"railNavOps('organisation')"},
-      {id:"absence",label:"Absence",active:S.tab==="analytics"&&activeAnView==="absence",action:"railNavAnalytics('absence')"},
-      {id:"alerts",label:"Alerts",badge:alertsBadge,active:S.tab==="analytics"&&activeAnView==="alerts",action:"railNavAnalytics('alerts')"},
-      {id:"data",label:"Data",active:S.tab==="analytics"&&activeAnView==="rawdata",action:"railNavAnalytics('data')"},
-      {id:"data-control",label:"Data control",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="data-control",action:"railNavOps('data-control')"},
-      {id:"exports",label:"Export Centre",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="exports",action:"railNavOps('exports')"},
-      {id:"decisions",label:"Decisions",badge:alertsBadge,active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="decisions",action:"railNavOps('decisions')"},
-      {id:"handoff",label:"Handoff",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="handoff",action:"railNavOps('handoff')"}
+      ...OPS_SECTIONS.map(sec=>({id:sec.id,label:sec.label,badge:sec.badge?alertsBadge:"",active:S.tab==="analytics"&&opsSection.id===sec.id,action:_opsNavAction(sec.tabs[0][0],sec.tabs[0][1])}))
     ]}
   ];
   groups.forEach(group=>{if(group.active)g[group.id]=true;});
@@ -282,6 +313,7 @@ function renderTabs(){
   if(bottomEl){
     bottomEl.innerHTML='';
   }
+  renderOpsSectionNav();
 }
 function renderKeyboardHints(){
   const kbEl=$("kbh");if(!kbEl)return;
@@ -387,7 +419,7 @@ function renderInfoBar(){
   const hEl=$("mhHealth");
   if(hEl&&S.month){
     const ths=computeTeamHealthScore(S.month);
-    if(ths){hEl.innerHTML=`<span style="font-weight:700;color:${ths.gradeCol};background:${cssAlpha(ths.gradeCol,10)};padding:1px 5px;border-radius:3px;cursor:pointer" onclick="setTab('analytics');setAnalyticsView('dashboard')">${ths.grade} ${ths.avg}</span>${loadBit}`;
+    if(ths){hEl.innerHTML=`<span style="font-weight:700;color:${ths.gradeCol};background:${cssAlpha(ths.gradeCol,10)};padding:1px 5px;border-radius:3px;cursor:pointer" onclick="railNavAnalytics('dashboard')" title="Team health score for ${X(monthLabel())}">Health ${ths.grade} ${ths.avg}</span>${loadBit}`;
     }else hEl.innerHTML=loadBit;
   }else if(hEl)hEl.innerHTML=loadBit;
   // Ticker — floor window + exception count for today
@@ -405,7 +437,7 @@ function renderInfoBar(){
   const floorOpen=ukStarts.length?(S.tz?u2s(ukStarts[0],today):ukStarts[0]):null;
   const floorClose=ukEnds.length?(S.tz?u2s(ukEnds[ukEnds.length-1],today):ukEnds[ukEnds.length-1]):null;
   let tk='';
-  if(floorOpen&&floorClose)tk+=`<span class="tk-item"><span class="tk-label">floor</span><span class="tk-val">${floorOpen}-${floorClose}</span></span>`;
+  if(floorOpen&&floorClose)tk+=`<span class="tk-item"><span class="tk-label">floor ${S.tz?"SA":"UK"}</span><span class="tk-val" title="Floor hours in ${S.tz?"South African":"UK"} time. Switch in Settings.">${floorOpen}-${floorClose}</span></span>`;
   if(todayExcs.length)tk+=`<span class="tk-item"><span class="tk-label">exc</span><span class="tk-val" style="color:${todayExcs.length>0?'var(--flag,#c07070)':'var(--ink2)'}">${todayExcs.length}</span></span>`;
   const _agentTotal=getAllAgentCount();
   if(_agentTotal>0)tk+=`<span class="tk-item"><span class="tk-label">agents</span><span class="tk-val" style="color:var(--accent)">${_agentTotal}</span></span>`;

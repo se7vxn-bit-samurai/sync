@@ -92,6 +92,7 @@ function _rerenderAnalyticsSurfaceNow(mode){
     // The bar holds only the scope toggle now; hide it on views the scope does not apply to.
     const bar=$("analyticsModeControls");
     if(bar)bar.style.display=['dashboard','coverage','capacity','absence'].includes(S.anView)?'flex':'none';
+    if(typeof syncOpsChrome==="function")syncOpsChrome();
     return true;
   }
   // Fallback: full re-render
