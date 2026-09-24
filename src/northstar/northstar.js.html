@@ -143,7 +143,7 @@ function nsPersist(){
     if(!NS.persistWarningShown){NS.persistWarningShown=true;toast("NorthStar is active, but the browser storage limit prevented full schedule persistence.","warn",5200);}
   }
   // Local persistence is immediate; cloud writes are an explicit user decision.
-  if(NS.trackLocalChanges&&!NS.applyingRemote&&typeof window._syncMarkLocalChange==="function")window._syncMarkLocalChange();
+  if(NS.trackLocalChanges&&!NS.applyingRemote&&typeof window._syncMarkLocalChange==="function")window._syncMarkLocalChange("canonical");
 }
 // A file can be opened for a one-off session without becoming a browser project. This remains
 // entirely local: enabling persistence never sends anything to the cloud.
@@ -189,10 +189,21 @@ function _syncCollectLocalKeys(){
   return out;
 }
 
-function _syncWriteLocalKeys(data){
+// opts.replace: the payload is the whole workspace (a cloud load), so a key it does not carry was
+// emptied on the device that saved it — the stores delete their key when empty. Leaving this
+// device's copy in place brought deleted logbook entries, notes and exceptions back.
+function _syncWriteLocalKeys(data,opts){
   if(!data||typeof data!=="object")return;
+  const replace=!!(opts&&opts.replace);
   SYNC_LOCAL_KEYS.forEach(key=>{
-    if(!Object.prototype.hasOwnProperty.call(data,key))return;
+    if(!Object.prototype.hasOwnProperty.call(data,key)){
+      if(!replace)return;
+      try{
+        if(typeof _persistRemove==="function")_persistRemove(key,{critical:true});
+        else localStorage.removeItem(key);
+      }catch(err){}
+      return;
+    }
     try{
       const value=data[key];
       const raw=typeof value==="string"?value:JSON.stringify(value);
@@ -303,23 +314,35 @@ function _syncIsDirty(){return _syncReadState().dirty===true;}
 // Bumped on every local change, so a save that was in flight while the user kept editing does not
 // mark those later edits as saved.
 let _syncChangeSeq=0;
-function _syncMarkDirty(){
+// `changed` lists what moved since the last cloud save or load (storage keys, or "canonical" for
+// project people/schedule data), so the save panel can say what a save will carry, not just that
+// something will.
+function _syncMarkDirty(key){
   _syncChangeSeq++;
-  if(!_syncIsDirty())_syncWriteState({dirty:true});
+  const state=_syncReadState(),changed=Array.isArray(state.changed)?state.changed:[];
+  const what=key||"workspace";
+  if(state.dirty===true&&changed.includes(what))return;
+  _syncWriteState({dirty:true,changed:changed.includes(what)?changed:changed.concat(what)});
+}
+function _syncChangedKeys(){
+  if(!_syncIsDirty())return[];
+  const changed=_syncReadState().changed;
+  return Array.isArray(changed)?changed.slice():[];
 }
 function _syncRecordSynced(userId,version,updatedAt,seqAtStart){
   const stillClean=seqAtStart===undefined||seqAtStart===_syncChangeSeq;
-  _syncWriteState({uid:userId,version,updated_at:updatedAt||null,dirty:stillClean?false:_syncIsDirty()});
+  _syncWriteState({uid:userId,version,updated_at:updatedAt||null,dirty:stillClean?false:_syncIsDirty(),changed:stillClean?[]:_syncChangedKeys()});
 }
 
 // NS.applyingRemote: writing the pulled copy into local storage must not count as a local edit.
 // Per-device view context syncs with the payload but is not work worth a conflict prompt.
-const SYNC_DIRTY_KEYS=new Set(SYNC_LOCAL_KEYS.filter(key=>key!=="sc_view_state"));
+// sc_people_view is the same kind of record: which People sub-view and filters are showing.
+const SYNC_DIRTY_KEYS=new Set(SYNC_LOCAL_KEYS.filter(key=>key!=="sc_view_state"&&key!=="sc_people_view"));
 // Called by _persistSet/_persistRemove for every key they write.
 function _syncNoteKeyWrite(key){
   if(!NS.trackLocalChanges||NS.applyingRemote||!SYNC_DIRTY_KEYS.has(key))return;
-  if(typeof window._syncMarkLocalChange==="function")window._syncMarkLocalChange();
-  else _syncMarkDirty();
+  if(typeof window._syncMarkLocalChange==="function")window._syncMarkLocalChange(key);
+  else _syncMarkDirty(key);
 }
 
 // Resolves true once local hydration has finished: until then the in-memory model came from the
@@ -358,6 +381,8 @@ async function _syncPushWorkspaceNow(opts){
     if(!userId)return false; // signed out — defensive no-op, should not happen behind the auth gate
     if(typeof _syncSetSaveDot==="function")_syncSetSaveDot("saving");
     if(!await nsWhenBootSettled())throw new Error("this device's workspace has not finished loading");
+    // Edits still on a debounce timer are part of what the user just pressed Save for.
+    if(typeof window._flushAllPendingPersist==="function")window._flushAllPendingPersist();
     const seq=_syncChangeSeq;
     const data=Object.assign({},nsCanonical(),_syncCollectLocalKeys());
     const mine={owner_user_id:userId,department_key:SYNC_PERSONAL_WORKSPACE_KEY};
@@ -397,10 +422,12 @@ async function _syncPushWorkspaceNow(opts){
 }
 
 function _syncApplyRemote(remote){
+  // A write still queued from before the load would land after it and put the old value back.
+  if(typeof window._flushAllPendingPersist==="function")window._flushAllPendingPersist();
   NS.applyingRemote=true;
   try{
     S.nsCanonical=nsNormalizeCanonical(remote);
-    _syncWriteLocalKeys(remote);
+    _syncWriteLocalKeys(remote,{replace:true});
     // Same order as launch: the stores load from storage first, then the canonical people are
     // mapped onto them.
     if(typeof _syncReloadLocalStores==="function")_syncReloadLocalStores();
@@ -470,9 +497,12 @@ function syncPullWorkspace(opts){
     // A plain request shares the running pull; choosing the cloud copy must still run after it.
     return opts.takeCloud?_syncPullInFlight.then(()=>syncPullWorkspace(opts)):_syncPullInFlight;
   }
-  _syncPullInFlight=_syncPullOnce(opts).finally(()=>{_syncPullInFlight=null;});
+  // Announced so an open Projects & Ops panel can show the check in progress, then its outcome.
+  _syncPullInFlight=_syncPullOnce(opts).finally(()=>{_syncPullInFlight=null;window.dispatchEvent(new Event("sync:pull-settled"));});
+  window.dispatchEvent(new Event("sync:pull-started"));
   return _syncPullInFlight;
 }
+function _syncPullPending(){return!!_syncPullInFlight;}
 
 // This entire file is wrapped in one top-level IIFE (see the opening `(function(){` at the very
 // top and its matching `})();` near the end) — every function above is scoped to THIS closure and
@@ -484,9 +514,11 @@ function syncPullWorkspace(opts){
 // succeeding into a permanent no-op, not a temporary one. Explicitly exporting the handful the main
 // script actually calls fixes that at the source, once, here, rather than patching each call site.
 window.syncPullWorkspace=syncPullWorkspace;
+window._syncPullPending=_syncPullPending;
 window._syncPushWorkspaceNow=_syncPushWorkspaceNow;
 window._syncMarkDirty=_syncMarkDirty;
 window._syncIsDirty=_syncIsDirty;
+window._syncChangedKeys=_syncChangedKeys;
 window._syncNoteKeyWrite=_syncNoteKeyWrite;
 window._syncGetUserId=_syncGetUserId;
 window.nsRestoreEntriesFromCanonical=nsRestoreEntriesFromCanonical;
@@ -835,6 +867,7 @@ async function nsSnapshotDbDelete(id){
 async function nsSaveSnapshot(label,opts){
   opts=opts||{};
   try{
+    if(typeof window._flushAllPendingPersist==="function")window._flushAllPendingPersist();
     const model=nsCanonical();
     const clone=typeof structuredClone==="function"?structuredClone(model):JSON.parse(JSON.stringify(model));
     const id=nsHash(nsNow()+"|"+Math.random())+"-"+Date.now().toString(36);
@@ -891,9 +924,14 @@ async function nsRestoreSnapshot(id){
     if(!record||!record.model)return{ok:false,error:"That snapshot could not be read from this device"};
     await nsSaveSnapshot("Before restoring "+(record.label||"a snapshot"),{reason:"auto-restore"});
     S.nsCanonical=nsNormalizeCanonical(record.model);
+    // Same order as a cloud load: storage first, then memory reloaded from it (otherwise the next
+    // background persist writes the pre-restore notes and logbook back), then people mapped on top.
+    if(record.localKeys&&typeof _syncWriteLocalKeys==="function"){
+      _syncWriteLocalKeys(record.localKeys,{replace:true});
+      if(typeof _syncReloadLocalStores==="function")_syncReloadLocalStores();
+    }
     if(typeof nsSanitizeCanonicalIdentities==="function")nsSanitizeCanonicalIdentities();
     if(typeof nsSyncPeopleToRuntime==="function")nsSyncPeopleToRuntime();
-    if(record.localKeys&&typeof _syncWriteLocalKeys==="function")_syncWriteLocalKeys(record.localKeys);
     nsRestoreEntriesFromCanonical();
     nsPersist();
     return{ok:true,label:record.label||"Snapshot",at:record.at};

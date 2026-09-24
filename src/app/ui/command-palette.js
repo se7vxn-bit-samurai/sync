@@ -66,6 +66,7 @@ function _collectCommandPaletteActions(){
       });
     });
   }catch(err){}
+  actions.push({id:"projects-ops",label:"Projects & Ops",hint:"Projects on this device, cloud save and sync",keywords:"projects ops files cloud sync save load account device",group:"Projects",run:()=>{if(typeof _syncOpenProjectsPanel==="function")_syncOpenProjectsPanel();}});
   actions.push({id:"project-picker",label:"Switch project…",hint:"Back to your projects",keywords:"projects switch picker choose continue workspace",group:"Projects",run:()=>{if(typeof _syncShowProjectPicker==="function")_syncShowProjectPicker();}});
   actions.push({id:"save-snapshot",label:"Save snapshot",hint:"Restore point on this device",keywords:"snapshot backup restore point version history save",group:"Operations",run:()=>{if(typeof _syncSaveSnapshotNow==="function")_syncSaveSnapshotNow();}});
   actions.push({id:"backups",label:"Snapshots & backups",hint:"Restore a previous version",keywords:"snapshot backup restore version history rollback undo",group:"Operations",run:()=>{openSettings();}});
