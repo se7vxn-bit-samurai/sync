@@ -137,16 +137,6 @@
       </button>
       <div id="lcNewSourceGroup">
 
-      <!-- Mode toggle -->
-      <div class="lc-mode-toggle">
-        <button id="lcModeStd" class="lc-mode-btn active" onclick="setLCMode('standard')">
-          <span class="lc-mbtn-icon">⊞</span>Standard roster
-        </button>
-        <button id="lcModeWfm" class="lc-mode-btn" onclick="setLCMode('wfm')">
-          <span class="lc-mbtn-icon">📆</span>WFM Calendar
-        </button>
-      </div>
-
       <!-- Drop zone -->
       <div id="dz" class="lc-dz"
         onclick="browseScheduleFile()"
@@ -163,14 +153,35 @@
         </div>
       </div>
 
+      <!-- First run only: every other route in requires the user to already have a roster
+           spreadsheet in hand, which makes the product impossible to evaluate before committing
+           real data to it. Shown only while there are genuinely no saved projects — see
+           _syncRenderSampleOffer. -->
+      <button id="lcSampleBtn" onclick="_syncCreateSampleProject()" class="lc-roster-btn" style="display:none">
+        <span style="font-size:13px;opacity:.5">✨</span>
+        <span class="lc-roster-label">Explore with a sample project</span>
+      </button>
+
+      <!-- Two ways in up front: a file, or the sample. Everything else is for people who already
+           know they need it, so it waits one click away. -->
+      <details class="lc-more">
+        <summary class="lc-more-summary">More ways to start</summary>
+        <div class="lc-more-body">
+      <!-- Mode toggle -->
+      <div class="lc-mode-toggle">
+        <button id="lcModeStd" class="lc-mode-btn active" onclick="setLCMode('standard')">
+          <span class="lc-mbtn-icon">⊞</span>Standard roster
+        </button>
+        <button id="lcModeWfm" class="lc-mode-btn" onclick="setLCMode('wfm')">
+          <span class="lc-mbtn-icon">📆</span>WFM Calendar
+        </button>
+      </div>
+
       <!-- Paste -->
       <button onclick="pasteFromClip()" class="lc-paste-btn">
         <span class="lc-paste-label">Paste schedule data</span>
         <span class="lc-paste-kbd">Ctrl+V</span>
       </button>
-
-      <!-- Or -->
-      <div class="lc-or"><span class="lc-or-rule"></span>or<span class="lc-or-rule"></span></div>
 
       <!-- New schedule -->
       <button onclick="startBuildWizard()" class="lc-new-btn">
@@ -183,15 +194,8 @@
         <span style="font-size:13px;opacity:.5">👥</span>
         <span class="lc-roster-label">Add agent roster</span>
       </button>
-
-      <!-- First run only: every other route in requires the user to already have a roster
-           spreadsheet in hand, which makes the product impossible to evaluate before committing
-           real data to it. Shown only while there are genuinely no saved projects — see
-           _syncRenderSampleOffer. -->
-      <button id="lcSampleBtn" onclick="_syncCreateSampleProject()" class="lc-roster-btn" style="display:none">
-        <span style="font-size:13px;opacity:.5">✨</span>
-        <span class="lc-roster-label">Explore with a sample project</span>
-      </button>
+        </div>
+      </details>
 
       </div>
 

@@ -1441,6 +1441,13 @@ body[data-theme="tide"]:is([data-variant="seafoam-day"],[data-variant="ice-sheet
 .sync-dashboard .sd-ledger{padding:26px 22px;display:flex;flex-direction:column;justify-content:center;gap:8px;border-left:1px solid var(--rule,var(--bdr));background:color-mix(in srgb,var(--bg2) 72%,transparent)}
 .sync-dashboard .sd-ledger-row{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--bdr);border-radius:6px;padding:7px 9px;background:color-mix(in srgb,var(--bg) 78%,transparent);font-size:11px}
 .sync-dashboard .sd-ledger-row b{color:var(--text)}
+/* Home status strip: replaced the 252px hero. Numbers first, one action. */
+.sync-dashboard .sd-status{display:grid;grid-template-columns:repeat(5,minmax(0,1fr)) auto;gap:8px;align-items:stretch}
+.sync-dashboard .sd-status .sd-ledger-row{flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;padding:9px 11px;background:var(--card);border-color:var(--card-border)}
+.sync-dashboard .sd-status .sd-ledger-row b{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--tm);font-weight:600}
+.sync-dashboard .sd-status .sd-ledger-row span{font-family:'JetBrains Mono','DM Mono',monospace;font-size:13px;font-weight:700;color:var(--text)}
+.sync-dashboard .sd-btn.primary{border-color:var(--accent);color:var(--accent);font-weight:600;white-space:nowrap}
+@media(max-width:900px){.sync-dashboard .sd-status{grid-template-columns:repeat(2,minmax(0,1fr))}.sync-dashboard .sd-status .sd-btn{grid-column:1/-1;min-height:42px}}
 .sync-dashboard .sd-ledger-row span{font-family:'DM Mono',monospace;color:var(--accent)}
 /* The Ops workspace overview (_opsMetric) uses the same KPI tiles; unscoped there it rendered as plain stacked text. */
 .sync-dashboard .sd-kpis,.ops-hq .sd-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:14px}
@@ -2649,6 +2656,12 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
   .ec:hover,.mc:hover,.phq-card:hover,.plg-card:hover,.pw-block:hover,.an-card:hover,.wv-card2:hover{transform:none}
 }
 .parser-disabled{opacity:.58;filter:saturate(.65);cursor:not-allowed!important}
+.lc-more{margin-top:10px;border:1px solid var(--rule,var(--bdr));border-radius:8px}
+.lc-more-summary{cursor:pointer;list-style:none;padding:11px 14px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3,var(--tm));display:flex;align-items:center;justify-content:space-between}
+.lc-more-summary::-webkit-details-marker{display:none}
+.lc-more-summary::after{content:"+";font-size:14px}
+.lc-more[open] .lc-more-summary::after{content:"−"}
+.lc-more-body{display:flex;flex-direction:column;gap:8px;padding:0 10px 10px}
 </style>
 
 <style id="sync-dashboard-workspace-styles">
@@ -2840,16 +2853,6 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
       </button>
       <div id="lcNewSourceGroup">
 
-      <!-- Mode toggle -->
-      <div class="lc-mode-toggle">
-        <button id="lcModeStd" class="lc-mode-btn active" onclick="setLCMode('standard')">
-          <span class="lc-mbtn-icon">⊞</span>Standard roster
-        </button>
-        <button id="lcModeWfm" class="lc-mode-btn" onclick="setLCMode('wfm')">
-          <span class="lc-mbtn-icon">📆</span>WFM Calendar
-        </button>
-      </div>
-
       <!-- Drop zone -->
       <div id="dz" class="lc-dz"
         onclick="browseScheduleFile()"
@@ -2866,14 +2869,35 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
         </div>
       </div>
 
+      <!-- First run only: every other route in requires the user to already have a roster
+           spreadsheet in hand, which makes the product impossible to evaluate before committing
+           real data to it. Shown only while there are genuinely no saved projects — see
+           _syncRenderSampleOffer. -->
+      <button id="lcSampleBtn" onclick="_syncCreateSampleProject()" class="lc-roster-btn" style="display:none">
+        <span style="font-size:13px;opacity:.5">✨</span>
+        <span class="lc-roster-label">Explore with a sample project</span>
+      </button>
+
+      <!-- Two ways in up front: a file, or the sample. Everything else is for people who already
+           know they need it, so it waits one click away. -->
+      <details class="lc-more">
+        <summary class="lc-more-summary">More ways to start</summary>
+        <div class="lc-more-body">
+      <!-- Mode toggle -->
+      <div class="lc-mode-toggle">
+        <button id="lcModeStd" class="lc-mode-btn active" onclick="setLCMode('standard')">
+          <span class="lc-mbtn-icon">⊞</span>Standard roster
+        </button>
+        <button id="lcModeWfm" class="lc-mode-btn" onclick="setLCMode('wfm')">
+          <span class="lc-mbtn-icon">📆</span>WFM Calendar
+        </button>
+      </div>
+
       <!-- Paste -->
       <button onclick="pasteFromClip()" class="lc-paste-btn">
         <span class="lc-paste-label">Paste schedule data</span>
         <span class="lc-paste-kbd">Ctrl+V</span>
       </button>
-
-      <!-- Or -->
-      <div class="lc-or"><span class="lc-or-rule"></span>or<span class="lc-or-rule"></span></div>
 
       <!-- New schedule -->
       <button onclick="startBuildWizard()" class="lc-new-btn">
@@ -2886,15 +2910,8 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
         <span style="font-size:13px;opacity:.5">👥</span>
         <span class="lc-roster-label">Add agent roster</span>
       </button>
-
-      <!-- First run only: every other route in requires the user to already have a roster
-           spreadsheet in hand, which makes the product impossible to evaluate before committing
-           real data to it. Shown only while there are genuinely no saved projects — see
-           _syncRenderSampleOffer. -->
-      <button id="lcSampleBtn" onclick="_syncCreateSampleProject()" class="lc-roster-btn" style="display:none">
-        <span style="font-size:13px;opacity:.5">✨</span>
-        <span class="lc-roster-label">Explore with a sample project</span>
-      </button>
+        </div>
+      </details>
 
       </div>
 
@@ -4602,8 +4619,6 @@ function rSyncDashboard(el){
   const issueOpen=buildIssueInboxItems().filter(x=>x.status==="open").length;
   const attention=getPeopleAttentionCount();
   const todayHours=Math.round(working.reduce((sum,e)=>sum+calcHrs(e.saS||e.ukS,e.saE||e.ukE),0)*10)/10;
-  const saNow=new Date().toLocaleTimeString("en-ZA",{timeZone:"Africa/Johannesburg",hour:"2-digit",minute:"2-digit",hour12:false});
-  const ukNow=new Date().toLocaleTimeString("en-GB",{timeZone:"Europe/London",hour:"2-digit",minute:"2-digit",hour12:false});
   const dashWeekOffset=Number(S.dashWeekOffset)||0;
   const weekStart=new Date(today);weekStart.setDate(weekStart.getDate()-((weekStart.getDay()+6)%7)+(dashWeekOffset*7));
   const weekEnd=new Date(weekStart);weekEnd.setDate(weekStart.getDate()+6);
@@ -4636,30 +4651,6 @@ function rSyncDashboard(el){
     calCells.push('<div class="sd-cal-d '+(stat.work?'work ':'')+(stat.off?'off ':'')+((isToday||isSelected)?'today':'')+'" onclick="setCalendarDay('+calY+','+calM+','+d+')" title="'+stat.work+' working, '+stat.off+' off">'+d+'</div>');
   }
   const miniCalendarHtml=calCells.join("");
-  const swatches=[
-    {k:"surge",l:"Surge",a:"#10121c",b:"#c349ee",c:"#6ab7ff",fg:"#eef6ff"},
-    {k:"tide",l:"Tide",a:"#0b1620",b:"#4db8c8",c:"#7fcf93",fg:"#e9fbff"},
-    {k:"press",l:"Press",a:"#f3d9bd",b:"#8a6337",c:"#2d2015",fg:"#fff4df"},
-    {k:"newsprint",l:"News",a:"#fff5c7",b:"#9381ff",c:"#ff8fab",fg:"#fff8fe"}
-  ];
-  const liveThemeColors=typeof getComputedStyle==="function"?getComputedStyle(document.body):null;
-  const liveColor=(name,fallback)=>liveThemeColors?(liveThemeColors.getPropertyValue(name).trim()||fallback):fallback;
-  const colorwayHtml='<div class="sd-colorway-grid">'+swatches.map(s=>{
-    const active=S.th===s.k;
-    const a=active?liveColor("--bg2",s.a):s.a,b=active?liveColor("--accent",s.b):s.b,c=active?liveColor("--mid-col",s.c):s.c,fg=active?liveColor("--text",s.fg):s.fg;
-    return '<button class="sd-colorway '+(active?'active':'')+'" style="--swatch-a:'+a+';--swatch-b:'+b+';--swatch-c:'+c+';--swatch-label:'+fg+'" onclick="setThemeColorway(&quot;'+s.k+'&quot;)" title="'+X(s.l)+(active?' · active variant':'')+' colourway"><i></i><span>'+X(s.l)+'</span></button>';
-  }).join("")+'</div>';
-  const floorStart=working.map(e=>S.tz?e.saS:e.ukS).filter(Boolean).sort()[0]||"--";
-  const floorEnd=working.map(e=>S.tz?e.saE:e.ukE).filter(Boolean).sort().pop()||"--";
-  const themeName=(TH[S.th]&&TH[S.th].n)||S.th||"Theme";
-  const variantName=typeof _themeVariantName==="function"?_themeVariantName(S.th||"surge",S.thVariant||0):"";
-  const variantLabel=typeof _themeVariantLabel==="function"?_themeVariantLabel(variantName):X(variantName||"Core");
-  const dicePips='<i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>';
-  // Faces persist in S so a shuffle's result survives the dashboard rerender it triggers
-  // (shuffleThemeColorway rebuilds this whole button) instead of snapping back to a default.
-  const diceFaces=Array.isArray(S._diceFaces)&&S._diceFaces.length===2?S._diceFaces:[3,4];
-  const clockExtras='<div class="sd-clock-extras"><div class="sd-clock-extra"><b>'+X(floorStart+'-'+floorEnd)+'</b><span>Floor window</span></div><button class="sd-clock-extra" onclick="openSettings()" title="Open settings"><b>Settings</b><span>Open panel</span></button><div class="sd-clock-extra"><b>'+X(themeName)+'</b><span>'+X(variantLabel)+'</span></div><button class="sd-clock-extra shuffle" onclick="shuffleDashboardColorway(this)" title="Throw dice and shuffle colourway (they always add up to 7)"><span class="sd-dice-pair" aria-label="Shuffle colourway"><b class="sd-dice-icon" data-face="'+diceFaces[0]+'">'+dicePips+'</b><b class="sd-dice-icon" data-face="'+diceFaces[1]+'">'+dicePips+'</b></span><span>Shuffle colourway</span></button></div>';
-  const clockHtml='<div class="sd-clock-panel"><div class="sd-clock-grid"><div class="sd-clock"><b>'+saNow+'</b><span>South Africa</span></div><div class="sd-clock"><b>'+ukNow+'</b><span>United Kingdom</span></div></div>'+colorwayHtml+clockExtras+'</div>';
   const gotoHtml='<div class="sd-jump-grid"><button onclick="railNavToday()">Today</button><button onclick="railNavCalendar(&quot;cards&quot;)">Cards</button><button onclick="railNavCalendar(&quot;overtime&quot;)">OT</button><button onclick="railNavPeople(&quot;dashboard&quot;)">People</button><button onclick="railNavAnalytics(&quot;blueprint&quot;)">Blueprint</button><button onclick="railNavAnalytics(&quot;data&quot;)">Data</button></div>';
   const dept=S.activeDept||"default";
   if(typeof normalizeBlueprintStore==="function")normalizeBlueprintStore();
@@ -4703,8 +4694,15 @@ function rSyncDashboard(el){
   el.innerHTML='<div class="sync-dashboard" data-testid="dashboard-workspace">'+
     '<div class="sd-main">'+
       universalNote+
-      '<section class="sd-hero"><div class="sd-hero-copy"><div class="sd-eyebrow">7OS Sync - Operations Suite</div><div class="sd-title">Sync<br>Dashboard</div><div class="sd-sub">Your operation at a glance - parsed, mapped, and ready before the day starts.</div><div class="sd-actions"><button class="sd-btn" onclick="browseScheduleFile()">Drop / browse files</button><button class="sd-btn" onclick="railNavToday()">Calendar</button><button class="sd-btn" onclick="railNavPeople(&quot;dashboard&quot;)">People</button></div></div><div class="sd-ledger"><div class="sd-ledger-row"><b>On floor</b><span>'+working.length+' / '+people.length+'</span></div><div class="sd-ledger-row"><b>Off / leave</b><span>'+off.length+' / '+people.length+'</span></div><div class="sd-ledger-row"><b>Alerts</b><span>'+issueOpen+' open</span></div><div class="sd-ledger-row"><b>Scope</b><span>'+people.length+' people - '+leaders.length+' leaders</span></div><div class="sd-ledger-row"><b>Sources</b><span>'+X(sourceLine)+'</span></div></div></section>'+
-      '<div class="sd-command-grid"><section class="sd-panel span-6"><div class="sd-panel-head"><h4>Working Today</h4><span>'+X(fDF(today))+'</span></div><div class="sd-panel-body"><div class="sd-list scroll">'+workingHtml+'</div></div></section><section class="sd-panel span-6"><div class="sd-panel-head"><h4>'+X(weekTitle)+'<small>'+X(weekRange)+'</small></h4><div class="sd-week-tools"><button aria-label="Previous week" onclick="S.dashWeekOffset=(Number(S.dashWeekOffset)||0)-1;rSyncDashboard($(\'ca\'))">‹</button><span>'+people.length+' people</span><button aria-label="Next week" onclick="S.dashWeekOffset=(Number(S.dashWeekOffset)||0)+1;rSyncDashboard($(\'ca\'))">›</button></div></div><div class="sd-panel-body"><div class="sd-cover">'+weekRows.join("")+'</div></div></section><section class="sd-panel span-4"><div class="sd-panel-head"><h4>Mini Calendar</h4><span>'+X(monthLabel())+'</span></div><div class="sd-panel-body"><div class="sd-mini-cal">'+miniCalendarHtml+'</div>'+gotoHtml+'</div></section><section class="sd-panel span-3"><div class="sd-panel-head"><h4>Shift time</h4><span>SA / UK</span></div><div class="sd-panel-body">'+clockHtml+'</div></section><section class="sd-panel span-5"><div class="sd-panel-head"><h4>Schedule plan</h4><span>'+X(planLine)+'</span></div><div class="sd-panel-body">'+blueprintScheduleHtml+'</div></section>'+birthdayWidgetHtml+'</div>'+
+      '<section class="sd-status" aria-label="Today at a glance">'+
+        '<div class="sd-ledger-row"><b>On floor</b><span>'+working.length+' / '+people.length+'</span></div>'+
+        '<div class="sd-ledger-row"><b>Off / leave</b><span>'+off.length+' / '+people.length+'</span></div>'+
+        '<div class="sd-ledger-row"><b>Alerts</b><span>'+issueOpen+' open</span></div>'+
+        '<div class="sd-ledger-row"><b>Scope</b><span>'+people.length+' people - '+leaders.length+' leaders</span></div>'+
+        '<div class="sd-ledger-row"><b>Sources</b><span>'+X(sourceLine)+'</span></div>'+
+        '<button class="sd-btn primary" onclick="browseScheduleFile()">Import file</button>'+
+      '</section>'+
+      '<div class="sd-command-grid"><section class="sd-panel span-6"><div class="sd-panel-head"><h4>Working Today</h4><span>'+X(fDF(today))+'</span></div><div class="sd-panel-body"><div class="sd-list scroll">'+workingHtml+'</div></div></section><section class="sd-panel span-6"><div class="sd-panel-head"><h4>'+X(weekTitle)+'<small>'+X(weekRange)+'</small></h4><div class="sd-week-tools"><button aria-label="Previous week" onclick="S.dashWeekOffset=(Number(S.dashWeekOffset)||0)-1;rSyncDashboard($(\'ca\'))">‹</button><span>'+people.length+' people</span><button aria-label="Next week" onclick="S.dashWeekOffset=(Number(S.dashWeekOffset)||0)+1;rSyncDashboard($(\'ca\'))">›</button></div></div><div class="sd-panel-body"><div class="sd-cover">'+weekRows.join("")+'</div></div></section><section class="sd-panel span-4"><div class="sd-panel-head"><h4>Mini Calendar</h4><span>'+X(monthLabel())+'</span></div><div class="sd-panel-body"><div class="sd-mini-cal">'+miniCalendarHtml+'</div>'+gotoHtml+'</div></section><section class="sd-panel span-8"><div class="sd-panel-head"><h4>Schedule plan</h4><span>'+X(planLine)+'</span></div><div class="sd-panel-body">'+blueprintScheduleHtml+'</div></section>'+birthdayWidgetHtml+'</div>'+
       '<div class="sd-focus-grid"><section class="sd-focus-card" onclick="railNavToday()"><div><h3>Calendar</h3></div><div class="sd-mini-list">'+calendarMini+'</div><div class="sd-focus-kpi"><b>'+working.length+'</b><span>'+X(calendarLine)+'</span></div></section><section class="sd-focus-card" onclick="railNavPeople(&quot;dashboard&quot;)"><div><h3>People</h3></div><div class="sd-mini-list">'+peopleMini+'</div><div class="sd-focus-kpi"><b>'+people.length+'</b><span>'+X(peopleLine)+'</span></div></section><section class="sd-focus-card blueprint" onclick="railNavAnalytics(&quot;blueprint&quot;)"><div><h3>Blueprint</h3></div><div class="sd-mini-list">'+planRowHtml+issueHtml+'</div><div class="sd-focus-kpi"><b>'+X(hasBlueprint?bpCycle+'w':'--')+'</b><span>'+X(planLine)+'</span></div></section></div>'+
     '</div>'+
   '</div>';

@@ -107,3 +107,31 @@ test.describe('screens agree with each other', () => {
     }
   });
 });
+
+test.describe('fewer choices up front', () => {
+  test('the landing page offers a file or the sample; the rest waits behind one click', async ({ page }) => {
+    await openApp(page, { profile: PROFILE, workspaceRow: workspaceRow(buildWorkspace(0)) });
+    await expect(page.locator('#dz')).toBeVisible();
+    await expect(page.locator('#lcSampleBtn')).toBeVisible();
+    for (const hidden of ['#lcModeWfm', '.lc-paste-btn', '.lc-new-btn']) await expect(page.locator(hidden)).toBeHidden();
+    await page.locator('.lc-more-summary').click();
+    await page.locator('#lcModeWfm').click();
+    await expect(page.locator('#lcDzHead')).toContainText('WFM');
+    await expect(page.locator('.lc-paste-btn')).toBeVisible();
+    await expect(page.locator('.lc-new-btn')).toBeVisible();
+  });
+
+  test('Home opens on the numbers and today, not a hero or a clock widget', async ({ page }) => {
+    await openSample(page);
+    await nav(page, () => railNavDashboard());
+    await expect(page.locator('#ca .sd-status')).toBeVisible();
+    await expect(page.locator('#ca .sd-hero')).toHaveCount(0);
+    await expect(page.locator('#ca .sd-panel', { hasText: 'Shift time' })).toHaveCount(0);
+    // The hero it replaced was at least 252px tall on desktop before Working Today began.
+    test.skip(test.info().project.name !== 'desktop-chromium', 'phones stack the strip into two columns');
+    const today = page.locator('#ca .sd-panel', { hasText: 'Working Today' });
+    await expect(today).toBeVisible();
+    await expect.poll(async () => (await page.locator('#ca .sd-status').boundingBox() || {}).height).toBeLessThan(160);
+    await expect.poll(async () => (await today.boundingBox() || {}).y).toBeLessThan(400);
+  });
+});
