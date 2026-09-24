@@ -154,13 +154,7 @@ function setAnalyticsView(view){
   if(resolved===S.anView)return; // v56: no-op if already on this view
   S.anView=resolved;
   if(S.tab==="analytics"){
-    // v56: fast-path — update tab bar active state in-place, swap content only
-    const bar=$("analyticsModeControls");
-    if(bar){
-      bar.querySelectorAll('.an-mode-btn').forEach(b=>{
-        b.classList.toggle('active',b.getAttribute('data-anview')===S.anView);
-      });
-    }
+    // v56: fast-path — swap content only
     // v56: debounce rapid clicks (16ms = 1 frame)
     clearTimeout(_anViewTimer);
     _anViewTimer=setTimeout(()=>rerenderAnalyticsSurface("view"),16);

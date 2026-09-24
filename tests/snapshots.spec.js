@@ -92,6 +92,10 @@ test.describe('sample project', () => {
     expect(await page.evaluate(() => S.activeDept)).toBe('Sample Team');
     // Real, usable data — not an empty placeholder project.
     expect(await page.evaluate(() => S.entries.length)).toBeGreaterThan(100);
+    // ...and the screens actually show it. The rows were in S.entries while every view rendered an
+    // index cached from before they loaded.
+    await page.evaluate(() => railNavCalendar('day'));
+    await expect(page.locator('#ca')).toContainText(/Scheduled \(\d+\)/);
 
     await page.evaluate(() => _syncRenderProjectPicker());
     await expect(page.locator('#lcSampleBtn')).toBeHidden();

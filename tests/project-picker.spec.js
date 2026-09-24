@@ -55,6 +55,28 @@ test.describe('project counts', () => {
     expect(await projectNames(page)).toHaveLength(6);
   });
 
+  test('a background re-render keeps the search text, the expansion and keyboard focus', async ({ page }) => {
+    // Local hydration and manual syncs re-render the picker on their own schedule.
+    await signInWith(page, 7);
+    await waitForPicker(page);
+    await page.locator(picker.search).fill('Project G');
+    await page.evaluate(() => _syncRenderProjectPicker());
+    await expect(page.locator(picker.search)).toHaveValue('Project G');
+    await expect(page.locator(picker.search)).toBeFocused();
+    expect(await projectNames(page)).toEqual(['Project G']);
+
+    await page.locator(picker.search).fill('');
+    await page.locator(picker.showAll).click();
+    await page.evaluate(() => _syncRenderProjectPicker());
+    expect(await projectNames(page)).toHaveLength(7);
+
+    await page.locator(picker.rows).nth(6).focus();
+    await page.evaluate(() => _syncRenderProjectPicker());
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#mv')).toBeVisible();
+    expect(await page.evaluate(() => S.activeDept)).toBe('Project G');
+  });
+
   test('a people-only project (no schedule rows) is listed and opens', async ({ page }) => {
     await signInWith(page, 1, { peopleOnly: true });
     await waitForPicker(page);
@@ -76,6 +98,23 @@ test.describe('project counts', () => {
     expect(await page.evaluate(() => S.activeDept)).toBe('Project C');
     const opened = await page.evaluate(() => JSON.parse(localStorage.getItem('sync_last_opened') || '{}'));
     expect(Object.keys(opened)).toContain('project c');
+  });
+
+  test('switching projects shows the new schedule, not a cached copy of the last one', async ({ page }) => {
+    // Every indexed view caches by S.entriesVer. Opening from the picker replaced S.entries without
+    // bumping it, so screens kept serving the index built before: empty, or the last project's.
+    const indexedNames = () => page.evaluate(() => {
+      railNavCalendar('day');
+      return Object.keys(getDataIndexes().byName);
+    });
+    await signInWith(page, 2);
+    await waitForPicker(page);
+    await page.locator(picker.rows, { hasText: 'Project A' }).click();
+    await expect.poll(indexedNames).toEqual([expect.stringMatching(/^Project A/)]);
+
+    await page.evaluate(() => _syncShowProjectPicker());
+    await page.locator(picker.rows, { hasText: 'Project B' }).click();
+    await expect.poll(indexedNames).toEqual([expect.stringMatching(/^Project B/)]);
   });
 
   test('opening a project on a fresh sign-in (cloud pull only, no local workbook) shows its schedule', async ({ page }) => {

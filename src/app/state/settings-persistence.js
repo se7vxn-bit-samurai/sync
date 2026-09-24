@@ -850,19 +850,45 @@ function _syncRenderProjectRows(){
 function _syncFilterProjectPicker(value){
   _syncPickerQuery=value||'';
   _syncRenderProjectRows();
+  _syncStampPickerSig();
 }
 function _syncShowAllProjects(){
   _syncPickerShowAll=true;
   _syncRenderProjectRows();
+  _syncStampPickerSig();
+}
+function _syncStampPickerSig(){
+  const host=document.getElementById('lcProjectPicker');
+  if(host&&host.dataset.sig)host.dataset.sig=JSON.stringify([_syncPickerAllProjects,_syncPickerQuery,_syncPickerShowAll]);
 }
 function _syncProjectPickerHtml(projects){
   _syncPickerAllProjects=projects;
-  _syncPickerQuery='';
-  _syncPickerShowAll=false;
+  // The picker re-renders on its own (local hydration landing, a manual sync). Keep what the user
+  // typed or expanded; _syncOpenProject resets both once a project is chosen.
+  if(projects.length<=6){_syncPickerQuery='';_syncPickerShowAll=false;}
   let h='<div class="lc-projects-label">Continue a project</div>';
-  if(projects.length>6)h+=`<input type="search" id="lcProjectSearch" class="lc-project-search" placeholder="Search projects…" aria-label="Search projects" oninput="_syncFilterProjectPicker(this.value)">`;
+  if(projects.length>6)h+=`<input type="search" id="lcProjectSearch" class="lc-project-search" placeholder="Search projects…" aria-label="Search projects" value="${X(_syncPickerQuery)}" oninput="_syncFilterProjectPicker(this.value)">`;
   h+='<div id="lcProjectRows"></div><div id="lcProjectMore" style="display:none"></div>';
   return h;
+}
+// Replacing the picker's markup drops keyboard focus, so a re-render between focusing a row and
+// pressing Enter did nothing. Remember what had focus and put it back.
+function _syncPickerFocus(host){
+  const el=document.activeElement;
+  if(!el||!host.contains(el))return null;
+  const wrap=el.closest('.lc-project-row-wrap'),name=wrap&&wrap.querySelector('.lc-project-name');
+  return{id:el.id,cls:el.classList.contains('lc-project-delete')?'.lc-project-delete':el.classList.contains('lc-project-action')?'.lc-project-action:not(.lc-project-delete)':el.classList.contains('lc-project-row')?'.lc-project-row':'',name:name?name.textContent:null};
+}
+function _syncRestorePickerFocus(host,focus){
+  if(!focus)return;
+  let el=focus.id?document.getElementById(focus.id):null;
+  if(!el&&focus.cls&&focus.name!==null){
+    const wrap=[...host.querySelectorAll('.lc-project-row-wrap')].find(w=>{const n=w.querySelector('.lc-project-name');return n&&n.textContent===focus.name;});
+    el=wrap&&wrap.querySelector(focus.cls);
+  }
+  if(!el)return;
+  el.focus();
+  if(el.id==='lcProjectSearch')try{el.setSelectionRange(el.value.length,el.value.length);}catch(err){}
 }
 async function _syncRenderProjectPicker(){
   const host=document.getElementById('lcProjectPicker');
@@ -876,8 +902,17 @@ async function _syncRenderProjectPicker(){
     const anyProjects=projects.length>0;
     _syncRenderSampleOffer(anyProjects);
     if(projects.length>=1){
-      host.innerHTML=_syncProjectPickerHtml(projects);
-      _syncRenderProjectRows();
+      // Only touch the DOM when something changed. Swapping identical markup (hydration landing,
+      // a manual sync) could eat a tap that landed mid-swap.
+      const html=_syncProjectPickerHtml(projects);
+      const sig=JSON.stringify([projects,_syncPickerQuery,_syncPickerShowAll]);
+      if(host.dataset.sig!==sig||!document.getElementById('lcProjectRows')){
+        const focus=_syncPickerFocus(host);
+        host.innerHTML=html;
+        _syncRenderProjectRows();
+        _syncRestorePickerFocus(host,focus);
+        host.dataset.sig=sig;
+      }
       host.style.display='flex';
       if(featuresEl)featuresEl.style.display='none';
       if(statsEl)statsEl.style.display='none';
@@ -885,7 +920,7 @@ async function _syncRenderProjectPicker(){
       return;
     }
   }catch(err){console.error('[sync] project picker render failed',err);}
-  host.style.display='none';host.innerHTML='';
+  host.style.display='none';host.innerHTML='';delete host.dataset.sig;
   if(featuresEl)featuresEl.style.display='';
   if(statsEl)statsEl.style.display='';
   _syncSetNewSourceCollapsed(false);
@@ -1133,6 +1168,7 @@ function _syncShowChangedSince(name,previousView){
 }
 function _syncOpenProject(name){
   if(!name)return;
+  _syncPickerQuery='';_syncPickerShowAll=false;
   // Whatever project is open right now keeps its context before we switch away from it.
   if(S.activeDept&&S.activeDept!==name)_syncSaveViewState(typeof nsActiveDepartmentKey==='function'?nsActiveDepartmentKey():'',{withCounts:true});
   S.activeDept=name;

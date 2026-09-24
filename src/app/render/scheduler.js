@@ -89,14 +89,9 @@ function _rerenderAnalyticsSurfaceNow(mode){
       host.appendChild(opsHost);
       rIntel(opsHost);
     }
-    // Update scope toggle visibility
-    const scopeWrap=$("analyticsScopeToggle");
-    if(scopeWrap)scopeWrap.style.display=['dashboard','coverage','capacity','absence'].includes(S.anView)?'flex':'none';
-    // Update active tab button
+    // The bar holds only the scope toggle now; hide it on views the scope does not apply to.
     const bar=$("analyticsModeControls");
-    if(bar)bar.querySelectorAll('.an-mode-btn').forEach(b=>{
-      b.classList.toggle('active',b.getAttribute('data-anview')===S.anView);
-    });
+    if(bar)bar.style.display=['dashboard','coverage','capacity','absence'].includes(S.anView)?'flex':'none';
     return true;
   }
   // Fallback: full re-render

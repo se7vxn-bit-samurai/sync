@@ -432,6 +432,8 @@ window.nsDepartmentKey=nsDepartmentKey;
 window.nsActiveDepartmentKey=nsActiveDepartmentKey;
 window.nsDownloadBlob=nsDownloadBlob;
 window._syncCollectLocalKeys=_syncCollectLocalKeys;
+// The Ops overview counts scoped OT wishes to decide whether to offer the OT+ workbench.
+window.nsScopedRows=nsScopedRows;
 
 function nsOpenDatabase(){
   if(!window.indexedDB)return Promise.reject(new Error("IndexedDB unavailable"));
@@ -492,6 +494,10 @@ function nsRestoreEntriesFromCanonical(){
   try{
     const scoped=(typeof nsScopedRows==="function")?nsScopedRows("schedule"):(nsCanonical().schedule||[]);
     S.entries=(scoped||[]).map(nsRuntimeEntry).filter(row=>row.date&&!isNaN(row.date));
+    // Every indexed view (calendar, dashboard, analytics) caches by entriesVer. Without the bump a
+    // project opened here rendered whatever index was built before it: empty, or the last project.
+    S.entriesVer=(S.entriesVer||0)+1;
+    if(typeof invalidateDerivedCache==="function")invalidateDerivedCache();
     // S.entries drives the calendar/dashboard directly, but S.months/S.month/S.mIdx are a SEPARATE
     // derived index that every local import path (proc/loadIntoWorkspace, etc.) computes for itself
     // at load time — this function is the one entry point that rebuilds S.entries WITHOUT going
@@ -2074,8 +2080,11 @@ function nsCoverReady(person){
 }
 
 function nsOpsShell(view,body){
-  const scope=((typeof isUniversalWorkspace==="function"&&isUniversalWorkspace())||S._universalWorkspace===true)?"Universal":(S.activeDept||"NorthStar workspace"),sources=nsScopedRows("sources"),publish=nsScopedRows("publishQueue"),conflicts=nsScopedRows("conflicts");
-  return`<div class="people-hq ops-hq ns-ops"><div class="ns-ops-context"><span>Workspace</span><b>${nsEsc(scope)}</b><span>Sources</span><b>${sources.length}</b><span>Pending publish</span><b>${publish.filter(item=>item.status==="pending").length}</b><span>Open conflicts</span><b>${conflicts.filter(item=>item.status==="open").length}</b></div><div class="ns-ops-main">${body}</div></div>`;
+  const universal=((typeof isUniversalWorkspace==="function"&&isUniversalWorkspace())||S._universalWorkspace===true),scope=universal?"Universal":(S.activeDept||"NorthStar workspace"),sources=nsScopedRows("sources"),publish=nsScopedRows("publishQueue"),conflicts=nsScopedRows("conflicts");
+  // Universal mode disables every Ops control except .ns-cross-department-action (see the
+  // body.sync-universal-active .ns-ops-main rule); this is that action's entry point.
+  const crossDeptAction=universal&&view!=="cross-department"?`<button class="ns-btn ns-cross-department-action" onclick="railNavOps('cross-department')" style="margin-left:auto">Review across departments</button>`:"";
+  return`<div class="people-hq ops-hq ns-ops"><div class="ns-ops-context"><span>Workspace</span><b>${nsEsc(scope)}</b><span>Sources</span><b>${sources.length}</b><span>Pending publish</span><b>${publish.filter(item=>item.status==="pending").length}</b><span>Open conflicts</span><b>${conflicts.filter(item=>item.status==="open").length}</b>${crossDeptAction}</div><div class="ns-ops-main">${body}</div></div>`;
 }
 
 function nsOrgDepartments(){
@@ -2555,7 +2564,16 @@ let nsLagExpected=performance.now()+1000;setInterval(()=>{const now=performance.
   const doHydrate=()=>nsHydrateDatabase().then(async localHydrated=>{
     // Launch is passive: use local cache only and let the user choose a project. Never pull
     // remote data or reopen a previous project as a side effect of visiting the app.
-    if(typeof _syncShowProjectPicker==="function")_syncShowProjectPicker({clearActive:true});
+    // Hydration can land a second or more after load. Whatever the user opened, imported or is
+    // previewing by then is theirs, not launch state, so it is never closed underneath them.
+    const live=!!(S.activeDept||(S.entries&&S.entries.length)||S.wb);
+    if(!live){if(typeof _syncShowProjectPicker==="function")_syncShowProjectPicker({clearActive:true});}
+    else{
+      // A project opened before hydration was built from the lean localStorage copy, which holds
+      // no schedule rows. Rebuild it from the full copy that just loaded.
+      if(S.activeDept&&!(S.entries&&S.entries.length))nsRestoreEntriesFromCanonical();
+      if(typeof _syncRenderProjectPicker==="function")_syncRenderProjectPicker();
+    }
     if(document.getElementById("ca"))try{ren();}catch(err){}
   }).finally(()=>{NS.trackLocalChanges=true;});
   const hydrate=()=>doHydrate();

@@ -226,29 +226,31 @@ function renderTabs(){
   const groups=[
     {id:"dashboard",label:"Home",active:S.tab==="dashboard",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="1.5" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/><rect x="8" y="1.5" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/><rect x="1.5" y="8" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/><rect x="8" y="8" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/></svg>`,action:"railNavDashboard()",children:[]},
     {id:"calendar",label:"Calendar",active:S.tab==="calendar",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.2"/><line x1="1" y1="5" x2="13" y2="5" stroke="currentColor" stroke-width="1"/><line x1="4" y1="1" x2="4" y2="3" stroke="currentColor" stroke-width="1.2"/><line x1="10" y1="1" x2="10" y2="3" stroke="currentColor" stroke-width="1.2"/></svg>`,children:[
-      {id:"day",label:"Dashboard",active:S.tab==="calendar"&&S.calSubTab==="day",action:"railNavCalendar('day')"},
+      {id:"day",label:"Calendar",active:S.tab==="calendar"&&S.calSubTab==="day",action:"railNavCalendar('day')"},
       {id:"cards",label:"Cards",active:S.tab==="calendar"&&S.calSubTab==="cards",action:"railNavCalendar('cards')"},
       {id:"coaching",label:"Coaching",active:S.tab==="calendar"&&S.calSubTab==="coaching",action:"railNavCalendar('coaching')"},
       {id:"overtime",label:"Overtime",active:S.tab==="calendar"&&S.calSubTab==="overtime",action:"railNavCalendar('overtime')"},
       {id:"planner",label:"Planner",active:S.tab==="calendar"&&S.calSubTab==="schedule",action:"railNavCalendar('planner')"}
     ]},
     {id:"people",label:"People",badge:peopleBadge,active:S.tab==="people",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 13c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="currentColor" stroke-width="1.2"/></svg>`,children:[
-      {id:"dashboard",label:"Dashboard",active:S.tab==="people"&&S.peopleSubTab==="dashboard",action:"railNavPeople('dashboard')"},
+      {id:"dashboard",label:"People overview",active:S.tab==="people"&&S.peopleSubTab==="dashboard",action:"railNavPeople('dashboard')"},
       {id:"team",label:"Team",active:S.tab==="people"&&S.peopleSubTab==="team",action:"railNavPeople('team')"},
       {id:"agents",label:"Agents",active:S.tab==="people"&&S.peopleSubTab==="agents",action:"railNavPeople('agents')"},
       {id:"logbook",label:"Logbook",active:S.tab==="people"&&S.peopleSubTab==="logbook",action:"railNavPeople('logbook')"},
       {id:"events",label:"Events",active:S.tab==="people"&&S.peopleSubTab==="events",action:"railNavPeople('events')"}
     ]},
     {id:"analytics",label:"Ops",active:S.tab==="analytics",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="8" width="3" height="5" rx="0.5" stroke="currentColor" stroke-width="1"/><rect x="5.5" y="4" width="3" height="9" rx="0.5" stroke="currentColor" stroke-width="1"/><rect x="10" y="1" width="3" height="12" rx="0.5" stroke="currentColor" stroke-width="1"/></svg>`,children:[
-      {id:"dashboard",label:"Dashboard",active:S.tab==="analytics"&&activeAnView==="dashboard",action:"railNavAnalytics('dashboard')"},
+      {id:"dashboard",label:"Operational analytics",active:S.tab==="analytics"&&activeAnView==="dashboard",action:"railNavAnalytics('dashboard')"},
       {id:"workspace",label:"Workspace",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="overview",action:"railNavOps('overview')"},
       {id:"schedule-window",label:"Schedule Window",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="schedule",action:"railNavOps('schedule')"},
       {id:"coverage",label:"Coverage",active:S.tab==="analytics"&&activeAnView==="coverage",action:"railNavAnalytics('coverage')"},
       {id:"blueprint",label:"Blueprint",active:S.tab==="analytics"&&activeAnView==="blueprint",action:"railNavAnalytics('blueprint')"},
+      {id:"blueprint-library",label:"Blueprint library",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="blueprints",action:"railNavOps('blueprints')"},
       {id:"organisation",label:"People & Org",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="organisation",action:"railNavOps('organisation')"},
       {id:"absence",label:"Absence",active:S.tab==="analytics"&&activeAnView==="absence",action:"railNavAnalytics('absence')"},
       {id:"alerts",label:"Alerts",badge:alertsBadge,active:S.tab==="analytics"&&activeAnView==="alerts",action:"railNavAnalytics('alerts')"},
       {id:"data",label:"Data",active:S.tab==="analytics"&&activeAnView==="rawdata",action:"railNavAnalytics('data')"},
+      {id:"data-control",label:"Data control",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="data-control",action:"railNavOps('data-control')"},
       {id:"exports",label:"Export Centre",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="exports",action:"railNavOps('exports')"},
       {id:"decisions",label:"Decisions",badge:alertsBadge,active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="decisions",action:"railNavOps('decisions')"},
       {id:"handoff",label:"Handoff",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="handoff",action:"railNavOps('handoff')"}

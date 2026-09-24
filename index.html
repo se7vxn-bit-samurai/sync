@@ -1442,20 +1442,21 @@ body[data-theme="tide"]:is([data-variant="seafoam-day"],[data-variant="ice-sheet
 .sync-dashboard .sd-ledger-row{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--bdr);border-radius:6px;padding:7px 9px;background:color-mix(in srgb,var(--bg) 78%,transparent);font-size:11px}
 .sync-dashboard .sd-ledger-row b{color:var(--text)}
 .sync-dashboard .sd-ledger-row span{font-family:'DM Mono',monospace;color:var(--accent)}
-.sync-dashboard .sd-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:14px}
-.sync-dashboard .sd-kpi{border:1px solid var(--card-border);border-radius:10px;background:var(--card);box-shadow:var(--sh);padding:15px 14px}
-.sync-dashboard .sd-kpi .n{font-family:'JetBrains Mono','DM Mono',monospace;font-size:26px;font-weight:800;color:var(--accent);line-height:1}
-.sync-dashboard .sd-kpi .l{margin-top:6px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--tm)}
-.sync-dashboard .sd-kpi .s{margin-top:5px;font-size:11px;color:var(--ink3,var(--tm))}
+/* The Ops workspace overview (_opsMetric) uses the same KPI tiles; unscoped there it rendered as plain stacked text. */
+.sync-dashboard .sd-kpis,.ops-hq .sd-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:14px}
+.sync-dashboard .sd-kpi,.ops-hq .sd-kpi{border:1px solid var(--card-border);border-radius:10px;background:var(--card);box-shadow:var(--sh);padding:15px 14px}
+.sync-dashboard .sd-kpi .n,.ops-hq .sd-kpi .n{font-family:'JetBrains Mono','DM Mono',monospace;font-size:26px;font-weight:800;color:var(--accent);line-height:1}
+.sync-dashboard .sd-kpi .l,.ops-hq .sd-kpi .l{margin-top:6px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--tm)}
+.sync-dashboard .sd-kpi .s,.ops-hq .sd-kpi .s{margin-top:5px;font-size:11px;color:var(--ink3,var(--tm))}
 .sync-dashboard .sd-side,.sync-dashboard .sd-main{min-width:0;display:flex;flex-direction:column;gap:10px}
 .sync-dashboard .an-card{border-radius:8px}
 .sync-dashboard .an-card-hd{min-height:34px;padding:10px 14px}
 .sync-dashboard .an-card-body{padding:10px 14px}
-.sync-dashboard .sd-list{display:flex;flex-direction:column;gap:6px}
-.sync-dashboard .sd-list.scroll{max-height:174px;overflow-y:auto;padding-right:3px}
-.sync-dashboard .sd-list-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--bdr);border-radius:6px;background:color-mix(in srgb,var(--bg) 78%,transparent);padding:7px 9px;font-size:11px}
-.sync-dashboard .sd-list-row .name{font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sync-dashboard .sd-list-row .meta{font-family:'DM Mono',monospace;color:var(--accent);white-space:nowrap}
+.sync-dashboard .sd-list,.ops-hq .sd-list{display:flex;flex-direction:column;gap:6px}
+.sync-dashboard .sd-list.scroll,.ops-hq .sd-list.scroll{max-height:174px;overflow-y:auto;padding-right:3px}
+.sync-dashboard .sd-list-row,.ops-hq .sd-list-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--bdr);border-radius:6px;background:color-mix(in srgb,var(--bg) 78%,transparent);padding:7px 9px;font-size:11px}
+.sync-dashboard .sd-list-row .name,.ops-hq .sd-list-row .name{font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sync-dashboard .sd-list-row .meta,.ops-hq .sd-list-row .meta{font-family:'DM Mono',monospace;color:var(--accent);white-space:nowrap}
 .sync-dashboard .sd-cover{display:flex;flex-direction:column;gap:7px}
 .sync-dashboard .sd-cover-row{display:grid;grid-template-columns:34px 1fr auto;gap:8px;align-items:center;font-size:11px}
 .sync-dashboard .sd-bar{height:5px;border-radius:6px;background:var(--bg3);overflow:hidden}
@@ -1564,7 +1565,7 @@ body.sync-universal-active .ns-ops-main .ns-cross-department-action{pointer-even
   .sync-dashboard .sd-hero-copy{padding:24px 22px}
   .sync-dashboard .sd-title{font-size:36px}
   .sync-dashboard .sd-ledger{border-left:0;border-top:1px solid var(--rule,var(--bdr));padding:18px 20px}
-  .sync-dashboard .sd-kpis,.sd-health-strip,.sync-dashboard .sd-focus-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sync-dashboard .sd-kpis,.ops-hq .sd-kpis,.sd-health-strip,.sync-dashboard .sd-focus-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .sync-dashboard .sd-focus-card.blueprint{grid-column:span 2}
   .sync-dashboard .sd-panel.span-3,.sync-dashboard .sd-panel.span-4,.sync-dashboard .sd-panel.span-5,.sync-dashboard .sd-panel.span-6,.sync-dashboard .sd-panel.span-7,.sync-dashboard .sd-panel.span-8{grid-column:span 6}
 }
@@ -2563,7 +2564,7 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
   .sync-dashboard .sd-hero-copy{padding:24px 18px}
   .sync-dashboard .sd-title{font-size:34px}
   .sync-dashboard .sd-ledger{border-left:0;border-top:1px solid var(--rule,var(--bdr));padding:16px}
-  .sync-dashboard .sd-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .sync-dashboard .sd-kpis,.ops-hq .sd-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
   .sync-dashboard .sd-focus-grid{grid-template-columns:1fr;gap:8px}
   .sync-dashboard .sd-focus-card,.sync-dashboard .sd-focus-card.blueprint{min-height:126px;grid-column:auto}
   .sync-dashboard .sd-command-grid{grid-template-columns:1fr;gap:8px}
@@ -4052,14 +4053,9 @@ function _rerenderAnalyticsSurfaceNow(mode){
       host.appendChild(opsHost);
       rIntel(opsHost);
     }
-    // Update scope toggle visibility
-    const scopeWrap=$("analyticsScopeToggle");
-    if(scopeWrap)scopeWrap.style.display=['dashboard','coverage','capacity','absence'].includes(S.anView)?'flex':'none';
-    // Update active tab button
+    // The bar holds only the scope toggle now; hide it on views the scope does not apply to.
     const bar=$("analyticsModeControls");
-    if(bar)bar.querySelectorAll('.an-mode-btn').forEach(b=>{
-      b.classList.toggle('active',b.getAttribute('data-anview')===S.anView);
-    });
+    if(bar)bar.style.display=['dashboard','coverage','capacity','absence'].includes(S.anView)?'flex':'none';
     return true;
   }
   // Fallback: full re-render
@@ -4755,12 +4751,17 @@ function rOps(el){
   const ready=ctx.intel?ctx.intel.ready:0,structure=ctx.intel?ctx.intel.issues.length:0;
   let body="";
   if(view==="overview"){
+    // OT+ and cross-department review were reachable only from one import path and from nowhere,
+    // respectively. Surface both where the data that needs them exists.
+    const otWishCount=(typeof nsScopedRows==="function"?nsScopedRows("otWishes"):[]).length;
+    const otCard=otWishCount?'<section class="an-card"><div class="an-card-hd"><h4>Overtime planning</h4><span>'+otWishCount+' wish'+(otWishCount===1?"":"es")+'</span></div><div class="an-card-body"><div class="qol-filterbar"><span style="font-size:11px;color:var(--tm)">Availability, fairness history, and allocation for imported OT wishes.</span><button class="qol-row-btn primary" style="margin-left:auto" onclick="railNavOps(&quot;otplus&quot;)">Open OT+ workbench</button></div></div></section>':"";
+    const universalCard=(typeof isUniversalWorkspace==="function"&&isUniversalWorkspace())?'<section class="an-card"><div class="an-card-hd"><h4>Universal workspace</h4><span>read-only combined view</span></div><div class="an-card-body"><div class="qol-filterbar"><span style="font-size:11px;color:var(--tm)">Department records stay isolated until you deliberately review them together.</span><button class="qol-row-btn primary ns-cross-department-action" style="margin-left:auto" onclick="railNavOps(&quot;cross-department&quot;)">Review across departments</button></div></div></section>':"";
     body='<div class="sd-kpis" style="margin:0">'+
       _opsMetric("On floor",ctx.working.length+" / "+ctx.people.length,ctx.off.length+" off / leave")+
       _opsMetric("Decision queue",ctx.issues.length,ctx.flags.length+" ops/blueprint flags",ctx.issues.length?"warn":"")+
       _opsMetric("People readiness",ready+" ready",structure+" structure signals")+
       _opsMetric("Blueprint",blueprint,(S.shs||[]).length+" sources")+
-    '</div><div class="qol-two-col" style="margin-top:12px"><section class="an-card"><div class="an-card-hd"><h4>Decision Queue</h4><span>Ops Hub port</span></div><div class="an-card-body">'+_opsIssueRows(5)+'</div></section><section class="an-card"><div class="an-card-hd"><h4>Sources Hub</h4><span>'+_opsSourceRows().length+' sources</span></div><div class="an-card-body"><div class="sd-list">'+_opsSourceCards()+'</div></div></section><section class="an-card"><div class="an-card-hd"><h4>Logbook</h4><span>people memory</span></div><div class="an-card-body">'+_opsLogbookRows(5)+'</div></section><section class="an-card"><div class="an-card-hd"><h4>Events</h4><span>current scope</span></div><div class="an-card-body">'+_opsEventRows(5)+'</div></section></div>';
+    '</div><div class="qol-two-col" style="margin-top:12px"><section class="an-card"><div class="an-card-hd"><h4>Decision Queue</h4><span>Ops Hub port</span></div><div class="an-card-body">'+_opsIssueRows(5)+'</div></section><section class="an-card"><div class="an-card-hd"><h4>Sources Hub</h4><span>'+_opsSourceRows().length+' sources</span></div><div class="an-card-body"><div class="sd-list">'+_opsSourceCards()+'</div></div></section><section class="an-card"><div class="an-card-hd"><h4>Logbook</h4><span>people memory</span></div><div class="an-card-body">'+_opsLogbookRows(5)+'</div></section><section class="an-card"><div class="an-card-hd"><h4>Events</h4><span>current scope</span></div><div class="an-card-body">'+_opsEventRows(5)+'</div></section>'+otCard+universalCard+'</div>';
   }else if(view==="decisions"){
     body='<section class="an-card"><div class="an-card-hd"><h4>Decision Queue</h4><span>'+ctx.issues.length+' open</span></div><div class="an-card-body"><div class="qol-filterbar"><span style="font-size:11px;color:var(--tm)">Ops Hub pattern: every signal should have owner, evidence, status, and next action.</span><button class="qol-row-btn primary" style="margin-left:auto" onclick="openIssueInbox()">Open Issue Inbox</button></div>'+_opsIssueRows(80)+'</div></section>';
   }else if(view==="sources"){
@@ -5933,13 +5934,7 @@ function setAnalyticsView(view){
   if(resolved===S.anView)return; // v56: no-op if already on this view
   S.anView=resolved;
   if(S.tab==="analytics"){
-    // v56: fast-path — update tab bar active state in-place, swap content only
-    const bar=$("analyticsModeControls");
-    if(bar){
-      bar.querySelectorAll('.an-mode-btn').forEach(b=>{
-        b.classList.toggle('active',b.getAttribute('data-anview')===S.anView);
-      });
-    }
+    // v56: fast-path — swap content only
     // v56: debounce rapid clicks (16ms = 1 frame)
     clearTimeout(_anViewTimer);
     _anViewTimer=setTimeout(()=>rerenderAnalyticsSurface("view"),16);
@@ -13225,29 +13220,31 @@ function renderTabs(){
   const groups=[
     {id:"dashboard",label:"Home",active:S.tab==="dashboard",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="1.5" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/><rect x="8" y="1.5" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/><rect x="1.5" y="8" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/><rect x="8" y="8" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/></svg>`,action:"railNavDashboard()",children:[]},
     {id:"calendar",label:"Calendar",active:S.tab==="calendar",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.2"/><line x1="1" y1="5" x2="13" y2="5" stroke="currentColor" stroke-width="1"/><line x1="4" y1="1" x2="4" y2="3" stroke="currentColor" stroke-width="1.2"/><line x1="10" y1="1" x2="10" y2="3" stroke="currentColor" stroke-width="1.2"/></svg>`,children:[
-      {id:"day",label:"Dashboard",active:S.tab==="calendar"&&S.calSubTab==="day",action:"railNavCalendar('day')"},
+      {id:"day",label:"Calendar",active:S.tab==="calendar"&&S.calSubTab==="day",action:"railNavCalendar('day')"},
       {id:"cards",label:"Cards",active:S.tab==="calendar"&&S.calSubTab==="cards",action:"railNavCalendar('cards')"},
       {id:"coaching",label:"Coaching",active:S.tab==="calendar"&&S.calSubTab==="coaching",action:"railNavCalendar('coaching')"},
       {id:"overtime",label:"Overtime",active:S.tab==="calendar"&&S.calSubTab==="overtime",action:"railNavCalendar('overtime')"},
       {id:"planner",label:"Planner",active:S.tab==="calendar"&&S.calSubTab==="schedule",action:"railNavCalendar('planner')"}
     ]},
     {id:"people",label:"People",badge:peopleBadge,active:S.tab==="people",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 13c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="currentColor" stroke-width="1.2"/></svg>`,children:[
-      {id:"dashboard",label:"Dashboard",active:S.tab==="people"&&S.peopleSubTab==="dashboard",action:"railNavPeople('dashboard')"},
+      {id:"dashboard",label:"People overview",active:S.tab==="people"&&S.peopleSubTab==="dashboard",action:"railNavPeople('dashboard')"},
       {id:"team",label:"Team",active:S.tab==="people"&&S.peopleSubTab==="team",action:"railNavPeople('team')"},
       {id:"agents",label:"Agents",active:S.tab==="people"&&S.peopleSubTab==="agents",action:"railNavPeople('agents')"},
       {id:"logbook",label:"Logbook",active:S.tab==="people"&&S.peopleSubTab==="logbook",action:"railNavPeople('logbook')"},
       {id:"events",label:"Events",active:S.tab==="people"&&S.peopleSubTab==="events",action:"railNavPeople('events')"}
     ]},
     {id:"analytics",label:"Ops",active:S.tab==="analytics",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="8" width="3" height="5" rx="0.5" stroke="currentColor" stroke-width="1"/><rect x="5.5" y="4" width="3" height="9" rx="0.5" stroke="currentColor" stroke-width="1"/><rect x="10" y="1" width="3" height="12" rx="0.5" stroke="currentColor" stroke-width="1"/></svg>`,children:[
-      {id:"dashboard",label:"Dashboard",active:S.tab==="analytics"&&activeAnView==="dashboard",action:"railNavAnalytics('dashboard')"},
+      {id:"dashboard",label:"Operational analytics",active:S.tab==="analytics"&&activeAnView==="dashboard",action:"railNavAnalytics('dashboard')"},
       {id:"workspace",label:"Workspace",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="overview",action:"railNavOps('overview')"},
       {id:"schedule-window",label:"Schedule Window",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="schedule",action:"railNavOps('schedule')"},
       {id:"coverage",label:"Coverage",active:S.tab==="analytics"&&activeAnView==="coverage",action:"railNavAnalytics('coverage')"},
       {id:"blueprint",label:"Blueprint",active:S.tab==="analytics"&&activeAnView==="blueprint",action:"railNavAnalytics('blueprint')"},
+      {id:"blueprint-library",label:"Blueprint library",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="blueprints",action:"railNavOps('blueprints')"},
       {id:"organisation",label:"People & Org",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="organisation",action:"railNavOps('organisation')"},
       {id:"absence",label:"Absence",active:S.tab==="analytics"&&activeAnView==="absence",action:"railNavAnalytics('absence')"},
       {id:"alerts",label:"Alerts",badge:alertsBadge,active:S.tab==="analytics"&&activeAnView==="alerts",action:"railNavAnalytics('alerts')"},
       {id:"data",label:"Data",active:S.tab==="analytics"&&activeAnView==="rawdata",action:"railNavAnalytics('data')"},
+      {id:"data-control",label:"Data control",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="data-control",action:"railNavOps('data-control')"},
       {id:"exports",label:"Export Centre",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="exports",action:"railNavOps('exports')"},
       {id:"decisions",label:"Decisions",badge:alertsBadge,active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="decisions",action:"railNavOps('decisions')"},
       {id:"handoff",label:"Handoff",active:S.tab==="analytics"&&activeAnView==="ops"&&S.opsView==="handoff",action:"railNavOps('handoff')"}
@@ -13540,7 +13537,7 @@ function ren(){_queueRenderTask("full",_renderNow);}
 function renderCalendarSubtabNav(active){
   var a=active||"day";
   var h='<div class="people-subtab-nav">';
-  h+='<button class="pst-btn'+(a==="day"?' a':'')+'" onclick="S.calSubTab=\'day\';ren()">Dashboard</button>';
+  h+='<button class="pst-btn'+(a==="day"?' a':'')+'" onclick="S.calSubTab=\'day\';ren()">Calendar</button>';
   h+='<button class="pst-btn'+(a==="cards"?' a':'')+'" onclick="S.calSubTab=\'cards\';S.plSubTab=\'cards\';ren()">Cards</button>';
   h+='<button class="pst-btn'+(a==="coaching"?' a':'')+'" onclick="S.calSubTab=\'coaching\';S.plSubTab=\'coaching\';ren()">Coaching</button>';
   h+='<button class="pst-btn'+(a==="overtime"?' a':'')+'" onclick="S.calSubTab=\'overtime\';S.plSubTab=\'overtime\';ren()">Overtime</button>';
@@ -19359,22 +19356,16 @@ function rAnalytics(el){
   if(S.anView==="forecast"||S.anView==="capacity")S.anView="dashboard";
   if(!["dashboard","coverage","alerts","absence","rawdata","blueprint","ops"].includes(S.anView))S.anView="dashboard";
 
-  const flagCount=computeFlags().filter(f=>f.category==="operational"||f.category==="blueprint").length;
-  const alertsBadge=flagCount>0?` <span style="font-size:10px;padding:1px 5px;border-radius:8px;background:rgba(220,38,38,.15);color:#dc2626;font-weight:700">${flagCount}</span>`:"";
-
   let h=`<div id="analyticsSurface">`;
-  h+=`<div id="analyticsModeControls" class="an-mode-toggle">`;
-  h+=`<button class="an-mode-btn${S.anView==="dashboard"?" active":""}" data-anview="dashboard" onclick="setAnalyticsView('dashboard')">Dashboard</button>`;
-  h+=`<button class="an-mode-btn${S.anView==="ops"?" active":""}" data-anview="ops" onclick="setAnalyticsView('ops')">Workspace</button>`;
-  h+=`<button class="an-mode-btn${S.anView==="coverage"?" active":""}" data-anview="coverage" onclick="setAnalyticsView('coverage')">Coverage</button>`;
-  h+=`<button class="an-mode-btn${S.anView==="blueprint"?" active":""}" data-anview="blueprint" onclick="setAnalyticsView('blueprint')">Blueprint</button>`;
-  h+=`<button class="an-mode-btn${S.anView==="absence"?" active":""}" data-anview="absence" onclick="setAnalyticsView('absence')">Absence</button>`;
-  h+=`<button class="an-mode-btn${S.anView==="alerts"?" active":""}" data-anview="alerts" onclick="setAnalyticsView('alerts')">Alerts${alertsBadge}</button>`;
-  h+=`<button class="an-mode-btn${S.anView==="rawdata"?" active":""}" data-anview="rawdata" onclick="setAnalyticsView('rawdata')">Data</button>`;
+  // The rail's Ops group is the only navigation for these views. This bar used to repeat it with
+  // its own Dashboard/Workspace/Coverage/... buttons, and its Workspace button never reset
+  // S.opsView, so it could land on whichever Ops sub-view was open last. Only the scope toggle,
+  // which the rail has no equivalent for, remains.
+  const scopeVisible=['dashboard','coverage','absence'].includes(S.anView);
+  h+=`<div id="analyticsModeControls" class="an-mode-toggle" style="border:none;display:${scopeVisible?'flex':'none'}">`;
   // Scope toggle
   if(!S.anScope)S.anScope='month';
-  const scopeVisible=['dashboard','coverage','absence'].includes(S.anView);
-  h+=`<div id="analyticsScopeToggle" style="margin-left:auto;display:${scopeVisible?'flex':'none'};align-items:center;gap:0;border:1px solid var(--bdr);border-radius:6px;overflow:hidden">`;
+  h+=`<div id="analyticsScopeToggle" style="margin-left:auto;display:flex;align-items:center;gap:0;border:1px solid var(--bdr);border-radius:6px;overflow:hidden">`;
   [{k:'today',l:'Today'},{k:'week',l:'Week'},{k:'month',l:'Month'}].forEach(sc=>{
     const isSel=S.anScope===sc.k;
     h+=`<button onclick="S.anScope='${sc.k}';_anDataCache=null;rerenderAnalyticsSurface('view')" style="padding:3px 10px;border:none;border-right:1px solid var(--bdr);background:${isSel?'var(--accent)':'none'};color:${isSel?'#000':'var(--tm)'};font-family:inherit;font-size:11px;font-weight:${isSel?'700':'400'};cursor:pointer;transition:all .12s">${sc.l}</button>`;
@@ -28838,19 +28829,45 @@ function _syncRenderProjectRows(){
 function _syncFilterProjectPicker(value){
   _syncPickerQuery=value||'';
   _syncRenderProjectRows();
+  _syncStampPickerSig();
 }
 function _syncShowAllProjects(){
   _syncPickerShowAll=true;
   _syncRenderProjectRows();
+  _syncStampPickerSig();
+}
+function _syncStampPickerSig(){
+  const host=document.getElementById('lcProjectPicker');
+  if(host&&host.dataset.sig)host.dataset.sig=JSON.stringify([_syncPickerAllProjects,_syncPickerQuery,_syncPickerShowAll]);
 }
 function _syncProjectPickerHtml(projects){
   _syncPickerAllProjects=projects;
-  _syncPickerQuery='';
-  _syncPickerShowAll=false;
+  // The picker re-renders on its own (local hydration landing, a manual sync). Keep what the user
+  // typed or expanded; _syncOpenProject resets both once a project is chosen.
+  if(projects.length<=6){_syncPickerQuery='';_syncPickerShowAll=false;}
   let h='<div class="lc-projects-label">Continue a project</div>';
-  if(projects.length>6)h+=`<input type="search" id="lcProjectSearch" class="lc-project-search" placeholder="Search projects…" aria-label="Search projects" oninput="_syncFilterProjectPicker(this.value)">`;
+  if(projects.length>6)h+=`<input type="search" id="lcProjectSearch" class="lc-project-search" placeholder="Search projects…" aria-label="Search projects" value="${X(_syncPickerQuery)}" oninput="_syncFilterProjectPicker(this.value)">`;
   h+='<div id="lcProjectRows"></div><div id="lcProjectMore" style="display:none"></div>';
   return h;
+}
+// Replacing the picker's markup drops keyboard focus, so a re-render between focusing a row and
+// pressing Enter did nothing. Remember what had focus and put it back.
+function _syncPickerFocus(host){
+  const el=document.activeElement;
+  if(!el||!host.contains(el))return null;
+  const wrap=el.closest('.lc-project-row-wrap'),name=wrap&&wrap.querySelector('.lc-project-name');
+  return{id:el.id,cls:el.classList.contains('lc-project-delete')?'.lc-project-delete':el.classList.contains('lc-project-action')?'.lc-project-action:not(.lc-project-delete)':el.classList.contains('lc-project-row')?'.lc-project-row':'',name:name?name.textContent:null};
+}
+function _syncRestorePickerFocus(host,focus){
+  if(!focus)return;
+  let el=focus.id?document.getElementById(focus.id):null;
+  if(!el&&focus.cls&&focus.name!==null){
+    const wrap=[...host.querySelectorAll('.lc-project-row-wrap')].find(w=>{const n=w.querySelector('.lc-project-name');return n&&n.textContent===focus.name;});
+    el=wrap&&wrap.querySelector(focus.cls);
+  }
+  if(!el)return;
+  el.focus();
+  if(el.id==='lcProjectSearch')try{el.setSelectionRange(el.value.length,el.value.length);}catch(err){}
 }
 async function _syncRenderProjectPicker(){
   const host=document.getElementById('lcProjectPicker');
@@ -28864,8 +28881,17 @@ async function _syncRenderProjectPicker(){
     const anyProjects=projects.length>0;
     _syncRenderSampleOffer(anyProjects);
     if(projects.length>=1){
-      host.innerHTML=_syncProjectPickerHtml(projects);
-      _syncRenderProjectRows();
+      // Only touch the DOM when something changed. Swapping identical markup (hydration landing,
+      // a manual sync) could eat a tap that landed mid-swap.
+      const html=_syncProjectPickerHtml(projects);
+      const sig=JSON.stringify([projects,_syncPickerQuery,_syncPickerShowAll]);
+      if(host.dataset.sig!==sig||!document.getElementById('lcProjectRows')){
+        const focus=_syncPickerFocus(host);
+        host.innerHTML=html;
+        _syncRenderProjectRows();
+        _syncRestorePickerFocus(host,focus);
+        host.dataset.sig=sig;
+      }
       host.style.display='flex';
       if(featuresEl)featuresEl.style.display='none';
       if(statsEl)statsEl.style.display='none';
@@ -28873,7 +28899,7 @@ async function _syncRenderProjectPicker(){
       return;
     }
   }catch(err){console.error('[sync] project picker render failed',err);}
-  host.style.display='none';host.innerHTML='';
+  host.style.display='none';host.innerHTML='';delete host.dataset.sig;
   if(featuresEl)featuresEl.style.display='';
   if(statsEl)statsEl.style.display='';
   _syncSetNewSourceCollapsed(false);
@@ -29121,6 +29147,7 @@ function _syncShowChangedSince(name,previousView){
 }
 function _syncOpenProject(name){
   if(!name)return;
+  _syncPickerQuery='';_syncPickerShowAll=false;
   // Whatever project is open right now keeps its context before we switch away from it.
   if(S.activeDept&&S.activeDept!==name)_syncSaveViewState(typeof nsActiveDepartmentKey==='function'?nsActiveDepartmentKey():'',{withCounts:true});
   S.activeDept=name;
@@ -32556,7 +32583,7 @@ function rPeople(el){
   // Sub-tab nav
   h+=`<div class="people-subtab-nav">`;
   const subtabs=[
-    {id:"dashboard",l:"Dashboard"},
+    {id:"dashboard",l:"People overview"},
     {id:"team",l:"Team"},
     {id:"agents",l:"Agents"},
     {id:"logbook",l:"Logbook"},
@@ -33588,6 +33615,8 @@ window.nsDepartmentKey=nsDepartmentKey;
 window.nsActiveDepartmentKey=nsActiveDepartmentKey;
 window.nsDownloadBlob=nsDownloadBlob;
 window._syncCollectLocalKeys=_syncCollectLocalKeys;
+// The Ops overview counts scoped OT wishes to decide whether to offer the OT+ workbench.
+window.nsScopedRows=nsScopedRows;
 
 function nsOpenDatabase(){
   if(!window.indexedDB)return Promise.reject(new Error("IndexedDB unavailable"));
@@ -33648,6 +33677,10 @@ function nsRestoreEntriesFromCanonical(){
   try{
     const scoped=(typeof nsScopedRows==="function")?nsScopedRows("schedule"):(nsCanonical().schedule||[]);
     S.entries=(scoped||[]).map(nsRuntimeEntry).filter(row=>row.date&&!isNaN(row.date));
+    // Every indexed view (calendar, dashboard, analytics) caches by entriesVer. Without the bump a
+    // project opened here rendered whatever index was built before it: empty, or the last project.
+    S.entriesVer=(S.entriesVer||0)+1;
+    if(typeof invalidateDerivedCache==="function")invalidateDerivedCache();
     // S.entries drives the calendar/dashboard directly, but S.months/S.month/S.mIdx are a SEPARATE
     // derived index that every local import path (proc/loadIntoWorkspace, etc.) computes for itself
     // at load time — this function is the one entry point that rebuilds S.entries WITHOUT going
@@ -35230,8 +35263,11 @@ function nsCoverReady(person){
 }
 
 function nsOpsShell(view,body){
-  const scope=((typeof isUniversalWorkspace==="function"&&isUniversalWorkspace())||S._universalWorkspace===true)?"Universal":(S.activeDept||"NorthStar workspace"),sources=nsScopedRows("sources"),publish=nsScopedRows("publishQueue"),conflicts=nsScopedRows("conflicts");
-  return`<div class="people-hq ops-hq ns-ops"><div class="ns-ops-context"><span>Workspace</span><b>${nsEsc(scope)}</b><span>Sources</span><b>${sources.length}</b><span>Pending publish</span><b>${publish.filter(item=>item.status==="pending").length}</b><span>Open conflicts</span><b>${conflicts.filter(item=>item.status==="open").length}</b></div><div class="ns-ops-main">${body}</div></div>`;
+  const universal=((typeof isUniversalWorkspace==="function"&&isUniversalWorkspace())||S._universalWorkspace===true),scope=universal?"Universal":(S.activeDept||"NorthStar workspace"),sources=nsScopedRows("sources"),publish=nsScopedRows("publishQueue"),conflicts=nsScopedRows("conflicts");
+  // Universal mode disables every Ops control except .ns-cross-department-action (see the
+  // body.sync-universal-active .ns-ops-main rule); this is that action's entry point.
+  const crossDeptAction=universal&&view!=="cross-department"?`<button class="ns-btn ns-cross-department-action" onclick="railNavOps('cross-department')" style="margin-left:auto">Review across departments</button>`:"";
+  return`<div class="people-hq ops-hq ns-ops"><div class="ns-ops-context"><span>Workspace</span><b>${nsEsc(scope)}</b><span>Sources</span><b>${sources.length}</b><span>Pending publish</span><b>${publish.filter(item=>item.status==="pending").length}</b><span>Open conflicts</span><b>${conflicts.filter(item=>item.status==="open").length}</b>${crossDeptAction}</div><div class="ns-ops-main">${body}</div></div>`;
 }
 
 function nsOrgDepartments(){
@@ -35711,7 +35747,16 @@ let nsLagExpected=performance.now()+1000;setInterval(()=>{const now=performance.
   const doHydrate=()=>nsHydrateDatabase().then(async localHydrated=>{
     // Launch is passive: use local cache only and let the user choose a project. Never pull
     // remote data or reopen a previous project as a side effect of visiting the app.
-    if(typeof _syncShowProjectPicker==="function")_syncShowProjectPicker({clearActive:true});
+    // Hydration can land a second or more after load. Whatever the user opened, imported or is
+    // previewing by then is theirs, not launch state, so it is never closed underneath them.
+    const live=!!(S.activeDept||(S.entries&&S.entries.length)||S.wb);
+    if(!live){if(typeof _syncShowProjectPicker==="function")_syncShowProjectPicker({clearActive:true});}
+    else{
+      // A project opened before hydration was built from the lean localStorage copy, which holds
+      // no schedule rows. Rebuild it from the full copy that just loaded.
+      if(S.activeDept&&!(S.entries&&S.entries.length))nsRestoreEntriesFromCanonical();
+      if(typeof _syncRenderProjectPicker==="function")_syncRenderProjectPicker();
+    }
     if(document.getElementById("ca"))try{ren();}catch(err){}
   }).finally(()=>{NS.trackLocalChanges=true;});
   const hydrate=()=>doHydrate();

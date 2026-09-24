@@ -2,7 +2,7 @@
 function renderCalendarSubtabNav(active){
   var a=active||"day";
   var h='<div class="people-subtab-nav">';
-  h+='<button class="pst-btn'+(a==="day"?' a':'')+'" onclick="S.calSubTab=\'day\';ren()">Dashboard</button>';
+  h+='<button class="pst-btn'+(a==="day"?' a':'')+'" onclick="S.calSubTab=\'day\';ren()">Calendar</button>';
   h+='<button class="pst-btn'+(a==="cards"?' a':'')+'" onclick="S.calSubTab=\'cards\';S.plSubTab=\'cards\';ren()">Cards</button>';
   h+='<button class="pst-btn'+(a==="coaching"?' a':'')+'" onclick="S.calSubTab=\'coaching\';S.plSubTab=\'coaching\';ren()">Coaching</button>';
   h+='<button class="pst-btn'+(a==="overtime"?' a':'')+'" onclick="S.calSubTab=\'overtime\';S.plSubTab=\'overtime\';ren()">Overtime</button>';

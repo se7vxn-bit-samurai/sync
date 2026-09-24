@@ -81,4 +81,28 @@ test.describe('local persistence', () => {
     await page.waitForTimeout(500);
     await expect(page.locator('#lcProjectPicker .lc-project-row')).toHaveCount(0);
   });
+
+  test('a file imported before local hydration finishes stays open once it lands', async ({ page }) => {
+    // Hold the first IndexedDB open (hydration's) so it resolves only after the import. On a slow
+    // device this is the normal order; hydration used to close whatever was open when it landed.
+    await page.addInitScript(() => {
+      const realOpen = IDBFactory.prototype.open;
+      let held = false;
+      IDBFactory.prototype.open = function (...args) {
+        const req = realOpen.apply(this, args);
+        if (held) return req;
+        held = true;
+        let handler = null;
+        Object.defineProperty(req, 'onsuccess', { configurable: true, get: () => handler, set: (fn) => { handler = fn; } });
+        req.addEventListener('success', (e) => setTimeout(() => { window.__hydrationReleased = true; if (handler) handler.call(req, e); }, 3000));
+        return req;
+      };
+    });
+    await importRoster(page, false);
+    expect(await page.evaluate(() => window.__hydrationReleased === true)).toBe(false);
+    await page.waitForFunction(() => window.__hydrationReleased === true, null, { timeout: 15_000 });
+    await page.waitForTimeout(500);
+    await expect(page.locator('#mv')).toBeVisible();
+    expect(await page.evaluate(() => S.entries.length)).toBe(620);
+  });
 });
