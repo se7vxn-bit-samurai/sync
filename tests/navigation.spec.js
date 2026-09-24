@@ -7,6 +7,9 @@ async function openSample(page) {
   await page.evaluate(() => _syncCreateSampleProject());
   await expect(page.locator('#mv')).toBeVisible();
   await page.waitForFunction(() => S.entries.length > 100);
+  // The boot splash sits over everything until finishBoot() removes it (up to ~3s after load);
+  // hit-testing before then lands on the splash, not the page.
+  await expect(page.locator('#syncBoot')).toHaveCount(0);
 }
 const opsRail = '[data-rail-group="analytics"] .mf-rail-child';
 const nav = (page, fn, arg) => page.evaluate(fn, arg);
