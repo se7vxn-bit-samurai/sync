@@ -183,6 +183,7 @@ function rCal(el){
         if(isCovering)mid+=`<span class="swap-tag" title="Covering ${isCovering.absentLeader}${isCovering.originalShift?' · '+isCovering.originalShift:''}">⇄ covering</span>`;
         if(isAbsent)mid+=`<span class="swap-tag absent" title="Absent — covered by ${isAbsent.coverLeader}">⇄ absent</span>`;
         mid+=`<button class="dd-mini-btn" onclick="navToPerson('${esc}')" title="Open month card">Month</button>`;
+        mid+=`<button class="dd-mini-btn swin-open-btn" onclick="openScheduleWindow('${esc}',{y:${selDate.getFullYear()},m:${selDate.getMonth()}})" title="Schedule window: UK and SA times, send">Schedule</button>`;
         mid+=renderInlineNoteButton("person",e.name,e.name,"compact");
         const _excWithAgent=personExcs.find(ex=>ex.agentName);
         mid+=`<button class="exc-flag${hasExc?' has-exc':''}" onclick="${_excWithAgent?`openAgentDrawer('${XJS(_excWithAgent.agentName)}')`:`S._excFormOpen=S._excFormOpen==='${XJ(formKey)}'?null:'${XJ(formKey)}';ren()`}">${hasExc?'⚡'+personExcs.length:'+ Flag'}</button>`;

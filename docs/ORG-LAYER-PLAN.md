@@ -551,6 +551,17 @@ later move to the cloud a change of where data is stored, not a rewrite.
 
 ### L1: Schedule Window, plus sharing it with agents
 
+**Status: built.** `src/app/views/schedule-window.js`, tested in `tests/schedule-window.spec.js`.
+Found while building it:
+- `u2s` compared the date's midnight with the 01:00 changeover, so every shift on the two
+  changeover Sundays got the old offset (for example, 25 Oct 2026 at 09:00 UK showed 10:00 SA
+  instead of 11:00). Fixed in `kernel.js`. Rows imported before the fix keep their stored
+  `saS`/`saE` in the older views until they are re-imported; the Schedule Window always
+  recalculates.
+- The CSV parser turns a **blank** cell into `OFF`. So "No row" appears only where the source has
+  no row at all: dates outside the roster, or people missing from it. Whether a blank cell should
+  mean "no row" is a parser decision, left for later.
+
 The stand-alone viewer for one person.
 
 | Part | Spec |

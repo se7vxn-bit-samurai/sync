@@ -234,6 +234,7 @@ function renderAgentDrawerContent(agentName){
   h+=`<div class="agent-drawer-section">`;
   h+=`<div class="ads-hd">Schedule — this week`;
   if(leaderName){h+=` <span style="font-size:11px;font-weight:400;color:var(--tm);cursor:pointer" onclick="closeAgentDrawer();navToPerson('${XJS(leaderName)}')" title="Open ${XA(leaderName)} schedule card">→ ${X(leaderName.split(" ")[0])}</span>`;}
+  h+=` <button type="button" class="swin-open-btn" onclick="closeAgentDrawer();openScheduleWindow('${XJS(agentName)}')" title="Any date range, UK and SA times, send to ${XA(agentName.split(" ")[0])}" style="margin-left:auto;font-size:11px;padding:2px 8px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--accent);font-family:inherit;cursor:pointer">Full schedule</button>`;
   h+=`</div>`;
   // Get the week Mon–Sun for today
   const wMon=new Date(today);wMon.setDate(wMon.getDate()-((wMon.getDay()+6)%7));wMon.setHours(0,0,0,0);

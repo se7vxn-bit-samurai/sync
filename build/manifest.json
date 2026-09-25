@@ -81,6 +81,7 @@
     "app/people/ops-surface.js",
     "app/export/cards-png-zip.js",
     "app/views/people.js",
+    "app/views/schedule-window.js",
     "app/_close.html",
     "northstar/northstar.js.html",
     "assets/v31-templates.js.html",

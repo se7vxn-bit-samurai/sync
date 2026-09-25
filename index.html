@@ -2070,6 +2070,73 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .agent-drawer-overlay.open .agent-drawer-bg{opacity:1;pointer-events:all}
 .agent-drawer{position:relative;z-index:1;width:min(400px,100vw);height:100vh;background:var(--hbg);border-left:1px solid var(--bdr);overflow-y:auto;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .22s cubic-bezier(.4,0,.2,1);backdrop-filter:blur(20px)}
 .agent-drawer-overlay.open .agent-drawer{transform:translateX(0)}
+/* Schedule Window (src/app/views/schedule-window.js) */
+.swin-overlay{position:fixed;inset:0;z-index:880;display:flex;align-items:center;justify-content:center}
+.swin-bg{position:absolute;inset:0;background:rgba(0,0,0,.5)}
+.swin{position:relative;z-index:1;width:min(1180px,96vw);height:min(860px,92vh);display:flex;flex-direction:column;background:var(--hbg);border:1px solid var(--bdr);border-radius:12px;box-shadow:var(--sl);overflow:hidden;color:var(--text)}
+.swin-body{display:flex;flex-direction:column;min-height:0;flex:1}
+.swin-hd{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-bottom:1px solid var(--bdr)}
+.swin-hd h2{font-size:17px;font-weight:700;margin:0;overflow-wrap:anywhere}
+.swin-meta{font-size:12px;color:var(--tm);margin-top:3px}
+.swin-chip{display:inline-block;font-size:10px;padding:1px 7px;border-radius:8px;border:1px solid var(--bdr);color:var(--tm);margin:5px 4px 0 0}
+.swin-x{border:1px solid var(--bdr);background:none;color:var(--text);border-radius:6px;width:32px;height:32px;cursor:pointer;flex-shrink:0}
+.swin-ctl{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:8px 16px;border-bottom:1px solid var(--bdr);font-size:12px;color:var(--tm)}
+.swin-ctl label{display:inline-flex;align-items:center;gap:6px}
+.swin-ctl select,.swin-ctl input{padding:4px 6px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font:inherit;font-size:12px;max-width:200px}
+.swin-ctl b{color:var(--text)}
+.swin-nav{display:inline-flex;align-items:center;gap:6px}
+.swin-seg{display:inline-flex;border:1px solid var(--bdr);border-radius:6px;overflow:hidden}
+.swin-seg button{border:0;background:none;color:var(--tm);padding:5px 10px;font:inherit;font-size:12px;cursor:pointer}
+.swin-seg button[aria-pressed="true"]{background:var(--al);color:var(--accent);font-weight:700}
+.swin-btn{border:1px solid var(--bdr);background:none;color:var(--text);border-radius:6px;padding:5px 10px;font:inherit;font-size:12px;cursor:pointer}
+.swin-btn.pri{background:var(--accent);border-color:var(--accent);color:#000;font-weight:700}
+.swin-main{display:grid;grid-template-columns:minmax(0,1fr) 300px;min-height:0;flex:1}
+.swin-tbl-wrap{overflow:auto;min-height:0}
+.swin-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.swin-tbl th{position:sticky;top:0;z-index:1;background:var(--hbg);text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tm);padding:7px 8px;border-bottom:1px solid var(--bdr);white-space:nowrap}
+.swin-tbl td{padding:6px 8px;border-bottom:1px solid var(--bdr);white-space:nowrap}
+.swin-tbl .mono{font-family:'DM Mono',ui-monospace,monospace}
+.swin-tbl sup{font-size:9px;color:var(--tm);margin-left:2px}
+.swin-tbl .swin-sec{color:var(--tm)}
+.swin-tbl tr.wk td{background:color-mix(in srgb,var(--al) 40%,transparent)}
+.swin-tbl tr.today td:first-child{box-shadow:inset 3px 0 0 var(--accent);font-weight:700}
+.swin-tbl tr.none td{color:var(--tm)}
+.swin-tbl tr.chg td{background:rgba(251,191,36,.10)}
+.swin-tag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:8px;border:1px solid currentColor;line-height:1.5}
+.swin-tag.t-off{color:var(--tm)}
+.swin-tag.t-leave{color:var(--accent)}
+.swin-tag.t-none{color:var(--wknd);border-style:dashed}
+.swin-tag.t-ph{color:var(--wknd)}
+.swin-tag.t-exc{color:var(--text);border-color:var(--bdr)}
+.swin-tag.t-chg{color:var(--wknd);font-size:9px}
+.swin-src{font-size:11px;color:var(--tm)}
+.swin-src.none{color:var(--wknd)}
+.swin-side{border-left:1px solid var(--bdr);overflow:auto;padding:12px 14px;display:flex;flex-direction:column;gap:16px}
+.swin-h{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--tm);margin-bottom:6px}
+.swin-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.swin-stat{border:1px solid var(--bdr);border-radius:8px;padding:6px 8px}
+.swin-stat b{display:block;font-size:15px}
+.swin-stat span{font-size:10px;color:var(--tm)}
+.swin-stat.warn b{color:var(--wknd)}
+.swin-cal-m{font-size:11px;font-weight:700;margin:6px 0 4px}
+.swin-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.swin-cal .dh{text-align:center;font-size:9px;color:var(--tm)}
+.swin-cal .c{border:1px solid var(--bdr);border-radius:5px;padding:2px 1px;text-align:center;font-size:9px;line-height:1.3;min-height:30px;font-family:'DM Mono',ui-monospace,monospace;overflow:hidden}
+.swin-cal .c b{display:block;font-size:10px;font-family:'DM Sans',sans-serif}
+.swin-cal .c.off,.swin-cal .c.ph{color:var(--tm)}
+.swin-cal .c.leave{color:var(--accent)}
+.swin-cal .c.none{border-style:dashed;color:var(--wknd)}
+.swin-cal .c.out{opacity:.35}
+.swin-cal .c.today{outline:2px solid var(--accent);outline-offset:-1px}
+.swin-note{font-size:11px;color:var(--tm);line-height:1.45;margin-top:6px}
+.swin-chg{margin:4px 0 0;padding-left:16px}
+.swin-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+@media (max-width:820px){
+  .swin{width:100vw;height:100dvh;border-radius:0;border:0}
+  .swin-main{display:block;overflow:auto}
+  .swin-tbl-wrap{overflow-x:auto;overflow-y:hidden}
+  .swin-side{border-left:0;border-top:1px solid var(--bdr);overflow:visible}
+}
 .agent-drawer::-webkit-scrollbar{width:4px}.agent-drawer::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:2px}
 .agent-drawer-hd{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--bdr);position:sticky;top:0;background:var(--hbg);z-index:2;gap:10px}
 .agent-avatar-lg{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#b98bff);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0}
@@ -5729,6 +5796,9 @@ function _collectCommandPaletteActions(){
     });
     actions.push({id:"pin:"+name,label:((S.pinnedPeople||[]).includes(name)?"Unpin ":"Pin ")+name,hint:"Pinned people",keywords:"pin favorite person "+name,run:()=>togglePinnedPerson(name)});
   });
+  if(typeof _swinAllNames==="function")_swinAllNames().slice(0,300).forEach(name=>{
+    actions.push({id:"schedule:"+name,label:"Schedule: "+name,hint:"Schedule window · UK and SA times · send",group:"People",keywords:"schedule window roster shifts times sa uk share send whatsapp png "+name,run:()=>openScheduleWindow(name)});
+  });
   (S.months||[]).forEach(mk=>{
     actions.push({
       id:"month:"+mk,
@@ -6776,7 +6846,10 @@ function mkE(name,date,day,raw,team,weekLabel){
   return{name,date,day,ukS,ukE,isOff:off,offL,raw:cs,team:team||"Main",week:weekLabel||"",_fileWeek:weekLabel||"",note:note||""};
 }
 
-function u2s(t,d){if(!t)return t;const dt=d||new Date(),y=dt.getFullYear(),ml=new Date(y,2,31),bs=new Date(y,2,31-ml.getDay(),1,0),ol=new Date(y,9,31),be=new Date(y,9,31-ol.getDay(),1,0),off=(dt>=bs&&dt<be)?1:2;const m=t.match(/^(\d{2}):(\d{2})$/);if(!m)return t;let h=+m[1]+off;if(h>=24)h-=24;return P(h)+":"+m[2];}
+// UK clock time -> SA clock time. SA is UTC+2 all year; the UK changes at 01:00 GMT on the last
+// Sunday of March and October. The comparison uses the shift's own time on its date, so a 09:00
+// shift on the changeover Sunday already gets the new offset (comparing the date's midnight did not).
+function u2s(t,d){if(!t)return t;const m=String(t).match(/^(\d{2}):(\d{2})$/);if(!m)return t;const dt=d||new Date(),y=dt.getFullYear(),ml=new Date(y,2,31),bs=new Date(y,2,31-ml.getDay(),1,0),ol=new Date(y,9,31),be=new Date(y,9,31-ol.getDay(),1,0),at=new Date(y,dt.getMonth(),dt.getDate(),+m[1],+m[2]),off=(at>=bs&&at<be)?1:2;let h=+m[1]+off;if(h>=24)h-=24;return P(h)+":"+m[2];}
 function calcHrs(s,e){if(!s||!e)return 0;const[sh,sm]=s.split(":").map(Number),[eh,em]=e.split(":").map(Number);let h=(eh*60+em)-(sh*60+sm);if(h<0)h+=1440;return Math.round(h/60*100)/100;}
 function calcEffectivePct(workingEntries,unplannedEvents){
   if(!workingEntries||!workingEntries.length)return 100;
@@ -13850,6 +13923,7 @@ function rCal(el){
         if(isCovering)mid+=`<span class="swap-tag" title="Covering ${isCovering.absentLeader}${isCovering.originalShift?' · '+isCovering.originalShift:''}">⇄ covering</span>`;
         if(isAbsent)mid+=`<span class="swap-tag absent" title="Absent — covered by ${isAbsent.coverLeader}">⇄ absent</span>`;
         mid+=`<button class="dd-mini-btn" onclick="navToPerson('${esc}')" title="Open month card">Month</button>`;
+        mid+=`<button class="dd-mini-btn swin-open-btn" onclick="openScheduleWindow('${esc}',{y:${selDate.getFullYear()},m:${selDate.getMonth()}})" title="Schedule window: UK and SA times, send">Schedule</button>`;
         mid+=renderInlineNoteButton("person",e.name,e.name,"compact");
         const _excWithAgent=personExcs.find(ex=>ex.agentName);
         mid+=`<button class="exc-flag${hasExc?' has-exc':''}" onclick="${_excWithAgent?`openAgentDrawer('${XJS(_excWithAgent.agentName)}')`:`S._excFormOpen=S._excFormOpen==='${XJ(formKey)}'?null:'${XJ(formKey)}';ren()`}">${hasExc?'⚡'+personExcs.length:'+ Flag'}</button>`;
@@ -26995,6 +27069,8 @@ document.addEventListener("keydown",e=>{
   if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&key==="s"){e.preventDefault();if(typeof _syncManualSave==='function')_syncManualSave();return;}
   if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&key==="k"){e.preventDefault();openCommandPalette();return;}
   if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&key==="z"){e.preventDefault();undoLastAction();return;}
+  // The Schedule Window is modal: arrows and letter shortcuts must not change the view behind it.
+  if(typeof _swinIsOpen==="function"&&_swinIsOpen()){if(e.key==="Escape")closeScheduleWindow();return;}
   if(!S.wb||e.target.tagName==="INPUT"||e.target.tagName==="SELECT"||e.target.tagName==="TEXTAREA")return;
   // Month nav works on all tabs — use Alt+arrow to avoid colliding with scroll
   if(e.key==="ArrowLeft"&&!e.shiftKey&&!e.altKey){e.preventDefault();navM(-1);}
@@ -29370,7 +29446,7 @@ function _syncCloseWorkspaceToLanding(){
    ═══════════════════════════════════════════════════════════════ */
 let _syncKnownProjects=[];
 let _syncPanelBusy='';
-const SYNC_CHANGE_LABELS={canonical:'Project people & schedule',sc_people:'Agent details',sc_rosterfile:'Agent roster',sc_agentnotes:'Agent notes',sc_agentstatuses:'Agent statuses',sc_people_logbook:'Logbook',sc_people_home:'Home notes',sc_exceptions:'Exceptions & absences',sc_leaverequests:'Leave requests',sc_dayclosed:'Day close-outs',sc_notes:'Shift notes',sc_att:'Attendance',sc_hc:'Headcount',sc_planner:'Planner edits',sc_blueprints:'Blueprints',sc_positions:'Positions',sc_coaching:'Coaching plan',sc_coachquality:'Coaching sessions',sc_otplan:'OT plan',sc_leaderplanner:'Leader planner',sc_shiftlib:'Shift library',sc_coveragereq:'Coverage targets',sc_forecast:'Forecast',sc_name_remaps:'Name changes',sc_qol_state:'Saved views',sc_settings:'Settings'};
+const SYNC_CHANGE_LABELS={canonical:'Project people & schedule',sc_people:'Agent details',sc_rosterfile:'Agent roster',sc_agentnotes:'Agent notes',sc_agentstatuses:'Agent statuses',sc_people_logbook:'Logbook',sc_people_home:'Home notes',sc_exceptions:'Exceptions & absences',sc_leaverequests:'Leave requests',sc_dayclosed:'Day close-outs',sc_notes:'Shift notes',sc_att:'Attendance',sc_hc:'Headcount',sc_planner:'Planner edits',sc_blueprints:'Blueprints',sc_positions:'Positions',sc_coaching:'Coaching plan',sc_coachquality:'Coaching sessions',sc_otplan:'OT plan',sc_leaderplanner:'Leader planner',sc_shiftlib:'Shift library',sc_coveragereq:'Coverage targets',sc_forecast:'Forecast',sc_name_remaps:'Name changes',sc_swin_sent:'Schedules sent',sc_qol_state:'Saved views',sc_settings:'Settings'};
 function _syncChangeSummary(){
   const keys=typeof window._syncChangedKeys==='function'?window._syncChangedKeys():[];
   const labels=[...new Set(keys.map(key=>SYNC_CHANGE_LABELS[key]||'Workspace'))];
@@ -30262,7 +30338,7 @@ function renderChangeLogPanel(){
 
 /* ═══ CLEAR ALL STORED DATA ═══ */
 function _clearAllDataStorageKeys(){
-  const base=["sc_att","sc_settings","sc_state_schema","sc_planner","sc_hc","sc_notes","sc_blueprints","sc_positions","sc_exceptions","sc_leaverequests","sc_dayclosed","sc_coaching","sc_leaderplanner","sc_people","sc_rosterfile","sc_shiftlib","sc_coachquality","sc_coveragereq","sc_otplan","sc_agentstatuses","sc_agentnotes","sc_forecast","sc_people_view","sc_people_home","sc_people_logbook","sc_cards_zip_presets","sc_qol_state",QOL_SHARED_STORAGE_KEY];
+  const base=["sc_att","sc_settings","sc_state_schema","sc_planner","sc_hc","sc_notes","sc_blueprints","sc_positions","sc_exceptions","sc_leaverequests","sc_dayclosed","sc_coaching","sc_leaderplanner","sc_people","sc_rosterfile","sc_shiftlib","sc_coachquality","sc_coveragereq","sc_otplan","sc_agentstatuses","sc_agentnotes","sc_forecast","sc_people_view","sc_people_home","sc_people_logbook","sc_cards_zip_presets","sc_qol_state","sc_swin_sent",QOL_SHARED_STORAGE_KEY];
   const aliases=Object.values(STORAGE_REBRAND_COMPAT).flat();
   let dynamic=[];
   try{dynamic=Object.keys(localStorage).filter(k=>k.startsWith("sc_snap_")||k.startsWith("sc_swaps_")||k.startsWith("7os_snap_")||k.startsWith("7os_swaps_")||k.startsWith("mfs_snap_")||k.startsWith("mfs_swaps_"));}catch(e){dynamic=[];}
@@ -30656,6 +30732,7 @@ function renderAgentDrawerContent(agentName){
   h+=`<div class="agent-drawer-section">`;
   h+=`<div class="ads-hd">Schedule — this week`;
   if(leaderName){h+=` <span style="font-size:11px;font-weight:400;color:var(--tm);cursor:pointer" onclick="closeAgentDrawer();navToPerson('${XJS(leaderName)}')" title="Open ${XA(leaderName)} schedule card">→ ${X(leaderName.split(" ")[0])}</span>`;}
+  h+=` <button type="button" class="swin-open-btn" onclick="closeAgentDrawer();openScheduleWindow('${XJS(agentName)}')" title="Any date range, UK and SA times, send to ${XA(agentName.split(" ")[0])}" style="margin-left:auto;font-size:11px;padding:2px 8px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--accent);font-family:inherit;cursor:pointer">Full schedule</button>`;
   h+=`</div>`;
   // Get the week Mon–Sun for today
   const wMon=new Date(today);wMon.setDate(wMon.getDate()-((wMon.getDay()+6)%7));wMon.setHours(0,0,0,0);
@@ -32498,6 +32575,7 @@ function rPeopleAgentsView(){
     h+=`<div style="font-size:12px;color:var(--tm)">${leaderName?"TL: "+X(leaderName):""}</div>`;
     h+=`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${renderPeopleBadges(sel,"agent")}</div>`;
     h+=`</div>`;
+    h+=`<button class="swin-open-btn" onclick="openScheduleWindow('${XJS(sel)}')" title="Any date range, UK and SA times, send to ${XA(sel.split(" ")[0])}" style="padding:5px 9px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer">Schedule</button>`;
     h+=`<button onclick="openPeopleRoleLabelsModal('${XJS(sel)}')" style="padding:5px 9px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer">Labels</button>`;
     h+=`<span class="qol-inline-tools">${renderPinButton(sel)}${renderInlineNoteButton("person",sel,sel)}</span>`;
     h+=`<span style="padding:4px 12px;border-radius:8px;background:${cssAlpha(statusDef.col,10)};color:${statusDef.col};font-size:12px;font-weight:600">${statusDef.icon} ${statusDef.label}</span>`;
@@ -33547,6 +33625,481 @@ async function expTLDayPack(){
     toast("Day pack exported ✓","ok");
   });
 }
+/* ═══════════════════════════════════════════════════════════════
+   SCHEDULE WINDOW
+   One person's schedule over any date range: UK and SA times side
+   by side, where every row came from, and a way to send it to them.
+
+   - SA times are calculated from the UK time on every render (u2s),
+     never read back from stored saS/saE.
+   - A person with no rows of their own follows their team leader's
+     rota (the Claims pattern), and those rows say so.
+   - A date with no source row shows "No row". Nothing is guessed.
+   - Sending (text, PNG, team zip) records what each person was sent,
+     so the next send can say exactly which days changed since.
+   ═══════════════════════════════════════════════════════════════ */
+const SWIN_SENT_KEY="sc_swin_sent";
+const SWIN_DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const SWIN_TYPE_LABEL={early:"Early",mid:"Mid",late:"Late",wknd:"Weekend"};
+const SWIN_SENT_KEEP_DAYS=180;
+// Window state lives here, not on S: it is view-only and must never ride along in snapshots.
+let _swinState=null,_swinReturnFocus=null;
+
+function _swinDate(iso){const[y,m,d]=String(iso).split("-").map(Number);return new Date(y,m-1,d);}
+function _swinAddDays(d,n){return new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);}
+function _swinDayLabel(iso){const d=_swinDate(iso);return SWIN_DOW[d.getDay()]+" "+P(d.getDate())+" "+MO[d.getMonth()];}
+function _swinSpanLabel(fromISO,toISO){return _swinDayLabel(fromISO)+(fromISO.slice(0,4)!==toISO.slice(0,4)?" "+fromISO.slice(0,4):"")+" – "+_swinDayLabel(toISO)+" "+toISO.slice(0,4);}
+function _swinEntryDate(e){
+  if(!e||!e.date)return null;
+  if(e.date instanceof Date)return e.date;
+  if(typeof e.date==="string"&&/^\d{4}-\d{2}-\d{2}/.test(e.date))return _swinDate(e.date.slice(0,10));
+  return null;
+}
+
+// ── Row resolution ──
+// name → Map(iso → entry). Rebuilt only when the entries array changes.
+let _swinIdxCache={src:null,ver:-1,len:-1,byName:new Map()};
+function _swinIndex(name){
+  const ents=S.entries||[];
+  if(_swinIdxCache.src!==ents||_swinIdxCache.ver!==(S.entriesVer||0)||_swinIdxCache.len!==ents.length){
+    const byName=new Map();
+    ents.forEach(e=>{
+      const d=_swinEntryDate(e);if(!d||!e.name)return;
+      let m=byName.get(e.name);if(!m){m=new Map();byName.set(e.name,m);}
+      const iso=excKey(d),cur=m.get(iso);
+      // Duplicate person/date rows (two sheets): a working row wins over an off marker.
+      if(!cur||(cur.isOff&&!e.isOff))m.set(iso,e);
+    });
+    _swinIdxCache={src:ents,ver:S.entriesVer||0,len:ents.length,byName};
+  }
+  return _swinIdxCache.byName.get(name)||new Map();
+}
+function _swinPerson(name){return(S.people||{})[name]||null;}
+function _swinLeaderOf(name){const p=_swinPerson(name),l=p&&p.teamLeader;return l&&l!==name?l:"";}
+// Off markers, by the categories normalizeOffCategory produces (plus common raw codes).
+function _swinOffKind(e){
+  const c=String(e.offL||e.raw||"OFF").trim().toUpperCase();
+  if(/^(AL|LEAVE|PTO|HOL|HOLIDAY|ANNUAL)$/.test(c))return{kind:"leave",status:"Leave"};
+  if(/^(SICK|SL)$/.test(c))return{kind:"off",status:"Sick"};
+  if(c==="PH")return{kind:"ph",status:"Public holiday"};
+  if(c==="TRAINING")return{kind:"off",status:"Training"};
+  if(c==="WFH")return{kind:"off",status:"WFH"};
+  return{kind:"off",status:"Off"};
+}
+function _swinRow(iso,d,e,source,leader,excs){
+  const r={iso,date:d,dow:SWIN_DOW[d.getDay()],source,leader:source==="tl"?leader:"",ph:isPH(d),excs,
+    kind:"none",code:"No row",status:"No row",type:"none",ukS:"",ukE:"",saS:"",saE:"",hrs:0,overnight:false};
+  if(!e)return r;
+  if(e.isOff){
+    const k=_swinOffKind(e);
+    r.kind=k.kind;r.status=k.status;r.type="off";
+    r.code=String(e.offL||"OFF");
+  }else if(e.ukS){
+    r.kind="work";r.ukS=e.ukS;r.ukE=e.ukE||"";
+    r.overnight=!!(r.ukE&&r.ukE<r.ukS);
+    r.saS=u2s(r.ukS,d);r.saE=r.ukE?u2s(r.ukE,r.overnight?_swinAddDays(d,1):d):"";
+    r.hrs=r.ukE?calcHrs(r.ukS,r.ukE):0;
+    r.type=shiftType(Object.assign({},e,{day:DOW[d.getDay()]}));
+    r.status=SWIN_TYPE_LABEL[r.type]||"Working";r.code=r.status;
+  }else{
+    r.kind="off";r.type="off";r.code=String(e.raw||"OFF");r.status="Off";
+  }
+  // Planned time away logged against a working day replaces it for display.
+  const planned=excs.find(x=>x.type==="annual_leave"||x.type==="training");
+  if(planned&&r.kind==="work"){r.kind="leave";r.status=planned.type==="training"?"Training":"Leave";r.code=r.status;}
+  return r;
+}
+// Rows for one person, one per date from fromISO to toISO inclusive.
+function swinRows(name,fromISO,toISO){
+  const own=_swinIndex(name),leader=own.size?"":_swinLeaderOf(name),lead=leader?_swinIndex(leader):null;
+  const excBy={};
+  (typeof effExc==="function"?effExc():[]).forEach(ex=>{
+    if(!ex||!ex.date||ex.date<fromISO||ex.date>toISO)return;
+    if(ex.agentName===name||(!ex.agentName&&ex.person===name))(excBy[ex.date]||(excBy[ex.date]=[])).push(ex);
+  });
+  const rows=[];
+  if(!fromISO||!toISO||fromISO>toISO)return rows;
+  for(let d=_swinDate(fromISO),end=_swinDate(toISO);d<=end;d=_swinAddDays(d,1)){
+    const iso=excKey(d);
+    let e=own.get(iso)||null,source=e?(e._bpFixed?"blueprint":"roster"):"none";
+    if(!e&&lead){e=lead.get(iso)||null;if(e)source="tl";}
+    rows.push(_swinRow(iso,d,e,source,leader,excBy[iso]||[]));
+  }
+  return rows;
+}
+function _swinShiftText(r,clock){
+  if(r.kind!=="work")return r.kind==="none"?"No row":r.code;
+  const s=clock==="uk"?r.ukS:r.saS,e=clock==="uk"?r.ukE:r.saE;
+  return s+(e?"–"+e:"")+(r.overnight?" (+1)":"");
+}
+function _swinSummary(rows){
+  const todayISO=excKey(new Date()),first=rows[0]&&rows[0].iso||todayISO;
+  const startISO=todayISO>first?todayISO:first;
+  const nextOff=rows.find(r=>r.iso>=startISO&&(r.kind==="off"||r.kind==="leave"||r.kind==="ph"));
+  return{
+    work:rows.filter(r=>r.kind==="work").length,
+    hrs:Math.round(rows.reduce((a,r)=>a+(r.kind==="work"?r.hrs:0),0)*10)/10,
+    off:rows.filter(r=>r.kind==="off"||r.kind==="ph").length,
+    leave:rows.filter(r=>r.kind==="leave").length,
+    none:rows.filter(r=>r.kind==="none").length,
+    inherited:rows.some(r=>r.source==="tl"),
+    nextOff:nextOff?nextOff.iso:""
+  };
+}
+
+// ── Range ──
+function _swinDataBounds(){
+  let min="",max="";
+  (S.entries||[]).forEach(e=>{const d=_swinEntryDate(e);if(!d)return;const iso=excKey(d);if(!min||iso<min)min=iso;if(!max||iso>max)max=iso;});
+  return{min,max};
+}
+function _swinDefaultMonth(){
+  if(S.month&&/^\d{4}-\d{1,2}$/.test(S.month)){const[y,m]=S.month.split("-").map(Number);return{y,m};}
+  const now=new Date(),b=_swinDataBounds(),todayISO=excKey(now);
+  if(!b.min||(todayISO>=b.min&&todayISO<=b.max))return{y:now.getFullYear(),m:now.getMonth()};
+  const d=_swinDate(b.min);return{y:d.getFullYear(),m:d.getMonth()};
+}
+function _swinRange(st){
+  if(st.mode==="all"){const b=_swinDataBounds();if(b.min)return{from:b.min,to:b.max,label:_swinSpanLabel(b.min,b.max)};}
+  if(st.mode==="custom"&&st.from&&st.to&&st.from<=st.to)return{from:st.from,to:st.to,label:_swinSpanLabel(st.from,st.to)};
+  const first=new Date(st.y,st.m,1),last=new Date(st.y,st.m+1,0);
+  return{from:excKey(first),to:excKey(last),label:MOFULL[st.m]+" "+st.y};
+}
+// ASCII-only range for file names ("October_2026", "2026-10-23_to_2026-10-31").
+function _swinFileRange(st,range){return st.mode==="month"?MOFULL[st.m]+"_"+st.y:range.from+"_to_"+range.to;}
+
+// ── Sent log: what each person was last sent, per date ──
+function _swinSentStore(){
+  let raw=null;
+  try{raw=(typeof _persistPendingSet!=="undefined"&&_persistPendingSet.has(SWIN_SENT_KEY))?_persistPendingSet.get(SWIN_SENT_KEY):localStorage.getItem(SWIN_SENT_KEY);}catch(e){raw=null;}
+  try{const o=raw?JSON.parse(raw):null;return o&&typeof o==="object"&&!Array.isArray(o)?o:{};}catch(e){return{};}
+}
+function _swinSentKey(name){const p=_swinPerson(name);return(S.activeDept||"")+"|"+(p&&p.personId?p.personId:"name:"+name);}
+function _swinSentFor(name){return _swinSentStore()[_swinSentKey(name)]||null;}
+function _swinSig(r){return r.kind==="work"?"W|"+r.ukS+"|"+r.ukE:r.kind==="none"?"none":r.kind+"|"+r.code;}
+function _swinSigText(sig,iso,clock){
+  const p=String(sig||"").split("|");
+  if(p[0]==="W"){const d=_swinDate(iso),s=p[1]||"",e=p[2]||"";return clock==="uk"?s+"–"+e:u2s(s,d)+"–"+(e?u2s(e,e<s?_swinAddDays(d,1):d):"");}
+  if(p[0]==="none")return"No row";
+  return p[1]||p[0];
+}
+function _swinSenderName(){
+  try{const p=typeof _syncProfileCache!=="undefined"?_syncProfileCache:null;return(p&&(p.full_name||p.googleName))||"";}catch(e){return"";}
+}
+function _swinRecordSent(name,rows,channel){
+  const store=_swinSentStore(),k=_swinSentKey(name),prev=store[k]||{},merged=Object.assign({},prev.rows||{});
+  rows.forEach(r=>{merged[r.iso]=_swinSig(r);});
+  const cutoff=excKey(_swinAddDays(new Date(),-SWIN_SENT_KEEP_DAYS));
+  Object.keys(merged).forEach(iso=>{if(iso<cutoff)delete merged[iso];});
+  store[k]={name,at:new Date().toISOString(),by:_swinSenderName(),channel,rows:merged};
+  _persistSet(SWIN_SENT_KEY,JSON.stringify(store));
+}
+function swinChangedSinceSent(name,rows){
+  const sent=_swinSentFor(name);
+  if(!sent||!sent.rows)return[];
+  return rows.filter(r=>Object.prototype.hasOwnProperty.call(sent.rows,r.iso)&&sent.rows[r.iso]!==_swinSig(r)).map(r=>({row:r,was:sent.rows[r.iso]}));
+}
+function _swinSentLine(sent){
+  if(!sent||!sent.at)return"";
+  const d=new Date(sent.at);
+  return"Last sent "+P(d.getDate())+" "+MO[d.getMonth()]+" "+d.getFullYear()+" "+P(d.getHours())+":"+P(d.getMinutes())+(sent.by?" by "+sent.by:"");
+}
+
+// ── Open / close ──
+function _swinAllNames(){
+  const s=new Set();
+  (S.entries||[]).forEach(e=>{if(e&&e.name)s.add(e.name);});
+  Object.keys(S.people||{}).forEach(n=>{if(n)s.add(n);});
+  return[...s].sort((a,b)=>a.localeCompare(b));
+}
+function _swinIsOpen(){return!!document.getElementById("swinOverlay");}
+function openScheduleWindow(name,opts){
+  if(!name)return;
+  opts=opts||{};
+  const prev=_swinState||{};
+  const month=opts.y!==undefined&&opts.m!==undefined?{y:opts.y,m:opts.m}:(prev.open&&prev.y!==undefined?{y:prev.y,m:prev.m}:_swinDefaultMonth());
+  _swinState={open:true,name,mode:opts.mode||(prev.open?prev.mode:"month")||"month",y:month.y,m:month.m,
+    from:opts.from||prev.from||"",to:opts.to||prev.to||"",
+    clock:opts.clock||prev.clock||(S.tz?"sa":"uk"),cmp:opts.cmp!==undefined?opts.cmp:""};
+  if(!prev.open)_swinReturnFocus=document.activeElement;
+  if(_swinState.cmp===name)_swinState.cmp="";
+  let el=document.getElementById("swinOverlay");
+  if(!el){
+    el=document.createElement("div");
+    el.id="swinOverlay";el.className="swin-overlay";
+    el.innerHTML=`<div class="swin-bg" onclick="closeScheduleWindow()"></div><div class="swin" role="dialog" aria-modal="true" aria-labelledby="swinTitle"><div id="swinBody" class="swin-body"></div></div>`;
+    document.body.appendChild(el);
+  }
+  renderScheduleWindow();
+  const x=document.getElementById("swinClose");if(x)x.focus();
+}
+function closeScheduleWindow(){
+  const el=document.getElementById("swinOverlay");if(el)el.remove();
+  if(_swinState)_swinState.open=false;
+  const f=_swinReturnFocus;_swinReturnFocus=null;
+  if(f&&f.isConnected&&typeof f.focus==="function")f.focus();
+}
+function swinSet(field,value){
+  const st=_swinState;if(!st)return;
+  if(field==="name"){openScheduleWindow(value,{cmp:st.cmp===value?"":st.cmp});return;}
+  if(field==="mode"&&value==="custom"&&(!st.from||!st.to)){const r=_swinRange(st);st.from=r.from;st.to=r.to;}
+  st[field]=value;
+  renderScheduleWindow();
+}
+function swinShiftMonth(dir){
+  const st=_swinState;if(!st)return;
+  const d=new Date(st.y,st.m+dir,1);st.y=d.getFullYear();st.m=d.getMonth();st.mode="month";
+  renderScheduleWindow();
+}
+
+// ── Render ──
+function _swinSourceCell(r){
+  if(r.source==="roster")return`<span class="swin-src" title="${XA("From the loaded roster"+(S.fn?": "+S.fn:""))}">Roster</span>`;
+  if(r.source==="blueprint")return`<span class="swin-src" title="Corrected to match the rotation blueprint">Blueprint fix</span>`;
+  if(r.source==="tl")return`<span class="swin-src" title="${XA("No rows of their own: following "+r.leader+"'s schedule")}">From TL rota</span>`;
+  return`<span class="swin-src none" title="The source has no row for this person on this date">No row</span>`;
+}
+function _swinStatusCell(r,name){
+  const cls=r.kind==="work"?"s-"+r.type:r.kind==="none"?"t-none":r.kind==="leave"?"t-leave":"t-off";
+  let h=`<span class="swin-tag ${cls}">${X(r.status)}</span>`;
+  const codeU=String(r.code||"").toUpperCase();
+  if(r.kind==="off"&&codeU&&codeU!=="OFF"&&codeU!==r.status.toUpperCase())h+=` <span class="swin-tag t-off">${X(r.code)}</span>`;
+  if(r.ph)h+=` <span class="swin-tag t-ph" title="${XA(r.ph.name)}">PH</span>`;
+  r.excs.forEach(ex=>{
+    if(ex.type==="annual_leave"||ex.type==="training")return;
+    const def=(typeof EXC_TYPES!=="undefined"?EXC_TYPES:[]).find(t=>t.id===ex.type);
+    h+=` <span class="swin-tag t-exc" title="Logged exception">${X(def?def.icon+" "+def.label:ex.type||"Event")}</span>`;
+  });
+  if(typeof getAgentStatus==="function"){
+    const s=getAgentStatus(name,r.date);
+    if(s&&s!=="unknown"&&typeof AGENT_STATUS_DEFS!=="undefined"&&AGENT_STATUS_DEFS[s])h+=` <span class="swin-tag t-exc" title="Status marked in People">${X(AGENT_STATUS_DEFS[s].icon+" "+AGENT_STATUS_DEFS[s].label)}</span>`;
+  }
+  return h;
+}
+function _swinTimeCells(r,clock){
+  const pair=(s,e,sec)=>r.kind==="work"
+    ?`<td class="mono${sec?" swin-sec":""}">${X(s)}</td><td class="mono${sec?" swin-sec":""}">${X(e)}${r.overnight?`<sup title="Ends the next day">+1</sup>`:""}</td>`
+    :`<td class="mono${sec?" swin-sec":""}">—</td><td class="mono${sec?" swin-sec":""}">—</td>`;
+  return clock==="uk"?pair(r.ukS,r.ukE,false)+pair(r.saS,r.saE,true):pair(r.saS,r.saE,false)+pair(r.ukS,r.ukE,true);
+}
+function _swinBoth(a,b){
+  const on=r=>r&&r.kind==="work";
+  if(!b)return"";
+  if(on(a)&&on(b))return"Both in";
+  if(!on(a)&&!on(b))return"Both out";
+  return on(a)?"Only "+X(_swinState.name.split(" ")[0]):"Only "+X(_swinState.cmp.split(" ")[0]);
+}
+function _swinMiniCalendars(rows,clock){
+  const months=[];
+  rows.forEach(r=>{const k=r.date.getFullYear()+"-"+r.date.getMonth();if(!months.length||months[months.length-1].k!==k)months.push({k,y:r.date.getFullYear(),m:r.date.getMonth(),rows:[]});months[months.length-1].rows.push(r);});
+  const todayISO=excKey(new Date());
+  return months.slice(0,3).map(mo=>{
+    const lead=(new Date(mo.y,mo.m,1).getDay()+6)%7;
+    const byDay=new Map(mo.rows.map(r=>[r.date.getDate(),r]));
+    const days=new Date(mo.y,mo.m+1,0).getDate();
+    let h=`<div class="swin-cal-m">${MOFULL[mo.m]} ${mo.y}</div><div class="swin-cal">`;
+    ["M","T","W","T","F","S","S"].forEach(d=>{h+=`<div class="dh">${d}</div>`;});
+    for(let i=0;i<lead;i++)h+=`<div></div>`;
+    for(let d=1;d<=days;d++){
+      const r=byDay.get(d);
+      if(!r){h+=`<div class="c out"><b>${d}</b></div>`;continue;}
+      const cls=r.kind==="work"?"work s-"+r.type:r.kind;
+      const txt=r.kind==="work"?(clock==="uk"?r.ukS:r.saS):r.kind==="none"?"·":r.kind==="leave"?"LV":r.code.slice(0,4);
+      h+=`<div class="c ${cls}${r.iso===todayISO?" today":""}" title="${XA(_swinDayLabel(r.iso)+": "+_swinShiftText(r,clock)+" · "+r.status)}"><b>${d}</b>${X(txt)}</div>`;
+    }
+    return h+`</div>`;
+  }).join("")+(months.length>3?`<div class="swin-note">Calendar shows the first 3 months of this range.</div>`:"");
+}
+function renderScheduleWindow(){
+  const st=_swinState,body=document.getElementById("swinBody");
+  if(!st||!body)return;
+  const range=_swinRange(st),rows=swinRows(st.name,range.from,range.to);
+  const cmpRows=st.cmp?swinRows(st.cmp,range.from,range.to):null;
+  const sum=_swinSummary(rows),sent=_swinSentFor(st.name),changed=swinChangedSinceSent(st.name,rows);
+  const changedSet=new Set(changed.map(c=>c.row.iso));
+  const person=_swinPerson(st.name)||{},leader=_swinLeaderOf(st.name);
+  const labels=typeof peopleRoleLabels==="function"?peopleRoleLabels(st.name):[];
+  const rosterTeam=((S.entries||[]).find(e=>e.name===st.name)||{}).team||"";
+  const team=person.team&&person.team!=="Main"?person.team:(rosterTeam!=="Main"?rosterTeam:"");
+  const names=_swinAllNames(),clock=st.clock==="uk"?"uk":"sa",pri=clock==="uk"?"UK":"SA",sec=clock==="uk"?"SA":"UK";
+  const todayISO=excKey(new Date()),teamOf=_swinTeamOf(st.name);
+
+  let h=`<div class="swin-hd"><div style="min-width:0;flex:1"><h2 id="swinTitle">${X(st.name)}</h2>`;
+  h+=`<div class="swin-meta">${[team?X(team):"",leader?"Leader: "+X(leader):(Object.values(S.people||{}).some(p=>p&&p.teamLeader===st.name)?"Team leader":"No leader recorded"),S.activeDept?X(S.activeDept):""].filter(Boolean).join(" · ")}</div>`;
+  if(sum.inherited)h+=`<div class="swin-meta">No rows of their own in this range: shifts follow ${X(leader)}'s rota.</div>`;
+  if(labels.length)h+=`<div>${labels.map(l=>`<span class="swin-chip">${X(l)}</span>`).join("")}</div>`;
+  h+=`</div><button type="button" id="swinClose" class="swin-x" onclick="closeScheduleWindow()" aria-label="Close schedule window">✕</button></div>`;
+
+  h+=`<div class="swin-ctl">`;
+  h+=`<label>Person <select id="swinPerson" onchange="swinSet('name',this.value)">${names.map(n=>`<option value="${XA(n)}"${n===st.name?" selected":""}>${X(n)}</option>`).join("")}</select></label>`;
+  h+=`<span class="swin-seg" role="group" aria-label="Date range">${[["month","Month"],["all","All loaded"],["custom","Custom"]].map(([k,l])=>`<button type="button" aria-pressed="${st.mode===k}" onclick="swinSet('mode','${k}')">${l}</button>`).join("")}</span>`;
+  if(st.mode==="month")h+=`<span class="swin-nav"><button type="button" class="swin-btn" onclick="swinShiftMonth(-1)" aria-label="Previous month">‹</button><b>${X(range.label)}</b><button type="button" class="swin-btn" onclick="swinShiftMonth(1)" aria-label="Next month">›</button></span>`;
+  else if(st.mode==="custom")h+=`<label>From <input type="date" id="swinFrom" value="${XA(range.from)}" onchange="swinSet('from',this.value)"></label><label>To <input type="date" id="swinTo" value="${XA(range.to)}" onchange="swinSet('to',this.value)"></label>`;
+  else h+=`<b>${X(range.label)}</b>`;
+  h+=`<span class="swin-seg" role="group" aria-label="Clock shown first">${[["sa","SA time"],["uk","UK time"]].map(([k,l])=>`<button type="button" id="swinClock_${k}" aria-pressed="${clock===k}" onclick="swinSet('clock','${k}')">${l}</button>`).join("")}</span>`;
+  h+=`<label>Compare <select id="swinCmp" onchange="swinSet('cmp',this.value)"><option value="">—</option>${names.filter(n=>n!==st.name).map(n=>`<option value="${XA(n)}"${n===st.cmp?" selected":""}>${X(n)}</option>`).join("")}</select></label>`;
+  h+=`</div>`;
+
+  h+=`<div class="swin-main"><div class="swin-tbl-wrap"><table class="swin-tbl" id="swinTable"><thead><tr><th>Date</th><th>Day</th><th>${pri} in</th><th>${pri} out</th><th>${sec} in</th><th>${sec} out</th><th>Hrs</th><th>Status</th><th>Source</th>`;
+  if(cmpRows)h+=`<th>${X(st.cmp.split(" ")[0])} (${pri})</th><th>Both</th>`;
+  h+=`</tr></thead><tbody>`;
+  rows.forEach((r,i)=>{
+    const wk=r.date.getDay()===0||r.date.getDay()===6;
+    const cls=[wk?"wk":"",r.iso===todayISO?"today":"",r.kind==="none"?"none":"",r.kind==="off"||r.kind==="ph"?"off":"",changedSet.has(r.iso)?"chg":""].filter(Boolean).join(" ");
+    h+=`<tr data-iso="${r.iso}" data-kind="${r.kind}" data-source="${r.source}"${cls?` class="${cls}"`:""}>`;
+    h+=`<td class="mono">${P(r.date.getDate())} ${MO[r.date.getMonth()]}${changedSet.has(r.iso)?` <span class="swin-tag t-chg" title="Different from what was last sent">changed</span>`:""}</td><td>${r.dow}</td>`;
+    h+=_swinTimeCells(r,clock);
+    h+=`<td class="mono">${r.kind==="work"&&r.hrs?r.hrs.toFixed(1):""}</td><td>${_swinStatusCell(r,st.name)}</td><td>${_swinSourceCell(r)}</td>`;
+    if(cmpRows){const b=cmpRows[i];h+=`<td class="mono">${X(_swinShiftText(b,clock))}</td><td>${_swinBoth(r,b)}</td>`;}
+    h+=`</tr>`;
+  });
+  if(!rows.length)h+=`<tr><td colspan="9" class="swin-note">No dates in this range.</td></tr>`;
+  h+=`</tbody></table></div>`;
+
+  h+=`<aside class="swin-side">`;
+  h+=`<div><div class="swin-h">Summary</div><div class="swin-stats">`;
+  h+=`<div class="swin-stat"><b>${sum.work}</b><span>Working</span></div><div class="swin-stat"><b>${sum.hrs}</b><span>Hours</span></div><div class="swin-stat"><b>${sum.off}</b><span>Off</span></div>`;
+  h+=`<div class="swin-stat"><b>${sum.leave}</b><span>Leave</span></div><div class="swin-stat${sum.none?" warn":""}"><b>${sum.none}</b><span>No row</span></div><div class="swin-stat"><b>${sum.nextOff?X(_swinDayLabel(sum.nextOff).slice(0,6)):"—"}</b><span>Next off</span></div>`;
+  h+=`</div>${sum.none?`<div class="swin-note">${sum.none} date${sum.none===1?" has":"s have"} no row in the source. They are shown as gaps, not as shifts.</div>`:""}</div>`;
+  h+=`<div><div class="swin-h">Calendar · ${pri} start times</div>${_swinMiniCalendars(rows,clock)}</div>`;
+  h+=`<div><div class="swin-h">Send to ${X(st.name.split(" ")[0])}</div>`;
+  if(sent){
+    h+=`<div class="swin-note" id="swinSentLine">${X(_swinSentLine(sent))}.</div>`;
+    if(changed.length){
+      h+=`<div class="swin-note" id="swinChanged"><b>${changed.length} day${changed.length===1?"":"s"} changed since:</b><ul class="swin-chg">${changed.slice(0,8).map(c=>`<li>${X(_swinDayLabel(c.row.iso))}: ${X(_swinSigText(c.was,c.row.iso,clock))} → ${X(_swinShiftText(c.row,clock))}</li>`).join("")}${changed.length>8?`<li>…and ${changed.length-8} more</li>`:""}</ul></div>`;
+    }else h+=`<div class="swin-note" id="swinChanged">Nothing in this range has changed since.</div>`;
+  }else h+=`<div class="swin-note">Not sent from this device yet. Sending records what they were told, so the next send lists what changed.</div>`;
+  h+=`<div class="swin-actions"><button type="button" class="swin-btn pri" id="swinCopy" onclick="swinCopyText()">Copy as text</button><button type="button" class="swin-btn" id="swinPng" onclick="swinExportPNG()">Save PNG</button>`;
+  if(teamOf.names.length>1)h+=`<button type="button" class="swin-btn" id="swinZip" onclick="swinExportTeamZip()" title="${XA("One PNG per person: "+teamOf.label)}">Team PNGs (${teamOf.names.length})</button>`;
+  h+=`</div><div class="swin-note">Shares use ${pri} time. ${pri==="SA"?"SA is UK +1h until the UK clocks go back, then UK +2h.":"SA staff see SA time in the SA view."}</div></div>`;
+  h+=`</aside></div>`;
+  body.innerHTML=h;
+}
+
+// ── Sharing ──
+function swinBuildText(name,fromISO,toISO,clock,rangeLabel){
+  const rows=swinRows(name,fromISO,toISO),sum=_swinSummary(rows),leader=_swinLeaderOf(name),sender=_swinSenderName();
+  const now=new Date();
+  const lines=[`${name} · ${rangeLabel||_swinSpanLabel(fromISO,toISO)} · ${clock==="uk"?"UK":"SA"} time`];
+  if(leader)lines.push("Team leader: "+leader);
+  lines.push("");
+  rows.forEach(r=>{
+    const shift=_swinShiftText(r,clock);
+    lines.push(`${_swinDayLabel(r.iso)}  ${shift}${r.kind==="work"?"  "+r.status:""}${r.ph?"  ("+r.ph.name+")":""}`);
+  });
+  lines.push("");
+  if(sum.nextOff)lines.push("Next day off: "+_swinDayLabel(sum.nextOff));
+  if(sum.none)lines.push(`${sum.none} day${sum.none===1?"":"s"} not on the roster yet: check with your team leader.`);
+  lines.push(`Sent ${P(now.getDate())} ${MO[now.getMonth()]} ${now.getFullYear()}${sender?" by "+sender:""}`);
+  return{text:lines.join("\n"),rows};
+}
+async function swinCopyText(){
+  const st=_swinState;if(!st)return;
+  const range=_swinRange(st),out=swinBuildText(st.name,range.from,range.to,st.clock,range.label);
+  let ok=false;
+  try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(out.text);ok=true;}}catch(e){ok=false;}
+  if(!ok){try{prompt("Copy this schedule:",out.text);ok=true;}catch(e){ok=false;}}
+  if(!ok){toast("Copy failed","warn");return;}
+  _swinRecordSent(st.name,out.rows,"text");
+  toast("Schedule copied ✓","ok");
+  renderScheduleWindow();
+}
+function _swinTeamOf(name){
+  const people=Object.values(S.people||{}).filter(p=>p&&p.name);
+  const leader=people.some(p=>p.teamLeader===name)?name:_swinLeaderOf(name);
+  if(leader){
+    const agents=[...new Set(people.filter(p=>p.teamLeader===leader).map(p=>p.name))].sort((a,b)=>a.localeCompare(b));
+    if(agents.length)return{label:leader+"'s team",file:leader+" team",names:agents};
+  }
+  const own=(S.entries||[]).find(e=>e.name===name),team=own&&own.team;
+  if(team){
+    const names=[...new Set((S.entries||[]).filter(e=>e.team===team).map(e=>e.name))].sort((a,b)=>a.localeCompare(b));
+    return{label:team==="Main"?"everyone on this roster":team,file:team==="Main"?"roster":team,names};
+  }
+  return{label:name,file:name,names:[name]};
+}
+// A self-contained, inline-styled sheet (fixed light palette) so the PNG looks the same in every
+// theme and needs no CSS-variable resolution inside html2canvas.
+function _swinSheetHTML(name,rows,clock,rangeLabel){
+  const C={ink:"#111827",mute:"#6b7280",rule:"#e5e7eb",early:"#047857",mid:"#1d4ed8",late:"#b91c1c",wknd:"#b45309",leave:"#6d28d9",none:"#b45309",band:"#f9fafb"};
+  const sum=_swinSummary(rows),leader=_swinLeaderOf(name),sender=_swinSenderName(),now=new Date();
+  const pri=clock==="uk"?"UK":"SA",sec=clock==="uk"?"SA":"UK";
+  const cell="padding:5px 8px;border-bottom:1px solid "+C.rule+";";
+  let h=`<div style="width:640px;padding:22px 24px;background:#ffffff;color:${C.ink};font-family:'DM Sans',Arial,sans-serif;box-sizing:border-box">`;
+  h+=`<div style="font-size:20px;font-weight:700">${X(name)}</div>`;
+  h+=`<div style="font-size:13px;color:${C.mute};margin-top:2px">${X(rangeLabel)} · times in ${pri==="SA"?"South African (SAST)":"UK"} time${leader?" · Team leader: "+X(leader):""}</div>`;
+  h+=`<table style="width:100%;border-collapse:collapse;margin-top:14px;font-size:13px"><thead><tr>`;
+  ["Date",pri+" shift",sec,"Status"].forEach((t,i)=>{h+=`<th style="text-align:left;${cell}font-size:11px;color:${C.mute};text-transform:uppercase;letter-spacing:.05em${i===2?";width:110px":""}">${t}</th>`;});
+  h+=`</tr></thead><tbody>`;
+  rows.forEach(r=>{
+    const wk=r.date.getDay()===0||r.date.getDay()===6;
+    const col=r.kind==="work"?C[r.type]||C.ink:r.kind==="leave"?C.leave:r.kind==="none"?C.none:C.mute;
+    const other=r.kind==="work"?_swinShiftText(r,clock==="uk"?"sa":"uk"):"";
+    h+=`<tr style="${wk?"background:"+C.band:""}"><td style="${cell}white-space:nowrap">${X(_swinDayLabel(r.iso))}${r.ph?` <span style="color:${C.wknd};font-size:11px">${X(r.ph.name)}</span>`:""}</td>`;
+    h+=`<td style="${cell}font-family:'DM Mono',monospace;font-weight:700;color:${col}">${X(r.kind==="none"?"—":_swinShiftText(r,clock))}</td>`;
+    h+=`<td style="${cell}font-family:'DM Mono',monospace;color:${C.mute}">${X(other)}</td>`;
+    h+=`<td style="${cell}color:${col}">${X(r.kind==="none"?"Not on roster":r.status)}</td></tr>`;
+  });
+  h+=`</tbody></table>`;
+  h+=`<div style="margin-top:12px;font-size:12px;color:${C.mute};line-height:1.5">`;
+  if(sum.nextOff)h+=`Next day off: <b style="color:${C.ink}">${X(_swinDayLabel(sum.nextOff))}</b><br>`;
+  h+=`${sum.work} working day${sum.work===1?"":"s"} · ${sum.hrs} h`;
+  if(sum.none)h+=` · <span style="color:${C.none}">${sum.none} day${sum.none===1?"":"s"} not on the roster yet</span>`;
+  h+=`<br>Sent ${P(now.getDate())} ${MO[now.getMonth()]} ${now.getFullYear()}${sender?" by "+X(sender):""} · Sync</div></div>`;
+  return h;
+}
+async function _swinSheetBlob(html){
+  if(typeof html2canvas==="undefined")throw new Error("PNG library unavailable");
+  const host=document.createElement("div");
+  host.style.cssText="position:fixed;left:0;top:0;z-index:-1;pointer-events:none;opacity:0;";
+  host.innerHTML=html;
+  document.body.appendChild(host);
+  try{
+    if(typeof _awaitFontRenderReady==="function")await _awaitFontRenderReady(1200);
+    const node=host.firstElementChild;
+    const run=()=>html2canvas(node,{scale:2,backgroundColor:"#ffffff",logging:false,useCORS:true,windowWidth:1280});
+    const canvas=typeof _withHtml2CanvasColorShim==="function"?await _withHtml2CanvasColorShim(run):await run();
+    return await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error("PNG encode failed")),"image/png"));
+  }finally{if(host.parentNode)host.parentNode.removeChild(host);}
+}
+async function swinExportPNG(){
+  const st=_swinState;if(!st)return;
+  const range=_swinRange(st),rows=swinRows(st.name,range.from,range.to);
+  await withExportLock("swin-png",async()=>{
+    try{
+      const blob=await _swinSheetBlob(_swinSheetHTML(st.name,rows,st.clock,range.label));
+      triggerBlobDownload(blob,buildFilename(safeFilenamePart(st.name)+"_schedule_"+_swinFileRange(st,range),"png"));
+      _swinRecordSent(st.name,rows,"png");
+      toast("Schedule PNG saved ✓","ok");
+    }catch(err){console.error(err);toast("PNG export failed","err");}
+  });
+  renderScheduleWindow();
+}
+async function swinExportTeamZip(){
+  const st=_swinState;if(!st)return;
+  if(typeof JSZip==="undefined"){toast("ZIP library unavailable","err");return;}
+  const range=_swinRange(st),team=_swinTeamOf(st.name);
+  await withExportLock("swin-zip",async()=>{
+    toast(`Building ${team.names.length} schedules…`,"info");
+    const zip=new JSZip(),used=new Set(),done=[];let failed=0;
+    for(const n of team.names){
+      try{
+        const rows=swinRows(n,range.from,range.to);
+        const blob=await _swinSheetBlob(_swinSheetHTML(n,rows,st.clock,range.label));
+        let base=safeFilenamePart(n)+"_"+_swinFileRange(st,range),fn=base+".png",seq=2;
+        while(used.has(fn)){fn=base+"_"+seq+".png";seq++;}
+        used.add(fn);zip.file(fn,blob);done.push({n,rows});
+      }catch(err){console.error(err);failed++;}
+    }
+    if(!done.length){toast("Team export failed","err");return;}
+    const out=await zip.generateAsync({type:"blob",compression:"DEFLATE",compressionOptions:{level:6}});
+    triggerBlobDownload(out,buildFilename(safeFilenamePart(team.file)+"_schedules_"+_swinFileRange(st,range),"zip"));
+    done.forEach(d=>_swinRecordSent(d.n,d.rows,"zip"));
+    toast(failed?`ZIP saved: ${done.length} schedules, ${failed} failed`:`ZIP saved ✓ (${done.length} schedules)`,failed?"warn":"ok");
+  });
+  renderScheduleWindow();
+}
+
 </script>
 <script>
 (function(){
@@ -33725,7 +34278,7 @@ window.nsClearLocalWorkspaceCache=nsClearLocalWorkspaceCache;
    <script src> AFTER that script runs, so both are already globals
    by the time any of this executes.
    ═══════════════════════════════════════════════════════════════ */
-const SYNC_LOCAL_KEYS=["sc_settings","sc_planner","sc_blueprints","sc_positions","sc_exceptions","sc_leaverequests","sc_dayclosed","sc_coaching","sc_qol_state","sc_att","sc_hc","sc_notes","sc_people","sc_rosterfile","sc_otplan","sc_leaderplanner","sc_shiftlib","sc_coveragereq","sc_forecast","sc_coachquality","sc_agentstatuses","sc_agentnotes","sc_name_remaps","sc_people_view","sc_people_home","sc_people_logbook","sc_view_state"];
+const SYNC_LOCAL_KEYS=["sc_settings","sc_planner","sc_blueprints","sc_positions","sc_exceptions","sc_leaverequests","sc_dayclosed","sc_coaching","sc_qol_state","sc_att","sc_hc","sc_notes","sc_people","sc_rosterfile","sc_otplan","sc_leaderplanner","sc_shiftlib","sc_coveragereq","sc_forecast","sc_coachquality","sc_agentstatuses","sc_agentnotes","sc_name_remaps","sc_people_view","sc_people_home","sc_people_logbook","sc_view_state","sc_swin_sent"];
 
 function _syncCollectLocalKeys(){
   const out={};
