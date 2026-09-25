@@ -669,6 +669,25 @@ has two new department tables, `reportingLines` and `orgChanges`, and exports `n
 
 ### L5: Leaders board (a local version of Bridge)
 
+**Status: built.** People → Leaders (`src/app/views/leaders.js`), tested in
+`tests/leaders.spec.js`.
+- **Rows:** one per team on the chosen date: anyone leading at least one agent. Managers who lead
+  only team leaders do not get a row.
+- **Columns:** who leads the team that day (acting cover shown), headcount, working (with how
+  many are marked present), sick, leave, off, no shift, leave in the next 7 days, open flags.
+- **How each person's day is decided:** in order, sick (People status sick or AWOL, a sick or
+  no-show exception, or a SICK roster marker); then leave (People status, a leave marker, or an
+  annual-leave, family or training exception); then the rota (working or off); otherwise no
+  shift.
+- **Thin:** fewer than half the team, or fewer than the project's minimum coverage, is working.
+- **No cover:** the leader is sick or on leave and nobody is acting for them.
+- **Sort:** by needs attention (no cover, then thin, then sick, then no shift), by name, or by
+  team size. The board follows the scope bar.
+- **Actions:** the team name opens People → Team; **Day** opens the calendar Day view scoped to
+  that leader.
+- **Not tested yet:** the universal workspace (every TL's file loaded together). People there
+  carry their department and the board adds a Dept column, but no spec exercises it.
+
 - One row per leader who is **effective today** (acting cover included).
 - Columns: headcount · working · leave · off · sick (from `agentStatuses`) · a thin-cover flag
   against the minimum set in `S.covMin` · leave in the next 7 days · open flags.
