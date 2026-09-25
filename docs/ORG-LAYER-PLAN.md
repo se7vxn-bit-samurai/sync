@@ -292,8 +292,10 @@ Build each once and reuse it everywhere. Most come from the Ops Hub prototype.
 - The source of truth is the time the roster shows (UK clock) plus its timezone:
   `start_local`, `end_local`, `tz='Europe/London'`. `start_utc` and `end_utc` are calculated when
   a row is written.
-- SA time is **calculated, never stored**, per date, with `Intl.DateTimeFormat` for
-  `Africa/Johannesburg`.
+- SA time is **calculated, never stored**, per date. Sync's `u2s(time, date)`
+  (`src/app/core/kernel.js`) already applies the UK clock-change dates correctly, so reuse it. Only
+  `me.html`, which will not include `kernel.js`, needs its own copy (or `Intl.DateTimeFormat` for
+  `Africa/Johannesburg`).
 - SA is on UTC+2 all year. The UK is on UTC+1 in summer and UTC+0 in winter. So:
   - SA = UK +1 until 25 Oct 2026
   - SA = UK +2 from 25 Oct 2026 until 28 Mar 2027
@@ -474,7 +476,7 @@ Each phase ships something usable on its own.
 
 | Phase | Deliverable | Done when |
 |---|---|---|
-| **0: Schedule Window** | Port the Schedule Window and mini calendar into Sync (local only). SA/UK times calculated per date. Missing rows show as "No row", never as an invented shift. Provenance tags. | A Playwright spec covers: DST crossover on 25 Oct, a missing row, an inherited row, an overnight shift |
+| **0: Local track** | The org features built inside Sync with no backend: the L1–L6 items in section 15. | Each L item's own exit test |
 | **1: Org foundation** | Migrations: orgs, departments, teams, people, reporting_lines, acting_assignments, org_members, invites, audit_log, `visible_people`, security rules. Ops Org Builder plus organogram import. Invite by email; sign-in links to the person. Data quality list. | Two test users in different teams see only their scope. An org edit writes an audit row and can be reverted. |
 | **2: Publish plus read surfaces** | `schedule_rows`, Publish to org with change preview. **Sync Me v1** (Today card, Schedule Window, published rows only). **Bridge v1** (leader grid, Schedule Window, read-only coverage). `me.html` build and deploy. | An agent signs in on a phone and sees their published month in SA time. A manager sees every team in their tree. |
 | **3: Live layer** | attendance (sick / late / mark), requests with coverage impact and routing, messages plus acknowledgements, realtime subscriptions, Desk Day board and Inbox, Bridge approvals, escalation times, leave caps | A sick tap on phone A appears on the TL's Day board and the manager's grid within 5 seconds, with no refresh |
@@ -508,21 +510,134 @@ Open, to decide before the phase that needs them:
 
 ---
 
-## 14. Next step: Phase 0 in detail
+## 14. Build rules for the local track
 
-1. `src/app/views/schedule-window.js` (new):
-   - `renderScheduleWindow(personName, fromISO, toISO)`: reads `S.entries` and the NorthStar
-     schedule rows.
-   - `renderMiniCalendar`.
-2. `src/app/core/timezones.js` (new):
-   - `saFromUk(dateISO, hhmm)` and `ukOffset(dateISO)` via `Intl.DateTimeFormat`.
-   - Handles overnight wrap. No fixed offsets.
-3. Entry points: People view (per-agent action), command palette ("Schedule for <name>"), Day
-   view context menu.
-4. Rendering rules:
-   - No source row renders `No row` (grey, flagged).
-   - An inherited row shows the `from TL rota` tag.
-   - A leave row shows the leave type.
-5. Tests, `tests/schedule-window.spec.js`: DST crossover (24/25/26 Oct 2026), missing row, inherited
-   row, overnight shift, SA/UK toggle.
-6. Add the new files to `build/manifest.json`, run `node build/build.js`, then `npm test`.
+Every org feature built inside Sync before the shared org layer follows four rules. They make the
+later move to the cloud a change of where data is stored, not a rewrite.
+
+1. **Key records on `person_id`, not on the name.** NorthStar already assigns IDs. New stores must
+   not repeat the name-keyed pattern of `S.agentNotes` and `S.agentStatuses`, which only survive a
+   rename because `_moveObjectKey` moves them by name.
+2. **Give every record dates.** Reporting lines, acting cover and moves carry
+   `effective_from/to` or `starts/ends`. Nothing about the org is true forever.
+3. **Write into NorthStar's tables** (`people`, `roles`, `acting`, `teams`, `leave`), not into new
+   `S.*` stores. Those tables map one-to-one to the tables in section 10.
+4. **Send every change through one function per entity**, such as `orgMovePerson(...)` or
+   `actingAssign(...)`. That function records the change in a local log (with undo) and, later,
+   becomes the API call plus the server audit row.
+
+## 15. Local track: what to build in Sync first
+
+### Already in Sync (do not rebuild)
+
+| Area | What exists |
+|---|---|
+| NorthStar Organisation page | People and roles table, an indented read-only organogram, person editor, acting editor (role, acting-for, start, end), coverage-ready leadership panel |
+| Role labels | YAT, Acting Leader, Supervisor, Acting Supervisor, Senior Agent, Floor Support, Trainer, SME (`PEOPLE_ROLE_LABEL_OPTIONS`) |
+| Agent drawer | Today's status buttons, **this week only** (following the TL's rota), notes |
+| Time | `u2s` with correct UK clock-change handling; SA/UK setting (`S.tz`) |
+| Holidays | SA public holiday engine, 2023–2030 |
+| Departments | One workspace per department, plus a universal workspace that merges them |
+| Exports | Schedule cards PNG/zip, TL Day Pack, EOD copy, weekly digest, "what changed since last time" |
+
+### Gap found while checking: acting cover forgets its dates
+
+- `nsOpenActingEditor` stores `starts` and `ends`.
+- The step that copies acting cover into the runtime people records (`northstar.js.html`, around
+  line 1393) keeps only a permanent `Acting Leader` label and `acting=true`.
+- Result: anyone who acted once is labelled acting in every view, forever. Their team's leader
+  never changes for the acting window.
+- L2 fixes this.
+
+### L1: Schedule Window, plus sharing it with agents
+
+The stand-alone viewer for one person.
+
+| Part | Spec |
+|---|---|
+| View | Any one person, any range (a month, several months, or custom dates). Columns: date · day · UK in/out · SA in/out · status · provenance. Next day off. SA public holidays marked. |
+| Mini calendar | A month grid with a shift code per day, beside the table (from the prototype's `renderScheduleMonitor`) |
+| Header | Name, team, **leader on that date** (acting-aware once L2 lands), role labels |
+| Provenance | Source file · from TL rota · blueprint fix · manual edit. A date with no source row shows `No row` (grey and flagged), never a guessed shift. |
+| Entry points | People row action, "Full schedule" in the agent drawer, command palette (`Schedule: <name>`), Day view person click |
+| Compare | A second person side by side, for checking swaps and cover |
+| Share | PNG of the month in SA time (reusing the `expSingleCardPNG` pipeline), copy-as-text for WhatsApp, zip for the whole team, stamped "Sent <date> by <TL>" |
+| Changes since last send | Per agent, using `change-tracking.js`: "3 days changed since you last sent this" |
+| Exit test | A Playwright spec covers: the 24/25/26 Oct 2026 clock change, a missing row, a row following the TL's rota, an overnight shift, the SA/UK setting, a PNG export |
+
+Why first: it stands alone, it becomes the shared component for every later surface, and the Share
+row gets agents their schedule in SA time before Sync Me exists. The change preview built here is
+the same one Phase 2's cloud publish needs.
+
+### L2: Acting cover and a YAT register, with dates
+
+| Part | Spec |
+|---|---|
+| Date-aware acting | `actingOn(person_id, date)` and `leaderOn(person_id, date)` replace the boolean flags. Labels show only inside the window. States: upcoming, active, ended. |
+| Views follow cover | During the window, the Team view, Day view and Schedule Window header show "Led by X (acting for Y)" |
+| Cover prompt | When a TL has leave or is off, show "Team 3 has no leader on Tue 13 Oct: assign cover?" |
+| Cover suggestions | Rank YAT and senior agents by: shift overlap with the absent TL on those dates · not on leave or off · fewest acting days so far (spreading development fairly) · same department |
+| YAT register | Pool list, days acted, teams covered, last acted, readiness notes |
+| Clash rules | Two people acting for the same leader on the same dates · the acting person on leave or off inside the window · acting cover with no end date |
+| Exit test | An acting window of 3–7 Oct: the label and leader change on 3 Oct and revert on 8 Oct; a clash is flagged |
+
+### L3: Org Builder (visual) and org data quality
+
+| Part | Spec |
+|---|---|
+| Lanes | GM → Manager/CCL → TL → Agents (from the prototype's `renderOrgBuilder`), next to the existing table and tree |
+| Move | Select, then "Move to…" (drag and drop later), always with an **effective date**. Schedule history before that date stays with the old leader. |
+| Bulk | Move several people at once (team split or merge) as one entry in the change log, undone as one |
+| Structure | Span of control per TL (agents per leader), vacancies (a team with no TL), an unassigned tray |
+| Organogram import | A plain sheet with Name / Role / Reports To columns (the prototype's `parseOrganogramWB`), alongside the existing peoplehub import |
+| Data quality list | No leader · scheduled but missing from the org · in the org but never scheduled · near-duplicate names (NorthStar aliases) · TL with no team · leaver with future shifts |
+| Change log | Every move and role change: who, when, the value before and after, the effective date, with undo |
+| Exit test | Moving an agent from 1 Oct shows the old leader on 30 Sep and the new one on 1 Oct; bulk undo restores both |
+
+### L4: Scope bar
+
+- One bar in the header: department · leader (includes everyone below them) · person · period.
+- Every view respects it; it persists per workspace.
+- It replaces the per-view team and person filters.
+- The leader filter covers the whole tree: choosing a manager includes all their TLs and those TLs'
+  agents.
+- It is the local version of the server's `visible_people` function (section 4), with the same logic.
+
+### L5: Leaders board (a local version of Bridge)
+
+- One row per leader who is **effective today** (acting cover included).
+- Columns: headcount · working · leave · off · sick (from `agentStatuses`) · a thin-cover flag
+  against the minimum set in `S.covMin` · leave in the next 7 days · open flags.
+- Clicking a row opens that team's Day view.
+- It works in the universal workspace, so a manager who loads every TL's file into Sync gets
+  Bridge today, with no backend.
+- This tests the Bridge design on real files before Phase 2.
+
+### L6: Leave and absence register, plus UK bank holidays
+
+| Part | Spec |
+|---|---|
+| Leave types | SA BCEA defaults: Annual, Sick, Family responsibility, Maternity/Parental, Unpaid, Study. Configurable. |
+| Sick-note flags | More than 2 consecutive days, or a 3rd occasion within 8 weeks (BCEA s23). These are flags, not decisions. |
+| Patterns | Absence next to a weekend or public holiday, Monday/Friday clustering (extending `patterns.js`) |
+| UK bank holidays | Shown alongside SA public holidays: client demand in the UK against staff rights in SA |
+| Access | Reasons and patterns sit behind a "sensitive" setting and are left out of exports unless explicitly included |
+
+### Not built locally: wait for the org layer
+
+Requests and approvals, notices and acknowledgements, self-reported attendance and EOD collation all
+need a second person on another device. A local version would be a fake.
+
+The universal workspace already covers collation across departments, so a separate file-pack
+format is dropped.
+
+### Order
+
+| # | Item | Depends on | Size |
+|---|---|---|---|
+| 1 | L1 Schedule Window + Share | — | M |
+| 2 | L2 Acting and YAT, with dates | — (L1's header uses it) | M |
+| 3 | L3 Org Builder + data quality | L2 | L |
+| 4 | L4 Scope bar | L3 (leader tree) | M |
+| 5 | L5 Leaders board | L4 | S |
+| 6 | L6 Leave/absence + UK holidays | — | M |
