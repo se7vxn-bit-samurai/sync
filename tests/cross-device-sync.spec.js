@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { openApp, PROFILE, buildWorkspace, workspaceRow, picker, waitForPicker, projectNames } = require('./helpers');
+const { openApp, PROFILE, buildWorkspace, workspaceRow, createTestProject, picker, waitForPicker, projectNames } = require('./helpers');
 
 // Two devices, one account. The cloud row carries a server version; each device remembers the
 // version it last matched and whether it has changed anything since.
@@ -68,7 +68,7 @@ test.describe('saving', () => {
   test('the first save from an account with no cloud copy creates it', async ({ page }) => {
     await signedInWith(page, null);
     await page.waitForFunction(() => JSON.parse(localStorage.getItem('sc_cloud_sync') || '{}').version === 0, null, { timeout: 20_000 });
-    await page.evaluate(() => _syncCreateSampleProject());
+    await createTestProject(page);
     expect(await page.evaluate(() => _syncManualSave())).toBe(true);
     const row = await page.evaluate(() => window.__fakeSupabase.state.cfg.workspaceRow);
     expect(row.version).toBe(1);
@@ -107,7 +107,7 @@ test.describe('both devices changed', () => {
   test('a device with its own projects is asked before its first sign-in replaces them', async ({ page }) => {
     await openApp(page, { profile: PROFILE, workspaceRow: workspaceRow(buildWorkspace(2)) });
     await page.waitForFunction(() => window.NorthStar && window.NorthStar.bootSettled, null, { timeout: 20_000 });
-    await page.evaluate(() => _syncCreateSampleProject());
+    await createTestProject(page);
     const localProjects = await page.evaluate(() => window.nsListCanonicalProjects().map((p) => p.name));
 
     await page.evaluate(() => window.__fakeSupabase.signIn());

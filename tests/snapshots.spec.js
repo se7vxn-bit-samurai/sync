@@ -81,40 +81,15 @@ test.describe('snapshots', () => {
   });
 });
 
-test.describe('sample project', () => {
-  test('is offered only when there is nothing saved', async ({ page }) => {
+test.describe('no sample data', () => {
+  test('nothing is offered or generated in place of real data', async ({ page }) => {
     await openApp(page, { profile: PROFILE, workspaceRow: workspaceRow(buildWorkspace(0)) });
     await page.evaluate(() => window.__fakeSupabase.signIn());
-    await expect(page.locator('#lcSampleBtn')).toBeVisible();
-
-    await page.evaluate(() => _syncCreateSampleProject());
-    await expect(page.locator('#mv')).toBeVisible();
-    expect(await page.evaluate(() => S.activeDept)).toBe('Sample Team');
-    // Real, usable data — not an empty placeholder project.
-    expect(await page.evaluate(() => S.entries.length)).toBeGreaterThan(100);
-    // ...and the screens actually show it. The rows were in S.entries while every view rendered an
-    // index cached from before they loaded.
-    await page.evaluate(() => railNavCalendar('day'));
-    await expect(page.locator('#ca')).toContainText(/Scheduled \(\d+\)/);
-
-    await page.evaluate(() => _syncRenderProjectPicker());
-    await expect(page.locator('#lcSampleBtn')).toBeHidden();
-  });
-
-  test('is not offered once a project exists', async ({ page }) => {
-    await signedInWith(page, 1);
-    await expect(page.locator('#lcSampleBtn')).toBeHidden();
-  });
-
-  test('behaves like any other project — renameable and deletable', async ({ page }) => {
-    await openApp(page, { profile: PROFILE, workspaceRow: workspaceRow(buildWorkspace(0)) });
-    await page.evaluate(() => window.__fakeSupabase.signIn());
-    await page.evaluate(() => _syncCreateSampleProject());
-    await page.evaluate(() => _syncShowProjectPicker());
-    await waitForPicker(page, { sync: false });
-    expect(await projectNames(page)).toEqual(['Sample Team']);
-    await expect(page.locator(picker.renameBtn).first()).toBeVisible();
-    await expect(page.locator(picker.deleteBtn).first()).toBeVisible();
+    await page.waitForFunction(() => window.NorthStar && window.NorthStar.bootSettled, null, { timeout: 20_000 });
+    await expect(page.locator('#lcSampleBtn')).toHaveCount(0);
+    expect(await page.evaluate(() => typeof window.nsCreateSampleProject)).toBe('undefined');
+    expect(await page.evaluate(() => window.nsListCanonicalProjects().length)).toBe(0);
+    expect(await page.evaluate(() => (S.entries || []).length)).toBe(0);
   });
 });
 

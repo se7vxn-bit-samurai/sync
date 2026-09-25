@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
-const { openApp, PROFILE, buildWorkspace, workspaceRow, waitForPicker } = require('./helpers');
+const { openApp, PROFILE, buildWorkspace, workspaceRow, waitForPicker, createTestProject } = require('./helpers');
 
-// The Projects & Ops panel, and the edits it saves. Before this: the entry point was a small link
+// The Projects panel, and the edits it saves. Before this: the entry point was a small link
 // shown only when signed in, that re-rendered the landing screen and so often looked like it did
 // nothing; and a device that loaded a cloud copy kept its own empty People stores in memory, so the
 // next background save deleted the loaded logbook, agent notes and statuses, and a cloud save then
@@ -27,7 +27,7 @@ async function editPeople(page) {
   });
 }
 
-test.describe('Projects & Ops entry point', () => {
+test.describe('Projects entry point', () => {
   test('is on the landing screen signed out, and opens the projects saved on this device', async ({ page }) => {
     await openApp(page);
     await page.waitForFunction(() => window.NorthStar && window.NorthStar.bootSettled, null, { timeout: 20_000 });
@@ -39,12 +39,15 @@ test.describe('Projects & Ops entry point', () => {
     await expect(panel).toContainText('No projects saved on this device yet');
     await expect(panel.getByRole('button', { name: /Continue with Google/ })).toBeVisible();
 
-    await panel.getByRole('button', { name: 'Try a sample project' }).click();
+    // Nothing saved means nothing listed: no sample or demo project is offered in its place.
+    await expect(panel.getByRole('button', { name: /sample/i })).toHaveCount(0);
+    await page.evaluate(() => _syncCloseProjectsPanel());
+    await createTestProject(page);
     await expect(page.locator('#mv')).toBeVisible();
     await page.evaluate(() => _syncShowProjectPicker());
     await expect(page.locator('#lcProjectsOpsSub')).toHaveText('1 project · on this device');
     await page.locator('#lcProjectsOpsBtn').click();
-    await expect(page.locator(`${PANEL} .spp-row-name`)).toHaveText(['Sample Team']);
+    await expect(page.locator(`${PANEL} .spp-row-name`)).toHaveText(['Test Team']);
     expect(page.__jsErrors).toEqual([]);
   });
 

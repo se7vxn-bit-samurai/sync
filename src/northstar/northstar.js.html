@@ -497,7 +497,7 @@ function syncPullWorkspace(opts){
     // A plain request shares the running pull; choosing the cloud copy must still run after it.
     return opts.takeCloud?_syncPullInFlight.then(()=>syncPullWorkspace(opts)):_syncPullInFlight;
   }
-  // Announced so an open Projects & Ops panel can show the check in progress, then its outcome.
+  // Announced so an open Projects panel can show the check in progress, then its outcome.
   _syncPullInFlight=_syncPullOnce(opts).finally(()=>{_syncPullInFlight=null;window.dispatchEvent(new Event("sync:pull-settled"));});
   window.dispatchEvent(new Event("sync:pull-started"));
   return _syncPullInFlight;
@@ -943,102 +943,6 @@ async function nsRestoreSnapshot(id){
     return{ok:false,error:(err&&err.message)||"Restore failed"};
   }
 }
-/* ═══════════════════════════════════════════════════════════════
-   SAMPLE PROJECT
-
-   Every way into this app previously required the user to already
-   have a roster spreadsheet, correctly shaped, in hand — so the
-   product could not be evaluated before real data was committed to
-   it. This builds a small but genuinely representative project
-   (teams, shifts, days off, a weekend) directly in the canonical
-   store, using the same record shapes an import produces, so every
-   downstream surface treats it as an ordinary project: it can be
-   renamed, deleted, synced and exported like any other.
-   ═══════════════════════════════════════════════════════════════ */
-const NS_SAMPLE_PEOPLE=[
-  {name:"Amara Okafor",team:"Early",role:"Team leader"},
-  {name:"Ben Sorensen",team:"Early",role:"Advisor"},
-  {name:"Chloe Duarte",team:"Early",role:"Advisor"},
-  {name:"Dmitri Volkov",team:"Late",role:"Team leader"},
-  {name:"Esi Mensah",team:"Late",role:"Advisor"},
-  {name:"Farid Haddad",team:"Late",role:"Advisor"}
-];
-function nsCreateSampleProject(preferredName){
-  try{
-    const model=nsCanonical();
-    let name=nsClean(preferredName)||"Sample Team";
-    const taken=new Set((typeof nsListCanonicalProjects==="function"?nsListCanonicalProjects():[]).map(p=>nsDepartmentKey(p.name)));
-    let n=2;
-    while(taken.has(nsDepartmentKey(name)))name=(nsClean(preferredName)||"Sample Team")+" ("+n++ +")";
-    const sourceId=nsId("src","sample|"+name+"|"+Date.now());
-    const loadedAt=nsNow();
-    model.sources.push({
-      source_id:sourceId,
-      source_name:"Sample roster",
-      source_kind:"sample",
-      department_name:name,
-      loaded_at:loadedAt,
-      sheets:1,
-      source_rows:0
-    });
-    NS_SAMPLE_PEOPLE.forEach((person,index)=>{
-      model.people.push({
-        person_id:nsId("per",name+"|"+person.name),
-        full_name:person.name,
-        home_department:name,
-        team_name:person.team,
-        role:person.role,
-        authority_rank:index===0||index===3?2:1,
-        source_id:sourceId
-      });
-    });
-    // Four weeks starting from the Monday of the current week, so the calendar, month views and
-    // "today" highlighting all have something real to show the moment it opens.
-    const start=new Date();
-    start.setHours(0,0,0,0);
-    start.setDate(start.getDate()-((start.getDay()+6)%7));
-    const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-    const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-    let rows=0;
-    for(let day=0;day<28;day++){
-      const date=new Date(start);
-      date.setDate(start.getDate()+day);
-      const weekday=date.getDay();
-      NS_SAMPLE_PEOPLE.forEach((person,index)=>{
-        // A rolling days-off pattern per person rather than a fixed weekend for everyone, so
-        // coverage, fairness and the off-day surfaces have something non-trivial to read.
-        const offset=(day+index*2)%7;
-        const isOff=offset===5||offset===6;
-        const early=person.team==="Early";
-        model.schedule.push({
-          schedule_id:nsId("sch",name+"|"+person.name+"|"+iso(date)),
-          person_name:person.name,
-          department:name,
-          team_name:person.team,
-          source_id:sourceId,
-          date:iso(date),
-          day_of_week:DAYS[weekday],
-          is_off:isOff,
-          off_type:isOff?"OFF":"",
-          uk_start:isOff?"":(early?"07:00":"12:00"),
-          uk_end:isOff?"":(early?"15:00":"20:00"),
-          authority_rank:1,
-          imported_at:loadedAt
-        });
-        rows++;
-      });
-    }
-    const source=model.sources[model.sources.length-1];
-    if(source)source.source_rows=rows;
-    if(typeof nsSyncPeopleToRuntime==="function")nsSyncPeopleToRuntime();
-    nsPersist();
-    return{name,people:NS_SAMPLE_PEOPLE.length,schedule:rows};
-  }catch(err){
-    console.error("[sync] creating the sample project failed",err);
-    return null;
-  }
-}
-window.nsCreateSampleProject=nsCreateSampleProject;
 
 window.nsSaveSnapshot=nsSaveSnapshot;
 window.nsListSnapshots=nsListSnapshots;

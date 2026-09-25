@@ -85,6 +85,79 @@ async function openApp(page, config = {}) {
   return page;
 }
 
+/**
+ * Builds a small, realistic project straight into the canonical store and opens it: six people in
+ * two teams, four weeks of shifts from the Monday of this week with rolling days off, one source.
+ * Test data only. The app itself ships no sample or demo data, so this lives here rather than in src/.
+ */
+async function createTestProject(page, name = 'Test Team') {
+  return page.evaluate((projectName) => {
+    const PEOPLE = [
+      { name: 'Amara Okafor', team: 'Early', role: 'Team leader' },
+      { name: 'Ben Sorensen', team: 'Early', role: 'Advisor' },
+      { name: 'Chloe Duarte', team: 'Early', role: 'Advisor' },
+      { name: 'Dmitri Volkov', team: 'Late', role: 'Team leader' },
+      { name: 'Esi Mensah', team: 'Late', role: 'Advisor' },
+      { name: 'Farid Haddad', team: 'Late', role: 'Advisor' },
+    ];
+    const model = window.nsCanonical();
+    const taken = new Set(window.nsListCanonicalProjects().map((p) => window.nsDepartmentKey(p.name)));
+    let dept = projectName;
+    for (let n = 2; taken.has(window.nsDepartmentKey(dept)); n++) dept = `${projectName} (${n})`;
+    const slug = (v) => String(v).toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const sourceId = `src-test-${slug(dept)}`;
+    const loadedAt = new Date().toISOString();
+    PEOPLE.forEach((person, index) => {
+      model.people.push({
+        person_id: `per-${slug(dept)}-${slug(person.name)}`,
+        full_name: person.name,
+        home_department: dept,
+        team_name: person.team,
+        role: person.role,
+        authority_rank: index === 0 || index === 3 ? 2 : 1,
+        source_id: sourceId,
+      });
+    });
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+    const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    let rows = 0;
+    for (let day = 0; day < 28; day++) {
+      const date = new Date(start);
+      date.setDate(start.getDate() + day);
+      PEOPLE.forEach((person, index) => {
+        const offset = (day + index * 2) % 7;
+        const isOff = offset === 5 || offset === 6;
+        const early = person.team === 'Early';
+        model.schedule.push({
+          schedule_id: `sch-${slug(dept)}-${slug(person.name)}-${iso(date)}`,
+          person_name: person.name,
+          department: dept,
+          team_name: person.team,
+          source_id: sourceId,
+          date: iso(date),
+          day_of_week: DAYS[date.getDay()],
+          is_off: isOff,
+          off_type: isOff ? 'OFF' : '',
+          uk_start: isOff ? '' : early ? '07:00' : '12:00',
+          uk_end: isOff ? '' : early ? '15:00' : '20:00',
+          authority_rank: 1,
+          imported_at: loadedAt,
+        });
+        rows++;
+      });
+    }
+    model.sources.push({ source_id: sourceId, source_name: `${dept}.xlsx`, source_kind: 'schedulehub', department_name: dept, loaded_at: loadedAt, sheets: 1, source_rows: rows });
+    window.nsPersist();
+    _syncOpenProject(dept);
+    _syncRenderProjectPicker();
+    _syncMarkLocalChange();
+    return { name: dept, people: PEOPLE.length, schedule: rows };
+  }, name);
+}
+
 const picker = {
   root: '#lcProjectPicker',
   rows: '.lc-project-row',
@@ -107,4 +180,4 @@ async function projectNames(page) {
   return page.$$eval(`${picker.root} ${picker.names}`, (els) => els.map((e) => e.textContent.trim()));
 }
 
-module.exports = { PROFILE, buildWorkspace, workspaceRow, openApp, picker, waitForPicker, projectNames };
+module.exports = { PROFILE, buildWorkspace, workspaceRow, openApp, createTestProject, picker, waitForPicker, projectNames };

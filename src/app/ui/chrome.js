@@ -267,8 +267,8 @@ function renderTabs(){
   const opsSection=opsSectionFor();
   S._railOpsSection=S.tab==="analytics"?opsSection.id:null;
   const g=_ensureRailGroups();
+  // Screens first, Home leading; Projects last, since it opens the project panel rather than a screen.
   const groups=[
-    {id:"projects",label:"Projects & Ops",active:false,action:"_syncOpenProjectsPanel()",icon:`<svg width="14" height="14" viewBox="0 0 18 18" fill="none"><path d="M2 5.5A1.5 1.5 0 0 1 3.5 4h3.3l1.6 1.8h6.1A1.5 1.5 0 0 1 16 7.3v6.2a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 2 13.5v-8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>`},
     {id:"dashboard",label:"Home",active:S.tab==="dashboard",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="1.5" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/><rect x="8" y="1.5" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/><rect x="1.5" y="8" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/><rect x="8" y="8" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/></svg>`,action:"railNavDashboard()",children:[]},
     {id:"calendar",label:"Calendar",active:S.tab==="calendar",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.2"/><line x1="1" y1="5" x2="13" y2="5" stroke="currentColor" stroke-width="1"/><line x1="4" y1="1" x2="4" y2="3" stroke="currentColor" stroke-width="1.2"/><line x1="10" y1="1" x2="10" y2="3" stroke="currentColor" stroke-width="1.2"/></svg>`,children:[
       {id:"day",label:"Calendar",active:S.tab==="calendar"&&S.calSubTab==="day",action:"railNavCalendar('day')"},
@@ -286,7 +286,8 @@ function renderTabs(){
     ]},
     {id:"analytics",label:"Ops",active:S.tab==="analytics",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="8" width="3" height="5" rx="0.5" stroke="currentColor" stroke-width="1"/><rect x="5.5" y="4" width="3" height="9" rx="0.5" stroke="currentColor" stroke-width="1"/><rect x="10" y="1" width="3" height="12" rx="0.5" stroke="currentColor" stroke-width="1"/></svg>`,children:[
       ...OPS_SECTIONS.map(sec=>({id:sec.id,label:sec.label,badge:sec.badge?alertsBadge:"",active:S.tab==="analytics"&&opsSection.id===sec.id,action:_opsNavAction(sec.tabs[0][0],sec.tabs[0][1])}))
-    ]}
+    ]},
+    {id:"projects",label:"Projects",active:false,action:"_syncOpenProjectsPanel()",icon:`<svg width="14" height="14" viewBox="0 0 18 18" fill="none"><path d="M2 5.5A1.5 1.5 0 0 1 3.5 4h3.3l1.6 1.8h6.1A1.5 1.5 0 0 1 16 7.3v6.2a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 2 13.5v-8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>`}
   ];
   groups.forEach(group=>{if(group.active)g[group.id]=true;});
   const navEl=$("mfRailNav");
@@ -408,7 +409,7 @@ function renderInfoBar(){
   const scopedEntries=getScopedEntriesByTeamLeader();
   const scopedNames=new Set(scopedEntries.map(e=>e.name));
   const ec=[...new Set(scopedEntries.map(e=>e.name))].length;
-  const lcEl=$("mhLeaderCount");if(lcEl)lcEl.textContent=ec+' tl';
+  const lcEl=$("mhLeaderCount");if(lcEl)lcEl.textContent=ec+(ec===1?' leader':' leaders');
   let loadBit="";
   if(S.loadedAt){
     const _ageMins=Math.round((Date.now()-S.loadedAt)/60000);
