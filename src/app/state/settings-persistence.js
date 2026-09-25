@@ -181,7 +181,7 @@ function loadSettings(){
       if(typeof s.cbMode==="boolean"){S.cbMode=s.cbMode;document.body.classList.toggle("cb-mode",S.cbMode);}
       if(s.density&&["compact","comfortable","spacious"].includes(s.density)){S.density=s.density;document.body.classList.remove("density-compact","density-spacious");if(s.density==="compact")document.body.classList.add("density-compact");else if(s.density==="spacious")document.body.classList.add("density-spacious");}
       if(s.tab)S.tab=s.tab;
-      if(s.peopleSubTab&&["dashboard","team","agents","logbook","events"].includes(s.peopleSubTab))S.peopleSubTab=s.peopleSubTab;
+      if(s.peopleSubTab&&["dashboard","team","agents","cover","logbook","events"].includes(s.peopleSubTab))S.peopleSubTab=s.peopleSubTab;
       if(s.peopleDashView&&["today_ops","week_risk","monthly_review"].includes(s.peopleDashView))S.peopleDashView=s.peopleDashView;
       if(s.peopleView&&["cards","table"].includes(s.peopleView))S._peopleView=s.peopleView;
       if(s.peopleLogFilter&&["all","note","followup","summary","event"].includes(s.peopleLogFilter))S._peopleLogFilter=s.peopleLogFilter;

@@ -547,7 +547,8 @@ later move to the cloud a change of where data is stored, not a rewrite.
   line 1393) keeps only a permanent `Acting Leader` label and `acting=true`.
 - Result: anyone who acted once is labelled acting in every view, forever. Their team's leader
   never changes for the acting window.
-- L2 fixes this.
+- Fixed in L2: neither the editor save nor the runtime copy adds the label any more, and a stored
+  one is hidden for anyone who has dated cover.
 
 ### L1: Schedule Window, plus sharing it with agents
 
@@ -581,6 +582,19 @@ row gets agents their schedule in SA time before Sync Me exists. The change prev
 the same one Phase 2's cloud publish needs.
 
 ### L2: Acting cover and a YAT register, with dates
+
+**Status: built.** Engine: `src/app/people/cover.js`. View: People → Cover (`src/app/views/cover.js`).
+NorthStar exports `nsActingRows` and `nsSaveActingCover`. Tested in `tests/cover.spec.js`.
+Decisions made while building it:
+- An agent who follows their TL's rota does not inherit the TL's leave or sickness. Those dates
+  show "TL away" (a gap), because the team still works but the source has no shift for them.
+- "Needs cover" means a leader with a team is on leave, sick or training (roster marker, logged
+  exception or People status) on a date with no active cover. Regular days off are not gaps.
+- Suggestion rank = availability 45 + hours overlap with the leader's last shift 20 + fairness
+  (fewest acting days in 6 months) 15 + on the team 10 + YAT/Senior Agent/Supervisor 10, minus
+  10 for leading their own team and 30 if already booked on those dates.
+- Undo is per record ("End today", "Cancel"), not a global undo. Every change is staged in
+  NorthStar's publish queue.
 
 | Part | Spec |
 |---|---|

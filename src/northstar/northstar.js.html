@@ -1378,7 +1378,7 @@ function nsRuntimeRole(roleTitle){return /agent/i.test(roleTitle||"")&&!/lead|su
 // alone. Opening a project uses it. The additions are a projection of the canonical model, not an
 // edit, so writing them does not mark the device as having unsaved work.
 function nsSyncPeopleToRuntime(opts){
-  const model=nsCanonical(),scopedPeople=nsScopedRows("people"),scopedActing=nsScopedRows("acting");if(!S.people||typeof S.people!=="object")S.people={};
+  const model=nsCanonical(),scopedPeople=nsScopedRows("people");if(!S.people||typeof S.people!=="object")S.people={};
   const byId=new Map(scopedPeople.map(person=>[person.person_id,person])),kept=opts&&opts.onlyMissing?new Set(Object.keys(S.people)):null;
   scopedPeople.forEach(person=>{
     const name=person.full_name;if(!name||kept&&kept.has(name))return;
@@ -1388,13 +1388,10 @@ function nsSyncPeopleToRuntime(opts){
     // nsApplyRuntimePersonEdit) holds the whole label set, so a label removed there stays removed.
     // Imported records only ever add labels.
     const labels=person.source_id==="NS-BROWSER"?nsNormalizeLabels(person.labels):[...new Set([...(current.labels||[]),...(person.labels||[])])];
-    S.people[name]=Object.assign({},current,{name,personId:person.person_id,role:nsRuntimeRole(person.role_type),roleType:person.role_type,title:person.job_title||person.role_type,jobTitle:person.job_title||current.jobTitle||"",team:person.home_team||current.team||"",department:person.home_department||current.department||"",teamLeader:manager,status:person.status||current.status||"Active",labels,roleLabels:labels,notes:person.notes||current.notes||""});
+    S.people[name]=Object.assign({},current,{name,personId:person.person_id,role:nsRuntimeRole(person.role_type),roleType:person.role_type,title:person.job_title||person.role_type,jobTitle:person.job_title||current.jobTitle||"",team:person.home_team||current.team||"",department:person.home_department||current.department||"",teamLeader:manager,status:person.status||current.status||"Active",labels,roleLabels:labels,notes:person.notes||current.notes||"",readiness:person.readiness_notes||current.readiness||""});
   });
-  scopedActing.filter(item=>String(item.status||"Active").toLowerCase()!=="inactive").forEach(item=>{
-    const person=byId.get(item.person_id);if(!person||kept&&kept.has(person.full_name))return;
-    const label=/supervisor/i.test(item.acting_role)?"Acting Supervisor":"Acting Leader";
-    const runtime=S.people[person.full_name];runtime.labels=[...new Set([...(runtime.labels||[]),label])];runtime.roleLabels=runtime.labels;runtime.acting=true;
-  });
+  // Acting cover is dated (model.acting, read through nsActingRows). It used to stamp a permanent
+  // "Acting Leader" label and acting=true here, so anyone who covered once showed as acting forever.
   if(!kept){try{savePeople();}catch(err){}return;}
   if(Object.keys(S.people).length===kept.size)return;
   const applying=NS.applyingRemote;NS.applyingRemote=true;
@@ -1429,6 +1426,7 @@ function nsApplyRuntimePersonEdit(name,patch){
     }
     if(has("status"))changes.status=nsClean(patch.status)||"Active";
     if(has("labels"))changes.labels=nsNormalizeLabels(patch.labels);
+    if(has("readiness"))changes.readiness_notes=String(patch.readiness||"").trim();
     if(!Object.entries(changes).some(([field,value])=>JSON.stringify(field==="labels"?nsNormalizeLabels(person.labels):person[field]??"")!==JSON.stringify(value)))return;
     // A person scoped only through its source keeps that scope once the source becomes NS-BROWSER.
     if(!nsDirectDepartmentKey(person)&&department)changes.department_key=department;
@@ -2282,7 +2280,7 @@ function nsRenderOrganisation(el){
   nsMergeRuntimePeopleDirectory();const model=nsCanonical(),all=nsAllPeople(),departments=nsOrgDepartments(),teams=nsOrgTeams();
   const search=String(S.nsOrgSearch||"").toLowerCase(),dept=S.nsOrgDept||"all",team=S.nsOrgTeam||"all";
   const people=all.filter(person=>(dept==="all"||person.home_department===dept)&&(team==="all"||person.home_team===team)&&(!search||[person.full_name,person.job_title,person.role_type,person.home_department,person.home_team,...nsPersonLabels(person)].join(" ").toLowerCase().includes(search)));
-  const acting=model.acting.filter(item=>String(item.status||"Active").toLowerCase()==="active"),ready=all.filter(nsCoverReady);
+  const todayISO=nsISODate(new Date()),acting=nsScopedRows("acting").filter(item=>String(item.status||"Active").toLowerCase()==="active"&&(!item.starts||nsISODate(item.starts)<=todayISO)&&(!item.ends||nsISODate(item.ends)>=todayISO)),ready=all.filter(nsCoverReady);
   const rows=people.map(person=>{
     const labels=nsPersonLabels(person),manager=person.manager_name||nsPersonName(person.reports_to_person_id)||"-";
     return`<tr><td><b>${nsEsc(person.full_name)}</b><div style="color:var(--tm);font:9px var(--mono);margin-top:2px">${nsEsc(person.person_id)}</div></td><td><b>${nsEsc(person.job_title||"-")}</b><div style="color:var(--tm);margin-top:2px">${nsEsc(person.role_type||"Unassigned")}</div></td><td>${nsEsc(person.home_department||"-")}<div style="color:var(--tm);margin-top:2px">${nsEsc(person.home_team||"-")}</div></td><td>${nsEsc(manager)}</td><td><div class="ns-labels">${labels.map(label=>`<span class="ns-label">${nsEsc(label)}</span>`).join("")||'<span class="ns-label">none</span>'}</div></td><td>${nsCoverReady(person)?'<span class="ns-label ready">Eligible</span>':'<span class="ns-label">Standard</span>'}</td><td style="white-space:nowrap"><button class="ns-btn" onclick="nsOpenPersonEditor('${nsJs(person.person_id)}')">Edit</button> <button class="ns-btn" onclick="nsOpenActingEditor('${nsJs(person.person_id)}')">Acting</button></td></tr>`;
@@ -2335,11 +2333,42 @@ function nsSaveActing(personId){
   const person=nsPersonById(personId);if(!person)return;
   const role=document.getElementById("nsActingRole")?.value||"Acting Team Lead",starts=document.getElementById("nsActingStarts")?.value||new Date().toISOString().slice(0,10),id=nsId("NS-ACT",personId+"|"+starts+"|"+role);
   const record={acting_assignment_id:id,person_id:personId,person_name:person.full_name,acting_role:role,acting_for_person_id:document.getElementById("nsActingFor")?.value||"",acting_scope:nsClean(document.getElementById("nsActingScope")?.value),starts,ends:document.getElementById("nsActingEnds")?.value||"",status:"Active",notes:"",source_id:"NS-BROWSER",authority_rank:0,updated_at:nsNow(),sync_status:"Staged"};
-  nsUpsert("acting",[record],row=>row.acting_assignment_id,0);const label=/supervisor/i.test(role)?"Acting Supervisor":"Acting Leader";person.labels=[...new Set([...(person.labels||[]),label])];person.source_id="NS-BROWSER";person.authority_rank=0;
-  nsStageChange("PeopleHub","Acting",id,"create",record);nsSyncPeopleToRuntime();if(typeof peopleSetRoleLabels==="function")peopleSetRoleLabels(person.full_name,person.labels);nsPersist();document.getElementById("nsActingEditor")?.remove();rOps($("ca"));toast(person.full_name+" is now cover-ready","ok");
+  nsUpsert("acting",[record],row=>row.acting_assignment_id,0);
+  nsStageChange("PeopleHub","Acting",id,"create",record);nsSyncPeopleToRuntime();nsPersist();document.getElementById("nsActingEditor")?.remove();rOps($("ca"));toast(person.full_name+" is covering from "+starts+(record.ends?" to "+record.ends:""),"ok");
+}
+
+// ── Dated acting cover for the app side (src/app/people/cover.js) ──
+// Person names are resolved here because the people records live in this closure. Rows are scoped
+// to the open project like every other department table.
+function nsActingRows(){
+  return nsScopedRows("acting").map(row=>({id:row.acting_assignment_id,personId:row.person_id||"",personName:nsPersonName(row.person_id)||row.person_name||"",role:row.acting_role||"Acting Team Lead",forId:row.acting_for_person_id||"",forName:row.acting_for_person_id?(nsPersonName(row.acting_for_person_id)||row.acting_for_name||""):(row.acting_for_name||""),scope:row.acting_scope||"",starts:nsISODate(row.starts)||"",ends:nsISODate(row.ends)||"",status:row.status||"Active",notes:row.notes||""})).filter(row=>row.personName);
+}
+function nsPersonIdByName(name){const key=nsNameKey(name);const person=key?nsScopedRows("people").find(item=>nsNameKey(item.full_name)===key):null;return person?person.person_id:"";}
+// Creates a cover record, or updates one when fields.id names an existing record. Returns its id.
+function nsSaveActingCover(fields){
+  if(!fields||typeof fields!=="object")return"";
+  const model=nsCanonical(),existing=fields.id?(model.acting||[]).find(row=>row.acting_assignment_id===fields.id):null;
+  if(existing){
+    const changes={};
+    ["starts","ends","status","notes","acting_role","acting_scope"].forEach(field=>{const key={acting_role:"role",acting_scope:"scope"}[field]||field;if(Object.prototype.hasOwnProperty.call(fields,key))changes[field]=field==="starts"||field==="ends"?nsISODate(fields[key]):nsClean(fields[key]);});
+    Object.assign(existing,changes,{source_id:"NS-BROWSER",authority_rank:0,updated_at:nsNow(),sync_status:"Staged"});
+    nsStageChange("PeopleHub","Acting",existing.acting_assignment_id,"update",Object.assign({},existing));
+    nsPersist();
+    return existing.acting_assignment_id;
+  }
+  const person=nsPersonById(fields.personId)||nsPersonById(nsPersonIdByName(fields.personName));if(!person)return"";
+  const forId=fields.forId||nsPersonIdByName(fields.forName)||"",starts=nsISODate(fields.starts)||nsISODate(new Date()),role=nsClean(fields.role)||"Acting Team Lead";
+  const id=nsId("NS-ACT",person.person_id+"|"+starts+"|"+role+"|"+forId);
+  const record={acting_assignment_id:id,person_id:person.person_id,person_name:person.full_name,acting_role:role,acting_for_person_id:forId,acting_scope:nsClean(fields.scope),starts,ends:nsISODate(fields.ends)||"",status:"Active",notes:nsClean(fields.notes),source_id:"NS-BROWSER",authority_rank:0,updated_at:nsNow(),sync_status:"Staged"};
+  nsUpsert("acting",[record],row=>row.acting_assignment_id,0);
+  nsStageChange("PeopleHub","Acting",id,"create",record);
+  nsPersist();
+  return id;
 }
 
 Object.assign(window,{nsOpenPersonEditor,nsSavePersonEditor,nsOpenOrgUnitEditor,nsSaveOrgUnit,nsOpenActingEditor,nsSaveActing});
+window.nsActingRows=nsActingRows;
+window.nsSaveActingCover=nsSaveActingCover;
 
 function nsOTDecisionKey(record){return(record.person_id||nsNameKey(record.person_name))+"|"+record.date+"|"+(record.slot||"FULL");}
 function nsOTMonths(){const dates=[...nsScopedRows("otWishes"),...nsScopedRows("otDecisions")].map(row=>row.date).filter(Boolean);return[...new Set(dates.map(date=>date.slice(0,7)))].sort();}

@@ -2109,6 +2109,8 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .swin-tag.t-ph{color:var(--wknd)}
 .swin-tag.t-exc{color:var(--text);border-color:var(--bdr)}
 .swin-tag.t-chg{color:var(--wknd);font-size:9px}
+.swin-tag.t-act{color:var(--accent);border-style:solid;font-weight:600}
+.swin-meta.swin-cover{color:var(--accent)}
 .swin-src{font-size:11px;color:var(--tm)}
 .swin-src.none{color:var(--wknd)}
 .swin-side{border-left:1px solid var(--bdr);overflow:auto;padding:12px 14px;display:flex;flex-direction:column;gap:16px}
@@ -2131,6 +2133,31 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .swin-note{font-size:11px;color:var(--tm);line-height:1.45;margin-top:6px}
 .swin-chg{margin:4px 0 0;padding-left:16px}
 .swin-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+/* People → Cover (src/app/views/cover.js) */
+.cov-wrap{overflow:auto;padding:14px 18px 24px;display:flex;flex-direction:column;gap:20px}
+.cov-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:12px;color:var(--tm)}
+.cov-bar b{font-size:15px;color:var(--text)}
+.cov-sec h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--tm);margin:0 0 8px}
+.cov-gap{border:1px solid var(--bdr);border-left:3px solid var(--wknd);border-radius:8px;padding:10px 12px;margin-bottom:8px;background:var(--card)}
+.cov-gap-hd{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;font-size:13px}
+.cov-why{color:var(--tm);font-size:11px;flex:1;min-width:160px}
+.cov-sugg{margin:10px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.cov-sugg li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;border:1px solid var(--bdr);border-radius:6px;padding:6px 8px;font-size:12px}
+.cov-score{font-family:'DM Mono',ui-monospace,monospace;font-size:11px;padding:1px 6px;border-radius:8px;background:var(--al);color:var(--accent)}
+.cov-tbl-wrap{overflow-x:auto}
+.cov-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.cov-tbl th{text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tm);padding:6px 8px;border-bottom:1px solid var(--bdr);white-space:nowrap}
+.cov-tbl td{padding:6px 8px;border-bottom:1px solid var(--bdr);vertical-align:middle}
+.cov-tbl .mono{font-family:'DM Mono',ui-monospace,monospace}
+.cov-state{font-size:10px;padding:1px 7px;border-radius:8px;border:1px solid currentColor;text-transform:capitalize}
+.cov-state.active{color:var(--early)}.cov-state.upcoming{color:var(--accent)}.cov-state.ended{color:var(--tm)}
+.cov-clash{font-size:12px;padding:7px 10px;border-radius:6px;border:1px solid var(--bdr);border-left:3px solid #dc2626;margin-bottom:6px;background:var(--card)}
+.cov-form{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-top:12px;font-size:11px}
+.cov-form label{display:flex;flex-direction:column;gap:3px;color:var(--tm)}
+.cov-form select,.cov-form input,.cov-ready{padding:4px 6px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font:inherit;font-size:12px;max-width:190px}
+.cov-ready{width:170px}
+.cov-banner{padding:8px 12px;border-radius:8px;border:1px solid var(--bdr);border-left:3px solid var(--accent);background:var(--card);font-size:12px;margin-bottom:10px}
+.swap-tag.cover-tag{border-color:var(--accent);color:var(--accent)}
 @media (max-width:820px){
   .swin{width:100vw;height:100dvh;border-radius:0;border:0}
   .swin-main{display:block;overflow:auto}
@@ -13447,6 +13474,7 @@ function renderTabs(){
       {id:"dashboard",label:"People overview",active:S.tab==="people"&&S.peopleSubTab==="dashboard",action:"railNavPeople('dashboard')"},
       {id:"team",label:"Team",active:S.tab==="people"&&S.peopleSubTab==="team",action:"railNavPeople('team')"},
       {id:"agents",label:"Agents",active:S.tab==="people"&&S.peopleSubTab==="agents",action:"railNavPeople('agents')"},
+      {id:"cover",label:"Cover",active:S.tab==="people"&&S.peopleSubTab==="cover",action:"railNavPeople('cover')"},
       {id:"logbook",label:"Logbook",active:S.tab==="people"&&S.peopleSubTab==="logbook",action:"railNavPeople('logbook')"},
       {id:"events",label:"Events",active:S.tab==="people"&&S.peopleSubTab==="events",action:"railNavPeople('events')"}
     ]},
@@ -13922,6 +13950,11 @@ function rCal(el){
         const isAbsent=daySwaps.find(sw=>sw.absentLeader===e.name);
         if(isCovering)mid+=`<span class="swap-tag" title="Covering ${isCovering.absentLeader}${isCovering.originalShift?' · '+isCovering.originalShift:''}">⇄ covering</span>`;
         if(isAbsent)mid+=`<span class="swap-tag absent" title="Absent — covered by ${isAbsent.coverLeader}">⇄ absent</span>`;
+        if(typeof actingOn==="function"){
+          const _act=actingOn(e.name,selDate),_cov=coverOn(e.name,selDate);
+          if(_act)mid+=`<span class="swap-tag cover-tag" title="${XA(coverLabel(_act)+", "+coverSpanText(_act))}">acting for ${X((_act.forName||"vacancy").split(" ")[0])}</span>`;
+          if(_cov)mid+=`<span class="swap-tag cover-tag" title="${XA(_cov.personName+" covers, "+coverSpanText(_cov))}">covered by ${X(_cov.personName.split(" ")[0])}</span>`;
+        }
         mid+=`<button class="dd-mini-btn" onclick="navToPerson('${esc}')" title="Open month card">Month</button>`;
         mid+=`<button class="dd-mini-btn swin-open-btn" onclick="openScheduleWindow('${esc}',{y:${selDate.getFullYear()},m:${selDate.getMonth()}})" title="Schedule window: UK and SA times, send">Schedule</button>`;
         mid+=renderInlineNoteButton("person",e.name,e.name,"compact");
@@ -13991,6 +14024,8 @@ function rCal(el){
         mid+=`<div class="${rowCls}">`;
         mid+=`<span class="ri-name" style="cursor:pointer" onclick="openDayInvestigation('${XJS(e.name)}','${excKey(selDate)}','calendar')">${X(e.name)}${tag}</span>`;
         mid+=`<span class="ri-shift s-off">${e.offL||'OFF'}</span>`;
+        const _cov=typeof coverOn==="function"?coverOn(e.name,selDate):null;
+        if(_cov)mid+=`<span class="swap-tag cover-tag" title="${XA(_cov.personName+" covers, "+coverSpanText(_cov))}">covered by ${X(_cov.personName.split(" ")[0])}</span>`;
         mid+=renderInlineNoteButton("person",e.name,e.name,"compact");
         if(covered){
           mid+=`<span class="swap-tag" style="margin-left:auto" title="Covered by ${covered.coverLeader}">⇄ ${X(covered.coverLeader.split(' ')[0])}</span>`;
@@ -28380,7 +28415,7 @@ function loadSettings(){
       if(typeof s.cbMode==="boolean"){S.cbMode=s.cbMode;document.body.classList.toggle("cb-mode",S.cbMode);}
       if(s.density&&["compact","comfortable","spacious"].includes(s.density)){S.density=s.density;document.body.classList.remove("density-compact","density-spacious");if(s.density==="compact")document.body.classList.add("density-compact");else if(s.density==="spacious")document.body.classList.add("density-spacious");}
       if(s.tab)S.tab=s.tab;
-      if(s.peopleSubTab&&["dashboard","team","agents","logbook","events"].includes(s.peopleSubTab))S.peopleSubTab=s.peopleSubTab;
+      if(s.peopleSubTab&&["dashboard","team","agents","cover","logbook","events"].includes(s.peopleSubTab))S.peopleSubTab=s.peopleSubTab;
       if(s.peopleDashView&&["today_ops","week_risk","monthly_review"].includes(s.peopleDashView))S.peopleDashView=s.peopleDashView;
       if(s.peopleView&&["cards","table"].includes(s.peopleView))S._peopleView=s.peopleView;
       if(s.peopleLogFilter&&["all","note","followup","summary","event"].includes(s.peopleLogFilter))S._peopleLogFilter=s.peopleLogFilter;
@@ -30693,6 +30728,7 @@ function renderAgentDrawerContent(agentName){
   if(!el)return;
   const person=S.people[agentName]||{name:agentName,role:"agent",teamLeader:"",team:""};
   const leaderName=person.teamLeader||"";
+  const ledBy=typeof leaderOn==="function"?leaderOn(agentName,new Date()):{cover:null};
   const today=new Date();
   const todayISO=excKey(today);
   const status=getAgentStatus(agentName,today);
@@ -30704,7 +30740,7 @@ function renderAgentDrawerContent(agentName){
   h+=`<div style="flex:1;min-width:0"><div class="agent-drawer-name">${X(agentName)}</div>`;
   h+=`<div class="agent-drawer-meta">`;
   if(person.team&&person.team!=="Main")h+=`${X(person.team)} · `;
-  if(leaderName)h+=`TL: ${X(leaderName.split(" ")[0])}`;
+  if(leaderName)h+=ledBy.cover?`TL: ${X(ledBy.name.split(" ")[0])} <span title="${XA(ledBy.name+" is acting for "+leaderName+", "+coverSpanText(ledBy.cover))}">(acting for ${X(leaderName.split(" ")[0])})</span>`:`TL: ${X(leaderName.split(" ")[0])}`;
   h+=`</div></div>`;
   h+=`<button class="agent-drawer-close" onclick="closeAgentDrawer()">✕</button>`;
   h+=`</div>`;
@@ -30938,7 +30974,7 @@ function _ensurePeopleOpsState(){
   if(!S.peopleHomeNotes||typeof S.peopleHomeNotes!=="object")S.peopleHomeNotes={};
   if(!Array.isArray(S.peopleLogbook))S.peopleLogbook=[];
   if(!S.peopleDashView||!["today_ops","week_risk","monthly_review"].includes(S.peopleDashView))S.peopleDashView="today_ops";
-  if(!S.peopleSubTab||!["dashboard","team","agents","logbook","events"].includes(S.peopleSubTab))S.peopleSubTab="dashboard";
+  if(!S.peopleSubTab||!["dashboard","team","agents","cover","logbook","events"].includes(S.peopleSubTab))S.peopleSubTab="dashboard";
   if(!S._peopleView||!["cards","table"].includes(S._peopleView))S._peopleView="cards";
   if(!S._peopleLogFilter)S._peopleLogFilter="all";
 }
@@ -31038,7 +31074,7 @@ function loadPeopleOps(){
     const view=localStorage.getItem("sc_people_view");
     if(view){
       const v=JSON.parse(view);
-      if(v.peopleSubTab&&["dashboard","team","agents","logbook","events"].includes(v.peopleSubTab))S.peopleSubTab=v.peopleSubTab;
+      if(v.peopleSubTab&&["dashboard","team","agents","cover","logbook","events"].includes(v.peopleSubTab))S.peopleSubTab=v.peopleSubTab;
       if(v.peopleDashView&&["today_ops","week_risk","monthly_review"].includes(v.peopleDashView))S.peopleDashView=v.peopleDashView;
       if(v.peopleView&&["cards","table"].includes(v.peopleView))S._peopleView=v.peopleView;
       if(v.peopleLogFilter&&["all","note","followup","summary","event"].includes(v.peopleLogFilter))S._peopleLogFilter=v.peopleLogFilter;
@@ -31255,9 +31291,13 @@ function _peopleFlagText(p){
 function peopleIsYAT(name){
   const p=(S.people||{})[name]||{};
   const txt=_peopleFlagText(p);
-  return p.yat===true||p.isYAT===true||txt.includes("yat")||txt.includes("young aspiring");
+  const labels=[p.labels,p.roleLabels].flat().filter(Boolean).map(x=>String(x).trim().toLowerCase());
+  return p.yat===true||p.isYAT===true||labels.includes("yat")||txt.includes("yat")||txt.includes("young aspiring");
 }
-function peopleIsActing(name){
+// With dated cover (people/cover.js) a person is acting only inside a record's dates. Without any
+// dated record, the older undated flags and labels still decide.
+function peopleIsActing(name,date){
+  if(typeof coverHasDated==="function"&&coverHasDated(name))return!!actingOn(name,date||new Date());
   const p=(S.people||{})[name]||{};
   const txt=_peopleFlagText(p);
   return p.acting===true||p.actingTL===true||String(p.role||"").toLowerCase().includes("acting")||txt.includes("acting");
@@ -31272,7 +31312,11 @@ function peopleRoleLabels(nameOrPerson){
     else if(v)raw.push(...String(v).split(/[;,|]/));
   });
   if(peopleIsYAT(p.name))raw.push("YAT");
-  if(peopleIsActing(p.name))raw.push(String(p.role||"").toLowerCase().includes("supervisor")?"Acting Supervisor":"Acting Leader");
+  if(typeof coverHasDated==="function"&&p.name&&coverHasDated(p.name)){
+    // Dated cover owns the acting label: drop stored ones, add today's if a record is active.
+    for(let i=raw.length-1;i>=0;i--)if(/^\s*acting\b/i.test(String(raw[i])))raw.splice(i,1);
+    const a=actingOn(p.name,new Date());if(a)raw.push(coverLabel(a));
+  }else if(peopleIsActing(p.name))raw.push(String(p.role||"").toLowerCase().includes("supervisor")?"Acting Supervisor":"Acting Leader");
   if(String(p.role||"").toLowerCase().includes("supervisor")||p.supervisor===true)raw.push("Supervisor");
   const known=PEOPLE_ROLE_LABEL_OPTIONS.map(x=>x.toLowerCase());
   return [...new Set(raw.map(x=>String(x||"").trim()).filter(Boolean).map(x=>{
@@ -33020,7 +33064,7 @@ function rPeopleLogbookView(){
 function rPeople(el){
   _ensurePeopleOpsState();
   if(S.peopleSubTab==="cards")S.peopleSubTab="team";
-  if(!["dashboard","team","agents","logbook","events"].includes(S.peopleSubTab))S.peopleSubTab="dashboard";
+  if(!["dashboard","team","agents","cover","logbook","events"].includes(S.peopleSubTab))S.peopleSubTab="dashboard";
   const scopeLeaders=_peopleScopeLeaders();
   if(scopeLeaders.length&&(!S.selectedTL||!scopeLeaders.includes(S.selectedTL)))S.selectedTL=scopeLeaders[0];
   savePeopleOps();
@@ -33031,6 +33075,7 @@ function rPeople(el){
     {id:"dashboard",l:"People overview"},
     {id:"team",l:"Team"},
     {id:"agents",l:"Agents"},
+    {id:"cover",l:"Cover"},
     {id:"logbook",l:"Logbook"},
     {id:"events",l:"Events"}
   ];
@@ -33073,6 +33118,8 @@ function rPeople(el){
     h+=rPeopleTeamView();
   } else if(S.peopleSubTab==="agents"){
     h+=rPeopleAgentsView();
+  } else if(S.peopleSubTab==="cover"){
+    h+=rPeopleCoverView();
   } else if(S.peopleSubTab==="logbook"){
     h+=rPeopleLogbookView();
   } else if(S.peopleSubTab==="events"){
@@ -33186,6 +33233,7 @@ function _renderTLDetailPanel(tlName,todayISO,today){
   const hs=S.month?computeHealthScore(S.entries.filter(e=>e.name===tlName&&e.date&&e.date.getMonth()===parseInt(S.month.split("-")[1])&&e.date.getFullYear()===parseInt(S.month.split("-")[0])),tlName,S.month,bp,pos,dk):null;
 
   let h="";
+  if(typeof coverBannerHTML==="function")h+=coverBannerHTML(tlName);
 
   // TL header card
   h+=`<div style="background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:12px">`;
@@ -33723,14 +33771,31 @@ function swinRows(name,fromISO,toISO){
     const iso=excKey(d);
     let e=own.get(iso)||null,source=e?(e._bpFixed?"blueprint":"roster"):"none";
     if(!e&&lead){e=lead.get(iso)||null;if(e)source="tl";}
-    rows.push(_swinRow(iso,d,e,source,leader,excBy[iso]||[]));
+    const r=_swinRow(iso,d,e,source,leader,excBy[iso]||[]);
+    // Following the TL's rota: the TL's own leave or sickness is not this person's. The team still
+    // works, but the source has no shift for them, so it is a gap, not "Leave".
+    if(source==="tl"&&e&&e.isOff&&(r.kind==="leave"||/^(Sick|Training)$/.test(r.status))){r.kind="none";r.type="none";r.status="TL away";r.code="TL away";r.leaderAway=true;}
+    rows.push(r);
   }
   return rows;
 }
 function _swinShiftText(r,clock){
-  if(r.kind!=="work")return r.kind==="none"?"No row":r.code;
+  if(r.kind!=="work")return r.kind==="none"?(r.leaderAway?"TL away":"No row"):r.code;
   const s=clock==="uk"?r.ukS:r.saS,e=clock==="uk"?r.ukE:r.saE;
   return s+(e?"–"+e:"")+(r.overnight?" (+1)":"");
+}
+// Cover records (people/cover.js) that touch this range, as lines for the header.
+function _swinCoverNotes(name,fromISO,toISO){
+  if(typeof coverRows!=="function")return[];
+  const base=_swinLeaderOf(name),out=[];
+  coverRows().forEach(r=>{
+    if(coverState(r)==="cancelled"||!_coverRangesOverlap(r,fromISO,toISO))return;
+    const span=coverSpanText(r);
+    if(_coverIs(name,r.personId,r.personName))out.push(`${coverLabel(r)} for ${r.forName||"a vacancy"}, ${span}`);
+    else if(_coverIs(name,r.forId,r.forName))out.push(`Covered by ${r.personName}, ${span}`);
+    else if(base&&_coverIs(base,r.forId,r.forName))out.push(`Led by ${r.personName} (acting for ${base}), ${span}`);
+  });
+  return out;
 }
 function _swinSummary(rows){
   const todayISO=excKey(new Date()),first=rows[0]&&rows[0].iso||todayISO;
@@ -33789,7 +33854,8 @@ function _swinSenderName(){
 function _swinRecordSent(name,rows,channel){
   const store=_swinSentStore(),k=_swinSentKey(name),prev=store[k]||{},merged=Object.assign({},prev.rows||{});
   rows.forEach(r=>{merged[r.iso]=_swinSig(r);});
-  const cutoff=excKey(_swinAddDays(new Date(),-SWIN_SENT_KEEP_DAYS));
+  const oldest=rows.reduce((m,r)=>!m||r.iso<m?r.iso:m,""),keep=excKey(_swinAddDays(new Date(),-SWIN_SENT_KEEP_DAYS));
+  const cutoff=oldest&&oldest<keep?oldest:keep;
   Object.keys(merged).forEach(iso=>{if(iso<cutoff)delete merged[iso];});
   store[k]={name,at:new Date().toISOString(),by:_swinSenderName(),channel,rows:merged};
   _persistSet(SWIN_SENT_KEY,JSON.stringify(store));
@@ -33865,6 +33931,12 @@ function _swinStatusCell(r,name){
   const codeU=String(r.code||"").toUpperCase();
   if(r.kind==="off"&&codeU&&codeU!=="OFF"&&codeU!==r.status.toUpperCase())h+=` <span class="swin-tag t-off">${X(r.code)}</span>`;
   if(r.ph)h+=` <span class="swin-tag t-ph" title="${XA(r.ph.name)}">PH</span>`;
+  if(typeof actingOn==="function"){
+    const a=actingOn(name,r.iso);
+    if(a)h+=` <span class="swin-tag t-act" title="${XA(coverLabel(a)+", "+coverSpanText(a))}">Acting for ${X((a.forName||"vacancy").split(" ")[0])}</span>`;
+    const l=leaderOn(name,r.iso);
+    if(l.cover)h+=` <span class="swin-tag t-act" title="${XA(l.cover.personName+" is acting for "+l.base+", "+coverSpanText(l.cover))}">Led by ${X(l.name.split(" ")[0])}</span>`;
+  }
   r.excs.forEach(ex=>{
     if(ex.type==="annual_leave"||ex.type==="training")return;
     const def=(typeof EXC_TYPES!=="undefined"?EXC_TYPES:[]).find(t=>t.id===ex.type);
@@ -33927,6 +33999,7 @@ function renderScheduleWindow(){
   let h=`<div class="swin-hd"><div style="min-width:0;flex:1"><h2 id="swinTitle">${X(st.name)}</h2>`;
   h+=`<div class="swin-meta">${[team?X(team):"",leader?"Leader: "+X(leader):(Object.values(S.people||{}).some(p=>p&&p.teamLeader===st.name)?"Team leader":"No leader recorded"),S.activeDept?X(S.activeDept):""].filter(Boolean).join(" · ")}</div>`;
   if(sum.inherited)h+=`<div class="swin-meta">No rows of their own in this range: shifts follow ${X(leader)}'s rota.</div>`;
+  _swinCoverNotes(st.name,range.from,range.to).forEach(t=>{h+=`<div class="swin-meta swin-cover">${X(t)}</div>`;});
   if(labels.length)h+=`<div>${labels.map(l=>`<span class="swin-chip">${X(l)}</span>`).join("")}</div>`;
   h+=`</div><button type="button" id="swinClose" class="swin-x" onclick="closeScheduleWindow()" aria-label="Close schedule window">✕</button></div>`;
 
@@ -34038,7 +34111,7 @@ function _swinSheetHTML(name,rows,clock,rangeLabel){
     h+=`<tr style="${wk?"background:"+C.band:""}"><td style="${cell}white-space:nowrap">${X(_swinDayLabel(r.iso))}${r.ph?` <span style="color:${C.wknd};font-size:11px">${X(r.ph.name)}</span>`:""}</td>`;
     h+=`<td style="${cell}font-family:'DM Mono',monospace;font-weight:700;color:${col}">${X(r.kind==="none"?"—":_swinShiftText(r,clock))}</td>`;
     h+=`<td style="${cell}font-family:'DM Mono',monospace;color:${C.mute}">${X(other)}</td>`;
-    h+=`<td style="${cell}color:${col}">${X(r.kind==="none"?"Not on roster":r.status)}</td></tr>`;
+    h+=`<td style="${cell}color:${col}">${X(r.kind==="none"?(r.leaderAway?"TL away, shift not set":"Not on roster"):r.status)}</td></tr>`;
   });
   h+=`</tbody></table>`;
   h+=`<div style="margin-top:12px;font-size:12px;color:${C.mute};line-height:1.5">`;
@@ -34098,6 +34171,358 @@ async function swinExportTeamZip(){
     toast(failed?`ZIP saved: ${done.length} schedules, ${failed} failed`:`ZIP saved ✓ (${done.length} schedules)`,failed?"warn":"ok");
   });
   renderScheduleWindow();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   COVER — dated acting assignments
+   The source of truth is NorthStar's acting table, read through
+   nsActingRows() and written through nsSaveActingCover(). A person
+   is acting only between a record's start and end dates:
+   - actingOn(name, iso)  the record they act under on that date
+   - coverOn(name, iso)   the record covering this leader on that date
+   - leaderOn(name, iso)  who leads this person on that date
+   People with no dated records keep the old undated labels/flags.
+   ═══════════════════════════════════════════════════════════════ */
+// Exception types that take a leader away from their team for the day.
+const COVER_ABSENT_EXC=["sick","annual_leave","family_responsibility","no_show","training"];
+const COVER_ABSENT_STATUS=["sick","leave","awol","training"];
+const COVER_LOOKBACK_DAYS=180;
+
+function _coverTodayISO(){return excKey(new Date());}
+function _coverISO(date){return date instanceof Date?excKey(date):(typeof date==="string"&&date?date.slice(0,10):_coverTodayISO());}
+let _coverCache={key:"",rows:[]};
+function coverRows(){
+  const m=S.nsCanonical,key=m?(m.updated_at||"")+"|"+((m.acting||[]).length)+"|"+(S.activeDept||""):"";
+  if(key&&_coverCache.key===key)return _coverCache.rows;
+  let rows=[];
+  try{rows=typeof nsActingRows==="function"?nsActingRows():[];}catch(e){rows=[];}
+  _coverCache={key,rows};
+  return rows;
+}
+function coverState(r,iso){
+  iso=iso||_coverTodayISO();
+  if(/^(inactive|cancelled|canceled|deleted|void)$/i.test(String(r.status||"").trim()))return"cancelled";
+  if(r.starts&&iso<r.starts)return"upcoming";
+  if(r.ends&&iso>r.ends)return"ended";
+  return"active";
+}
+function _coverPid(name){const p=(S.people||{})[name];return p&&p.personId||"";}
+// Matches by person_id when both sides have one, by name otherwise.
+function _coverIs(name,id,recName){
+  if(!name)return false;
+  const pid=_coverPid(name);
+  if(pid&&id)return pid===id;
+  return!!recName&&recName===name;
+}
+function coverHasDated(name){return coverRows().some(r=>coverState(r)!=="cancelled"&&_coverIs(name,r.personId,r.personName));}
+function actingOn(name,date){
+  const iso=_coverISO(date);
+  return coverRows().find(r=>_coverIs(name,r.personId,r.personName)&&coverState(r,iso)==="active")||null;
+}
+function coverOn(leaderName,date){
+  const iso=_coverISO(date);
+  return coverRows().find(r=>(r.forId||r.forName)&&_coverIs(leaderName,r.forId,r.forName)&&coverState(r,iso)==="active")||null;
+}
+function leaderOn(name,date){
+  const base=((S.people||{})[name]||{}).teamLeader||"";
+  if(!base||base===name)return{name:base,base,cover:null};
+  const c=coverOn(base,date);
+  // The acting person still reports to the leader they cover; they do not lead themselves.
+  if(c&&c.personName&&c.personName!==name)return{name:c.personName,base,cover:c};
+  return{name:base,base,cover:null};
+}
+function coverLabel(r){return/supervisor/i.test(r.role)?"Acting Supervisor":/manager/i.test(r.role)?"Acting Manager":"Acting Leader";}
+function _coverShort(iso){const d=_swinDate(iso);return P(d.getDate())+" "+MO[d.getMonth()];}
+function coverSpanText(r){
+  if(!r.starts&&!r.ends)return"no dates";
+  if(!r.ends)return"from "+_coverShort(r.starts);
+  if(!r.starts)return"until "+_coverShort(r.ends);
+  return r.starts===r.ends?_coverShort(r.starts):_coverShort(r.starts)+" – "+_coverShort(r.ends);
+}
+function _coverDays(fromISO,toISO){if(!fromISO||!toISO||toISO<fromISO)return 0;return Math.round((_swinDate(toISO)-_swinDate(fromISO))/864e5)+1;}
+// Days actually spent acting since sinceISO (up to today).
+function coverActingDays(name,sinceISO){
+  const today=_coverTodayISO();
+  return coverRows().filter(r=>coverState(r)!=="cancelled"&&_coverIs(name,r.personId,r.personName)).reduce((sum,r)=>{
+    const from=r.starts&&r.starts>sinceISO?r.starts:sinceISO,to=r.ends&&r.ends<today?r.ends:today;
+    return sum+_coverDays(from,to);
+  },0);
+}
+function coverLastActed(name){
+  const today=_coverTodayISO();let last="";
+  coverRows().forEach(r=>{
+    if(coverState(r)==="cancelled"||!_coverIs(name,r.personId,r.personName)||(r.starts&&r.starts>today))return;
+    const end=r.ends&&r.ends<today?r.ends:today;if(end>last)last=end;
+  });
+  return last;
+}
+// What takes someone away from the team on this schedule row, or "" if nothing does.
+function coverAbsence(row,name){
+  if(!row)return"";
+  if(row.kind==="leave")return row.status||"Leave";
+  if(row.kind==="off"&&/^(Sick|Training)$/.test(row.status))return row.status;
+  const ex=(row.excs||[]).find(x=>COVER_ABSENT_EXC.includes(x.type));
+  if(ex){const d=(typeof EXC_TYPES!=="undefined"?EXC_TYPES:[]).find(t=>t.id===ex.type);return d?d.label:ex.type;}
+  if(typeof getAgentStatus==="function"){const s=getAgentStatus(name,row.date);if(COVER_ABSENT_STATUS.includes(s))return AGENT_STATUS_DEFS[s].label;}
+  return"";
+}
+// Leaders: anyone with at least one person reporting to them.
+function coverLeaders(){
+  const set=new Set();
+  Object.values(S.people||{}).forEach(p=>{if(p&&p.teamLeader&&p.teamLeader!==p.name)set.add(p.teamLeader);});
+  return[...set].sort((a,b)=>a.localeCompare(b));
+}
+function coverTeamOf(leader){return Object.values(S.people||{}).filter(p=>p&&p.name&&p.teamLeader===leader&&p.name!==leader).map(p=>p.name).sort((a,b)=>a.localeCompare(b));}
+
+// ── Gaps: a leader away while their team works, with no cover booked ──
+function coverGaps(fromISO,toISO){
+  const out=[];
+  coverLeaders().forEach(leader=>{
+    const team=coverTeamOf(leader);if(!team.length)return;
+    let span=null;
+    swinRows(leader,fromISO,toISO).forEach(r=>{
+      const why=coverAbsence(r,leader);
+      if(!why||coverOn(leader,r.iso)){span=null;return;}
+      if(span&&excKey(_swinAddDays(_swinDate(span.to),1))===r.iso){span.to=r.iso;span.dates.push(r.iso);if(!span.why.includes(why))span.why.push(why);return;}
+      span={leader,from:r.iso,to:r.iso,dates:[r.iso],why:[why],team:team.length};
+      out.push(span);
+    });
+  });
+  return out.sort((a,b)=>a.from.localeCompare(b.from)||a.leader.localeCompare(b.leader));
+}
+function _coverMins(t){const m=String(t||"").match(/^(\d{1,2}):(\d{2})$/);return m?+m[1]*60+ +m[2]:null;}
+function _coverOverlap(ref,row){
+  const a=_coverMins(ref.s),b0=_coverMins(ref.e),c=_coverMins(row.ukS),d0=_coverMins(row.ukE);
+  if(a===null||b0===null||c===null||d0===null)return 1;
+  const b=b0<=a?b0+1440:b0,d=d0<=c?d0+1440:d0,len=b-a;
+  return len>0?Math.max(0,Math.min(b,d)-Math.max(a,c))/len:1;
+}
+// The leader's most recent working shift before the gap: the hours the team needs a leader for.
+function _coverRefShift(leader,fromISO){
+  const from=excKey(_swinAddDays(_swinDate(fromISO),-21)),to=excKey(_swinAddDays(_swinDate(fromISO),-1));
+  const w=swinRows(leader,from,to).reverse().find(r=>r.kind==="work");
+  return w?{s:w.ukS,e:w.ukE}:null;
+}
+function _coverRangesOverlap(r,fromISO,toISO){return(!r.starts||r.starts<=toISO)&&(!r.ends||r.ends>=fromISO);}
+// Ranked people who could cover a gap, with the reasons behind each rank.
+function coverSuggest(gap){
+  const L=gap.leader,dates=gap.dates,from=dates[0],to=dates[dates.length-1],dateSet=new Set(dates);
+  const ref=_coverRefShift(L,from),team=new Set(coverTeamOf(L)),leaders=new Set(coverLeaders());
+  const pool=new Set(team);
+  Object.values(S.people||{}).forEach(p=>{
+    if(!p||!p.name||p.name===L)return;
+    const labels=peopleRoleLabels(p.name);
+    if(labels.some(l=>/^(YAT|Senior Agent|Supervisor|SME)$/i.test(l))||leaders.has(p.name))pool.add(p.name);
+  });
+  pool.delete(L);
+  const since=excKey(_swinAddDays(new Date(),-COVER_LOOKBACK_DAYS)),out=[];
+  pool.forEach(name=>{
+    let avail=0,ov=0;
+    swinRows(name,from,to).forEach(r=>{
+      if(!dateSet.has(r.iso)||coverAbsence(r,name))return;
+      if(r.kind==="work"){avail++;ov+=ref?_coverOverlap(ref,r):1;}
+      // Follows the absent leader's rota: works the team's pattern while the leader is away.
+      else if(r.leaderAway){avail++;ov+=1;}
+    });
+    if(!avail)return;
+    const busy=coverRows().find(c=>coverState(c)!=="cancelled"&&_coverIs(name,c.personId,c.personName)&&_coverRangesOverlap(c,from,to));
+    const days=coverActingDays(name,since),labels=peopleRoleLabels(name).filter(l=>!/^acting\b/i.test(l));
+    const onTeam=team.has(name),leads=leaders.has(name),dev=labels.some(l=>/^(YAT|Senior Agent|Supervisor)$/i.test(l));
+    const availR=avail/dates.length,ovR=ov/dates.length;
+    const score=Math.round(45*availR+20*ovR+15/(1+days/5)+(onTeam?10:0)+(dev?10:0)-(leads?10:0)-(busy?30:0));
+    const why=[];
+    why.push(avail===dates.length?`Works all ${dates.length} day${dates.length===1?"":"s"}`:`Works ${avail} of ${dates.length} days`);
+    if(ref)why.push(ovR>=0.99?"same hours as "+L.split(" ")[0]:Math.round(ovR*100)+"% of "+L.split(" ")[0]+"'s hours");
+    why.push(days?`acted ${days} day${days===1?"":"s"} in 6 months`:"has not acted yet");
+    if(onTeam)why.push("on this team");
+    if(labels.length)why.push(labels.join(", "));
+    if(leads)why.push("leads their own team");
+    if(busy)why.push("already covering "+(busy.forName||"a vacancy")+" "+coverSpanText(busy));
+    out.push({name,score,avail,days,onTeam,leads,busy:!!busy,why});
+  });
+  return out.sort((a,b)=>b.score-a.score||a.days-b.days||a.name.localeCompare(b.name)).slice(0,6);
+}
+
+// ── Clashes in current and upcoming cover ──
+function coverClashes(){
+  const today=_coverTodayISO(),far="9999-12-31";
+  const rows=coverRows().filter(r=>coverState(r)!=="cancelled"&&!(r.ends&&r.ends<today));
+  const out=[];
+  rows.forEach(r=>{
+    if(!r.ends)out.push({kind:"open",ids:[r.id],text:`${r.personName} is covering ${r.forName||"a vacancy"} with no end date.`});
+    if((r.forId&&r.forId===r.personId)||(r.forName&&r.forName===r.personName))out.push({kind:"self",ids:[r.id],text:`${r.personName} is booked to cover themselves.`});
+  });
+  for(let i=0;i<rows.length;i++)for(let j=i+1;j<rows.length;j++){
+    const a=rows[i],b=rows[j];
+    if(!((a.starts||"")<=(b.ends||far)&&(b.starts||"")<=(a.ends||far)))continue;
+    const from=[a.starts,b.starts].filter(Boolean).sort().pop()||today,to=[a.ends||far,b.ends||far].sort()[0];
+    const when=to===far?"from "+_coverShort(from):(from===to?_coverShort(from):_coverShort(from)+" – "+_coverShort(to));
+    const sameFor=(a.forId&&a.forId===b.forId)||(!a.forId&&!b.forId&&a.forName&&a.forName===b.forName);
+    const sameActor=(a.personId&&a.personId===b.personId)||(!a.personId&&a.personName===b.personName);
+    if(sameFor)out.push({kind:"double",ids:[a.id,b.id],text:`${a.personName} and ${b.personName} are both booked to cover ${a.forName} ${when}.`});
+    else if(sameActor)out.push({kind:"twice",ids:[a.id,b.id],text:`${a.personName} is covering ${a.forName||"a vacancy"} and ${b.forName||"a vacancy"} at the same time (${when}).`});
+  }
+  // The acting person away on a day the team needs them.
+  rows.forEach(r=>{
+    const from=r.starts||today,to=r.ends||excKey(_swinAddDays(_swinDate(from),30));
+    const end=_coverDays(from,to)>62?excKey(_swinAddDays(_swinDate(from),61)):to;
+    const lead=r.forName?swinRows(r.forName,from,end):null,away=[];
+    swinRows(r.personName,from,end).forEach((row,i)=>{
+      const absent=coverAbsence(row,r.personName);
+      const needed=!lead||coverAbsence(lead[i],r.forName)||lead[i].kind==="work";
+      if(absent)away.push(_swinDayLabel(row.iso)+" ("+absent+")");
+      else if(needed&&(row.kind==="off"||row.kind==="ph"))away.push(_swinDayLabel(row.iso)+" (off)");
+    });
+    if(away.length)out.push({kind:"away",ids:[r.id],text:`${r.personName} is not available for part of the cover for ${r.forName||"a vacancy"}: ${away.slice(0,4).join(", ")}${away.length>4?` and ${away.length-4} more`:""}.`});
+  });
+  return out;
+}
+
+// ── Writes (all through NorthStar, so they sync and stage like other org edits) ──
+function _coverRefresh(){
+  _coverCache.key="";
+  if(typeof invalidateDerivedCache==="function")invalidateDerivedCache();
+  if(S.tab==="people"&&typeof rPeople==="function")rPeople($("ca"));
+  if(typeof _swinIsOpen==="function"&&_swinIsOpen())renderScheduleWindow();
+  if(S._agentDrawerOpen&&S._agentDrawerName)renderAgentDrawerContent(S._agentDrawerName);
+}
+function coverAssign(personName,forName,starts,ends,role){
+  if(typeof nsSaveActingCover!=="function"){toast("Cover needs a project to be open","warn");return"";}
+  if(!personName||!forName||personName===forName){toast("Pick who covers and who they cover","warn");return"";}
+  if(!starts){toast("Pick a start date","warn");return"";}
+  if(ends&&ends<starts){toast("The end date is before the start","warn");return"";}
+  const id=nsSaveActingCover({personId:_coverPid(personName),personName,forId:_coverPid(forName),forName,starts,ends:ends||"",role:role||"Acting Team Lead",scope:((S.people||{})[forName]||{}).team||""});
+  if(!id){toast(`${personName} is not in this project's people, so cover cannot be saved`,"warn");return"";}
+  _coverRefresh();
+  toast(`${personName} covers ${forName} ${coverSpanText({starts,ends})}`,"ok");
+  return id;
+}
+function coverEnd(id,iso){
+  if(typeof nsSaveActingCover!=="function"||!id)return;
+  nsSaveActingCover({id,ends:iso||_coverTodayISO()});
+  _coverRefresh();
+  toast("Cover ends "+_coverShort(iso||_coverTodayISO()),"ok");
+}
+function coverCancel(id){
+  if(typeof nsSaveActingCover!=="function"||!id)return;
+  nsSaveActingCover({id,status:"Inactive"});
+  _coverRefresh();
+  toast("Cover cancelled","ok");
+}
+function coverSetReadiness(name,text){
+  const p=(S.people||{})[name];if(!p)return;
+  p.readiness=String(text||"").trim();
+  if(typeof savePeople==="function")savePeople();
+  if(typeof nsApplyRuntimePersonEdit==="function")nsApplyRuntimePersonEdit(name,{readiness:p.readiness});
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PEOPLE → COVER
+   Leaders away without cover (with ranked suggestions), booked
+   cover, clashes, and the YAT / cover pool register.
+   Engine: src/app/people/cover.js
+   ═══════════════════════════════════════════════════════════════ */
+let _coverUI={days:14,open:"",form:{person:"",forName:"",starts:"",ends:"",role:"Acting Team Lead"}};
+const COVER_ROLES=["Acting Team Lead","Acting Supervisor","Acting Manager"];
+
+function coverSetDays(n){_coverUI.days=n;rPeople($("ca"));}
+function coverToggleSuggest(key){_coverUI.open=_coverUI.open===key?"":key;rPeople($("ca"));}
+function coverFormSet(field,value){_coverUI.form[field]=value;}
+function coverFormSave(){
+  const f=_coverUI.form;
+  if(coverAssign(f.person,f.forName,f.starts,f.ends,f.role))_coverUI.form={person:"",forName:"",starts:"",ends:"",role:f.role};
+}
+function coverAssignGap(person,leader,from,to){if(coverAssign(person,leader,from,to,"Acting Team Lead"))_coverUI.open="";}
+
+function coverBannerHTML(name){
+  if(typeof coverRows!=="function"||!name)return"";
+  const today=_coverTodayISO(),soon=excKey(_swinAddDays(new Date(),14)),first=name.split(" ")[0],out=[];
+  coverRows().forEach(r=>{
+    const st=coverState(r,today);
+    if(st==="cancelled"||st==="ended"||(st==="upcoming"&&r.starts>soon))return;
+    const span=coverSpanText(r);
+    if(_coverIs(name,r.forId,r.forName))out.push(st==="active"?`${r.personName} is acting for ${first} today (${span}).`:`Cover booked for ${first}: ${r.personName}, ${span}.`);
+    else if(_coverIs(name,r.personId,r.personName))out.push(st==="active"?`${first} is ${coverLabel(r)} for ${r.forName||"a vacancy"} (${span}).`:`${first} covers ${r.forName||"a vacancy"} ${span}.`);
+  });
+  return out.length?`<div class="cov-banner" data-testid="cover-banner">${out.map(X).join("<br>")}</div>`:"";
+}
+
+function _coverGapHTML(g){
+  const key=g.leader+"|"+g.from,open=_coverUI.open===key;
+  const span=g.from===g.to?_swinDayLabel(g.from):_swinDayLabel(g.from)+" – "+_swinDayLabel(g.to);
+  let h=`<div class="cov-gap" data-leader="${XA(g.leader)}" data-from="${g.from}"><div class="cov-gap-hd"><b>${X(g.leader)}</b><span>${X(span)}</span><span class="cov-why">${X(g.why.join(", "))} · ${g.team} ${g.team===1?"person":"people"} in the team</span>`;
+  h+=`<button type="button" class="swin-btn${open?" pri":""}" onclick="coverToggleSuggest('${XJS(key)}')">${open?"Hide":"Suggest cover"}</button></div>`;
+  if(open){
+    const list=coverSuggest(g);
+    if(!list.length)h+=`<div class="swin-note">Nobody in this project is working on those dates. Book cover from another team below.</div>`;
+    else h+=`<ol class="cov-sugg">${list.map(c=>`<li data-name="${XA(c.name)}"><span class="cov-score" title="Rank score">${c.score}</span><b>${X(c.name)}</b><span class="cov-why">${X(c.why.join(" · "))}</span><button type="button" class="swin-btn" onclick="coverAssignGap('${XJS(c.name)}','${XJS(g.leader)}','${g.from}','${g.to}')">Assign</button></li>`).join("")}</ol>`;
+  }
+  return h+`</div>`;
+}
+
+function rPeopleCoverView(){
+  const today=_coverTodayISO(),to=excKey(_swinAddDays(new Date(),_coverUI.days-1));
+  const gaps=coverGaps(today,to),clashes=coverClashes();
+  const recent=excKey(_swinAddDays(new Date(),-30));
+  const booked=coverRows().filter(r=>coverState(r)!=="cancelled"&&!(r.ends&&r.ends<recent)).sort((a,b)=>(a.starts||"").localeCompare(b.starts||"")||a.personName.localeCompare(b.personName));
+  const names=_swinAllNames(),leaders=coverLeaders(),f=_coverUI.form;
+  if(!f.starts)f.starts=today;
+  if(!f.forName&&leaders.length)f.forName=leaders[0];
+
+  let h=`<div class="cov-wrap">`;
+  h+=`<div class="cov-bar"><b>Cover</b><span>Look ahead</span><span class="swin-seg" role="group" aria-label="Look ahead">${[7,14,28].map(n=>`<button type="button" aria-pressed="${_coverUI.days===n}" onclick="coverSetDays(${n})">${n} days</button>`).join("")}</span><span class="swin-note" style="margin:0">Acting cover is dated. Labels and team leaders change only between its start and end.</span></div>`;
+
+  h+=`<section class="cov-sec" id="covGaps"><h3>Needs cover (${gaps.length})</h3>`;
+  h+=gaps.length?gaps.map(_coverGapHTML).join(""):`<div class="swin-note">No leader is away without cover in the next ${_coverUI.days} days.</div>`;
+  h+=`</section>`;
+
+  h+=`<section class="cov-sec" id="covBooked"><h3>Booked cover (${booked.length})</h3>`;
+  if(booked.length){
+    h+=`<div class="cov-tbl-wrap"><table class="cov-tbl"><thead><tr><th>Who</th><th>Covering</th><th>Dates</th><th>Role</th><th>State</th><th></th></tr></thead><tbody>`;
+    booked.forEach(r=>{
+      const st=coverState(r,today);
+      h+=`<tr data-id="${XA(r.id)}"><td><b>${X(r.personName)}</b></td><td>${X(r.forName||"Vacancy")}</td><td>${X(coverSpanText(r))}</td><td>${X(r.role)}</td><td><span class="cov-state ${st}">${st}</span></td><td style="white-space:nowrap">`;
+      if(st==="active")h+=`<button type="button" class="swin-btn" onclick="coverEnd('${XJS(r.id)}')">End today</button> `;
+      if(st!=="ended")h+=`<button type="button" class="swin-btn" onclick="coverCancel('${XJS(r.id)}')">Cancel</button>`;
+      h+=`</td></tr>`;
+    });
+    h+=`</tbody></table></div>`;
+  }else h+=`<div class="swin-note">No cover booked.</div>`;
+  const opt=(list,sel)=>list.map(n=>`<option value="${XA(n)}"${n===sel?" selected":""}>${X(n)}</option>`).join("");
+  h+=`<div class="cov-form" id="covForm">`;
+  h+=`<label>Who covers<select id="covPerson" onchange="coverFormSet('person',this.value)"><option value="">—</option>${opt(names,f.person)}</select></label>`;
+  h+=`<label>Covering<select id="covFor" onchange="coverFormSet('forName',this.value)">${opt([...leaders,...names.filter(n=>!leaders.includes(n))],f.forName)}</select></label>`;
+  h+=`<label>From<input type="date" id="covFrom" value="${XA(f.starts)}" onchange="coverFormSet('starts',this.value)"></label>`;
+  h+=`<label>To<input type="date" id="covTo" value="${XA(f.ends)}" onchange="coverFormSet('ends',this.value)"></label>`;
+  h+=`<label>Role<select id="covRole" onchange="coverFormSet('role',this.value)">${opt(COVER_ROLES,f.role)}</select></label>`;
+  h+=`<button type="button" class="swin-btn pri" id="covSave" onclick="coverFormSave()">Book cover</button></div>`;
+  h+=`</section>`;
+
+  h+=`<section class="cov-sec" id="covClashes"><h3>Clashes (${clashes.length})</h3>`;
+  h+=clashes.length?clashes.map(c=>`<div class="cov-clash" data-kind="${c.kind}">${X(c.text)}</div>`).join(""):`<div class="swin-note">No clashes in current or upcoming cover.</div>`;
+  h+=`</section>`;
+
+  // Pool: development labels, or anyone who has acted.
+  const since=excKey(_swinAddDays(new Date(),-COVER_LOOKBACK_DAYS));
+  const actors=new Set(coverRows().filter(r=>coverState(r)!=="cancelled").map(r=>r.personName));
+  const pool=Object.values(S.people||{}).filter(p=>p&&p.name&&(actors.has(p.name)||peopleRoleLabels(p.name).some(l=>/^(YAT|Senior Agent|Supervisor|SME)$/i.test(l)))).map(p=>p.name).sort((a,b)=>a.localeCompare(b));
+  h+=`<section class="cov-sec" id="covPool"><h3>YAT and cover pool (${pool.length})</h3>`;
+  if(pool.length){
+    h+=`<div class="cov-tbl-wrap"><table class="cov-tbl"><thead><tr><th>Name</th><th>Leader</th><th>Labels</th><th>Acted (6 mo)</th><th>Teams covered</th><th>Last acted</th><th>Now / next</th><th>Readiness</th></tr></thead><tbody>`;
+    pool.forEach(n=>{
+      const p=S.people[n]||{},mine=coverRows().filter(r=>coverState(r)!=="cancelled"&&_coverIs(n,r.personId,r.personName));
+      const teams=[...new Set(mine.filter(r=>!r.starts||r.starts<=today).map(r=>r.forName||"Vacancy"))];
+      const now=mine.find(r=>coverState(r,today)==="active")||mine.filter(r=>coverState(r,today)==="upcoming").sort((a,b)=>a.starts.localeCompare(b.starts))[0];
+      const last=coverLastActed(n),labels=peopleRoleLabels(n).filter(l=>!/^acting\b/i.test(l));
+      h+=`<tr data-name="${XA(n)}"><td><b>${X(n)}</b></td><td>${X(p.teamLeader||"—")}</td><td>${labels.map(l=>`<span class="swin-chip" style="margin-top:0">${X(l)}</span>`).join(" ")||"—"}</td>`;
+      h+=`<td class="mono">${coverActingDays(n,since)}</td><td>${X(teams.join(", ")||"—")}</td><td>${last?X(_swinDayLabel(last)):"—"}</td>`;
+      h+=`<td>${now?`${X(coverState(now,today)==="active"?"Acting for ":"Covers ")}${X(now.forName||"vacancy")}, ${X(coverSpanText(now))}`:"—"}</td>`;
+      h+=`<td><input class="cov-ready" aria-label="${XA("Readiness note for "+n)}" value="${XA(p.readiness||"")}" placeholder="Ready for…" onchange="coverSetReadiness('${XJS(n)}',this.value)"></td></tr>`;
+    });
+    h+=`</tbody></table></div>`;
+  }else h+=`<div class="swin-note">Nobody is labelled YAT, Senior Agent, Supervisor or SME, and nobody has acted yet. Add labels from People → Agents.</div>`;
+  h+=`</section></div>`;
+  return h;
 }
 
 </script>
@@ -35481,7 +35906,7 @@ function nsRuntimeRole(roleTitle){return /agent/i.test(roleTitle||"")&&!/lead|su
 // alone. Opening a project uses it. The additions are a projection of the canonical model, not an
 // edit, so writing them does not mark the device as having unsaved work.
 function nsSyncPeopleToRuntime(opts){
-  const model=nsCanonical(),scopedPeople=nsScopedRows("people"),scopedActing=nsScopedRows("acting");if(!S.people||typeof S.people!=="object")S.people={};
+  const model=nsCanonical(),scopedPeople=nsScopedRows("people");if(!S.people||typeof S.people!=="object")S.people={};
   const byId=new Map(scopedPeople.map(person=>[person.person_id,person])),kept=opts&&opts.onlyMissing?new Set(Object.keys(S.people)):null;
   scopedPeople.forEach(person=>{
     const name=person.full_name;if(!name||kept&&kept.has(name))return;
@@ -35491,13 +35916,10 @@ function nsSyncPeopleToRuntime(opts){
     // nsApplyRuntimePersonEdit) holds the whole label set, so a label removed there stays removed.
     // Imported records only ever add labels.
     const labels=person.source_id==="NS-BROWSER"?nsNormalizeLabels(person.labels):[...new Set([...(current.labels||[]),...(person.labels||[])])];
-    S.people[name]=Object.assign({},current,{name,personId:person.person_id,role:nsRuntimeRole(person.role_type),roleType:person.role_type,title:person.job_title||person.role_type,jobTitle:person.job_title||current.jobTitle||"",team:person.home_team||current.team||"",department:person.home_department||current.department||"",teamLeader:manager,status:person.status||current.status||"Active",labels,roleLabels:labels,notes:person.notes||current.notes||""});
+    S.people[name]=Object.assign({},current,{name,personId:person.person_id,role:nsRuntimeRole(person.role_type),roleType:person.role_type,title:person.job_title||person.role_type,jobTitle:person.job_title||current.jobTitle||"",team:person.home_team||current.team||"",department:person.home_department||current.department||"",teamLeader:manager,status:person.status||current.status||"Active",labels,roleLabels:labels,notes:person.notes||current.notes||"",readiness:person.readiness_notes||current.readiness||""});
   });
-  scopedActing.filter(item=>String(item.status||"Active").toLowerCase()!=="inactive").forEach(item=>{
-    const person=byId.get(item.person_id);if(!person||kept&&kept.has(person.full_name))return;
-    const label=/supervisor/i.test(item.acting_role)?"Acting Supervisor":"Acting Leader";
-    const runtime=S.people[person.full_name];runtime.labels=[...new Set([...(runtime.labels||[]),label])];runtime.roleLabels=runtime.labels;runtime.acting=true;
-  });
+  // Acting cover is dated (model.acting, read through nsActingRows). It used to stamp a permanent
+  // "Acting Leader" label and acting=true here, so anyone who covered once showed as acting forever.
   if(!kept){try{savePeople();}catch(err){}return;}
   if(Object.keys(S.people).length===kept.size)return;
   const applying=NS.applyingRemote;NS.applyingRemote=true;
@@ -35532,6 +35954,7 @@ function nsApplyRuntimePersonEdit(name,patch){
     }
     if(has("status"))changes.status=nsClean(patch.status)||"Active";
     if(has("labels"))changes.labels=nsNormalizeLabels(patch.labels);
+    if(has("readiness"))changes.readiness_notes=String(patch.readiness||"").trim();
     if(!Object.entries(changes).some(([field,value])=>JSON.stringify(field==="labels"?nsNormalizeLabels(person.labels):person[field]??"")!==JSON.stringify(value)))return;
     // A person scoped only through its source keeps that scope once the source becomes NS-BROWSER.
     if(!nsDirectDepartmentKey(person)&&department)changes.department_key=department;
@@ -36385,7 +36808,7 @@ function nsRenderOrganisation(el){
   nsMergeRuntimePeopleDirectory();const model=nsCanonical(),all=nsAllPeople(),departments=nsOrgDepartments(),teams=nsOrgTeams();
   const search=String(S.nsOrgSearch||"").toLowerCase(),dept=S.nsOrgDept||"all",team=S.nsOrgTeam||"all";
   const people=all.filter(person=>(dept==="all"||person.home_department===dept)&&(team==="all"||person.home_team===team)&&(!search||[person.full_name,person.job_title,person.role_type,person.home_department,person.home_team,...nsPersonLabels(person)].join(" ").toLowerCase().includes(search)));
-  const acting=model.acting.filter(item=>String(item.status||"Active").toLowerCase()==="active"),ready=all.filter(nsCoverReady);
+  const todayISO=nsISODate(new Date()),acting=nsScopedRows("acting").filter(item=>String(item.status||"Active").toLowerCase()==="active"&&(!item.starts||nsISODate(item.starts)<=todayISO)&&(!item.ends||nsISODate(item.ends)>=todayISO)),ready=all.filter(nsCoverReady);
   const rows=people.map(person=>{
     const labels=nsPersonLabels(person),manager=person.manager_name||nsPersonName(person.reports_to_person_id)||"-";
     return`<tr><td><b>${nsEsc(person.full_name)}</b><div style="color:var(--tm);font:9px var(--mono);margin-top:2px">${nsEsc(person.person_id)}</div></td><td><b>${nsEsc(person.job_title||"-")}</b><div style="color:var(--tm);margin-top:2px">${nsEsc(person.role_type||"Unassigned")}</div></td><td>${nsEsc(person.home_department||"-")}<div style="color:var(--tm);margin-top:2px">${nsEsc(person.home_team||"-")}</div></td><td>${nsEsc(manager)}</td><td><div class="ns-labels">${labels.map(label=>`<span class="ns-label">${nsEsc(label)}</span>`).join("")||'<span class="ns-label">none</span>'}</div></td><td>${nsCoverReady(person)?'<span class="ns-label ready">Eligible</span>':'<span class="ns-label">Standard</span>'}</td><td style="white-space:nowrap"><button class="ns-btn" onclick="nsOpenPersonEditor('${nsJs(person.person_id)}')">Edit</button> <button class="ns-btn" onclick="nsOpenActingEditor('${nsJs(person.person_id)}')">Acting</button></td></tr>`;
@@ -36438,11 +36861,42 @@ function nsSaveActing(personId){
   const person=nsPersonById(personId);if(!person)return;
   const role=document.getElementById("nsActingRole")?.value||"Acting Team Lead",starts=document.getElementById("nsActingStarts")?.value||new Date().toISOString().slice(0,10),id=nsId("NS-ACT",personId+"|"+starts+"|"+role);
   const record={acting_assignment_id:id,person_id:personId,person_name:person.full_name,acting_role:role,acting_for_person_id:document.getElementById("nsActingFor")?.value||"",acting_scope:nsClean(document.getElementById("nsActingScope")?.value),starts,ends:document.getElementById("nsActingEnds")?.value||"",status:"Active",notes:"",source_id:"NS-BROWSER",authority_rank:0,updated_at:nsNow(),sync_status:"Staged"};
-  nsUpsert("acting",[record],row=>row.acting_assignment_id,0);const label=/supervisor/i.test(role)?"Acting Supervisor":"Acting Leader";person.labels=[...new Set([...(person.labels||[]),label])];person.source_id="NS-BROWSER";person.authority_rank=0;
-  nsStageChange("PeopleHub","Acting",id,"create",record);nsSyncPeopleToRuntime();if(typeof peopleSetRoleLabels==="function")peopleSetRoleLabels(person.full_name,person.labels);nsPersist();document.getElementById("nsActingEditor")?.remove();rOps($("ca"));toast(person.full_name+" is now cover-ready","ok");
+  nsUpsert("acting",[record],row=>row.acting_assignment_id,0);
+  nsStageChange("PeopleHub","Acting",id,"create",record);nsSyncPeopleToRuntime();nsPersist();document.getElementById("nsActingEditor")?.remove();rOps($("ca"));toast(person.full_name+" is covering from "+starts+(record.ends?" to "+record.ends:""),"ok");
+}
+
+// ── Dated acting cover for the app side (src/app/people/cover.js) ──
+// Person names are resolved here because the people records live in this closure. Rows are scoped
+// to the open project like every other department table.
+function nsActingRows(){
+  return nsScopedRows("acting").map(row=>({id:row.acting_assignment_id,personId:row.person_id||"",personName:nsPersonName(row.person_id)||row.person_name||"",role:row.acting_role||"Acting Team Lead",forId:row.acting_for_person_id||"",forName:row.acting_for_person_id?(nsPersonName(row.acting_for_person_id)||row.acting_for_name||""):(row.acting_for_name||""),scope:row.acting_scope||"",starts:nsISODate(row.starts)||"",ends:nsISODate(row.ends)||"",status:row.status||"Active",notes:row.notes||""})).filter(row=>row.personName);
+}
+function nsPersonIdByName(name){const key=nsNameKey(name);const person=key?nsScopedRows("people").find(item=>nsNameKey(item.full_name)===key):null;return person?person.person_id:"";}
+// Creates a cover record, or updates one when fields.id names an existing record. Returns its id.
+function nsSaveActingCover(fields){
+  if(!fields||typeof fields!=="object")return"";
+  const model=nsCanonical(),existing=fields.id?(model.acting||[]).find(row=>row.acting_assignment_id===fields.id):null;
+  if(existing){
+    const changes={};
+    ["starts","ends","status","notes","acting_role","acting_scope"].forEach(field=>{const key={acting_role:"role",acting_scope:"scope"}[field]||field;if(Object.prototype.hasOwnProperty.call(fields,key))changes[field]=field==="starts"||field==="ends"?nsISODate(fields[key]):nsClean(fields[key]);});
+    Object.assign(existing,changes,{source_id:"NS-BROWSER",authority_rank:0,updated_at:nsNow(),sync_status:"Staged"});
+    nsStageChange("PeopleHub","Acting",existing.acting_assignment_id,"update",Object.assign({},existing));
+    nsPersist();
+    return existing.acting_assignment_id;
+  }
+  const person=nsPersonById(fields.personId)||nsPersonById(nsPersonIdByName(fields.personName));if(!person)return"";
+  const forId=fields.forId||nsPersonIdByName(fields.forName)||"",starts=nsISODate(fields.starts)||nsISODate(new Date()),role=nsClean(fields.role)||"Acting Team Lead";
+  const id=nsId("NS-ACT",person.person_id+"|"+starts+"|"+role+"|"+forId);
+  const record={acting_assignment_id:id,person_id:person.person_id,person_name:person.full_name,acting_role:role,acting_for_person_id:forId,acting_scope:nsClean(fields.scope),starts,ends:nsISODate(fields.ends)||"",status:"Active",notes:nsClean(fields.notes),source_id:"NS-BROWSER",authority_rank:0,updated_at:nsNow(),sync_status:"Staged"};
+  nsUpsert("acting",[record],row=>row.acting_assignment_id,0);
+  nsStageChange("PeopleHub","Acting",id,"create",record);
+  nsPersist();
+  return id;
 }
 
 Object.assign(window,{nsOpenPersonEditor,nsSavePersonEditor,nsOpenOrgUnitEditor,nsSaveOrgUnit,nsOpenActingEditor,nsSaveActing});
+window.nsActingRows=nsActingRows;
+window.nsSaveActingCover=nsSaveActingCover;
 
 function nsOTDecisionKey(record){return(record.person_id||nsNameKey(record.person_name))+"|"+record.date+"|"+(record.slot||"FULL");}
 function nsOTMonths(){const dates=[...nsScopedRows("otWishes"),...nsScopedRows("otDecisions")].map(row=>row.date).filter(Boolean);return[...new Set(dates.map(date=>date.slice(0,7)))].sort();}

@@ -96,14 +96,31 @@ function swinRows(name,fromISO,toISO){
     const iso=excKey(d);
     let e=own.get(iso)||null,source=e?(e._bpFixed?"blueprint":"roster"):"none";
     if(!e&&lead){e=lead.get(iso)||null;if(e)source="tl";}
-    rows.push(_swinRow(iso,d,e,source,leader,excBy[iso]||[]));
+    const r=_swinRow(iso,d,e,source,leader,excBy[iso]||[]);
+    // Following the TL's rota: the TL's own leave or sickness is not this person's. The team still
+    // works, but the source has no shift for them, so it is a gap, not "Leave".
+    if(source==="tl"&&e&&e.isOff&&(r.kind==="leave"||/^(Sick|Training)$/.test(r.status))){r.kind="none";r.type="none";r.status="TL away";r.code="TL away";r.leaderAway=true;}
+    rows.push(r);
   }
   return rows;
 }
 function _swinShiftText(r,clock){
-  if(r.kind!=="work")return r.kind==="none"?"No row":r.code;
+  if(r.kind!=="work")return r.kind==="none"?(r.leaderAway?"TL away":"No row"):r.code;
   const s=clock==="uk"?r.ukS:r.saS,e=clock==="uk"?r.ukE:r.saE;
   return s+(e?"–"+e:"")+(r.overnight?" (+1)":"");
+}
+// Cover records (people/cover.js) that touch this range, as lines for the header.
+function _swinCoverNotes(name,fromISO,toISO){
+  if(typeof coverRows!=="function")return[];
+  const base=_swinLeaderOf(name),out=[];
+  coverRows().forEach(r=>{
+    if(coverState(r)==="cancelled"||!_coverRangesOverlap(r,fromISO,toISO))return;
+    const span=coverSpanText(r);
+    if(_coverIs(name,r.personId,r.personName))out.push(`${coverLabel(r)} for ${r.forName||"a vacancy"}, ${span}`);
+    else if(_coverIs(name,r.forId,r.forName))out.push(`Covered by ${r.personName}, ${span}`);
+    else if(base&&_coverIs(base,r.forId,r.forName))out.push(`Led by ${r.personName} (acting for ${base}), ${span}`);
+  });
+  return out;
 }
 function _swinSummary(rows){
   const todayISO=excKey(new Date()),first=rows[0]&&rows[0].iso||todayISO;
@@ -162,7 +179,8 @@ function _swinSenderName(){
 function _swinRecordSent(name,rows,channel){
   const store=_swinSentStore(),k=_swinSentKey(name),prev=store[k]||{},merged=Object.assign({},prev.rows||{});
   rows.forEach(r=>{merged[r.iso]=_swinSig(r);});
-  const cutoff=excKey(_swinAddDays(new Date(),-SWIN_SENT_KEEP_DAYS));
+  const oldest=rows.reduce((m,r)=>!m||r.iso<m?r.iso:m,""),keep=excKey(_swinAddDays(new Date(),-SWIN_SENT_KEEP_DAYS));
+  const cutoff=oldest&&oldest<keep?oldest:keep;
   Object.keys(merged).forEach(iso=>{if(iso<cutoff)delete merged[iso];});
   store[k]={name,at:new Date().toISOString(),by:_swinSenderName(),channel,rows:merged};
   _persistSet(SWIN_SENT_KEY,JSON.stringify(store));
@@ -238,6 +256,12 @@ function _swinStatusCell(r,name){
   const codeU=String(r.code||"").toUpperCase();
   if(r.kind==="off"&&codeU&&codeU!=="OFF"&&codeU!==r.status.toUpperCase())h+=` <span class="swin-tag t-off">${X(r.code)}</span>`;
   if(r.ph)h+=` <span class="swin-tag t-ph" title="${XA(r.ph.name)}">PH</span>`;
+  if(typeof actingOn==="function"){
+    const a=actingOn(name,r.iso);
+    if(a)h+=` <span class="swin-tag t-act" title="${XA(coverLabel(a)+", "+coverSpanText(a))}">Acting for ${X((a.forName||"vacancy").split(" ")[0])}</span>`;
+    const l=leaderOn(name,r.iso);
+    if(l.cover)h+=` <span class="swin-tag t-act" title="${XA(l.cover.personName+" is acting for "+l.base+", "+coverSpanText(l.cover))}">Led by ${X(l.name.split(" ")[0])}</span>`;
+  }
   r.excs.forEach(ex=>{
     if(ex.type==="annual_leave"||ex.type==="training")return;
     const def=(typeof EXC_TYPES!=="undefined"?EXC_TYPES:[]).find(t=>t.id===ex.type);
@@ -300,6 +324,7 @@ function renderScheduleWindow(){
   let h=`<div class="swin-hd"><div style="min-width:0;flex:1"><h2 id="swinTitle">${X(st.name)}</h2>`;
   h+=`<div class="swin-meta">${[team?X(team):"",leader?"Leader: "+X(leader):(Object.values(S.people||{}).some(p=>p&&p.teamLeader===st.name)?"Team leader":"No leader recorded"),S.activeDept?X(S.activeDept):""].filter(Boolean).join(" · ")}</div>`;
   if(sum.inherited)h+=`<div class="swin-meta">No rows of their own in this range: shifts follow ${X(leader)}'s rota.</div>`;
+  _swinCoverNotes(st.name,range.from,range.to).forEach(t=>{h+=`<div class="swin-meta swin-cover">${X(t)}</div>`;});
   if(labels.length)h+=`<div>${labels.map(l=>`<span class="swin-chip">${X(l)}</span>`).join("")}</div>`;
   h+=`</div><button type="button" id="swinClose" class="swin-x" onclick="closeScheduleWindow()" aria-label="Close schedule window">✕</button></div>`;
 
@@ -411,7 +436,7 @@ function _swinSheetHTML(name,rows,clock,rangeLabel){
     h+=`<tr style="${wk?"background:"+C.band:""}"><td style="${cell}white-space:nowrap">${X(_swinDayLabel(r.iso))}${r.ph?` <span style="color:${C.wknd};font-size:11px">${X(r.ph.name)}</span>`:""}</td>`;
     h+=`<td style="${cell}font-family:'DM Mono',monospace;font-weight:700;color:${col}">${X(r.kind==="none"?"—":_swinShiftText(r,clock))}</td>`;
     h+=`<td style="${cell}font-family:'DM Mono',monospace;color:${C.mute}">${X(other)}</td>`;
-    h+=`<td style="${cell}color:${col}">${X(r.kind==="none"?"Not on roster":r.status)}</td></tr>`;
+    h+=`<td style="${cell}color:${col}">${X(r.kind==="none"?(r.leaderAway?"TL away, shift not set":"Not on roster"):r.status)}</td></tr>`;
   });
   h+=`</tbody></table>`;
   h+=`<div style="margin-top:12px;font-size:12px;color:${C.mute};line-height:1.5">`;

@@ -540,7 +540,7 @@ function rPeopleLogbookView(){
 function rPeople(el){
   _ensurePeopleOpsState();
   if(S.peopleSubTab==="cards")S.peopleSubTab="team";
-  if(!["dashboard","team","agents","logbook","events"].includes(S.peopleSubTab))S.peopleSubTab="dashboard";
+  if(!["dashboard","team","agents","cover","logbook","events"].includes(S.peopleSubTab))S.peopleSubTab="dashboard";
   const scopeLeaders=_peopleScopeLeaders();
   if(scopeLeaders.length&&(!S.selectedTL||!scopeLeaders.includes(S.selectedTL)))S.selectedTL=scopeLeaders[0];
   savePeopleOps();
@@ -551,6 +551,7 @@ function rPeople(el){
     {id:"dashboard",l:"People overview"},
     {id:"team",l:"Team"},
     {id:"agents",l:"Agents"},
+    {id:"cover",l:"Cover"},
     {id:"logbook",l:"Logbook"},
     {id:"events",l:"Events"}
   ];
@@ -593,6 +594,8 @@ function rPeople(el){
     h+=rPeopleTeamView();
   } else if(S.peopleSubTab==="agents"){
     h+=rPeopleAgentsView();
+  } else if(S.peopleSubTab==="cover"){
+    h+=rPeopleCoverView();
   } else if(S.peopleSubTab==="logbook"){
     h+=rPeopleLogbookView();
   } else if(S.peopleSubTab==="events"){
@@ -706,6 +709,7 @@ function _renderTLDetailPanel(tlName,todayISO,today){
   const hs=S.month?computeHealthScore(S.entries.filter(e=>e.name===tlName&&e.date&&e.date.getMonth()===parseInt(S.month.split("-")[1])&&e.date.getFullYear()===parseInt(S.month.split("-")[0])),tlName,S.month,bp,pos,dk):null;
 
   let h="";
+  if(typeof coverBannerHTML==="function")h+=coverBannerHTML(tlName);
 
   // TL header card
   h+=`<div style="background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:12px">`;
