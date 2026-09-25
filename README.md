@@ -54,7 +54,11 @@ a reload, and both-sides-changed comparisons. `projects-ops.spec.js` covers the 
 notes and statuses — reaching a second device and surviving its next save.
 
 `mobile-shell.spec.js` covers the phone bar (Home, Calendar, People, Ops, Projects), the iOS
-home-screen icon and status bar, and the shell clearing a notch inset.
+home-screen icon, launch screens and status bar, the shell clearing a notch inset, the project tab
+strip waiting for a second project, and the Android status bar following the theme.
+
+`apple-touch-icon.png` and `splash/` are published next to `index.html`. They are rendered from the
+mark and the boot splash by `node build/render-ios-assets.js`; re-run it when either changes.
 
 Tests build their projects with `createTestProject` in `tests/helpers.js`. The app itself ships no
 sample or demo data.

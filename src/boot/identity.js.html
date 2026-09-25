@@ -14,7 +14,7 @@
     const boot=document.getElementById('syncBoot');
     if(!boot)return;
     boot.classList.add('done');
-    setTimeout(()=>boot.remove(),520);
+    setTimeout(()=>{boot.remove();if(typeof _syncThemeColorMeta==='function')_syncThemeColorMeta();},520);
   }
   document.addEventListener('DOMContentLoaded',function(){
     installSyncIdentity();

@@ -80,10 +80,8 @@ test.describe('screens agree with each other', () => {
     }
   });
 
-  test('Home, Ops and Data control report the same sources', async ({ page }) => {
+  test('Ops and Data control report the same sources', async ({ page }) => {
     await openProject(page);
-    await nav(page, () => railNavDashboard());
-    await expect(page.locator('#ca .sd-ledger-row', { hasText: 'Sources' })).toContainText('1 file · 168 rows');
     await nav(page, () => railNavOps('overview'));
     await expect(page.locator('#ca .an-card', { hasText: 'Sources' }).first()).toContainText('1 loaded');
     await expect(page.locator('#ca')).not.toContainText('Parsed schedule rows');
@@ -124,17 +122,35 @@ test.describe('fewer choices up front', () => {
     await expect(page.locator('.lc-new-btn')).toBeVisible();
   });
 
-  test('Home opens on the numbers and today, not a hero or a clock widget', async ({ page }) => {
+  test('Home opens on the hero and today, with no admin rows in the hero', async ({ page }) => {
     await openProject(page);
     await nav(page, () => railNavDashboard());
-    await expect(page.locator('#ca .sd-status')).toBeVisible();
-    await expect(page.locator('#ca .sd-hero')).toHaveCount(0);
+    const hero = page.locator('#ca .sd-hero');
+    await expect(hero).toBeVisible();
+    await expect(hero.locator('.sd-title')).toHaveText(/Sync\s*Dashboard/);
+    await expect(hero.locator('.sd-ledger-row b')).toHaveText(['On floor', 'Off / leave', 'Floor window']);
+    await expect(hero).not.toContainText(/Alerts|Scope|Sources|Drop \/ browse|Import file/);
+    await expect(hero.locator('.sd-ledger-row', { hasText: 'Floor window' })).toContainText(/\d\d:\d\d–\d\d:\d\d/);
+    await expect(page.locator('#ca .sd-panel', { hasText: 'Working Today' })).toBeVisible();
     await expect(page.locator('#ca .sd-panel', { hasText: 'Shift time' })).toHaveCount(0);
-    // The hero it replaced was at least 252px tall on desktop before Working Today began.
-    test.skip(test.info().project.name !== 'desktop-chromium', 'phones stack the strip into two columns');
-    const today = page.locator('#ca .sd-panel', { hasText: 'Working Today' });
-    await expect(today).toBeVisible();
-    await expect.poll(async () => (await page.locator('#ca .sd-status').boundingBox() || {}).height).toBeLessThan(160);
-    await expect.poll(async () => (await today.boundingBox() || {}).y).toBeLessThan(400);
+  });
+
+  test('Home carries the live signal field, with no invader mode', async ({ page }) => {
+    await openProject(page);
+    await nav(page, () => railNavDashboard());
+    const field = page.locator('#ca .sd-side .sync-ascii-stage');
+    await expect(field).toBeVisible();
+    await expect(field.locator('.sync-signal-pre')).not.toBeEmpty();
+    const modes = await page.evaluate(() => SyncSignalField.modes);
+    expect(modes).toEqual(['Signal', 'Contour', 'Rain', 'Lattice', 'Phase']);
+    // The button names the mode the engine is drawing, and follows it round the whole cycle.
+    const button = page.locator('#syncAsciiModeButton');
+    await expect(button).toHaveText('Signal ↻');
+    for (const name of [...modes.slice(1), modes[0]]) {
+      await button.click();
+      await expect(button).toHaveText(`${name} ↻`);
+      expect(await page.evaluate(() => window._syncField.mode)).toBe(name);
+    }
+    expect(page.__jsErrors).toEqual([]);
   });
 });

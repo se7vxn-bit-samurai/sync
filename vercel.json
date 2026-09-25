@@ -2,6 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "installCommand": "echo 'no runtime dependencies'",
-  "buildCommand": "node build/build.js --check && mkdir -p _site && cp index.html apple-touch-icon.png _site/",
+  "buildCommand": "node build/build.js --check && mkdir -p _site && cp -r index.html apple-touch-icon.png splash _site/",
   "outputDirectory": "_site"
 }

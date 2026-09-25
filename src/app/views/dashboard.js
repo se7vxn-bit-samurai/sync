@@ -423,96 +423,28 @@ function rSyncDashboardWorkspace(el){
   if(S._dashboardWidgetDrawer)el.querySelector(".sync-dashboard-workspace")?.classList.add("drawer-open");
   ensureDashboardPersonalTicker();
 }
-const SYNC_ASCII_PATTERNS=[
-  {name:"Contour",frames:[String.raw`       .---------.       
-    .-'  .-----.  '-.    
-  .'   .'       '.   '.  
- /   .'  .---.    '.   \ 
-|   /   /     \     \   |
-|  |   |   +   |     |  |
-|   \   \     /     /   |
- \   '.  '---'    .'   / 
-  '.   '.       .'   .'  
-    '-.  '-----'  .-'    
-       '---------'       `,String.raw`       .---------.       
-    .-' .-------. '-.    
-  .'  .'  .---.  '.  '.  
- /  .'   /     \   '.  \ 
-|  /    |  /\   |    \  |
-| |     | <  >  |     | |
-|  \    |  \/   |    /  |
- \  '.   \     /   .'  / 
-  '.  '.  '---'  .'  .'  
-    '-. '-------' .-'    
-       '---------'       `]},
-  {name:"Weave",frames:[String.raw`+----+----+----+----+
-|\\  /|/\\ /|\\  /|/\\ /|
-| \\/ |  X | \\/ |  X |
-| /\ | /\\| /\ | /\\|
-+----+----+----+----+
-| /\\|\\  /| /\\|\\  /|
-|  X | \\/ |  X | \\/ |
-|/  \| /\ |/  \| /\ |
-+----+----+----+----+`,String.raw`+----+----+----+----+
-| /\\|\\  /| /\\|\\  /|
-|  X | \\/ |  X | \\/ |
-|/  \| /\ |/  \| /\ |
-+----+----+----+----+
-|\\  /|/\\ /|\\  /|/\\ /|
-| \\/ |  X | \\/ |  X |
-| /\ | /\\| /\ | /\\|
-+----+----+----+----+`]},
-  {name:"Resolve",frames:[String.raw`x . :  /\/\  : . x
- .  /  \/  \  .
-:  <   /\   >  :
- .  \ /  \ /  .
-x .  X----X  . x
- .  / \  / \  .
-:  <   \/   >  :
- .  \  /\  /  .
-x . : \/\/ : . x`,String.raw`.   .   /\   .   .
-  .   /  \   .
- .   / /\ \   .
-    / /  \ \    
----< < SYNC > >---
-    \ \  / /    
- .   \ \/ /   .
-  .   \  /   .
-.   .  \/  .   .`]},
-  {name:"Signal",frames:[String.raw`|. .|.. | .|.. .|
-| ..|.  |..| .  |
-|---+---+--+----|
-| . | /\|. | ..|
-|.. |<  >  |.  |
-|---+-\/-+-+---|
-| . |.. | .|.. |
-|.. | . |..| . |`,String.raw`|.. | . |..| .  |
-| . |.. | .|..  |
-|---+--+---+----|
-|.. |\  /. | . |
-| . | >< |..   |
-|---+-/\-+--+--|
-|.. | . |..| . |
-| . |.. | .|.. |`]}];
+// Home's signal field: the live ASCII engine in src/signal-field. The mode is stored as an index into
+// its modes; Signal (the mark resolving out of noise) is the default.
+function _syncAsciiModeIndex(){
+  const count=(window.SyncSignalField&&SyncSignalField.modes.length)||1;
+  return Math.abs(Number(S.syncAsciiMode)||0)%count;
+}
+function _syncAsciiModeName(){return window.SyncSignalField?SyncSignalField.modes[_syncAsciiModeIndex()]:"Signal";}
 function syncAsciiMarkup(){
-  // Rain is the launch default; an explicit mode (including 0) remains user-selectable.
-  const mode=(S.syncAsciiMode==null?3:Math.abs(Number(S.syncAsciiMode)||0))%SYNC_ASCII_PATTERNS.length,pattern=SYNC_ASCII_PATTERNS[mode];
-  return`<section class="sd-stage sync-ascii-stage"><div class="sync-ascii-head"><span>Sync signal field</span><button onclick="cycleSyncAsciiPattern()" title="Change signal pattern">${X(pattern.name)} ↻</button></div><div id="syncAsciiCanvas" class="sync-ascii-canvas" aria-label="Live Sync signal field"></div><div class="sync-ascii-foot"><span>Chaos</span><span class="sync-ascii-meter"><i></i><i></i><i></i><i></i><i></i></span><span>Sync</span></div></section>`;
+  return`<section class="sd-stage sync-ascii-stage"><div class="sync-ascii-head"><span>Sync signal field</span><button id="syncAsciiModeButton" onclick="cycleSyncAsciiPattern()" title="Change signal pattern">${X(_syncAsciiModeName())} ↻</button></div><div id="syncAsciiCanvas" class="sync-ascii-canvas" aria-label="Live Sync signal field"></div><div class="sync-ascii-foot"><span>Chaos</span><span class="sync-ascii-meter"><i></i><i></i><i></i><i></i><i></i></span><span>Sync</span></div></section>`;
 }
 function paintMeter(v){const meter=document.querySelector("#syncAsciiCanvas")?.closest(".sync-ascii-stage")?.querySelectorAll(".sync-ascii-meter i");if(!meter)return;const n=Math.round(v*meter.length);meter.forEach((el,i)=>el.classList.toggle("on",i<n));}
 function cycleSyncAsciiPattern(){
-  const count=window.SyncSignalField?.modes?.length||SYNC_ASCII_PATTERNS.length;
-  const current=S.syncAsciiMode==null?3:Math.abs(Number(S.syncAsciiMode)||0);
-  S.syncAsciiMode=(current+1)%count;
-  if(window._syncField)window._syncField.setMode(window.SyncSignalField.modes[S.syncAsciiMode]);
+  S.syncAsciiMode=(_syncAsciiModeIndex()+1)%((window.SyncSignalField&&SyncSignalField.modes.length)||1);
+  if(window._syncField)window._syncField.setMode(_syncAsciiModeName());
+  const btn=$("syncAsciiModeButton");if(btn)btn.textContent=_syncAsciiModeName()+" ↻";
   schedulePersist?.(false);
 }
 function ensureSyncAsciiTicker(){
   const host=$("syncAsciiCanvas");
   if(!host||!window.SyncSignalField)return;
   window._syncField?.destroy();
-  const asciiMode=S.syncAsciiMode==null?3:Math.abs(Number(S.syncAsciiMode)||0);
-  window._syncField=SyncSignalField.mount(host,{mode:SyncSignalField.modes[asciiMode%SyncSignalField.modes.length],onLevel:(v)=>paintMeter(v)});
+  window._syncField=SyncSignalField.mount(host,{mode:_syncAsciiModeName(),onLevel:(v)=>paintMeter(v)});
 }
 function rSyncDashboard(el){
   el.classList.add("dashboard-fixed");
@@ -540,8 +472,9 @@ function rSyncDashboard(el){
   const peopleIntel=typeof peopleOpsIntel==="function"?peopleOpsIntel(leaders):null;
   const peopleLine=peopleIntel?peopleIntel.ready+' OT ready - '+peopleIntel.issues.length+' structure':'people signals '+attention;
   const calendarLine=working.length+' working - '+off.length+' off - '+todayHours+'h';
-  const sourceRows=typeof _opsSourceRows==="function"?_opsSourceRows():[];
-  const sourceLine=sourceRows.length+(sourceRows.length===1?' file':' files')+' · '+sourceRows.reduce((n,r)=>n+(Number(r.rows)||0),0)+' rows';
+  const shiftStart=e=>(S.tz&&e.saS?e.saS:e.ukS)||"",shiftEnd=e=>(S.tz&&e.saE?e.saE:e.ukE)||"";
+  const floorStarts=working.map(shiftStart).filter(Boolean).sort(),floorEnds=working.map(shiftEnd).filter(Boolean).sort();
+  const floorWindow=floorStarts.length&&floorEnds.length?floorStarts[0]+'–'+floorEnds[floorEnds.length-1]:'No shifts today';
   const calendarMini='<div class="sd-list-row"><span class="name">Today</span><span class="meta">'+working.length+' / '+people.length+'</span></div><div class="sd-list-row"><span class="name">Window</span><span class="meta">'+X((S.tz?"SA":"UK")+' floor')+'</span></div>';
   const peopleMini='<div class="sd-list-row"><span class="name">People</span><span class="meta">'+people.length+'</span></div><div class="sd-list-row"><span class="name">OT readiness</span><span class="meta">'+(peopleIntel?peopleIntel.ready+' ready':'--')+'</span></div>';
   const monthParts=S.month?S.month.split("-").map(Number):[today.getFullYear(),today.getMonth()];
@@ -599,16 +532,18 @@ function rSyncDashboard(el){
   el.innerHTML='<div class="sync-dashboard" data-testid="dashboard-workspace">'+
     '<div class="sd-main">'+
       universalNote+
-      '<section class="sd-status" aria-label="Today at a glance">'+
-        '<div class="sd-ledger-row"><b>On floor</b><span>'+working.length+' / '+people.length+'</span></div>'+
-        '<div class="sd-ledger-row"><b>Off / leave</b><span>'+off.length+' / '+people.length+'</span></div>'+
-        '<div class="sd-ledger-row"><b>Alerts</b><span>'+issueOpen+' open</span></div>'+
-        '<div class="sd-ledger-row"><b>Scope</b><span>'+people.length+' people · '+leaders.length+' leaders</span></div>'+
-        '<div class="sd-ledger-row"><b>Sources</b><span>'+X(sourceLine)+'</span></div>'+
-        '<button class="sd-btn primary" onclick="browseScheduleFile()">Import file</button>'+
-      '</section>'+
+      // The hero is today's floor and nothing else: alerts, scope, sources and importing live in the
+      // toolbar, Ops and the Projects panel.
+      '<section class="sd-hero"><div class="sd-hero-copy"><div class="sd-eyebrow">7OS Sync · Operations Suite</div><div class="sd-title">Sync<br>Dashboard</div><div class="sd-sub">Your operation at a glance: parsed, mapped, and ready before the day starts.</div><div class="sd-actions"><button class="sd-btn" onclick="railNavToday()">Calendar</button><button class="sd-btn" onclick="railNavPeople(&quot;dashboard&quot;)">People</button></div></div>'+
+        '<div class="sd-ledger" aria-label="Today at a glance">'+
+          '<div class="sd-ledger-row"><b>On floor</b><span>'+working.length+' / '+people.length+'</span></div>'+
+          '<div class="sd-ledger-row"><b>Off / leave</b><span>'+off.length+' / '+people.length+'</span></div>'+
+          '<div class="sd-ledger-row"><b>Floor window</b><span>'+X(floorWindow)+'</span></div>'+
+        '</div></section>'+
       '<div class="sd-command-grid"><section class="sd-panel span-6"><div class="sd-panel-head"><h4>Working Today</h4><span>'+X(fDF(today))+'</span></div><div class="sd-panel-body"><div class="sd-list scroll">'+workingHtml+'</div></div></section><section class="sd-panel span-6"><div class="sd-panel-head"><h4>'+X(weekTitle)+'<small>'+X(weekRange)+'</small></h4><div class="sd-week-tools"><button aria-label="Previous week" onclick="S.dashWeekOffset=(Number(S.dashWeekOffset)||0)-1;rSyncDashboard($(\'ca\'))">‹</button><span>'+people.length+' people</span><button aria-label="Next week" onclick="S.dashWeekOffset=(Number(S.dashWeekOffset)||0)+1;rSyncDashboard($(\'ca\'))">›</button></div></div><div class="sd-panel-body"><div class="sd-cover">'+weekRows.join("")+'</div></div></section><section class="sd-panel span-4"><div class="sd-panel-head"><h4>Mini Calendar</h4><span>'+X(monthLabel())+'</span></div><div class="sd-panel-body"><div class="sd-mini-cal">'+miniCalendarHtml+'</div>'+gotoHtml+'</div></section><section class="sd-panel span-8"><div class="sd-panel-head"><h4>Schedule plan</h4><span>'+X(planLine)+'</span></div><div class="sd-panel-body">'+blueprintScheduleHtml+'</div></section>'+birthdayWidgetHtml+'</div>'+
       '<div class="sd-focus-grid"><section class="sd-focus-card" onclick="railNavToday()"><div><h3>Calendar</h3></div><div class="sd-mini-list">'+calendarMini+'</div><div class="sd-focus-kpi"><b>'+working.length+'</b><span>'+X(calendarLine)+'</span></div></section><section class="sd-focus-card" onclick="railNavPeople(&quot;dashboard&quot;)"><div><h3>People</h3></div><div class="sd-mini-list">'+peopleMini+'</div><div class="sd-focus-kpi"><b>'+people.length+'</b><span>'+X(peopleLine)+'</span></div></section><section class="sd-focus-card blueprint" onclick="railNavAnalytics(&quot;blueprint&quot;)"><div><h3>Blueprint</h3></div><div class="sd-mini-list">'+planRowHtml+issueHtml+'</div><div class="sd-focus-kpi"><b>'+X(hasBlueprint?bpCycle+'w':'--')+'</b><span>'+X(planLine)+'</span></div></section></div>'+
     '</div>'+
+    '<aside class="sd-side">'+syncAsciiMarkup()+'</aside>'+
   '</div>';
+  ensureSyncAsciiTicker();
 }

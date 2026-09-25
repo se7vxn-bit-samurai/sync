@@ -15,7 +15,9 @@
 .sync-boot::before{content:"";position:absolute;inset:-10%;background-image:linear-gradient(rgba(233,248,242,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(233,248,242,.045) 1px,transparent 1px);background-size:42px 42px;mask-image:radial-gradient(circle at center,#000 0%,transparent 70%);animation:syncGridDrift 8s linear infinite}
 .sync-boot.done{opacity:0;visibility:hidden;pointer-events:none}
 .sync-boot-panel{position:relative;display:grid;justify-items:center;gap:18px;padding:24px;text-align:center}
-.sync-boot-mark{width:min(168px,38vw);aspect-ratio:1;color:#9381ff;filter:drop-shadow(0 22px 44px rgba(0,0,0,.35))}
+/* The splash is always dark, so its mark draws in the splash's light ink, not the theme's (a light
+   theme's dark ink left the frame and S nearly invisible). */
+.sync-boot-mark{--ink:#e9f8f2;width:min(168px,38vw);aspect-ratio:1;color:#9381ff;filter:drop-shadow(0 22px 44px rgba(0,0,0,.35))}
 .sync-boot-mark .sync-frame,.sync-boot-mark .sync-link,.sync-boot-mark .sync-link-alt{stroke-dasharray:220;stroke-dashoffset:220;animation:syncDraw 1.05s ease forwards}
 .sync-boot-mark .sync-link{animation-delay:.18s}
 .sync-boot-mark .sync-link-alt{animation-delay:.34s}
@@ -1341,13 +1343,7 @@ body[data-theme="tide"]:is([data-variant="seafoam-day"],[data-variant="ice-sheet
 .sync-dashboard .sd-ledger{padding:26px 22px;display:flex;flex-direction:column;justify-content:center;gap:8px;border-left:1px solid var(--rule,var(--bdr));background:color-mix(in srgb,var(--bg2) 72%,transparent)}
 .sync-dashboard .sd-ledger-row{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--bdr);border-radius:6px;padding:7px 9px;background:color-mix(in srgb,var(--bg) 78%,transparent);font-size:11px}
 .sync-dashboard .sd-ledger-row b{color:var(--text)}
-/* Home status strip: replaced the 252px hero. Numbers first, one action. */
-.sync-dashboard .sd-status{display:grid;grid-template-columns:repeat(5,minmax(0,1fr)) auto;gap:8px;align-items:stretch}
-.sync-dashboard .sd-status .sd-ledger-row{flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;padding:9px 11px;background:var(--card);border-color:var(--card-border)}
-.sync-dashboard .sd-status .sd-ledger-row b{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--tm);font-weight:600}
-.sync-dashboard .sd-status .sd-ledger-row span{font-family:'JetBrains Mono','DM Mono',monospace;font-size:13px;font-weight:700;color:var(--text)}
 .sync-dashboard .sd-btn.primary{border-color:var(--accent);color:var(--accent);font-weight:600;white-space:nowrap}
-@media(max-width:900px){.sync-dashboard .sd-status{grid-template-columns:repeat(2,minmax(0,1fr))}.sync-dashboard .sd-status .sd-btn{grid-column:1/-1;min-height:42px}.sync-dashboard .sd-status .sd-ledger-row:nth-of-type(odd):last-of-type{grid-column:1/-1}}
 .sync-dashboard .sd-ledger-row span{font-family:'DM Mono',monospace;color:var(--accent)}
 /* The Ops workspace overview (_opsMetric) uses the same KPI tiles; unscoped there it rendered as plain stacked text. */
 .sync-dashboard .sd-kpis,.ops-hq .sd-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:14px}
@@ -2413,6 +2409,7 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
   .lc-th-dot{width:15px;height:15px}
 
   /* App shell */
+  .dept-strip.single{display:none}
   #mv{height:calc(100dvh - var(--sat));min-height:0}
   .mf-masthead{height:48px;min-height:48px;padding:0 12px;flex-wrap:nowrap;gap:6px;position:relative}
   .mf-mh-left{min-width:0;gap:6px}
@@ -2475,6 +2472,13 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
   .people-hq-grid{padding:10px;gap:10px}
   .people-context{padding:8px 10px;overflow-x:auto;flex-wrap:nowrap}
   .sync-dashboard{grid-template-columns:1fr;padding:10px;gap:10px}
+  /* One column: the signal field sits under the hero instead of after everything else. */
+  .sync-dashboard .sd-main{display:contents}
+  .sync-dashboard .sd-main>*{order:2}
+  .sync-dashboard .sd-main>.sd-hero,.sync-dashboard .sd-main>.sync-universal-note{order:0}
+  .sync-dashboard .sd-side{order:1}
+  .sync-dashboard .sd-side .sync-ascii-stage{min-height:0;height:230px}
+  .sync-dashboard .sd-panel-head h4 small{display:block;margin:3px 0 0}
   .sync-dashboard .sd-hero{grid-template-columns:1fr;min-height:auto}
   .sync-dashboard .sd-hero-copy{padding:24px 18px}
   .sync-dashboard .sd-title{font-size:34px}

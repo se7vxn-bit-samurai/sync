@@ -67,6 +67,26 @@ function _syncThemeVariantAttrs(){
   document.body.setAttribute("data-theme",theme);
   document.body.setAttribute("data-variant",variant);
   _applyThemeCardPalette(theme,idx);
+  _syncThemeColorMeta();
+}
+// Android paints its status bar from theme-color. Match whatever is painted at the top of the screen
+// (the project tab strip, the masthead, or the landing), so a light theme is not capped by a black
+// band. iOS ignores it: its status bar style is fixed in the head.
+function _syncThemeColorMeta(){
+  requestAnimationFrame(()=>{
+    try{
+      const meta=document.querySelector('meta[name="theme-color"]');if(!meta)return;
+      let el=document.elementFromPoint(window.innerWidth/2,1),color="";
+      for(;el&&el!==document.documentElement;el=el.parentElement){
+        const m=getComputedStyle(el).backgroundColor.match(/rgba?\(([^)]+)\)/);
+        if(!m)continue;
+        const parts=m[1].split(/[\s,\/]+/).filter(Boolean).map(Number);
+        if(parts.length<4||parts[3]>=0.85){color=`rgb(${parts[0]}, ${parts[1]}, ${parts[2]})`;break;}
+      }
+      if(!color)color=getComputedStyle(document.body).backgroundColor;
+      if(color&&meta.getAttribute("content")!==color)meta.setAttribute("content",color);
+    }catch(e){}
+  });
 }
 function _applyThemeCardPalette(theme,variantIdx){
   const palettes=THEME_CARD_PALETTES[theme]||THEME_CARD_PALETTES.surge;

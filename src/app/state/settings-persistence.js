@@ -1211,6 +1211,7 @@ function _syncShowProjectPicker(options){
   if(ha)ha.style.display='none';
   _syncRenderProjectPicker();
   _syncRenderLandingWidget();
+  if(typeof _syncThemeColorMeta==='function')_syncThemeColorMeta();
 }
 function _syncCloseWorkspaceToLanding(){
   _syncShowProjectPicker({clearActive:true});
@@ -1528,6 +1529,32 @@ async function _syncDeleteProject(key,name){
   }
   _syncRenderProjectPicker();
   if(typeof updateDeptStrip==='function')updateDeptStrip();
+}
+// The sample-project button is gone, but projects it made may still be on a device or in its cloud
+// copy. Listed only while one exists; removing them is a deliberate click, never automatic.
+function _syncRenderSampleCleanupSection(){
+  const samples=typeof window.nsListSampleProjects==='function'?window.nsListSampleProjects():[];
+  if(!samples.length)return'';
+  return `<section data-testid="sample-cleanup" style="margin-top:16px"><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Sample projects</div><p style="font-size:12px;color:var(--tm);line-height:1.5;margin:0 0 12px">Made by the old sample button: <b>${samples.map(p=>X(p.name)).join('</b>, <b>')}</b>. Removing them deletes them here and from your cloud copy. A restore point is taken first.</p><button class="btn" data-testid="remove-sample-projects" onclick="_syncRemoveSampleProjects()">Remove sample projects</button></section>`;
+}
+async function _syncRemoveSampleProjects(){
+  const samples=typeof window.nsListSampleProjects==='function'?window.nsListSampleProjects():[];
+  if(!samples.length||typeof window.nsRemoveDepartmentEverywhere!=='function')return;
+  if(!confirm(`Remove ${samples.length===1?'the sample project':samples.length+' sample projects'} (${samples.map(p=>p.name).join(', ')})?`))return;
+  await _syncAutoSnapshot('Before removing sample projects','auto-delete');
+  const activeKey=S.activeDept&&typeof nsActiveDepartmentKey==='function'?nsActiveDepartmentKey():'';
+  samples.forEach(p=>window.nsRemoveDepartmentEverywhere(p.key));
+  let flushOk=true;
+  try{flushOk=typeof window.syncFlushPendingPush==='function'?await window.syncFlushPendingPush():true;}
+  catch(err){flushOk=false;}
+  if(activeKey&&samples.some(p=>p.key===activeKey)){
+    S.activeDept=null;S.entries=[];
+    if(typeof _restoreViewportFromState==='function')_restoreViewportFromState();
+  }
+  _syncRenderProjectPicker();
+  if(typeof updateDeptStrip==='function')updateDeptStrip();
+  if(typeof renderSettings==='function'&&S._settingsOpen)renderSettings();
+  toast(flushOk?'Sample projects removed':'Sample projects removed here; the cloud copy could not be confirmed yet',flushOk?'ok':'warn');
 }
 async function _syncRetryDeleteFlush(name){
   _syncSetDeleteModalBusy(name,'Retrying sync for');

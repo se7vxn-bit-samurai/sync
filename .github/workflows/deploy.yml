@@ -4,8 +4,8 @@ name: Test and deploy
 # suite runs first and the site publishes only if it passes. A broken commit never reaches
 # sync.theguide.club; the last good deploy stays live.
 #
-# Publishing only index.html, CNAME and the iOS home-screen icon is deliberate: tests/, package.json
-# and the lockfile stay out of the public site.
+# Publishing only index.html, CNAME and the iOS icon and launch screens is deliberate: tests/,
+# package.json and the lockfile stay out of the public site.
 on:
   push:
     branches: [main]
@@ -61,6 +61,7 @@ jobs:
           cp index.html _site/
           cp CNAME _site/
           cp apple-touch-icon.png _site/
+          cp -r splash _site/
           ls -la _site
 
       - uses: actions/configure-pages@v5

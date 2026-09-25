@@ -93,6 +93,35 @@ test.describe('no sample data', () => {
   });
 });
 
+test.describe('sample projects made by the old sample button', () => {
+  test('Settings lists them and removes only them', async ({ page }) => {
+    const model = buildWorkspace(1, { names: ['Real Team'] });
+    model.sources.push({ source_id: 'src-sample', source_name: 'Sample roster', source_kind: 'sample', department_name: 'Sample Team', loaded_at: new Date().toISOString(), sheets: 1 });
+    model.people.push({ person_id: 'p-sample', full_name: 'Sample Person', home_department: 'Sample Team', source_id: 'src-sample' });
+    await openApp(page, { profile: PROFILE, workspaceRow: workspaceRow(model) });
+    await page.evaluate(() => window.__fakeSupabase.signIn());
+    await waitForPicker(page);
+    expect(await projectNames(page)).toEqual(expect.arrayContaining(['Real Team', 'Sample Team']));
+
+    await page.evaluate(() => openSettings('workspace'));
+    const section = page.locator('[data-testid="sample-cleanup"]');
+    await expect(section).toContainText('Sample Team');
+    await expect(section).not.toContainText('Real Team');
+    page.once('dialog', (d) => d.accept());
+    await section.locator('[data-testid="remove-sample-projects"]').click();
+    await expect(section).toHaveCount(0);
+    expect(await page.evaluate(() => window.nsListCanonicalProjects().map((p) => p.name))).toEqual(['Real Team']);
+    expect(await page.evaluate(() => window.nsListSampleProjects())).toEqual([]);
+  });
+
+  test('Settings shows nothing about them when there are none', async ({ page }) => {
+    await signedInWith(page, 1);
+    await page.evaluate(() => openSettings('workspace'));
+    await expect(page.locator('#settingsPanel')).toBeVisible();
+    await expect(page.locator('[data-testid="sample-cleanup"]')).toHaveCount(0);
+  });
+});
+
 test.describe('what changed since last time', () => {
   test('reports the difference in counts when a project is reopened', async ({ page }) => {
     await signedInWith(page, 2);

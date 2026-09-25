@@ -944,6 +944,22 @@ async function nsRestoreSnapshot(id){
   }
 }
 
+// Projects made by the sample-project button this app used to have: every source they hold is
+// source_kind "sample". A project someone later imported real data into keeps a real source, so it
+// is never listed. Used only by Settings' explicit "Remove sample projects".
+function nsListSampleProjects(){
+  try{
+    const byKey=new Map();
+    (nsCanonical().sources||[]).forEach(source=>{
+      const key=nsDirectDepartmentKey(source);if(!key)return;
+      const rec=byKey.get(key)||{key,name:nsClean(source.department_name)||key,sample:true};
+      if(source.source_kind!=="sample")rec.sample=false;
+      byKey.set(key,rec);
+    });
+    return[...byKey.values()].filter(rec=>rec.sample).map(({key,name})=>({key,name}));
+  }catch(err){console.error("[sync] listing sample projects failed",err);return[];}
+}
+window.nsListSampleProjects=nsListSampleProjects;
 window.nsSaveSnapshot=nsSaveSnapshot;
 window.nsListSnapshots=nsListSnapshots;
 window.nsRestoreSnapshot=nsRestoreSnapshot;
@@ -2674,34 +2690,6 @@ showLoadSplash=function(leaders,months,cacheKept){
   let resolvedCount=leaders;
   try{resolvedCount=gN().length||leaders;}catch(err){}
   return nsBaseShowLoadSplash(resolvedCount,months,cacheKept);
-};
-
-function nsExpandedSyncFrame(frame,mode){
-  const width=58,height=68,variants=[". :  ","+ -  ","x .  ","| .  "],motif=variants[mode%variants.length];
-  const field=Array.from({length:height},(_,y)=>Array.from({length:width},(_,x)=>y%6===0?(x%8===0?"+":"-"):(x%12===0?"|":motif[(x*3+y*5)%motif.length])));
-  const core=String(frame||"").replace(/^\n+|\n+$/g,"").split("\n"),coreWidth=Math.max(0,...core.map(line=>line.length));
-  const top=Math.max(1,Math.floor((height-core.length)/2)),left=Math.max(1,Math.floor((width-coreWidth)/2));
-  core.forEach((line,row)=>[...line].forEach((char,column)=>{if(top+row<height&&left+column<width)field[top+row][left+column]=char;}));
-  return field.map(row=>row.join("")).join("\n");
-}
-window.syncAsciiMarkup=function(){
-  // Rain is the launch default; an explicit mode (including 0) remains user-selectable.
-  const mode=(S.syncAsciiMode==null?3:Math.abs(Number(S.syncAsciiMode)||0))%SYNC_ASCII_PATTERNS.length,pattern=SYNC_ASCII_PATTERNS[mode];
-  return`<section class="sd-stage sync-ascii-stage"><div class="sync-ascii-head"><span>Sync signal field</span><button id="syncAsciiModeButton" onclick="cycleSyncAsciiPattern()" title="Change Sync mark">${X(pattern.name)} ↻</button></div><div id="syncAsciiCanvas" class="sync-ascii-canvas" aria-label="Live Sync signal field"></div><div class="sync-ascii-foot"><span>Chaos</span><span class="sync-ascii-meter"><i></i><i></i><i></i><i></i><i></i></span><span>Sync</span></div></section>`;
-};
-window.cycleSyncAsciiPattern=function(){
-  const count=window.SyncSignalField?.modes?.length||SYNC_ASCII_PATTERNS.length;
-  const current=S.syncAsciiMode==null?3:Math.abs(Number(S.syncAsciiMode)||0);
-  S.syncAsciiMode=(current+1)%count;
-  if(window._syncField)window._syncField.setMode(window.SyncSignalField.modes[S.syncAsciiMode]);
-  schedulePersist?.(false);
-};
-window.ensureSyncAsciiTicker=function(){
-  const host=document.getElementById("syncAsciiCanvas");
-  if(!host||!window.SyncSignalField)return;
-  window._syncField?.destroy();
-  const asciiMode=S.syncAsciiMode==null?3:Math.abs(Number(S.syncAsciiMode)||0);
-  window._syncField=SyncSignalField.mount(host,{mode:SyncSignalField.modes[asciiMode%SyncSignalField.modes.length],onLevel:(v)=>window.paintMeter?.(v)});
 };
 
 const nsMotionPolish=document.createElement("style");

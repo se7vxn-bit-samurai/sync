@@ -341,8 +341,9 @@ function loadIntoWorkspace(wb,sourceName,opts={}){
 function updateDeptStrip(){
   const strip=$("deptStrip");if(!strip)return;
   const depts=Object.keys(S.workspace);
-  if(!depts.length){strip.className="dept-strip";return;}
-  strip.className="dept-strip show";
+  if(!depts.length){strip.className="dept-strip";if(typeof _syncThemeColorMeta==="function")_syncThemeColorMeta();return;}
+  // "single": one project. Phones hide the strip then, since it only repeats the masthead's name.
+  strip.className="dept-strip show"+(depts.length<2?" single":"");
   let h="";
   depts.forEach(name=>{
     const isActive=name===S.activeDept;
@@ -364,6 +365,7 @@ function updateDeptStrip(){
   }
   h+=`<button class="dept-add" onclick="event.stopPropagation();openDeptAddMenu(this)" title="Add a department">+</button>`;
   strip.innerHTML=h;
+  if(typeof _syncThemeColorMeta==="function")_syncThemeColorMeta();
 }
 
 function closeDeptAddMenu(){

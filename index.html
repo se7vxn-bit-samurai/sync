@@ -26,6 +26,21 @@
 <!-- iOS ignores SVG touch icons and falls back to a screenshot of the page: this must be a real,
      opaque 180x180 PNG served next to index.html (deploy.yml and vercel.json publish it). -->
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<!-- iOS launch screens: the boot splash, settled, one per iPhone portrait size. iOS shows white
+     instead when none matches the device exactly. Rendered from #syncBoot; published from splash/. -->
+<link rel="apple-touch-startup-image" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/iphone-1320x2868.png">
+<link rel="apple-touch-startup-image" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/iphone-1206x2622.png">
+<link rel="apple-touch-startup-image" media="(device-width: 420px) and (device-height: 912px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/iphone-1260x2736.png">
+<link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/iphone-1290x2796.png">
+<link rel="apple-touch-startup-image" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/iphone-1179x2556.png">
+<link rel="apple-touch-startup-image" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/iphone-1284x2778.png">
+<link rel="apple-touch-startup-image" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/iphone-1170x2532.png">
+<link rel="apple-touch-startup-image" media="(device-width: 360px) and (device-height: 780px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/iphone-1080x2340.png">
+<link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/iphone-1125x2436.png">
+<link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/iphone-1242x2688.png">
+<link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="splash/iphone-828x1792.png">
+<link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/iphone-1242x2208.png">
+<link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="splash/iphone-750x1334.png">
 <title>Sync</title>
 <script id="sync-xlsx-parser">
 /* Vendored SheetJS Community Edition 0.20.3. Source: https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js */
@@ -172,7 +187,9 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
 .sync-boot::before{content:"";position:absolute;inset:-10%;background-image:linear-gradient(rgba(233,248,242,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(233,248,242,.045) 1px,transparent 1px);background-size:42px 42px;mask-image:radial-gradient(circle at center,#000 0%,transparent 70%);animation:syncGridDrift 8s linear infinite}
 .sync-boot.done{opacity:0;visibility:hidden;pointer-events:none}
 .sync-boot-panel{position:relative;display:grid;justify-items:center;gap:18px;padding:24px;text-align:center}
-.sync-boot-mark{width:min(168px,38vw);aspect-ratio:1;color:#9381ff;filter:drop-shadow(0 22px 44px rgba(0,0,0,.35))}
+/* The splash is always dark, so its mark draws in the splash's light ink, not the theme's (a light
+   theme's dark ink left the frame and S nearly invisible). */
+.sync-boot-mark{--ink:#e9f8f2;width:min(168px,38vw);aspect-ratio:1;color:#9381ff;filter:drop-shadow(0 22px 44px rgba(0,0,0,.35))}
 .sync-boot-mark .sync-frame,.sync-boot-mark .sync-link,.sync-boot-mark .sync-link-alt{stroke-dasharray:220;stroke-dashoffset:220;animation:syncDraw 1.05s ease forwards}
 .sync-boot-mark .sync-link{animation-delay:.18s}
 .sync-boot-mark .sync-link-alt{animation-delay:.34s}
@@ -1498,13 +1515,7 @@ body[data-theme="tide"]:is([data-variant="seafoam-day"],[data-variant="ice-sheet
 .sync-dashboard .sd-ledger{padding:26px 22px;display:flex;flex-direction:column;justify-content:center;gap:8px;border-left:1px solid var(--rule,var(--bdr));background:color-mix(in srgb,var(--bg2) 72%,transparent)}
 .sync-dashboard .sd-ledger-row{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--bdr);border-radius:6px;padding:7px 9px;background:color-mix(in srgb,var(--bg) 78%,transparent);font-size:11px}
 .sync-dashboard .sd-ledger-row b{color:var(--text)}
-/* Home status strip: replaced the 252px hero. Numbers first, one action. */
-.sync-dashboard .sd-status{display:grid;grid-template-columns:repeat(5,minmax(0,1fr)) auto;gap:8px;align-items:stretch}
-.sync-dashboard .sd-status .sd-ledger-row{flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;padding:9px 11px;background:var(--card);border-color:var(--card-border)}
-.sync-dashboard .sd-status .sd-ledger-row b{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--tm);font-weight:600}
-.sync-dashboard .sd-status .sd-ledger-row span{font-family:'JetBrains Mono','DM Mono',monospace;font-size:13px;font-weight:700;color:var(--text)}
 .sync-dashboard .sd-btn.primary{border-color:var(--accent);color:var(--accent);font-weight:600;white-space:nowrap}
-@media(max-width:900px){.sync-dashboard .sd-status{grid-template-columns:repeat(2,minmax(0,1fr))}.sync-dashboard .sd-status .sd-btn{grid-column:1/-1;min-height:42px}.sync-dashboard .sd-status .sd-ledger-row:nth-of-type(odd):last-of-type{grid-column:1/-1}}
 .sync-dashboard .sd-ledger-row span{font-family:'DM Mono',monospace;color:var(--accent)}
 /* The Ops workspace overview (_opsMetric) uses the same KPI tiles; unscoped there it rendered as plain stacked text. */
 .sync-dashboard .sd-kpis,.ops-hq .sd-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:14px}
@@ -2570,6 +2581,7 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
   .lc-th-dot{width:15px;height:15px}
 
   /* App shell */
+  .dept-strip.single{display:none}
   #mv{height:calc(100dvh - var(--sat));min-height:0}
   .mf-masthead{height:48px;min-height:48px;padding:0 12px;flex-wrap:nowrap;gap:6px;position:relative}
   .mf-mh-left{min-width:0;gap:6px}
@@ -2632,6 +2644,13 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
   .people-hq-grid{padding:10px;gap:10px}
   .people-context{padding:8px 10px;overflow-x:auto;flex-wrap:nowrap}
   .sync-dashboard{grid-template-columns:1fr;padding:10px;gap:10px}
+  /* One column: the signal field sits under the hero instead of after everything else. */
+  .sync-dashboard .sd-main{display:contents}
+  .sync-dashboard .sd-main>*{order:2}
+  .sync-dashboard .sd-main>.sd-hero,.sync-dashboard .sd-main>.sync-universal-note{order:0}
+  .sync-dashboard .sd-side{order:1}
+  .sync-dashboard .sd-side .sync-ascii-stage{min-height:0;height:230px}
+  .sync-dashboard .sd-panel-head h4 small{display:block;margin:3px 0 0}
   .sync-dashboard .sd-hero{grid-template-columns:1fr;min-height:auto}
   .sync-dashboard .sd-hero-copy{padding:24px 18px}
   .sync-dashboard .sd-title{font-size:34px}
@@ -4577,96 +4596,28 @@ function rSyncDashboardWorkspace(el){
   if(S._dashboardWidgetDrawer)el.querySelector(".sync-dashboard-workspace")?.classList.add("drawer-open");
   ensureDashboardPersonalTicker();
 }
-const SYNC_ASCII_PATTERNS=[
-  {name:"Contour",frames:[String.raw`       .---------.       
-    .-'  .-----.  '-.    
-  .'   .'       '.   '.  
- /   .'  .---.    '.   \ 
-|   /   /     \     \   |
-|  |   |   +   |     |  |
-|   \   \     /     /   |
- \   '.  '---'    .'   / 
-  '.   '.       .'   .'  
-    '-.  '-----'  .-'    
-       '---------'       `,String.raw`       .---------.       
-    .-' .-------. '-.    
-  .'  .'  .---.  '.  '.  
- /  .'   /     \   '.  \ 
-|  /    |  /\   |    \  |
-| |     | <  >  |     | |
-|  \    |  \/   |    /  |
- \  '.   \     /   .'  / 
-  '.  '.  '---'  .'  .'  
-    '-. '-------' .-'    
-       '---------'       `]},
-  {name:"Weave",frames:[String.raw`+----+----+----+----+
-|\\  /|/\\ /|\\  /|/\\ /|
-| \\/ |  X | \\/ |  X |
-| /\ | /\\| /\ | /\\|
-+----+----+----+----+
-| /\\|\\  /| /\\|\\  /|
-|  X | \\/ |  X | \\/ |
-|/  \| /\ |/  \| /\ |
-+----+----+----+----+`,String.raw`+----+----+----+----+
-| /\\|\\  /| /\\|\\  /|
-|  X | \\/ |  X | \\/ |
-|/  \| /\ |/  \| /\ |
-+----+----+----+----+
-|\\  /|/\\ /|\\  /|/\\ /|
-| \\/ |  X | \\/ |  X |
-| /\ | /\\| /\ | /\\|
-+----+----+----+----+`]},
-  {name:"Resolve",frames:[String.raw`x . :  /\/\  : . x
- .  /  \/  \  .
-:  <   /\   >  :
- .  \ /  \ /  .
-x .  X----X  . x
- .  / \  / \  .
-:  <   \/   >  :
- .  \  /\  /  .
-x . : \/\/ : . x`,String.raw`.   .   /\   .   .
-  .   /  \   .
- .   / /\ \   .
-    / /  \ \    
----< < SYNC > >---
-    \ \  / /    
- .   \ \/ /   .
-  .   \  /   .
-.   .  \/  .   .`]},
-  {name:"Signal",frames:[String.raw`|. .|.. | .|.. .|
-| ..|.  |..| .  |
-|---+---+--+----|
-| . | /\|. | ..|
-|.. |<  >  |.  |
-|---+-\/-+-+---|
-| . |.. | .|.. |
-|.. | . |..| . |`,String.raw`|.. | . |..| .  |
-| . |.. | .|..  |
-|---+--+---+----|
-|.. |\  /. | . |
-| . | >< |..   |
-|---+-/\-+--+--|
-|.. | . |..| . |
-| . |.. | .|.. |`]}];
+// Home's signal field: the live ASCII engine in src/signal-field. The mode is stored as an index into
+// its modes; Signal (the mark resolving out of noise) is the default.
+function _syncAsciiModeIndex(){
+  const count=(window.SyncSignalField&&SyncSignalField.modes.length)||1;
+  return Math.abs(Number(S.syncAsciiMode)||0)%count;
+}
+function _syncAsciiModeName(){return window.SyncSignalField?SyncSignalField.modes[_syncAsciiModeIndex()]:"Signal";}
 function syncAsciiMarkup(){
-  // Rain is the launch default; an explicit mode (including 0) remains user-selectable.
-  const mode=(S.syncAsciiMode==null?3:Math.abs(Number(S.syncAsciiMode)||0))%SYNC_ASCII_PATTERNS.length,pattern=SYNC_ASCII_PATTERNS[mode];
-  return`<section class="sd-stage sync-ascii-stage"><div class="sync-ascii-head"><span>Sync signal field</span><button onclick="cycleSyncAsciiPattern()" title="Change signal pattern">${X(pattern.name)} ↻</button></div><div id="syncAsciiCanvas" class="sync-ascii-canvas" aria-label="Live Sync signal field"></div><div class="sync-ascii-foot"><span>Chaos</span><span class="sync-ascii-meter"><i></i><i></i><i></i><i></i><i></i></span><span>Sync</span></div></section>`;
+  return`<section class="sd-stage sync-ascii-stage"><div class="sync-ascii-head"><span>Sync signal field</span><button id="syncAsciiModeButton" onclick="cycleSyncAsciiPattern()" title="Change signal pattern">${X(_syncAsciiModeName())} ↻</button></div><div id="syncAsciiCanvas" class="sync-ascii-canvas" aria-label="Live Sync signal field"></div><div class="sync-ascii-foot"><span>Chaos</span><span class="sync-ascii-meter"><i></i><i></i><i></i><i></i><i></i></span><span>Sync</span></div></section>`;
 }
 function paintMeter(v){const meter=document.querySelector("#syncAsciiCanvas")?.closest(".sync-ascii-stage")?.querySelectorAll(".sync-ascii-meter i");if(!meter)return;const n=Math.round(v*meter.length);meter.forEach((el,i)=>el.classList.toggle("on",i<n));}
 function cycleSyncAsciiPattern(){
-  const count=window.SyncSignalField?.modes?.length||SYNC_ASCII_PATTERNS.length;
-  const current=S.syncAsciiMode==null?3:Math.abs(Number(S.syncAsciiMode)||0);
-  S.syncAsciiMode=(current+1)%count;
-  if(window._syncField)window._syncField.setMode(window.SyncSignalField.modes[S.syncAsciiMode]);
+  S.syncAsciiMode=(_syncAsciiModeIndex()+1)%((window.SyncSignalField&&SyncSignalField.modes.length)||1);
+  if(window._syncField)window._syncField.setMode(_syncAsciiModeName());
+  const btn=$("syncAsciiModeButton");if(btn)btn.textContent=_syncAsciiModeName()+" ↻";
   schedulePersist?.(false);
 }
 function ensureSyncAsciiTicker(){
   const host=$("syncAsciiCanvas");
   if(!host||!window.SyncSignalField)return;
   window._syncField?.destroy();
-  const asciiMode=S.syncAsciiMode==null?3:Math.abs(Number(S.syncAsciiMode)||0);
-  window._syncField=SyncSignalField.mount(host,{mode:SyncSignalField.modes[asciiMode%SyncSignalField.modes.length],onLevel:(v)=>paintMeter(v)});
+  window._syncField=SyncSignalField.mount(host,{mode:_syncAsciiModeName(),onLevel:(v)=>paintMeter(v)});
 }
 function rSyncDashboard(el){
   el.classList.add("dashboard-fixed");
@@ -4694,8 +4645,9 @@ function rSyncDashboard(el){
   const peopleIntel=typeof peopleOpsIntel==="function"?peopleOpsIntel(leaders):null;
   const peopleLine=peopleIntel?peopleIntel.ready+' OT ready - '+peopleIntel.issues.length+' structure':'people signals '+attention;
   const calendarLine=working.length+' working - '+off.length+' off - '+todayHours+'h';
-  const sourceRows=typeof _opsSourceRows==="function"?_opsSourceRows():[];
-  const sourceLine=sourceRows.length+(sourceRows.length===1?' file':' files')+' · '+sourceRows.reduce((n,r)=>n+(Number(r.rows)||0),0)+' rows';
+  const shiftStart=e=>(S.tz&&e.saS?e.saS:e.ukS)||"",shiftEnd=e=>(S.tz&&e.saE?e.saE:e.ukE)||"";
+  const floorStarts=working.map(shiftStart).filter(Boolean).sort(),floorEnds=working.map(shiftEnd).filter(Boolean).sort();
+  const floorWindow=floorStarts.length&&floorEnds.length?floorStarts[0]+'–'+floorEnds[floorEnds.length-1]:'No shifts today';
   const calendarMini='<div class="sd-list-row"><span class="name">Today</span><span class="meta">'+working.length+' / '+people.length+'</span></div><div class="sd-list-row"><span class="name">Window</span><span class="meta">'+X((S.tz?"SA":"UK")+' floor')+'</span></div>';
   const peopleMini='<div class="sd-list-row"><span class="name">People</span><span class="meta">'+people.length+'</span></div><div class="sd-list-row"><span class="name">OT readiness</span><span class="meta">'+(peopleIntel?peopleIntel.ready+' ready':'--')+'</span></div>';
   const monthParts=S.month?S.month.split("-").map(Number):[today.getFullYear(),today.getMonth()];
@@ -4753,18 +4705,20 @@ function rSyncDashboard(el){
   el.innerHTML='<div class="sync-dashboard" data-testid="dashboard-workspace">'+
     '<div class="sd-main">'+
       universalNote+
-      '<section class="sd-status" aria-label="Today at a glance">'+
-        '<div class="sd-ledger-row"><b>On floor</b><span>'+working.length+' / '+people.length+'</span></div>'+
-        '<div class="sd-ledger-row"><b>Off / leave</b><span>'+off.length+' / '+people.length+'</span></div>'+
-        '<div class="sd-ledger-row"><b>Alerts</b><span>'+issueOpen+' open</span></div>'+
-        '<div class="sd-ledger-row"><b>Scope</b><span>'+people.length+' people · '+leaders.length+' leaders</span></div>'+
-        '<div class="sd-ledger-row"><b>Sources</b><span>'+X(sourceLine)+'</span></div>'+
-        '<button class="sd-btn primary" onclick="browseScheduleFile()">Import file</button>'+
-      '</section>'+
+      // The hero is today's floor and nothing else: alerts, scope, sources and importing live in the
+      // toolbar, Ops and the Projects panel.
+      '<section class="sd-hero"><div class="sd-hero-copy"><div class="sd-eyebrow">7OS Sync · Operations Suite</div><div class="sd-title">Sync<br>Dashboard</div><div class="sd-sub">Your operation at a glance: parsed, mapped, and ready before the day starts.</div><div class="sd-actions"><button class="sd-btn" onclick="railNavToday()">Calendar</button><button class="sd-btn" onclick="railNavPeople(&quot;dashboard&quot;)">People</button></div></div>'+
+        '<div class="sd-ledger" aria-label="Today at a glance">'+
+          '<div class="sd-ledger-row"><b>On floor</b><span>'+working.length+' / '+people.length+'</span></div>'+
+          '<div class="sd-ledger-row"><b>Off / leave</b><span>'+off.length+' / '+people.length+'</span></div>'+
+          '<div class="sd-ledger-row"><b>Floor window</b><span>'+X(floorWindow)+'</span></div>'+
+        '</div></section>'+
       '<div class="sd-command-grid"><section class="sd-panel span-6"><div class="sd-panel-head"><h4>Working Today</h4><span>'+X(fDF(today))+'</span></div><div class="sd-panel-body"><div class="sd-list scroll">'+workingHtml+'</div></div></section><section class="sd-panel span-6"><div class="sd-panel-head"><h4>'+X(weekTitle)+'<small>'+X(weekRange)+'</small></h4><div class="sd-week-tools"><button aria-label="Previous week" onclick="S.dashWeekOffset=(Number(S.dashWeekOffset)||0)-1;rSyncDashboard($(\'ca\'))">‹</button><span>'+people.length+' people</span><button aria-label="Next week" onclick="S.dashWeekOffset=(Number(S.dashWeekOffset)||0)+1;rSyncDashboard($(\'ca\'))">›</button></div></div><div class="sd-panel-body"><div class="sd-cover">'+weekRows.join("")+'</div></div></section><section class="sd-panel span-4"><div class="sd-panel-head"><h4>Mini Calendar</h4><span>'+X(monthLabel())+'</span></div><div class="sd-panel-body"><div class="sd-mini-cal">'+miniCalendarHtml+'</div>'+gotoHtml+'</div></section><section class="sd-panel span-8"><div class="sd-panel-head"><h4>Schedule plan</h4><span>'+X(planLine)+'</span></div><div class="sd-panel-body">'+blueprintScheduleHtml+'</div></section>'+birthdayWidgetHtml+'</div>'+
       '<div class="sd-focus-grid"><section class="sd-focus-card" onclick="railNavToday()"><div><h3>Calendar</h3></div><div class="sd-mini-list">'+calendarMini+'</div><div class="sd-focus-kpi"><b>'+working.length+'</b><span>'+X(calendarLine)+'</span></div></section><section class="sd-focus-card" onclick="railNavPeople(&quot;dashboard&quot;)"><div><h3>People</h3></div><div class="sd-mini-list">'+peopleMini+'</div><div class="sd-focus-kpi"><b>'+people.length+'</b><span>'+X(peopleLine)+'</span></div></section><section class="sd-focus-card blueprint" onclick="railNavAnalytics(&quot;blueprint&quot;)"><div><h3>Blueprint</h3></div><div class="sd-mini-list">'+planRowHtml+issueHtml+'</div><div class="sd-focus-kpi"><b>'+X(hasBlueprint?bpCycle+'w':'--')+'</b><span>'+X(planLine)+'</span></div></section></div>'+
     '</div>'+
+    '<aside class="sd-side">'+syncAsciiMarkup()+'</aside>'+
   '</div>';
+  ensureSyncAsciiTicker();
 }
 
 function _opsScope(){
@@ -12915,8 +12869,9 @@ function loadIntoWorkspace(wb,sourceName,opts={}){
 function updateDeptStrip(){
   const strip=$("deptStrip");if(!strip)return;
   const depts=Object.keys(S.workspace);
-  if(!depts.length){strip.className="dept-strip";return;}
-  strip.className="dept-strip show";
+  if(!depts.length){strip.className="dept-strip";if(typeof _syncThemeColorMeta==="function")_syncThemeColorMeta();return;}
+  // "single": one project. Phones hide the strip then, since it only repeats the masthead's name.
+  strip.className="dept-strip show"+(depts.length<2?" single":"");
   let h="";
   depts.forEach(name=>{
     const isActive=name===S.activeDept;
@@ -12938,6 +12893,7 @@ function updateDeptStrip(){
   }
   h+=`<button class="dept-add" onclick="event.stopPropagation();openDeptAddMenu(this)" title="Add a department">+</button>`;
   strip.innerHTML=h;
+  if(typeof _syncThemeColorMeta==="function")_syncThemeColorMeta();
 }
 
 function closeDeptAddMenu(){
@@ -16749,6 +16705,7 @@ function renderSettings(){
   let h='';
   if(section==='account')h+=_syncRenderSettingsAccountSection()+_syncRenderSettingsSnapshotSection();
   if(section==='workspace')h+=`<section><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Workspace</div><p style="font-size:12px;color:var(--tm);line-height:1.5;margin:0 0 12px">Keep your working context close to the schedule. Filters and notes are saved on this device.</p><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();_syncOpenProjectsPanel()">Projects</button><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();triggerRosterUpload()">Add roster</button><textarea id="syncSettingsScratchpad" placeholder="Quick notes, reminders, todos…" oninput="S.scratchpad=this.value;_saveScratchpad()" style="width:100%;box-sizing:border-box;min-height:110px;padding:8px 10px;border-radius:7px;border:1px solid var(--bdr);background:var(--card);color:var(--text);font-size:12px;font-family:inherit;resize:vertical">${X(S.scratchpad||'')}</textarea><div style="font-size:10px;color:var(--tm);margin-top:4px">Saved locally</div></section>`;
+  if(section==='workspace')h+=_syncRenderSampleCleanupSection();
   if(section==='preferences')h+=`<section><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Appearance</div><div style="display:flex;gap:6px;margin-bottom:12px">${Object.entries(TH).map(([k,t])=>`<button onclick="setTh('${k}');renderSettings()" style="flex:1;padding:8px 4px;border:1px solid ${S.th===k?'var(--accent)':'var(--bdr)'};border-radius:8px;background:${S.th===k?'var(--al)':'none'};color:var(--text);font:11px inherit;cursor:pointer"><span style="display:block;width:12px;height:12px;border-radius:50%;background:${t.d};margin:0 auto 4px"></span>${t.n}</button>`).join('')}</div><div style="display:flex;gap:4px;margin-bottom:10px">${['compact','comfortable','spacious'].map(d=>`<button onclick="setDensity('${d}');renderSettings()" style="flex:1;padding:7px;border:1px solid ${S.density===d?'var(--accent)':'var(--bdr)'};border-radius:6px;background:${S.density===d?'var(--al)':'none'};color:var(--text);font:11px inherit;cursor:pointer">${d[0].toUpperCase()+d.slice(1)}</button>`).join('')}</div><label style="display:block;font-size:12px;margin:8px 0"><input type="checkbox" ${S.cbMode?'checked':''} onchange="setCbMode(this.checked);renderSettings()"> Colour-blind mode</label><label style="display:block;font-size:12px;margin:8px 0"><input type="checkbox" ${S.tz?'checked':''} onchange="setTimezoneEnabled(this.checked);renderSettings()"> UK → SA timezone</label><label style="display:block;font-size:12px;margin:8px 0"><input type="checkbox" ${S.hlToday?'checked':''} onchange="setTodayHighlight(this.checked);renderSettings()"> Highlight today in calendar</label></section>`;
   if(section==='data')h+=`<section><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Data &amp; exports</div><p style="font-size:12px;color:var(--tm);line-height:1.5;margin:0 0 12px">Create a portable export or open the dedicated data views without crowding your daily workspace.</p><button class="btn bp" style="margin:0 8px 8px 0" onclick="closeSettings();expSavePlus('all')">Save+ export</button><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();expCurrentMonth()">Styled report</button><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();S.anView='rawdata';setTab('analytics')">Raw data</button><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();runRulesValidation()">Validate</button></section>`;
   if(section==='advanced')h+=`<section><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Advanced</div><p style="font-size:12px;color:var(--tm);line-height:1.5;margin:0 0 12px">Destructive actions are separated from everyday settings.</p><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();if(S.activeDept)removeDept(S.activeDept)">Close workspace</button><button class="btn" style="margin:0 8px 8px 0;color:#dc2626;border-color:rgba(220,38,38,.3)" onclick="if(confirm('Clear all stored data?')){closeSettings();clearAllData()}">Clear all data</button><div style="font-size:11px;color:var(--tm);margin-top:12px">${APP_BUILD}</div></section>`;
@@ -26923,6 +26880,26 @@ function _syncThemeVariantAttrs(){
   document.body.setAttribute("data-theme",theme);
   document.body.setAttribute("data-variant",variant);
   _applyThemeCardPalette(theme,idx);
+  _syncThemeColorMeta();
+}
+// Android paints its status bar from theme-color. Match whatever is painted at the top of the screen
+// (the project tab strip, the masthead, or the landing), so a light theme is not capped by a black
+// band. iOS ignores it: its status bar style is fixed in the head.
+function _syncThemeColorMeta(){
+  requestAnimationFrame(()=>{
+    try{
+      const meta=document.querySelector('meta[name="theme-color"]');if(!meta)return;
+      let el=document.elementFromPoint(window.innerWidth/2,1),color="";
+      for(;el&&el!==document.documentElement;el=el.parentElement){
+        const m=getComputedStyle(el).backgroundColor.match(/rgba?\(([^)]+)\)/);
+        if(!m)continue;
+        const parts=m[1].split(/[\s,\/]+/).filter(Boolean).map(Number);
+        if(parts.length<4||parts[3]>=0.85){color=`rgb(${parts[0]}, ${parts[1]}, ${parts[2]})`;break;}
+      }
+      if(!color)color=getComputedStyle(document.body).backgroundColor;
+      if(color&&meta.getAttribute("content")!==color)meta.setAttribute("content",color);
+    }catch(e){}
+  });
 }
 function _applyThemeCardPalette(theme,variantIdx){
   const palettes=THEME_CARD_PALETTES[theme]||THEME_CARD_PALETTES.surge;
@@ -29339,6 +29316,7 @@ function _syncShowProjectPicker(options){
   if(ha)ha.style.display='none';
   _syncRenderProjectPicker();
   _syncRenderLandingWidget();
+  if(typeof _syncThemeColorMeta==='function')_syncThemeColorMeta();
 }
 function _syncCloseWorkspaceToLanding(){
   _syncShowProjectPicker({clearActive:true});
@@ -29656,6 +29634,32 @@ async function _syncDeleteProject(key,name){
   }
   _syncRenderProjectPicker();
   if(typeof updateDeptStrip==='function')updateDeptStrip();
+}
+// The sample-project button is gone, but projects it made may still be on a device or in its cloud
+// copy. Listed only while one exists; removing them is a deliberate click, never automatic.
+function _syncRenderSampleCleanupSection(){
+  const samples=typeof window.nsListSampleProjects==='function'?window.nsListSampleProjects():[];
+  if(!samples.length)return'';
+  return `<section data-testid="sample-cleanup" style="margin-top:16px"><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Sample projects</div><p style="font-size:12px;color:var(--tm);line-height:1.5;margin:0 0 12px">Made by the old sample button: <b>${samples.map(p=>X(p.name)).join('</b>, <b>')}</b>. Removing them deletes them here and from your cloud copy. A restore point is taken first.</p><button class="btn" data-testid="remove-sample-projects" onclick="_syncRemoveSampleProjects()">Remove sample projects</button></section>`;
+}
+async function _syncRemoveSampleProjects(){
+  const samples=typeof window.nsListSampleProjects==='function'?window.nsListSampleProjects():[];
+  if(!samples.length||typeof window.nsRemoveDepartmentEverywhere!=='function')return;
+  if(!confirm(`Remove ${samples.length===1?'the sample project':samples.length+' sample projects'} (${samples.map(p=>p.name).join(', ')})?`))return;
+  await _syncAutoSnapshot('Before removing sample projects','auto-delete');
+  const activeKey=S.activeDept&&typeof nsActiveDepartmentKey==='function'?nsActiveDepartmentKey():'';
+  samples.forEach(p=>window.nsRemoveDepartmentEverywhere(p.key));
+  let flushOk=true;
+  try{flushOk=typeof window.syncFlushPendingPush==='function'?await window.syncFlushPendingPush():true;}
+  catch(err){flushOk=false;}
+  if(activeKey&&samples.some(p=>p.key===activeKey)){
+    S.activeDept=null;S.entries=[];
+    if(typeof _restoreViewportFromState==='function')_restoreViewportFromState();
+  }
+  _syncRenderProjectPicker();
+  if(typeof updateDeptStrip==='function')updateDeptStrip();
+  if(typeof renderSettings==='function'&&S._settingsOpen)renderSettings();
+  toast(flushOk?'Sample projects removed':'Sample projects removed here; the cloud copy could not be confirmed yet',flushOk?'ok':'warn');
 }
 async function _syncRetryDeleteFlush(name){
   _syncSetDeleteModalBusy(name,'Retrying sync for');
@@ -34481,6 +34485,22 @@ async function nsRestoreSnapshot(id){
   }
 }
 
+// Projects made by the sample-project button this app used to have: every source they hold is
+// source_kind "sample". A project someone later imported real data into keeps a real source, so it
+// is never listed. Used only by Settings' explicit "Remove sample projects".
+function nsListSampleProjects(){
+  try{
+    const byKey=new Map();
+    (nsCanonical().sources||[]).forEach(source=>{
+      const key=nsDirectDepartmentKey(source);if(!key)return;
+      const rec=byKey.get(key)||{key,name:nsClean(source.department_name)||key,sample:true};
+      if(source.source_kind!=="sample")rec.sample=false;
+      byKey.set(key,rec);
+    });
+    return[...byKey.values()].filter(rec=>rec.sample).map(({key,name})=>({key,name}));
+  }catch(err){console.error("[sync] listing sample projects failed",err);return[];}
+}
+window.nsListSampleProjects=nsListSampleProjects;
 window.nsSaveSnapshot=nsSaveSnapshot;
 window.nsListSnapshots=nsListSnapshots;
 window.nsRestoreSnapshot=nsRestoreSnapshot;
@@ -36213,34 +36233,6 @@ showLoadSplash=function(leaders,months,cacheKept){
   return nsBaseShowLoadSplash(resolvedCount,months,cacheKept);
 };
 
-function nsExpandedSyncFrame(frame,mode){
-  const width=58,height=68,variants=[". :  ","+ -  ","x .  ","| .  "],motif=variants[mode%variants.length];
-  const field=Array.from({length:height},(_,y)=>Array.from({length:width},(_,x)=>y%6===0?(x%8===0?"+":"-"):(x%12===0?"|":motif[(x*3+y*5)%motif.length])));
-  const core=String(frame||"").replace(/^\n+|\n+$/g,"").split("\n"),coreWidth=Math.max(0,...core.map(line=>line.length));
-  const top=Math.max(1,Math.floor((height-core.length)/2)),left=Math.max(1,Math.floor((width-coreWidth)/2));
-  core.forEach((line,row)=>[...line].forEach((char,column)=>{if(top+row<height&&left+column<width)field[top+row][left+column]=char;}));
-  return field.map(row=>row.join("")).join("\n");
-}
-window.syncAsciiMarkup=function(){
-  // Rain is the launch default; an explicit mode (including 0) remains user-selectable.
-  const mode=(S.syncAsciiMode==null?3:Math.abs(Number(S.syncAsciiMode)||0))%SYNC_ASCII_PATTERNS.length,pattern=SYNC_ASCII_PATTERNS[mode];
-  return`<section class="sd-stage sync-ascii-stage"><div class="sync-ascii-head"><span>Sync signal field</span><button id="syncAsciiModeButton" onclick="cycleSyncAsciiPattern()" title="Change Sync mark">${X(pattern.name)} ↻</button></div><div id="syncAsciiCanvas" class="sync-ascii-canvas" aria-label="Live Sync signal field"></div><div class="sync-ascii-foot"><span>Chaos</span><span class="sync-ascii-meter"><i></i><i></i><i></i><i></i><i></i></span><span>Sync</span></div></section>`;
-};
-window.cycleSyncAsciiPattern=function(){
-  const count=window.SyncSignalField?.modes?.length||SYNC_ASCII_PATTERNS.length;
-  const current=S.syncAsciiMode==null?3:Math.abs(Number(S.syncAsciiMode)||0);
-  S.syncAsciiMode=(current+1)%count;
-  if(window._syncField)window._syncField.setMode(window.SyncSignalField.modes[S.syncAsciiMode]);
-  schedulePersist?.(false);
-};
-window.ensureSyncAsciiTicker=function(){
-  const host=document.getElementById("syncAsciiCanvas");
-  if(!host||!window.SyncSignalField)return;
-  window._syncField?.destroy();
-  const asciiMode=S.syncAsciiMode==null?3:Math.abs(Number(S.syncAsciiMode)||0);
-  window._syncField=SyncSignalField.mount(host,{mode:SyncSignalField.modes[asciiMode%SyncSignalField.modes.length],onLevel:(v)=>window.paintMeter?.(v)});
-};
-
 const nsMotionPolish=document.createElement("style");
 nsMotionPolish.textContent=`.ns-shared-row{grid-template-columns:22px minmax(190px,1fr) minmax(160px,.65fr) minmax(220px,1.1fr)!important}.ns-shared-pick{width:15px;height:15px;align-self:center}.ns-shared-bulk{display:grid;grid-template-columns:auto auto 1fr repeat(4,auto);gap:6px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--bdr);background:color-mix(in srgb,var(--al) 45%,transparent);position:sticky;top:0;z-index:2}.sync-dashboard .sync-ascii-stage{width:100%;min-width:0;min-height:360px;height:min(620px,calc(100dvh - 210px));max-height:620px}.sync-ascii-canvas{width:100%;height:100%;min-width:0;min-height:0;box-sizing:border-box;padding:7px!important;font-size:clamp(7px,.54vw,10px)!important;line-height:1.08!important;overflow:hidden!important}.sync-ascii-canvas .sync-signal-pre{width:100%;height:100%;min-width:0;min-height:0;overflow:hidden;contain:strict}.people-subtab-nav{position:sticky;top:0;z-index:8;overflow-x:auto;scrollbar-width:thin;gap:4px!important;padding:6px!important;background:var(--bg)}.people-subtab-nav .pst-btn{flex:0 0 auto}@media(max-width:900px){.ns-shared-row{grid-template-columns:22px 1fr!important}.ns-shared-row>select,.ns-shared-row>input:not(.ns-shared-pick),.ns-shared-row>span{grid-column:2}.ns-shared-bulk{grid-template-columns:repeat(2,auto);position:static}.ns-shared-bulk span{display:none}.sync-dashboard .sync-ascii-stage{min-height:360px;height:420px}}`;
 document.head.appendChild(nsMotionPolish);
@@ -36366,11 +36358,6 @@ function drawNodes(b, cx, cy, sc, frac, pop, alpha) {
                b.put(px(cx, sc, n[0]) + 1, py(cy, sc, n[1]), ')', n[2], alpha); }
   });
 }
-/* ── live roster feed — replaced by the app on file ingest ──── */
-var NAMES = ['Gugulethu Modimola','Sivuyile Khumbane','Sharon Moyo','Larissa Brits',
-  'Linolan Muntherv','Thabo Nkosi','Ayanda Dlamini','Marius van Wyk','Chloe Petersen',
-  'Nomsa Zulu','Ruan Botha','Precious Mahlangu','Dean Fourie','Zanele Khoza'];
-
 /* ── per-mode S variants. Every mode gets its own wholly unique
       spine; all share the shipped cage + node tiers. ─────────── */
 var SPINES = {
@@ -36387,8 +36374,6 @@ var SPINES = {
   Rain: { polys: [[[84,36],[54,36],[39,50],[84,74],[68,86],[38,86]]], w: 2, ch: '┃' },
   /* orthogonal circuit routing — right angles only, board-trace S */
   Lattice: { polys: [[[82,34],[48,34],[48,52],[78,52],[78,72],[44,72],[44,86],[82,86]]], w: 2, ch: '█' },
-  /* woven S — slope glyphs, reads as threaded rows of names */
-  Roster: { polys: [[[84,36],[54,36],[39,50],[84,74],[68,86],[38,86]]], w: 3, ch: null },
   /* smooth double-bowl S, phase-locked curve */
   Phase: (function () {
     var p = [], D = Math.PI / 180, r = 13;
@@ -36612,128 +36597,6 @@ MODES.push({
   }
 });
 
-/* 6 ── ROSTER — real people from the parsed file, raining in and
-      being absorbed by the mark. Drives on ingest; the meter reads
-      how much of the drop has been reconciled.                    */
-MODES.push({
-  name: 'Roster', hint: 'people landing in the plan',
-  level: function (st) { var s = st.scratch.roster; return s ? clamp01(s.locked / Math.max(8, s.total)) : 0; },
-  draw: function (b, st) {
-    var S = st.scratch.roster;
-    var sc = fitScale(st, 0.26), RR = 52 * sc;
-    var baseY = st.h - RR - 3;
-    var burst = st.ingest > 0;
-
-    function shortName(n) {
-      var p = n.split(' ');
-      var s = p.length > 1 ? p[0] + ' ' + p[1][0] + '.' : p[0];
-      return s.length > 12 ? s.slice(0, 12) : s;
-    }
-    function wave(seed) {
-      var cellW = 14, cols = Math.max(2, Math.floor((st.w - 2) / cellW));
-      var rows = Math.max(3, Math.min(5, Math.floor((baseY - 6) / 4)));
-      var inv = [];
-      for (var r = 0; r < rows; r++) for (var c = 0; c < cols; c++) {
-        var i = seed * 97 + r * cols + c;
-        inv.push({ c: c, r: r, nm: shortName(NAMES[Math.floor(rnd(i, 7) * NAMES.length)] || 'Unassigned') });
-      }
-      return { inv: inv, cols: cols, rows: rows, cellW: cellW, ox: 0, dir: 1, drop: 0, step: 0 };
-    }
-    if (!S || S.w !== st.w || S.h !== st.h) {
-      S = st.scratch.roster = { locked: 0, total: 0, w: st.w, h: st.h, waveN: 0, bullets: [], trails: [], fireT: 0 };
-      var W0 = wave(0); for (var kk in W0) S[kk] = W0[kk]; S.total = S.inv.length;
-    }
-    if (burst && !S.burstDone) {                                  // new drop = new wave
-      var W1 = wave(++S.waveN); for (var k2 in W1) S[k2] = W1[k2];
-      S.total += S.inv.length; S.burstDone = 1;
-    }
-    if (!burst) S.burstDone = 0;
-
-    ambient(b, st, 0.05, 0);
-
-    /* ── base tracks the pointer, arcade style ── */
-    var baseX = st.mOn ? Math.max(RR * SX + 1, Math.min(st.w - RR * SX - 1, st.mx)) : st.cx;
-    S.baseX = S.baseX === undefined ? baseX : S.baseX + (baseX - S.baseX) * Math.min(1, st.dt * 6);
-
-    /* ── formation march: step sideways, drop a row at the edges ── */
-    S.step += st.dt;
-    var cadence = burst ? 0.16 : 0.34;
-    if (S.step > cadence) {
-      S.step = 0;
-      S.ox += S.dir;
-      var span = S.cols * S.cellW;
-      if (S.ox + span >= st.w - 1 || S.ox <= 0) { S.dir *= -1; S.drop += 1; }
-    }
-    var rowH = 4, topY = 3 + S.drop;
-
-    /* ── the base fires at the lowest name in a column ── */
-    S.fireT += st.dt;
-    if (S.fireT > (burst ? 0.22 : 0.5) && S.inv.length) {
-      S.fireT = 0;
-      var lowest = null;
-      for (var q = 0; q < S.inv.length; q++)
-        if (!lowest || S.inv[q].r > lowest.r) lowest = S.inv[q];
-      var cand = S.inv.filter(function (v) { return v.r === lowest.r; });
-      var tgt = cand[Math.floor(Math.random() * cand.length)];
-      S.bullets.push({ x: S.baseX, y: baseY - RR, tx: tgt, id: tgt.c * 31 + tgt.r });
-    }
-
-    /* ── bullets ── */
-    for (var bi = S.bullets.length - 1; bi >= 0; bi--) {
-      var bl = S.bullets[bi];
-      var tIdx = S.inv.indexOf(bl.tx);
-      if (tIdx < 0) { S.bullets.splice(bi, 1); continue; }
-      var tX = S.ox + bl.tx.c * S.cellW + bl.tx.nm.length / 2;
-      var tY = topY + bl.tx.r * rowH;
-      bl.y -= 46 * st.dt;
-      bl.x += (tX - bl.x) * Math.min(1, st.dt * 5);
-      b.put(bl.x, bl.y, '│', 3); b.put(bl.x, bl.y + 1, '·', 2);
-      if (bl.y <= tY) {                                            // HIT
-        S.locked++;
-        S.trails.push({ x: tX, y: tY, t: st.t });
-        S.inv.splice(tIdx, 1);
-        S.bullets.splice(bi, 1);
-        if (!S.inv.length) { var W2 = wave(++S.waveN); for (var k3 in W2) S[k3] = W2[k3]; S.total += S.inv.length; }
-      }
-    }
-
-    /* ── the invader formation ── */
-    S.inv.forEach(function (v) {
-      var x = Math.round(S.ox + v.c * S.cellW), y = topY + v.r * rowH;
-      if (y < 0 || y >= baseY - RR) return;
-      var cl = v.r >= S.rows - 1 ? 3 : v.r >= S.rows - 2 ? 2 : 1;
-      var wig = (Math.floor(st.t * 3) % 2) ? '▚' : '▞';
-      b.put(x - 2, y, wig, cl);
-      for (var c2 = 0; c2 < v.nm.length; c2++)
-        b.put(x + c2, y, v.nm[c2] === ' ' ? '·' : v.nm[c2], cl);
-      b.put(x + v.nm.length + 1, y, wig, cl);
-    });
-
-    /* ── snake trail of absorbed names running back to the base ── */
-    for (var ti = S.trails.length - 1; ti >= 0; ti--) {
-      var tr = S.trails[ti], age = st.t - tr.t;
-      if (age > 1.1) { S.trails.splice(ti, 1); continue; }
-      var f = age / 1.1;
-      for (var seg = 0; seg < 7; seg++) {
-        var sf = clamp01(f - seg * 0.06);
-        b.put(lerp(tr.x, S.baseX, sf), lerp(tr.y, baseY - RR, sf), seg ? '·' : '◦', seg < 2 ? 3 : 2);
-      }
-      if (f < 0.25) b.ring(tr.x, tr.y, f * 14, '·', 2, 1 - f * 4);
-    }
-
-    /* ── the base: the mark itself ── */
-    drawMark(b, S.baseX, baseY, sc, 3, 1, 'Roster');
-
-    /* ── arcade HUD ── */
-    var hud = 'WAVE ' + (S.waveN + 1) + '   RECONCILED ' + S.locked + '/' + S.total;
-    for (var h = 0; h < hud.length && h < st.w; h++)
-      b.put(Math.max(0, (st.w - hud.length) / 2) + h, 1, hud[h] === ' ' ? ' ' : hud[h], 2);
-    for (var lx = 0; lx < st.w; lx++) b.put(lx, baseY + RR + 1, '─', 0, 0.5);
-
-    if (st.ingest > 0) st.ingest = Math.max(0, st.ingest - st.dt * 0.22);
-  }
-});
-
 /* ═══════════════ RENDERER ═══════════════ */
 var CLS = ['sf0', 'sf1', 'sf2', 'sf3'];
 function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
@@ -36758,7 +36621,7 @@ function mount(el, opts) {
   el.appendChild(pre);
 
   var mode = Math.max(0, MODES.findIndex(function (m) { return m.name === opts.mode; }));
-  var st = { t: 0, dt: 0.05, w: 10, h: 10, cx: 5, cy: 5, mx: 0, my: 0, mOn: false, ripples: [], scratch: {}, ingest: 0 };
+  var st = { t: 0, dt: 0.05, w: 10, h: 10, cx: 5, cy: 5, mx: 0, my: 0, mOn: false, ripples: [], scratch: {} };
   var buf = null, cw = 6, chh = 10, raf = 0, t0 = performance.now(), dead = false, visible = true;
   var minMs = 1000 / (opts.fps || 18);
 
@@ -36824,12 +36687,6 @@ function mount(el, opts) {
     get mode() { return MODES[mode].name; },
     setMode: function (n) { var i = MODES.findIndex(function (m) { return m.name === n; }); if (i >= 0) { mode = i; t0 = performance.now(); st.t = 0; st.scratch = {}; paintNow(); } },
     cycle: function () { mode = (mode + 1) % MODES.length; t0 = performance.now(); st.t = 0; st.scratch = {}; paintNow(); return MODES[mode].name; },
-    /* call from the app's file-drop / roster-save handler */
-    ingest: function (names) {
-      if (names && names.length) NAMES = names;
-      st.ingest = 1;
-      if (MODES[mode].name !== 'Roster') this.setMode('Roster');
-    },
     destroy: function () {
       dead = true; cancelAnimationFrame(raf); if (ro) ro.disconnect(); if (io) io.disconnect();
       el.removeEventListener('pointermove', onMove);
@@ -36842,8 +36699,7 @@ function mount(el, opts) {
 
 global.SyncSignalField = {
   mount: mount,
-  modes: MODES.map(function (m) { return m.name; }),
-  setNames: function (arr) { if (arr && arr.length) NAMES = arr.slice(0, 400); }
+  modes: MODES.map(function (m) { return m.name; })
 };
 })(window);
 
@@ -37138,7 +36994,7 @@ Object.assign(window,{nsOpenV31PackBuilder,nsBuildV31Pack,nsOpenOrganisationRevi
     const boot=document.getElementById('syncBoot');
     if(!boot)return;
     boot.classList.add('done');
-    setTimeout(()=>boot.remove(),520);
+    setTimeout(()=>{boot.remove();if(typeof _syncThemeColorMeta==='function')_syncThemeColorMeta();},520);
   }
   document.addEventListener('DOMContentLoaded',function(){
     installSyncIdentity();

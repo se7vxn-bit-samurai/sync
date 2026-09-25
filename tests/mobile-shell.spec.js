@@ -67,3 +67,40 @@ test('with a notch inset, the shell starts below it and the bottom bar still end
   expect(landing.top).toBeGreaterThanOrEqual(47);
   expect(landing.bottom).toBeLessThanOrEqual(height + 0.5);
 });
+
+test('every iPhone launch screen resolves to a PNG of exactly its device size', async ({ page, request }) => {
+  await openApp(page);
+  const links = await page.locator('link[rel="apple-touch-startup-image"]').evaluateAll((els) =>
+    els.map((el) => ({ href: el.getAttribute('href'), media: el.getAttribute('media') })));
+  expect(links.length).toBeGreaterThanOrEqual(13);
+  for (const { href, media } of links) {
+    const [, w, h, dpr] = media.match(/device-width: (\d+)px\) and \(device-height: (\d+)px\) and \(-webkit-device-pixel-ratio: (\d)\)/);
+    const res = await request.get('/' + href);
+    expect(res.status(), href).toBe(200);
+    const png = await res.body();
+    expect([png.readUInt32BE(16), png.readUInt32BE(20)], href).toEqual([w * dpr, h * dpr]);
+  }
+});
+
+test('on a phone, the project tab strip waits for a second project', async ({ page }) => {
+  test.skip(test.info().project.name !== 'mobile-chromium', 'phone layout only');
+  await openProject(page);
+  await expect(page.locator('#deptStrip')).toBeHidden();
+  await createTestProject(page, 'Second Team');
+  await expect(page.locator('#deptStrip')).toBeVisible();
+  await expect(page.locator('#deptStrip .dept-tab .dt-name')).toContainText(['Test Team', 'Second Team']);
+});
+
+test('the Android status bar colour follows the theme', async ({ page }) => {
+  test.skip(test.info().project.name !== 'mobile-chromium', 'desktop keeps the always-dark tab strip on top');
+  await openProject(page);
+  const themeColor = () => page.locator('meta[name="theme-color"]').getAttribute('content');
+  await page.evaluate(() => setTh('press'));
+  await expect.poll(themeColor).toMatch(/^rgb\(/);
+  const light = await themeColor();
+  await page.evaluate(() => setTh('surge'));
+  await expect.poll(themeColor).not.toBe(light);
+  // Light theme, light bar: the sum of its channels is well above a dark theme's.
+  const sum = (c) => c.match(/\d+/g).slice(0, 3).map(Number).reduce((a, b) => a + b, 0);
+  expect(sum(light)).toBeGreaterThan(sum(await themeColor()));
+});

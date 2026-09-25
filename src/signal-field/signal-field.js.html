@@ -112,11 +112,6 @@ function drawNodes(b, cx, cy, sc, frac, pop, alpha) {
                b.put(px(cx, sc, n[0]) + 1, py(cy, sc, n[1]), ')', n[2], alpha); }
   });
 }
-/* ── live roster feed — replaced by the app on file ingest ──── */
-var NAMES = ['Gugulethu Modimola','Sivuyile Khumbane','Sharon Moyo','Larissa Brits',
-  'Linolan Muntherv','Thabo Nkosi','Ayanda Dlamini','Marius van Wyk','Chloe Petersen',
-  'Nomsa Zulu','Ruan Botha','Precious Mahlangu','Dean Fourie','Zanele Khoza'];
-
 /* ── per-mode S variants. Every mode gets its own wholly unique
       spine; all share the shipped cage + node tiers. ─────────── */
 var SPINES = {
@@ -133,8 +128,6 @@ var SPINES = {
   Rain: { polys: [[[84,36],[54,36],[39,50],[84,74],[68,86],[38,86]]], w: 2, ch: '┃' },
   /* orthogonal circuit routing — right angles only, board-trace S */
   Lattice: { polys: [[[82,34],[48,34],[48,52],[78,52],[78,72],[44,72],[44,86],[82,86]]], w: 2, ch: '█' },
-  /* woven S — slope glyphs, reads as threaded rows of names */
-  Roster: { polys: [[[84,36],[54,36],[39,50],[84,74],[68,86],[38,86]]], w: 3, ch: null },
   /* smooth double-bowl S, phase-locked curve */
   Phase: (function () {
     var p = [], D = Math.PI / 180, r = 13;
@@ -358,128 +351,6 @@ MODES.push({
   }
 });
 
-/* 6 ── ROSTER — real people from the parsed file, raining in and
-      being absorbed by the mark. Drives on ingest; the meter reads
-      how much of the drop has been reconciled.                    */
-MODES.push({
-  name: 'Roster', hint: 'people landing in the plan',
-  level: function (st) { var s = st.scratch.roster; return s ? clamp01(s.locked / Math.max(8, s.total)) : 0; },
-  draw: function (b, st) {
-    var S = st.scratch.roster;
-    var sc = fitScale(st, 0.26), RR = 52 * sc;
-    var baseY = st.h - RR - 3;
-    var burst = st.ingest > 0;
-
-    function shortName(n) {
-      var p = n.split(' ');
-      var s = p.length > 1 ? p[0] + ' ' + p[1][0] + '.' : p[0];
-      return s.length > 12 ? s.slice(0, 12) : s;
-    }
-    function wave(seed) {
-      var cellW = 14, cols = Math.max(2, Math.floor((st.w - 2) / cellW));
-      var rows = Math.max(3, Math.min(5, Math.floor((baseY - 6) / 4)));
-      var inv = [];
-      for (var r = 0; r < rows; r++) for (var c = 0; c < cols; c++) {
-        var i = seed * 97 + r * cols + c;
-        inv.push({ c: c, r: r, nm: shortName(NAMES[Math.floor(rnd(i, 7) * NAMES.length)] || 'Unassigned') });
-      }
-      return { inv: inv, cols: cols, rows: rows, cellW: cellW, ox: 0, dir: 1, drop: 0, step: 0 };
-    }
-    if (!S || S.w !== st.w || S.h !== st.h) {
-      S = st.scratch.roster = { locked: 0, total: 0, w: st.w, h: st.h, waveN: 0, bullets: [], trails: [], fireT: 0 };
-      var W0 = wave(0); for (var kk in W0) S[kk] = W0[kk]; S.total = S.inv.length;
-    }
-    if (burst && !S.burstDone) {                                  // new drop = new wave
-      var W1 = wave(++S.waveN); for (var k2 in W1) S[k2] = W1[k2];
-      S.total += S.inv.length; S.burstDone = 1;
-    }
-    if (!burst) S.burstDone = 0;
-
-    ambient(b, st, 0.05, 0);
-
-    /* ── base tracks the pointer, arcade style ── */
-    var baseX = st.mOn ? Math.max(RR * SX + 1, Math.min(st.w - RR * SX - 1, st.mx)) : st.cx;
-    S.baseX = S.baseX === undefined ? baseX : S.baseX + (baseX - S.baseX) * Math.min(1, st.dt * 6);
-
-    /* ── formation march: step sideways, drop a row at the edges ── */
-    S.step += st.dt;
-    var cadence = burst ? 0.16 : 0.34;
-    if (S.step > cadence) {
-      S.step = 0;
-      S.ox += S.dir;
-      var span = S.cols * S.cellW;
-      if (S.ox + span >= st.w - 1 || S.ox <= 0) { S.dir *= -1; S.drop += 1; }
-    }
-    var rowH = 4, topY = 3 + S.drop;
-
-    /* ── the base fires at the lowest name in a column ── */
-    S.fireT += st.dt;
-    if (S.fireT > (burst ? 0.22 : 0.5) && S.inv.length) {
-      S.fireT = 0;
-      var lowest = null;
-      for (var q = 0; q < S.inv.length; q++)
-        if (!lowest || S.inv[q].r > lowest.r) lowest = S.inv[q];
-      var cand = S.inv.filter(function (v) { return v.r === lowest.r; });
-      var tgt = cand[Math.floor(Math.random() * cand.length)];
-      S.bullets.push({ x: S.baseX, y: baseY - RR, tx: tgt, id: tgt.c * 31 + tgt.r });
-    }
-
-    /* ── bullets ── */
-    for (var bi = S.bullets.length - 1; bi >= 0; bi--) {
-      var bl = S.bullets[bi];
-      var tIdx = S.inv.indexOf(bl.tx);
-      if (tIdx < 0) { S.bullets.splice(bi, 1); continue; }
-      var tX = S.ox + bl.tx.c * S.cellW + bl.tx.nm.length / 2;
-      var tY = topY + bl.tx.r * rowH;
-      bl.y -= 46 * st.dt;
-      bl.x += (tX - bl.x) * Math.min(1, st.dt * 5);
-      b.put(bl.x, bl.y, '│', 3); b.put(bl.x, bl.y + 1, '·', 2);
-      if (bl.y <= tY) {                                            // HIT
-        S.locked++;
-        S.trails.push({ x: tX, y: tY, t: st.t });
-        S.inv.splice(tIdx, 1);
-        S.bullets.splice(bi, 1);
-        if (!S.inv.length) { var W2 = wave(++S.waveN); for (var k3 in W2) S[k3] = W2[k3]; S.total += S.inv.length; }
-      }
-    }
-
-    /* ── the invader formation ── */
-    S.inv.forEach(function (v) {
-      var x = Math.round(S.ox + v.c * S.cellW), y = topY + v.r * rowH;
-      if (y < 0 || y >= baseY - RR) return;
-      var cl = v.r >= S.rows - 1 ? 3 : v.r >= S.rows - 2 ? 2 : 1;
-      var wig = (Math.floor(st.t * 3) % 2) ? '▚' : '▞';
-      b.put(x - 2, y, wig, cl);
-      for (var c2 = 0; c2 < v.nm.length; c2++)
-        b.put(x + c2, y, v.nm[c2] === ' ' ? '·' : v.nm[c2], cl);
-      b.put(x + v.nm.length + 1, y, wig, cl);
-    });
-
-    /* ── snake trail of absorbed names running back to the base ── */
-    for (var ti = S.trails.length - 1; ti >= 0; ti--) {
-      var tr = S.trails[ti], age = st.t - tr.t;
-      if (age > 1.1) { S.trails.splice(ti, 1); continue; }
-      var f = age / 1.1;
-      for (var seg = 0; seg < 7; seg++) {
-        var sf = clamp01(f - seg * 0.06);
-        b.put(lerp(tr.x, S.baseX, sf), lerp(tr.y, baseY - RR, sf), seg ? '·' : '◦', seg < 2 ? 3 : 2);
-      }
-      if (f < 0.25) b.ring(tr.x, tr.y, f * 14, '·', 2, 1 - f * 4);
-    }
-
-    /* ── the base: the mark itself ── */
-    drawMark(b, S.baseX, baseY, sc, 3, 1, 'Roster');
-
-    /* ── arcade HUD ── */
-    var hud = 'WAVE ' + (S.waveN + 1) + '   RECONCILED ' + S.locked + '/' + S.total;
-    for (var h = 0; h < hud.length && h < st.w; h++)
-      b.put(Math.max(0, (st.w - hud.length) / 2) + h, 1, hud[h] === ' ' ? ' ' : hud[h], 2);
-    for (var lx = 0; lx < st.w; lx++) b.put(lx, baseY + RR + 1, '─', 0, 0.5);
-
-    if (st.ingest > 0) st.ingest = Math.max(0, st.ingest - st.dt * 0.22);
-  }
-});
-
 /* ═══════════════ RENDERER ═══════════════ */
 var CLS = ['sf0', 'sf1', 'sf2', 'sf3'];
 function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
@@ -504,7 +375,7 @@ function mount(el, opts) {
   el.appendChild(pre);
 
   var mode = Math.max(0, MODES.findIndex(function (m) { return m.name === opts.mode; }));
-  var st = { t: 0, dt: 0.05, w: 10, h: 10, cx: 5, cy: 5, mx: 0, my: 0, mOn: false, ripples: [], scratch: {}, ingest: 0 };
+  var st = { t: 0, dt: 0.05, w: 10, h: 10, cx: 5, cy: 5, mx: 0, my: 0, mOn: false, ripples: [], scratch: {} };
   var buf = null, cw = 6, chh = 10, raf = 0, t0 = performance.now(), dead = false, visible = true;
   var minMs = 1000 / (opts.fps || 18);
 
@@ -570,12 +441,6 @@ function mount(el, opts) {
     get mode() { return MODES[mode].name; },
     setMode: function (n) { var i = MODES.findIndex(function (m) { return m.name === n; }); if (i >= 0) { mode = i; t0 = performance.now(); st.t = 0; st.scratch = {}; paintNow(); } },
     cycle: function () { mode = (mode + 1) % MODES.length; t0 = performance.now(); st.t = 0; st.scratch = {}; paintNow(); return MODES[mode].name; },
-    /* call from the app's file-drop / roster-save handler */
-    ingest: function (names) {
-      if (names && names.length) NAMES = names;
-      st.ingest = 1;
-      if (MODES[mode].name !== 'Roster') this.setMode('Roster');
-    },
     destroy: function () {
       dead = true; cancelAnimationFrame(raf); if (ro) ro.disconnect(); if (io) io.disconnect();
       el.removeEventListener('pointermove', onMove);
@@ -588,8 +453,7 @@ function mount(el, opts) {
 
 global.SyncSignalField = {
   mount: mount,
-  modes: MODES.map(function (m) { return m.name; }),
-  setNames: function (arr) { if (arr && arr.length) NAMES = arr.slice(0, 400); }
+  modes: MODES.map(function (m) { return m.name; })
 };
 })(window);
 
