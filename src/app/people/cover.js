@@ -49,7 +49,8 @@ function coverOn(leaderName,date){
   return coverRows().find(r=>(r.forId||r.forName)&&_coverIs(leaderName,r.forId,r.forName)&&coverState(r,iso)==="active")||null;
 }
 function leaderOn(name,date){
-  const base=((S.people||{})[name]||{}).teamLeader||"";
+  // Dated reporting lines (people/org.js) first, then today's leader from People.
+  const base=typeof baseLeaderOn==="function"?baseLeaderOn(name,date):(((S.people||{})[name]||{}).teamLeader||"");
   if(!base||base===name)return{name:base,base,cover:null};
   const c=coverOn(base,date);
   // The acting person still reports to the leader they cover; they do not lead themselves.

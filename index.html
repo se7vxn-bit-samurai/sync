@@ -2158,6 +2158,37 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .cov-ready{width:170px}
 .cov-banner{padding:8px 12px;border-radius:8px;border:1px solid var(--bdr);border-left:3px solid var(--accent);background:var(--card);font-size:12px;margin-bottom:10px}
 .swap-tag.cover-tag{border-color:var(--accent);color:var(--accent)}
+/* People → Org (src/app/views/org.js) */
+.org-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;font-size:12px;color:var(--tm)}
+.org-bar>b{font-size:15px;color:var(--text)}
+.org-bar label{display:inline-flex;align-items:center;gap:6px}
+.org-bar select,.org-bar input{padding:4px 6px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font:inherit;font-size:12px;max-width:200px}
+.org-actions{background:var(--bg);padding:8px 0;border-bottom:1px solid var(--bdr)}
+@media (min-width:821px){.org-actions{position:sticky;top:0;z-index:2}}
+.org-chip.leaver{text-decoration:line-through;opacity:.7}
+.org-actions b{color:var(--accent)}
+.swin-btn:disabled{opacity:.45;cursor:not-allowed}
+.org-lane-h{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--tm);margin-bottom:6px}
+.org-lane-h span{font-family:'DM Mono',ui-monospace,monospace;margin-left:4px}
+.org-chips{display:flex;flex-wrap:wrap;gap:5px}
+.org-chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--bdr);background:var(--card);color:var(--text);border-radius:14px;padding:3px 10px;font:inherit;font-size:12px;cursor:pointer}
+.org-chip.sel{border-color:var(--accent);background:var(--al);color:var(--accent);font-weight:700}
+.org-dot,.org-count{font-size:9px;padding:0 5px;border-radius:8px;border:1px solid currentColor;color:var(--accent)}
+.org-count{color:var(--tm)}
+.org-teams{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.org-team{border:1px solid var(--bdr);border-radius:10px;padding:10px;background:var(--card);display:flex;flex-direction:column;gap:8px}
+.org-team.empty{border-style:dashed}
+.org-team.unassigned{border-left:3px solid var(--wknd)}
+.org-team-hd{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.org-here{margin-left:auto}
+.org-span{font-size:10px;padding:1px 7px;border-radius:8px;border:1px solid var(--bdr);color:var(--tm)}
+.org-span.warn{color:var(--wknd);border-color:var(--wknd)}
+.org-mgr{font-size:11px;color:var(--tm)}
+.org-issue{border:1px solid var(--bdr);border-left:3px solid var(--wknd);border-radius:8px;padding:8px 10px;margin-bottom:8px;background:var(--card)}
+.org-issue-hd{display:flex;align-items:center;gap:8px;font-size:12px}
+.org-issue-hd .swin-btn{margin-left:auto}
+.org-issue-names{font-size:12px;margin-top:4px}
+tr.org-undone td{opacity:.55}
 @media (max-width:820px){
   .swin{width:100vw;height:100dvh;border-radius:0;border:0}
   .swin-main{display:block;overflow:auto}
@@ -13475,6 +13506,7 @@ function renderTabs(){
       {id:"team",label:"Team",active:S.tab==="people"&&S.peopleSubTab==="team",action:"railNavPeople('team')"},
       {id:"agents",label:"Agents",active:S.tab==="people"&&S.peopleSubTab==="agents",action:"railNavPeople('agents')"},
       {id:"cover",label:"Cover",active:S.tab==="people"&&S.peopleSubTab==="cover",action:"railNavPeople('cover')"},
+      {id:"org",label:"Org builder",active:S.tab==="people"&&S.peopleSubTab==="org",action:"railNavPeople('org')"},
       {id:"logbook",label:"Logbook",active:S.tab==="people"&&S.peopleSubTab==="logbook",action:"railNavPeople('logbook')"},
       {id:"events",label:"Events",active:S.tab==="people"&&S.peopleSubTab==="events",action:"railNavPeople('events')"}
     ]},
@@ -28415,7 +28447,7 @@ function loadSettings(){
       if(typeof s.cbMode==="boolean"){S.cbMode=s.cbMode;document.body.classList.toggle("cb-mode",S.cbMode);}
       if(s.density&&["compact","comfortable","spacious"].includes(s.density)){S.density=s.density;document.body.classList.remove("density-compact","density-spacious");if(s.density==="compact")document.body.classList.add("density-compact");else if(s.density==="spacious")document.body.classList.add("density-spacious");}
       if(s.tab)S.tab=s.tab;
-      if(s.peopleSubTab&&["dashboard","team","agents","cover","logbook","events"].includes(s.peopleSubTab))S.peopleSubTab=s.peopleSubTab;
+      if(s.peopleSubTab&&["dashboard","team","agents","cover","org","logbook","events"].includes(s.peopleSubTab))S.peopleSubTab=s.peopleSubTab;
       if(s.peopleDashView&&["today_ops","week_risk","monthly_review"].includes(s.peopleDashView))S.peopleDashView=s.peopleDashView;
       if(s.peopleView&&["cards","table"].includes(s.peopleView))S._peopleView=s.peopleView;
       if(s.peopleLogFilter&&["all","note","followup","summary","event"].includes(s.peopleLogFilter))S._peopleLogFilter=s.peopleLogFilter;
@@ -30974,7 +31006,7 @@ function _ensurePeopleOpsState(){
   if(!S.peopleHomeNotes||typeof S.peopleHomeNotes!=="object")S.peopleHomeNotes={};
   if(!Array.isArray(S.peopleLogbook))S.peopleLogbook=[];
   if(!S.peopleDashView||!["today_ops","week_risk","monthly_review"].includes(S.peopleDashView))S.peopleDashView="today_ops";
-  if(!S.peopleSubTab||!["dashboard","team","agents","cover","logbook","events"].includes(S.peopleSubTab))S.peopleSubTab="dashboard";
+  if(!S.peopleSubTab||!["dashboard","team","agents","cover","org","logbook","events"].includes(S.peopleSubTab))S.peopleSubTab="dashboard";
   if(!S._peopleView||!["cards","table"].includes(S._peopleView))S._peopleView="cards";
   if(!S._peopleLogFilter)S._peopleLogFilter="all";
 }
@@ -31074,7 +31106,7 @@ function loadPeopleOps(){
     const view=localStorage.getItem("sc_people_view");
     if(view){
       const v=JSON.parse(view);
-      if(v.peopleSubTab&&["dashboard","team","agents","cover","logbook","events"].includes(v.peopleSubTab))S.peopleSubTab=v.peopleSubTab;
+      if(v.peopleSubTab&&["dashboard","team","agents","cover","org","logbook","events"].includes(v.peopleSubTab))S.peopleSubTab=v.peopleSubTab;
       if(v.peopleDashView&&["today_ops","week_risk","monthly_review"].includes(v.peopleDashView))S.peopleDashView=v.peopleDashView;
       if(v.peopleView&&["cards","table"].includes(v.peopleView))S._peopleView=v.peopleView;
       if(v.peopleLogFilter&&["all","note","followup","summary","event"].includes(v.peopleLogFilter))S._peopleLogFilter=v.peopleLogFilter;
@@ -33064,7 +33096,7 @@ function rPeopleLogbookView(){
 function rPeople(el){
   _ensurePeopleOpsState();
   if(S.peopleSubTab==="cards")S.peopleSubTab="team";
-  if(!["dashboard","team","agents","cover","logbook","events"].includes(S.peopleSubTab))S.peopleSubTab="dashboard";
+  if(!["dashboard","team","agents","cover","org","logbook","events"].includes(S.peopleSubTab))S.peopleSubTab="dashboard";
   const scopeLeaders=_peopleScopeLeaders();
   if(scopeLeaders.length&&(!S.selectedTL||!scopeLeaders.includes(S.selectedTL)))S.selectedTL=scopeLeaders[0];
   savePeopleOps();
@@ -33076,6 +33108,7 @@ function rPeople(el){
     {id:"team",l:"Team"},
     {id:"agents",l:"Agents"},
     {id:"cover",l:"Cover"},
+    {id:"org",l:"Org"},
     {id:"logbook",l:"Logbook"},
     {id:"events",l:"Events"}
   ];
@@ -33120,6 +33153,8 @@ function rPeople(el){
     h+=rPeopleAgentsView();
   } else if(S.peopleSubTab==="cover"){
     h+=rPeopleCoverView();
+  } else if(S.peopleSubTab==="org"){
+    h+=rPeopleOrgView();
   } else if(S.peopleSubTab==="logbook"){
     h+=rPeopleLogbookView();
   } else if(S.peopleSubTab==="events"){
@@ -33759,7 +33794,9 @@ function _swinRow(iso,d,e,source,leader,excs){
 }
 // Rows for one person, one per date from fromISO to toISO inclusive.
 function swinRows(name,fromISO,toISO){
-  const own=_swinIndex(name),leader=own.size?"":_swinLeaderOf(name),lead=leader?_swinIndex(leader):null;
+  // No rows of their own: follow the rota of whoever they report to on each date (a dated move
+  // switches rota on its effective date; history before it stays with the old leader).
+  const own=_swinIndex(name),leaderFor=iso=>own.size?"":(typeof baseLeaderOn==="function"?baseLeaderOn(name,iso):_swinLeaderOf(name));
   const excBy={};
   (typeof effExc==="function"?effExc():[]).forEach(ex=>{
     if(!ex||!ex.date||ex.date<fromISO||ex.date>toISO)return;
@@ -33770,7 +33807,8 @@ function swinRows(name,fromISO,toISO){
   for(let d=_swinDate(fromISO),end=_swinDate(toISO);d<=end;d=_swinAddDays(d,1)){
     const iso=excKey(d);
     let e=own.get(iso)||null,source=e?(e._bpFixed?"blueprint":"roster"):"none";
-    if(!e&&lead){e=lead.get(iso)||null;if(e)source="tl";}
+    const leader=e?"":leaderFor(iso);
+    if(!e&&leader&&leader!==name){e=_swinIndex(leader).get(iso)||null;if(e)source="tl";}
     const r=_swinRow(iso,d,e,source,leader,excBy[iso]||[]);
     // Following the TL's rota: the TL's own leave or sickness is not this person's. The team still
     // works, but the source has no shift for them, so it is a gap, not "Leave".
@@ -33998,7 +34036,10 @@ function renderScheduleWindow(){
 
   let h=`<div class="swin-hd"><div style="min-width:0;flex:1"><h2 id="swinTitle">${X(st.name)}</h2>`;
   h+=`<div class="swin-meta">${[team?X(team):"",leader?"Leader: "+X(leader):(Object.values(S.people||{}).some(p=>p&&p.teamLeader===st.name)?"Team leader":"No leader recorded"),S.activeDept?X(S.activeDept):""].filter(Boolean).join(" · ")}</div>`;
-  if(sum.inherited)h+=`<div class="swin-meta">No rows of their own in this range: shifts follow ${X(leader)}'s rota.</div>`;
+  if(sum.inherited){
+    const follow=[];rows.forEach(r=>{if(r.source==="tl"&&r.leader&&(!follow.length||follow[follow.length-1].name!==r.leader))follow.push({name:r.leader,from:r.iso});});
+    h+=`<div class="swin-meta">No rows of their own in this range: shifts follow ${follow.map((f,i)=>i?`${X(f.name)}'s from ${X(_swinDayLabel(f.from))}`:`${X(f.name)}'s rota`).join(", then ")}.</div>`;
+  }
   _swinCoverNotes(st.name,range.from,range.to).forEach(t=>{h+=`<div class="swin-meta swin-cover">${X(t)}</div>`;});
   if(labels.length)h+=`<div>${labels.map(l=>`<span class="swin-chip">${X(l)}</span>`).join("")}</div>`;
   h+=`</div><button type="button" id="swinClose" class="swin-x" onclick="closeScheduleWindow()" aria-label="Close schedule window">✕</button></div>`;
@@ -34224,7 +34265,8 @@ function coverOn(leaderName,date){
   return coverRows().find(r=>(r.forId||r.forName)&&_coverIs(leaderName,r.forId,r.forName)&&coverState(r,iso)==="active")||null;
 }
 function leaderOn(name,date){
-  const base=((S.people||{})[name]||{}).teamLeader||"";
+  // Dated reporting lines (people/org.js) first, then today's leader from People.
+  const base=typeof baseLeaderOn==="function"?baseLeaderOn(name,date):(((S.people||{})[name]||{}).teamLeader||"");
   if(!base||base===name)return{name:base,base,cover:null};
   const c=coverOn(base,date);
   // The acting person still reports to the leader they cover; they do not lead themselves.
@@ -34525,6 +34567,256 @@ function rPeopleCoverView(){
   return h;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   ORG — dated reporting lines, lanes and data quality (read side)
+   Lines live in NorthStar (reportingLines); every edit goes through
+   nsOrgMove / nsOrgSetRole / nsOrgImport and can be undone as a
+   batch with nsOrgUndo. baseLeaderOn(name, date) is who someone
+   reports to on a date; leaderOn (people/cover.js) adds acting cover.
+   ═══════════════════════════════════════════════════════════════ */
+const ORG_SPAN_WARN=15;
+const ORG_LEAVER_RE=/^(leaver|left|inactive|terminated|resigned|exited)$/i;
+let _orgLineCache={key:"",byPid:new Map(),byName:new Map()};
+function orgLineIndex(){
+  const m=S.nsCanonical,key=m?(m.updated_at||"")+"|"+((m.reportingLines||[]).length)+"|"+(S.activeDept||""):"";
+  if(key&&_orgLineCache.key===key)return _orgLineCache;
+  const byPid=new Map(),byName=new Map();
+  let rows=[];
+  try{rows=typeof nsOrgLines==="function"?nsOrgLines():[];}catch(e){rows=[];}
+  rows.forEach(l=>{
+    if(l.personId){if(!byPid.has(l.personId))byPid.set(l.personId,[]);byPid.get(l.personId).push(l);}
+    if(l.personName){if(!byName.has(l.personName))byName.set(l.personName,[]);byName.get(l.personName).push(l);}
+  });
+  _orgLineCache={key,byPid,byName};
+  return _orgLineCache;
+}
+function _orgLinesFor(name){const idx=orgLineIndex(),pid=_coverPid(name);return(pid&&idx.byPid.get(pid))||idx.byName.get(name)||[];}
+// Who someone reports to on a date: their dated reporting line, or today's leader from People.
+function baseLeaderOn(name,date){
+  const iso=_coverISO(date);let hit=null;
+  _orgLinesFor(name).forEach(l=>{if((!l.from||l.from<=iso)&&(!l.to||l.to>=iso)&&(!hit||l.from>hit.from))hit=l;});
+  if(hit)return hit.leaderName||"";
+  const l=((S.people||{})[name]||{}).teamLeader||"";
+  return l===name?"":l;
+}
+function orgLaneOf(name,reportCount){
+  const p=(S.people||{})[name]||{},t=[p.roleType,p.title,p.jobTitle].filter(Boolean).join(" ");
+  if(/general manager|\bgm\b|head of|director/i.test(t))return"gm";
+  if(/manager|\bccl\b/i.test(t))return"mgr";
+  if(/lead|leader|supervisor|\btl\b/i.test(t)||reportCount>0)return"tl";
+  return"agent";
+}
+// The org as it stands on a date.
+function orgStructure(date){
+  const iso=_coverISO(date),people=S.people||{};
+  const names=Object.keys(people).filter(n=>n&&people[n]&&!/^deleted$/i.test(String(people[n].status||"")));
+  const leaderOf=new Map(names.map(n=>[n,baseLeaderOn(n,iso)])),reports=new Map();
+  names.forEach(n=>{const l=leaderOf.get(n);if(l){if(!reports.has(l))reports.set(l,[]);reports.get(l).push(n);}});
+  reports.forEach(list=>list.sort((a,b)=>a.localeCompare(b)));
+  const lane=new Map(names.map(n=>[n,orgLaneOf(n,(reports.get(n)||[]).length)]));
+  const by=k=>names.filter(n=>lane.get(n)===k).sort((a,b)=>a.localeCompare(b));
+  const gms=by("gm"),mgrs=by("mgr"),tls=by("tl"),agents=by("agent");
+  // A team is anyone leading at least one agent (usually a TL), plus every TL, even with nobody.
+  const teamLeads=[...new Set([...tls,...names.filter(n=>(reports.get(n)||[]).some(m=>lane.get(m)==="agent"))])].sort((a,b)=>a.localeCompare(b));
+  const teams=teamLeads.map(l=>({leader:l,manager:leaderOf.get(l)||"",members:(reports.get(l)||[]).filter(m=>lane.get(m)==="agent"),cover:typeof coverOn==="function"?coverOn(l,iso):null}));
+  const unassigned=agents.filter(n=>!leaderOf.get(n));
+  return{iso,names,leaderOf,reports,lane,gms,mgrs,tls,agents,teams,unassigned};
+}
+function _orgNameKey(n){return String(n||"").toLowerCase().replace(/[^a-z\s]/g," ").split(/\s+/).filter(Boolean).sort().join(" ");}
+function _orgOneEdit(a,b){
+  if(a===b)return false;
+  const la=a.length,lb=b.length;if(Math.abs(la-lb)>1)return false;
+  let i=0,j=0,edits=0;
+  while(i<la&&j<lb){
+    if(a[i]===b[j]){i++;j++;continue;}
+    if(++edits>1)return false;
+    if(la>lb)i++;else if(lb>la)j++;else{i++;j++;}
+  }
+  return edits+(la-i)+(lb-j)<=1;
+}
+function orgDuplicatePairs(names){
+  const out=[],seen=new Set(),byKey=new Map();
+  names.forEach(n=>{const k=_orgNameKey(n);if(!k)return;if(!byKey.has(k))byKey.set(k,[]);byKey.get(k).push(n);});
+  byKey.forEach(list=>{for(let i=1;i<list.length;i++){out.push([list[0],list[i]]);seen.add(list[0]+"|"+list[i]);}});
+  const compact=names.map(n=>[n,String(n).toLowerCase().replace(/[^a-z]/g,"")]).filter(([,c])=>c.length>=6);
+  for(let i=0;i<compact.length;i++)for(let j=i+1;j<compact.length;j++){
+    const[a,ca]=compact[i],[b,cb]=compact[j];
+    if(seen.has(a+"|"+b)||seen.has(b+"|"+a)||_orgNameKey(a)===_orgNameKey(b))continue;
+    if(_orgOneEdit(ca,cb))out.push([a,b]);
+  }
+  return out;
+}
+// Problems in the org on a date, grouped. Each item names the people it is about.
+function orgQuality(date){
+  const st=orgStructure(date),people=S.people||{},today=_coverTodayISO(),out=[];
+  const add=(kind,title,names,hint)=>{if(names.length)out.push({kind,title,names,hint});};
+  const own=new Map();
+  (S.entries||[]).forEach(e=>{const d=_swinEntryDate(e);if(!d||!e.name)return;const iso=excKey(d);if(!own.has(e.name))own.set(e.name,{last:iso});else if(iso>own.get(e.name).last)own.get(e.name).last=iso;});
+  add("noLeader","Agents with no leader",st.unassigned,"Select them and use Move to.");
+  add("missingLeader","Leader not in People",st.names.filter(n=>{const l=st.leaderOf.get(n);return l&&!people[l];}).map(n=>`${n} → ${st.leaderOf.get(n)}`),"Add the leader in People, or move these people.");
+  add("notInOrg","On the roster but not in People",[...own.keys()].filter(n=>!people[n]).sort((a,b)=>a.localeCompare(b)),"Import an organogram or add them in People → Agents.");
+  add("neverScheduled","In People but never scheduled",st.names.filter(n=>/^(agent|tl)$/.test(st.lane.get(n))&&!own.has(n)&&!own.has(st.leaderOf.get(n)||"")),"Nothing on the roster for them or their leader, so every day shows No row.");
+  add("dupes","Possible duplicate names",orgDuplicatePairs(st.names).map(([a,b])=>`${a} / ${b}`),"Rename or merge in Ops → People & Org.");
+  add("tlNoTeam","Team leaders with no team",st.tls.filter(n=>!(st.reports.get(n)||[]).length),"Move agents to them, or change their role.");
+  add("leaverShifts","Leavers with future shifts",st.names.filter(n=>ORG_LEAVER_RE.test(String(people[n].status||""))&&own.has(n)&&own.get(n).last>today),"Remove their shifts after their last day.");
+  add("span",`More than ${ORG_SPAN_WARN} agents on one leader`,st.teams.filter(t=>t.members.length>ORG_SPAN_WARN).map(t=>`${t.leader} (${t.members.length})`),"Consider splitting the team.");
+  return out;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PEOPLE → ORG (Org builder)
+   The org on a chosen date in lanes (GM → Managers → Teams →
+   Unassigned). Select people, then move them or change their role
+   from that date. Organogram import, data quality, and a change log
+   where each change undoes as a unit.
+   Engine: src/app/people/org.js · writes: NorthStar nsOrg*.
+   ═══════════════════════════════════════════════════════════════ */
+let _orgUI={asOf:"",sel:new Set(),target:"",role:"Team Leader",importRows:null,importName:""};
+const ORG_ROLES=["Agent","Team Leader","Supervisor","Operations Manager","General Manager"];
+
+function orgRefresh(){
+  _orgLineCache.key="";
+  if(typeof _coverCache!=="undefined")_coverCache.key="";
+  if(typeof invalidateDerivedCache==="function")invalidateDerivedCache();
+  if(S.tab==="people"&&typeof rPeople==="function")rPeople($("ca"));
+  if(typeof _swinIsOpen==="function"&&_swinIsOpen())renderScheduleWindow();
+}
+function orgSetAsOf(iso){_orgUI.asOf=iso||_coverTodayISO();rPeople($("ca"));}
+function orgToggle(name){if(_orgUI.sel.has(name))_orgUI.sel.delete(name);else _orgUI.sel.add(name);rPeople($("ca"));}
+function orgSelectMany(names){(names||[]).forEach(n=>{if((S.people||{})[n])_orgUI.sel.add(n);});rPeople($("ca"));}
+function orgClearSel(){_orgUI.sel.clear();rPeople($("ca"));}
+function _orgBy(){return typeof _swinSenderName==="function"?_swinSenderName():"";}
+function _orgResult(res,okText){
+  if(!res||res.error){toast(res&&res.error||"Nothing changed","warn");return false;}
+  toast(okText(res),"ok");_orgUI.sel.clear();orgRefresh();return true;
+}
+function orgMoveTo(target){
+  if(typeof nsOrgMove!=="function"){toast("Open a project first","warn");return;}
+  const names=[..._orgUI.sel];if(!names.length){toast("Select people first","warn");return;}
+  const leader=target==="__none__"?"":target;
+  _orgResult(nsOrgMove(names,leader,_orgUI.asOf,_orgBy()),r=>`Moved ${r.count} ${r.count===1?"person":"people"} to ${leader||"no leader"} from ${_swinDayLabel(_orgUI.asOf)}${r.skipped&&r.skipped.length?` (skipped ${r.skipped.join(", ")}: would loop)`:""}`);
+}
+function orgMoveSelected(){const t=document.getElementById("orgTarget");orgMoveTo(t?t.value:_orgUI.target);}
+function orgSetRoleSelected(){
+  if(typeof nsOrgSetRole!=="function"){toast("Open a project first","warn");return;}
+  const r=document.getElementById("orgRole"),role=r?r.value:_orgUI.role;_orgUI.role=role;
+  _orgResult(nsOrgSetRole([..._orgUI.sel],role,_orgUI.asOf,_orgBy()),res=>`${res.count} ${res.count===1?"person is":"people are"} now ${role}`);
+}
+function orgUndo(id){
+  if(typeof nsOrgUndo!=="function")return;
+  if(nsOrgUndo(id)){toast("Change undone","ok");orgRefresh();}else toast("Already undone","warn");
+}
+
+// ── Organogram import ──
+// Finds the Name / Reports To / Role columns in the first ten rows of the org sheet.
+function orgParseOrganogram(wb){
+  const sheet=wb.SheetNames.find(n=>/organ|^org|structure|hierarch|leaders?$/i.test(n))||wb.SheetNames[0];
+  const aoa=XLSX.utils.sheet_to_json(wb.Sheets[sheet],{header:1,defval:"",raw:false});
+  const norm=v=>String(v||"").trim().toLowerCase();
+  const nameRe=/^(name|full name|employee|employee name|agent|agent name|person|staff|staff name)$/;
+  const toRes=[/^reports? to$/,/^line manager$/,/^team leader$|^tl$/,/^leader$/,/^supervisor$/,/^manager$/];
+  const roleRe=/^(role|job title|title|position|designation)$/;
+  for(let r=0;r<Math.min(10,aoa.length);r++){
+    const head=(aoa[r]||[]).map(norm),nameCol=head.findIndex(h=>nameRe.test(h));if(nameCol<0)continue;
+    let toCol=-1;for(const re of toRes){toCol=head.findIndex((h,i)=>i!==nameCol&&re.test(h));if(toCol>=0)break;}
+    if(toCol<0)continue;
+    const roleCol=head.findIndex((h,i)=>i!==nameCol&&i!==toCol&&roleRe.test(h));
+    return aoa.slice(r+1).map(row=>({name:String(row[nameCol]||"").trim(),reportsTo:String(row[toCol]||"").trim(),role:roleCol>=0?String(row[roleCol]||"").trim():""})).filter(row=>row.name);
+  }
+  return[];
+}
+async function orgImportFile(file){
+  if(!file)return;
+  if(typeof XLSX==="undefined"){toast("Spreadsheet reader unavailable","err");return;}
+  let rows=[];
+  try{const wb=XLSX.read(await file.arrayBuffer(),{type:"array"});rows=orgParseOrganogram(wb);}catch(e){console.error(e);}
+  if(!rows.length){toast("No Name and Reports To columns found in that file","warn");return;}
+  _orgUI.importRows=rows;_orgUI.importName=file.name;
+  const people=S.people||{},asOf=_orgUI.asOf||_coverTodayISO();
+  const added=[...new Set(rows.flatMap(r=>[r.name,r.reportsTo]).filter(n=>n&&!people[n]))];
+  const moves=rows.filter(r=>r.reportsTo&&people[r.name]&&baseLeaderOn(r.name,asOf)!==r.reportsTo);
+  const roles=rows.filter(r=>r.role&&people[r.name]&&(people[r.name].roleType||"")!==r.role);
+  let body=`<div class="org-import" style="min-width:min(520px,86vw)"><div class="swin-note" style="margin-top:0">${rows.length} rows. Applied as one change from <b>${X(_swinDayLabel(asOf))}</b>, so it undoes in one step.</div>`;
+  body+=`<div class="swin-stats" style="margin:10px 0"><div class="swin-stat"><b id="orgImpNew">${added.length}</b><span>New people</span></div><div class="swin-stat"><b id="orgImpMoves">${moves.length}</b><span>Leader changes</span></div><div class="swin-stat"><b id="orgImpRoles">${roles.length}</b><span>Role changes</span></div></div>`;
+  const lines=[...added.slice(0,6).map(n=>`Add ${n}`),...moves.slice(0,8).map(r=>`${r.name}: ${baseLeaderOn(r.name,asOf)||"no leader"} → ${r.reportsTo}`),...roles.slice(0,6).map(r=>`${r.name}: ${people[r.name].roleType||"no role"} → ${r.role}`)];
+  if(lines.length)body+=`<ul class="swin-chg">${lines.map(l=>`<li>${X(l)}</li>`).join("")}</ul>`;
+  body+=`</div>`;
+  _qolModal("orgImport","Import organogram",file.name,body,`<button class="qol-row-btn" onclick="document.getElementById('orgImport')?.remove()">Cancel</button><button class="qol-row-btn primary" id="orgImportApply" onclick="orgImportApply()">Apply</button>`);
+}
+function orgImportApply(){
+  const rows=_orgUI.importRows;document.getElementById("orgImport")?.remove();
+  if(!rows||typeof nsOrgImport!=="function")return;
+  _orgUI.importRows=null;
+  _orgResult(nsOrgImport(rows,_orgUI.asOf,_orgBy()),r=>`Organogram applied: ${r.created} added, ${r.moved} moved, ${r.roles} role changes`);
+}
+
+// ── Render ──
+function _orgChip(name,st,extra){
+  const on=_orgUI.sel.has(name),p=(S.people||{})[name]||{},labels=typeof peopleRoleLabels==="function"?peopleRoleLabels(name):[];
+  const title=[p.roleType||p.title||"",labels.join(", "),p.status&&!/^active$/i.test(p.status)?p.status:""].filter(Boolean).join(" · ");
+  const leaver=ORG_LEAVER_RE.test(String(p.status||""));
+  return`<button type="button" class="org-chip${on?" sel":""}${leaver?" leaver":""}" aria-pressed="${on}" data-name="${XA(name)}" title="${XA(title||name)}" onclick="orgToggle('${XJS(name)}')">${X(name)}${labels.some(l=>/^YAT$/i.test(l))?`<span class="org-dot" title="YAT">YAT</span>`:""}${extra||""}</button>`;
+}
+function _orgLaneRow(label,names,st){
+  return`<div class="org-lane"><div class="org-lane-h">${label} <span>${names.length}</span></div><div class="org-chips">${names.length?names.map(n=>_orgChip(n,st,st.reports.get(n)?`<span class="org-count">${st.reports.get(n).length}</span>`:"")).join(""):`<span class="swin-note" style="margin:0">None</span>`}</div></div>`;
+}
+function rPeopleOrgView(){
+  const today=_coverTodayISO();if(!_orgUI.asOf)_orgUI.asOf=today;
+  const st=orgStructure(_orgUI.asOf),quality=orgQuality(_orgUI.asOf),changes=typeof nsOrgChanges==="function"?nsOrgChanges():[];
+  [..._orgUI.sel].forEach(n=>{if(!(S.people||{})[n])_orgUI.sel.delete(n);});
+  const selCount=_orgUI.sel.size,targets=[...st.gms,...st.mgrs,...st.teams.map(t=>t.leader).filter(n=>!st.gms.includes(n)&&!st.mgrs.includes(n))];
+  const dis=selCount?"":" disabled";
+  let h=`<div class="cov-wrap org-wrap">`;
+  h+=`<div class="org-bar"><b>Org builder</b><label>Date <input type="date" id="orgAsOf" value="${XA(_orgUI.asOf)}" onchange="orgSetAsOf(this.value)"></label>`;
+  h+=`<span class="swin-note" style="margin:0">Shows the org on this date${_orgUI.asOf!==today?` (today is ${X(_swinDayLabel(today))})`:""}. Moves and role changes take effect from it.</span></div>`;
+  h+=`<div class="org-bar org-actions"><span id="orgSelCount"><b>${selCount}</b> selected</span>`;
+  h+=`<label>Move to <select id="orgTarget" onchange="_orgUI.target=this.value"><option value="__none__">— no leader —</option>${targets.map(n=>`<option value="${XA(n)}"${n===_orgUI.target?" selected":""}>${X(n)}</option>`).join("")}</select></label><button type="button" class="swin-btn pri" id="orgMoveBtn" onclick="orgMoveSelected()"${dis}>Move</button>`;
+  h+=`<label>Role <select id="orgRole" onchange="_orgUI.role=this.value">${ORG_ROLES.map(r=>`<option${r===_orgUI.role?" selected":""}>${X(r)}</option>`).join("")}</select></label><button type="button" class="swin-btn" id="orgRoleBtn" onclick="orgSetRoleSelected()"${dis}>Set role</button>`;
+  if(selCount)h+=`<button type="button" class="swin-btn" onclick="orgClearSel()">Clear</button>`;
+  h+=`<span style="margin-left:auto"></span><button type="button" class="swin-btn" id="orgImportBtn" onclick="document.getElementById('orgImportFile').click()">Import organogram</button><input type="file" id="orgImportFile" accept=".xlsx,.xls,.csv" hidden onchange="orgImportFile(this.files[0]);this.value=''"></div>`;
+
+  h+=_orgLaneRow("General manager",st.gms,st)+_orgLaneRow("Managers / CCL",st.mgrs,st);
+  h+=`<div class="org-lane"><div class="org-lane-h">Teams <span>${st.teams.length}</span></div><div class="org-teams">`;
+  st.teams.forEach(t=>{
+    const warn=t.members.length>ORG_SPAN_WARN,empty=!t.members.length;
+    h+=`<div class="org-team${empty?" empty":""}" data-leader="${XA(t.leader)}"><div class="org-team-hd">${_orgChip(t.leader,st)}<span class="org-span${warn?" warn":""}" title="Agents reporting to ${XA(t.leader)} on this date">${t.members.length} agent${t.members.length===1?"":"s"}</span>`;
+    if(t.manager)h+=`<span class="org-mgr">↑ ${X(t.manager)}</span>`;
+    if(t.cover)h+=`<span class="swin-tag t-act" title="${XA(coverSpanText(t.cover))}">covered by ${X(t.cover.personName.split(" ")[0])}</span>`;
+    h+=`<button type="button" class="swin-btn org-here" onclick="orgMoveTo('${XJS(t.leader)}')"${dis}>Move here</button></div>`;
+    h+=`<div class="org-chips">${t.members.map(n=>_orgChip(n,st)).join("")||`<span class="swin-note" style="margin:0">No agents on this date.</span>`}</div></div>`;
+  });
+  h+=`<div class="org-team unassigned" data-leader=""><div class="org-team-hd"><b>Unassigned</b><span class="org-span${st.unassigned.length?" warn":""}">${st.unassigned.length}</span>${st.unassigned.length?`<button type="button" class="swin-btn" onclick="orgSelectMany(${X(JSON.stringify(st.unassigned))})">Select all</button>`:""}</div><div class="org-chips">${st.unassigned.map(n=>_orgChip(n,st)).join("")||`<span class="swin-note" style="margin:0">Everyone has a leader.</span>`}</div></div>`;
+  h+=`</div></div>`;
+
+  h+=`<section class="cov-sec" id="orgQuality"><h3>Data quality (${quality.reduce((a,q)=>a+q.names.length,0)})</h3>`;
+  if(!quality.length)h+=`<div class="swin-note">No problems found on this date.</div>`;
+  quality.forEach(q=>{
+    const selectable=q.names.filter(n=>(S.people||{})[n]);
+    h+=`<div class="org-issue" data-kind="${q.kind}"><div class="org-issue-hd"><b>${X(q.title)}</b><span class="org-span warn">${q.names.length}</span>${selectable.length?`<button type="button" class="swin-btn" onclick="orgSelectMany(${X(JSON.stringify(selectable))})">Select</button>`:""}</div><div class="org-issue-names">${q.names.slice(0,20).map(X).join(" · ")}${q.names.length>20?` and ${q.names.length-20} more`:""}</div><div class="swin-note">${X(q.hint)}</div></div>`;
+  });
+  h+=`</section>`;
+
+  h+=`<section class="cov-sec" id="orgChanges"><h3>Change log (${changes.length})</h3>`;
+  if(!changes.length)h+=`<div class="swin-note">No org changes yet. Moves, role changes and imports are listed here, and each one can be undone.</div>`;
+  else{
+    h+=`<div class="cov-tbl-wrap"><table class="cov-tbl"><thead><tr><th>When</th><th>Change</th><th>From</th><th>By</th><th></th></tr></thead><tbody>`;
+    changes.forEach((c,i)=>{
+      const ids=new Set(c.items.map(it=>it.person_id));
+      const blocker=changes.slice(0,i).find(n=>!n.undone&&n.items.some(it=>ids.has(it.person_id)));
+      const at=new Date(c.at),when=`${P(at.getDate())} ${MO[at.getMonth()]} ${P(at.getHours())}:${P(at.getMinutes())}`;
+      const detail=c.items.slice(0,6).map(it=>it.field==="created"?`added ${it.person_name}`:`${it.person_name}: ${it.before||"none"} → ${it.after||"none"}`).join("; ")+(c.items.length>6?` and ${c.items.length-6} more`:"");
+      h+=`<tr data-id="${XA(c.id)}" class="${c.undone?"org-undone":""}"><td class="mono">${X(when)}</td><td><b>${X(c.summary)}</b><div class="swin-note" style="margin-top:2px">${X(detail)}</div></td><td>${c.effective?X(_swinDayLabel(c.effective)):"—"}</td><td>${X(c.by||"—")}</td><td style="white-space:nowrap">`;
+      if(c.undone)h+=`<span class="cov-state ended">undone</span>`;
+      else if(blocker)h+=`<button type="button" class="swin-btn" disabled title="${XA("Undo the newer change first: "+blocker.summary)}">Undo</button>`;
+      else h+=`<button type="button" class="swin-btn" onclick="orgUndo('${XJS(c.id)}')">Undo</button>`;
+      h+=`</td></tr>`;
+    });
+    h+=`</tbody></table></div>`;
+  }
+  h+=`</section></div>`;
+  return h;
+}
+
 </script>
 <script>
 (function(){
@@ -34589,7 +34881,7 @@ NS.classifyIdentity=nsClassifyIdentityLabel;
 function nsEmptyCanonical(){
   return{
     schema:NS_SCHEMA,version:NS_VERSION,updated_at:nsNow(),
-    people:[],roles:[],acting:[],teams:[],orgUnits:[],aliases:[],
+    people:[],roles:[],acting:[],reportingLines:[],orgChanges:[],teams:[],orgUnits:[],aliases:[],
     schedule:[],otWishes:[],otDecisions:[],leave:[],fairness:[],sourceLinks:[],
     sources:[],syncLog:[],imports:[],sharedScheduleGroups:[],
     publishQueue:[],conflicts:[],conflictRules:[],ruleLibraryRevisions:[],alertActions:[],exportPresets:[],performanceRuns:[]
@@ -34598,7 +34890,7 @@ function nsEmptyCanonical(){
 
 function nsNormalizeCanonical(value){
   const out=Object.assign(nsEmptyCanonical(),value&&typeof value==="object"?value:{});
-  ["people","roles","acting","teams","orgUnits","aliases","schedule","otWishes","otDecisions","leave","fairness","sourceLinks","sources","syncLog","imports","sharedScheduleGroups","publishQueue","conflicts","conflictRules","ruleLibraryRevisions","alertActions","exportPresets","performanceRuns"].forEach(key=>{
+  ["people","roles","acting","reportingLines","orgChanges","teams","orgUnits","aliases","schedule","otWishes","otDecisions","leave","fairness","sourceLinks","sources","syncLog","imports","sharedScheduleGroups","publishQueue","conflicts","conflictRules","ruleLibraryRevisions","alertActions","exportPresets","performanceRuns"].forEach(key=>{
     if(!Array.isArray(out[key]))out[key]=[];
   });
   out.schema=NS_SCHEMA;out.version=NS_VERSION;
@@ -34614,7 +34906,7 @@ function nsCanonical(){
   return S.nsCanonical;
 }
 
-const NS_DEPARTMENT_TABLES=new Set(["people","roles","acting","teams","orgUnits","aliases","schedule","otWishes","otDecisions","leave","fairness","sourceLinks","sources","syncLog","imports","sharedScheduleGroups","publishQueue","conflicts","alertActions","performanceRuns"]);
+const NS_DEPARTMENT_TABLES=new Set(["people","roles","acting","reportingLines","orgChanges","teams","orgUnits","aliases","schedule","otWishes","otDecisions","leave","fairness","sourceLinks","sources","syncLog","imports","sharedScheduleGroups","publishQueue","conflicts","alertActions","performanceRuns"]);
 function nsDepartmentKey(value){return nsNameKey(nsClean(value||""))||"default";}
 function nsActiveDepartmentKey(){return nsDepartmentKey(S.activeDept||"default");}
 function nsDirectDepartmentKey(record){
@@ -35908,10 +36200,15 @@ function nsRuntimeRole(roleTitle){return /agent/i.test(roleTitle||"")&&!/lead|su
 function nsSyncPeopleToRuntime(opts){
   const model=nsCanonical(),scopedPeople=nsScopedRows("people");if(!S.people||typeof S.people!=="object")S.people={};
   const byId=new Map(scopedPeople.map(person=>[person.person_id,person])),kept=opts&&opts.onlyMissing?new Set(Object.keys(S.people)):null;
+  const lineIndex=nsLinesIndex(),todayISO=nsISODate(new Date());
   scopedPeople.forEach(person=>{
     const name=person.full_name;if(!name||kept&&kept.has(name))return;
     const current=S.people[name]||{};
-    const manager=person.manager_name||(byId.get(person.reports_to_person_id)||{}).full_name||current.teamLeader||"";
+    // Dated reporting lines decide today's leader. A move dated in the future leaves the person with
+    // their old leader until that day; on the day, the person record catches up here.
+    const lineLeader=nsLineLeaderOn(person.person_id,todayISO,lineIndex);
+    if(lineLeader!==null&&lineLeader!==(person.reports_to_person_id||"")){person.reports_to_person_id=lineLeader;person.manager_name=lineLeader?(byId.get(lineLeader)||{}).full_name||nsPersonName(lineLeader):"";}
+    const manager=lineLeader!==null?(lineLeader?(byId.get(lineLeader)||{}).full_name||nsPersonName(lineLeader):""):(person.manager_name||(byId.get(person.reports_to_person_id)||{}).full_name||current.teamLeader||"");
     // A browser edit (NorthStar editor, or a People-view edit written through by
     // nsApplyRuntimePersonEdit) holds the whole label set, so a label removed there stays removed.
     // Imported records only ever add labels.
@@ -35943,7 +36240,7 @@ function nsFillRuntimePeopleFromCanonical(){
 function nsApplyRuntimePersonEdit(name,patch){
   const key=nsNameKey(name);if(!key||!patch||typeof patch!=="object")return[];
   const scoped=nsScopedRows("people"),matches=scoped.filter(person=>nsNameKey(person.full_name)===key);if(!matches.length)return[];
-  const model=nsCanonical(),sourceMap=nsSourceDepartmentMap(model),now=nsNow(),has=field=>Object.prototype.hasOwnProperty.call(patch,field),changed=[];
+  const model=nsCanonical(),sourceMap=nsSourceDepartmentMap(model),now=nsNow(),has=field=>Object.prototype.hasOwnProperty.call(patch,field),changed=[],lineMoves=[];
   matches.forEach(person=>{
     const department=nsRecordDepartmentKey(person,model,sourceMap),changes={};
     if(has("team"))changes.home_team=nsClean(patch.team);
@@ -35961,10 +36258,13 @@ function nsApplyRuntimePersonEdit(name,patch){
     // Its labels turn authoritative with the stamp, so the ones S.people gathered from earlier merges
     // are carried over rather than dropped by a team leader edit.
     if(!has("labels")&&person.source_id!=="NS-BROWSER"){const runtime=S.people&&S.people[person.full_name];if(runtime)changes.labels=nsNormalizeLabels([...nsNormalizeLabels(person.labels),...nsNormalizeLabels(runtime.labels)]);}
+    const leaderBefore=has("teamLeader")?nsLineLeaderOn(person.person_id,nsISODate(new Date())):null;
     Object.assign(person,changes,{source_id:"NS-BROWSER",authority_rank:0,last_modified_utc:now,sync_status:"Staged"});
     nsStageChange("PeopleHub","People",person.person_id,"update",Object.assign({},person));
+    if(leaderBefore!==null&&leaderBefore!==(changes.reports_to_person_id||""))lineMoves.push(person);
     changed.push(person);
   });
+  lineMoves.forEach(person=>nsOrgMove([person.full_name],person.manager_name||"",nsISODate(new Date()),"People view"));
   if(changed.length)nsPersist();
   return changed;
 }
@@ -36817,7 +37117,7 @@ function nsRenderOrganisation(el){
   const body=`<div class="ns-toolbar"><input class="grow" value="${nsEsc(S.nsOrgSearch||"")}" oninput="S.nsOrgSearch=this.value;rOps($('ca'))" placeholder="Search people, roles, labels"><select onchange="S.nsOrgDept=this.value;rOps($('ca'))"><option value="all">All departments</option>${departments.map(name=>`<option${dept===name?' selected':''}>${nsEsc(name)}</option>`).join("")}</select><select onchange="S.nsOrgTeam=this.value;rOps($('ca'))"><option value="all">All teams</option>${teams.map(name=>`<option${team===name?' selected':''}>${nsEsc(name)}</option>`).join("")}</select><button class="ns-btn" onclick="nsOpenOrgUnitEditor()">Add unit</button><button class="ns-btn primary" onclick="nsOpenPersonEditor()">Add person</button></div>
     <div class="ns-kpis"><div class="ns-kpi"><b>${departments.length}</b><span>Departments</span></div><div class="ns-kpi"><b>${teams.length}</b><span>Teams</span></div><div class="ns-kpi"><b>${ready.length}</b><span>Cover-ready leaders</span></div><div class="ns-kpi"><b>${acting.length}</b><span>Active acting assignments</span></div></div>
     <div class="ns-split"><section class="ns-panel"><div class="ns-panel-hd"><h3>People and roles</h3><span>${people.length} shown</span></div><div class="ns-table-wrap" style="max-height:560px"><table class="ns-table"><thead><tr><th>Person</th><th>Title / operational role</th><th>Unit</th><th>Reports to</th><th>Labels</th><th>Coverage</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="7"><div class="ns-empty">No people match this scope.</div></td></tr>'}</tbody></table></div></section>
-    <div style="display:flex;flex-direction:column;gap:10px"><section class="ns-panel"><div class="ns-panel-hd"><h3>Organogram</h3><span>reporting lines</span></div><div class="ns-panel-body ns-tree" style="max-height:310px;overflow:auto">${nsRenderOrgTree(people)}</div></section><section class="ns-panel"><div class="ns-panel-hd"><h3>Coverage-ready leadership</h3><span>YAT + acting + supervisors</span></div><div class="ns-panel-body" style="max-height:240px;overflow:auto;padding:0">${readyRows}</div></section></div></div>`;
+    <div style="display:flex;flex-direction:column;gap:10px"><section class="ns-panel"><div class="ns-panel-hd"><h3>Organogram</h3><span>reporting lines · <button class="ns-btn" onclick="railNavPeople('org')">Open Org builder</button></span></div><div class="ns-panel-body ns-tree" style="max-height:310px;overflow:auto">${nsRenderOrgTree(people)}</div></section><section class="ns-panel"><div class="ns-panel-hd"><h3>Coverage-ready leadership</h3><span>YAT + acting + supervisors</span></div><div class="ns-panel-body" style="max-height:240px;overflow:auto;padding:0">${readyRows}</div></section></div></div>`;
   el.innerHTML=nsOpsShell("organisation",body);
 }
 
@@ -36897,6 +37197,147 @@ function nsSaveActingCover(fields){
 Object.assign(window,{nsOpenPersonEditor,nsSavePersonEditor,nsOpenOrgUnitEditor,nsSaveOrgUnit,nsOpenActingEditor,nsSaveActing});
 window.nsActingRows=nsActingRows;
 window.nsSaveActingCover=nsSaveActingCover;
+
+// ── Org builder: dated reporting lines and a change log with undo (src/app/views/org.js) ──
+// A reporting line says who someone reports to between two dates (open-ended when effective_to is
+// blank; from the beginning when effective_from is blank). Every org edit is one batch in
+// orgChanges holding the reverse of each step it took, so a batch undoes as a unit.
+function nsAddDaysISO(iso,n){const d=new Date(iso+"T00:00:00");d.setDate(d.getDate()+n);return nsISODate(d);}
+function nsLinesIndex(){
+  const index=new Map();
+  nsScopedRows("reportingLines").forEach(line=>{if(line.status==="Superseded")return;if(!index.has(line.person_id))index.set(line.person_id,[]);index.get(line.person_id).push(line);});
+  return index;
+}
+// Who someone reports to on a date: a person_id, "" for nobody, or null when no dated line covers it.
+function nsLineLeaderOn(personId,iso,index){
+  const lines=(index||nsLinesIndex()).get(personId)||[];
+  let hit=null;
+  lines.forEach(line=>{if((!line.effective_from||line.effective_from<=iso)&&(!line.effective_to||line.effective_to>=iso)&&(!hit||(line.effective_from||"")>(hit.effective_from||"")))hit=line;});
+  return hit?(hit.reports_to_person_id||""):null;
+}
+function nsOrgLines(){
+  return nsScopedRows("reportingLines").filter(line=>line.status!=="Superseded").map(line=>({id:line.line_id,personId:line.person_id,personName:nsPersonName(line.person_id),leaderId:line.reports_to_person_id||"",leaderName:line.reports_to_person_id?nsPersonName(line.reports_to_person_id):"",from:line.effective_from||"",to:line.effective_to||""}));
+}
+function nsOrgChanges(){
+  return nsScopedRows("orgChanges").slice().sort((a,b)=>String(b.at).localeCompare(String(a.at))).map(c=>({id:c.change_id,kind:c.kind,summary:c.summary,effective:c.effective_from||"",at:c.at,by:c.by||"",items:c.items||[],undone:c.undone_at||""}));
+}
+// Runs steps against the model and returns the steps that reverse them, newest first.
+function nsOrgRunOps(ops){
+  const model=nsCanonical(),undo=[];
+  (ops||[]).forEach(op=>{
+    if(op.op==="lineCreate"){const line=nsStampDepartment([Object.assign({},op.line)])[0];model.reportingLines.push(line);undo.unshift({op:"lineDelete",line_id:line.line_id});}
+    else if(op.op==="lineDelete"){const i=model.reportingLines.findIndex(line=>line.line_id===op.line_id);if(i>=0){const line=model.reportingLines.splice(i,1)[0];undo.unshift({op:"lineCreate",line});}}
+    else if(op.op==="lineSet"){const line=model.reportingLines.find(item=>item.line_id===op.line_id);if(line){undo.unshift({op:"lineSet",line_id:op.line_id,field:op.field,value:line[op.field]??""});line[op.field]=op.value;}}
+    else if(op.op==="personSet"){const person=nsPersonById(op.person_id);if(person){undo.unshift({op:"personSet",person_id:op.person_id,field:op.field,value:person[op.field]??""});person[op.field]=op.value;Object.assign(person,{source_id:"NS-BROWSER",authority_rank:0,last_modified_utc:nsNow(),sync_status:"Staged"});}}
+    else if(op.op==="personCreate"){const person=nsStampDepartment([Object.assign({},op.person)])[0];model.people.push(person);undo.unshift({op:"personDelete",person_id:person.person_id});}
+    else if(op.op==="personDelete"){const person=nsPersonById(op.person_id),i=person?model.people.indexOf(person):-1;if(i>=0){model.people.splice(i,1);if(S.people&&S.people[person.full_name])delete S.people[person.full_name];undo.unshift({op:"personCreate",person});}}
+  });
+  return undo;
+}
+function nsOrgCommit(kind,summary,effective,items,ops,by){
+  const model=nsCanonical(),undo=nsOrgRunOps(ops);
+  const entry=nsStampDepartment([{change_id:nsId("NS-ORG",kind+"|"+nsNow()+"|"+Math.random()),kind,summary,effective_from:effective||"",at:nsNow(),by:nsClean(by),items,undo,undone_at:"",source_id:"NS-BROWSER"}])[0];
+  model.orgChanges.push(entry);
+  nsStageChange("PeopleHub","Org",entry.change_id,kind,{summary,effective_from:effective||"",items});
+  nsSyncPeopleToRuntime();nsPersist();
+  return entry.change_id;
+}
+function nsOrgUndo(changeId){
+  const entry=nsScopedRows("orgChanges").find(c=>c.change_id===changeId);
+  if(!entry||entry.undone_at)return false;
+  nsOrgRunOps(entry.undo||[]);
+  entry.undone_at=nsNow();
+  nsStageChange("PeopleHub","Org",entry.change_id,"undo",{summary:entry.summary});
+  nsSyncPeopleToRuntime();nsPersist();
+  return true;
+}
+function nsLeaderIdOn(person,iso,index){
+  const line=nsLineLeaderOn(person.person_id,iso,index);
+  return line!==null?line:(person.reports_to_person_id||nsPersonIdByName(person.manager_name)||"");
+}
+// Adds the steps that make `person` report to `leader` (a person record or null) from `eff`.
+function nsOrgMovePlan(person,leader,eff,ops,items){
+  const index=nsLinesIndex(),beforeId=nsLeaderIdOn(person,eff,index),newId=leader?leader.person_id:"";
+  if(beforeId===newId)return;
+  const lines=index.get(person.person_id)||[],dayBefore=nsAddDaysISO(eff,-1),today=nsISODate(new Date()),seed=Math.random().toString(36).slice(2);
+  // First dated move: keep the leader they had before, so history before `eff` does not change.
+  if(!lines.length&&beforeId)ops.push({op:"lineCreate",line:{line_id:nsId("NS-RL",person.person_id+"|base|"+seed),person_id:person.person_id,reports_to_person_id:beforeId,effective_from:"",effective_to:dayBefore,status:"Active",source_id:"NS-BROWSER"}});
+  lines.forEach(line=>{
+    if(line.effective_from&&line.effective_from>=eff)ops.push({op:"lineSet",line_id:line.line_id,field:"status",value:"Superseded"});
+    else if(!line.effective_to||line.effective_to>=eff)ops.push({op:"lineSet",line_id:line.line_id,field:"effective_to",value:dayBefore});
+  });
+  ops.push({op:"lineCreate",line:{line_id:nsId("NS-RL",person.person_id+"|"+eff+"|"+seed),person_id:person.person_id,reports_to_person_id:newId,effective_from:eff,effective_to:"",status:"Active",source_id:"NS-BROWSER"}});
+  if(eff<=today){ops.push({op:"personSet",person_id:person.person_id,field:"reports_to_person_id",value:newId});ops.push({op:"personSet",person_id:person.person_id,field:"manager_name",value:leader?leader.full_name:""});}
+  items.push({person_id:person.person_id,person_name:person.full_name,field:"leader",before:nsPersonName(beforeId)||"",after:leader?leader.full_name:""});
+}
+// True when `leader` already reports (directly or not) to `person` on that date: the move would loop.
+function nsOrgWouldLoop(person,leader,eff){
+  const index=nsLinesIndex();let cur=leader,guard=0;
+  while(cur&&guard++<50){if(cur.person_id===person.person_id)return true;const up=nsLeaderIdOn(cur,eff,index);cur=up?nsPersonById(up):null;}
+  return false;
+}
+function nsOrgMove(names,leaderName,effective,by){
+  const eff=nsISODate(effective)||nsISODate(new Date()),leader=leaderName?nsPersonById(nsPersonIdByName(leaderName)):null;
+  if(leaderName&&!leader)return{error:"Not in this project's people: "+leaderName};
+  const ops=[],items=[],loops=[];
+  [...new Set(names||[])].forEach(name=>{
+    const person=nsPersonById(nsPersonIdByName(name));if(!person||leader&&person.person_id===leader.person_id)return;
+    if(leader&&nsOrgWouldLoop(person,leader,eff)){loops.push(person.full_name);return;}
+    nsOrgMovePlan(person,leader,eff,ops,items);
+  });
+  if(loops.length&&!items.length)return{error:`${leader.full_name} already reports to ${loops.join(", ")}, so that move would make a loop`};
+  if(!items.length)return{error:"Nothing to change: they already report to "+(leader?leader.full_name:"nobody")+" on "+eff};
+  const who=items.length>3?items.length+" people":items.map(item=>item.person_name).join(", ");
+  return{id:nsOrgCommit("move",`Moved ${who} to ${leader?leader.full_name:"no leader"}`,eff,items,ops,by),count:items.length,skipped:loops};
+}
+function nsOrgSetRole(names,role,effective,by){
+  const value=nsClean(role);if(!value)return{error:"Pick a role"};
+  const ops=[],items=[];
+  [...new Set(names||[])].forEach(name=>{
+    const person=nsPersonById(nsPersonIdByName(name));if(!person||person.role_type===value)return;
+    ops.push({op:"personSet",person_id:person.person_id,field:"role_type",value});
+    if(!person.job_title||person.job_title===person.role_type)ops.push({op:"personSet",person_id:person.person_id,field:"job_title",value});
+    items.push({person_id:person.person_id,person_name:person.full_name,field:"role",before:person.role_type||"",after:value});
+  });
+  if(!items.length)return{error:"Nothing to change"};
+  const who=items.length>3?items.length+" people":items.map(item=>item.person_name).join(", ");
+  return{id:nsOrgCommit("role",`${who}: role set to ${value}`,nsISODate(effective)||nsISODate(new Date()),items,ops,by),count:items.length};
+}
+// rows: [{name, role, reportsTo}] from an organogram sheet. Creates missing people, then applies
+// leader and role changes, all as one batch. A blank "reports to" leaves the leader unchanged.
+function nsOrgImport(rows,effective,by){
+  const eff=nsISODate(effective)||nsISODate(new Date()),ops=[],items=[],created=new Map(),dept=S.activeDept||"";
+  const find=name=>nsPersonById(nsPersonIdByName(name))||created.get(nsNameKey(name))||null;
+  const ensure=(name,role)=>{
+    let person=find(name);if(person)return person;
+    person={person_id:nsId("NS-P",nsNameKey(name)+"|"+nsActiveDepartmentKey()),full_name:nsClean(name),role_type:nsClean(role)||"Agent",job_title:nsClean(role),home_department:dept,home_team:"",reports_to_person_id:"",manager_name:"",status:"Active",labels:[],notes:"",source_id:"NS-BROWSER",authority_rank:0,imported_at:nsNow()};
+    created.set(nsNameKey(name),person);ops.push({op:"personCreate",person});
+    items.push({person_id:person.person_id,person_name:person.full_name,field:"created",before:"",after:person.role_type});
+    return person;
+  };
+  const clean=(rows||[]).map(row=>({name:nsClean(row.name),role:nsClean(row.role),reportsTo:nsClean(row.reportsTo)})).filter(row=>row.name&&nsClassifyIdentityLabel(row.name).valid);
+  clean.forEach(row=>ensure(row.name,row.role));
+  clean.forEach(row=>{if(row.reportsTo)ensure(row.reportsTo,"Team Leader");});
+  clean.forEach(row=>{
+    const person=find(row.name),isNew=created.has(nsNameKey(row.name));
+    if(!isNew&&row.role&&row.role!==person.role_type){ops.push({op:"personSet",person_id:person.person_id,field:"role_type",value:row.role});items.push({person_id:person.person_id,person_name:person.full_name,field:"role",before:person.role_type||"",after:row.role});}
+    if(!row.reportsTo)return;
+    const leader=find(row.reportsTo);if(!leader||leader.person_id===person.person_id)return;
+    if(isNew){person.reports_to_person_id=leader.person_id;person.manager_name=leader.full_name;return;}
+    if(!created.has(nsNameKey(leader.full_name))&&nsOrgWouldLoop(person,leader,eff))return;
+    nsOrgMovePlan(person,leader,eff,ops,items);
+  });
+  if(!items.length)return{error:"The sheet matches the current org: nothing to change"};
+  const count=field=>items.filter(item=>item.field===field).length;
+  const summary=`Organogram import: ${count("created")} added, ${count("leader")} moved, ${count("role")} role changes`;
+  return{id:nsOrgCommit("import",summary,eff,items,ops,by),created:count("created"),moved:count("leader"),roles:count("role")};
+}
+window.nsOrgLines=nsOrgLines;
+window.nsOrgChanges=nsOrgChanges;
+window.nsOrgMove=nsOrgMove;
+window.nsOrgSetRole=nsOrgSetRole;
+window.nsOrgImport=nsOrgImport;
+window.nsOrgUndo=nsOrgUndo;
 
 function nsOTDecisionKey(record){return(record.person_id||nsNameKey(record.person_name))+"|"+record.date+"|"+(record.slot||"FULL");}
 function nsOTMonths(){const dates=[...nsScopedRows("otWishes"),...nsScopedRows("otDecisions")].map(row=>row.date).filter(Boolean);return[...new Set(dates.map(date=>date.slice(0,7)))].sort();}

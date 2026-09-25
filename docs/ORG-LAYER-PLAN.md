@@ -608,6 +608,28 @@ Decisions made while building it:
 
 ### L3: Org Builder (visual) and org data quality
 
+**Status: built.** People → Org (`src/app/views/org.js`), engine `src/app/people/org.js`. NorthStar
+has two new department tables, `reportingLines` and `orgChanges`, and exports `nsOrgLines`,
+`nsOrgChanges`, `nsOrgMove`, `nsOrgSetRole`, `nsOrgImport` and `nsOrgUndo`. Tested in
+`tests/org.spec.js`. How it works:
+- **Reporting lines are dated.** The first dated move writes a line for the leader someone had
+  before (open start, ending the day before), so history before the move does not change. A
+  move from today or earlier also updates the person record straight away. A future move leaves
+  People on the old leader until that day; the NorthStar people sync switches it on the day.
+- **Every change stores its own undo steps**, so a batch (a bulk move, an import) undoes as a
+  unit. Undo is blocked while a newer, not-undone change touches the same people.
+- **A leader change from the People views** (Team assign, add agents) on someone who already has
+  dated lines becomes a dated move from today, logged as "People view", so the next sync does not
+  put the old leader back.
+- **Moves that would make a loop are refused.** Someone cannot report to a person already below
+  them on that date.
+- **Organogram import** reads the first sheet that looks like an org sheet: Name + Reports To
+  (or Line manager / Team leader / Leader / Supervisor / Manager) + optional Role. It adds
+  missing people, previews the changes, and applies them as one change from the chosen date. A
+  blank "reports to" leaves that person's leader alone.
+- **Lanes are decided by role:** General Manager, Head of or Director; then Manager or CCL; then
+  Team Leader, Leader, Supervisor or TL, or anyone with reports; everyone else is an agent.
+
 | Part | Spec |
 |---|---|
 | Lanes | GM → Manager/CCL → TL → Agents (from the prototype's `renderOrgBuilder`), next to the existing table and tree |

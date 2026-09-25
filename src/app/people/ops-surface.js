@@ -441,7 +441,7 @@ function _ensurePeopleOpsState(){
   if(!S.peopleHomeNotes||typeof S.peopleHomeNotes!=="object")S.peopleHomeNotes={};
   if(!Array.isArray(S.peopleLogbook))S.peopleLogbook=[];
   if(!S.peopleDashView||!["today_ops","week_risk","monthly_review"].includes(S.peopleDashView))S.peopleDashView="today_ops";
-  if(!S.peopleSubTab||!["dashboard","team","agents","cover","logbook","events"].includes(S.peopleSubTab))S.peopleSubTab="dashboard";
+  if(!S.peopleSubTab||!["dashboard","team","agents","cover","org","logbook","events"].includes(S.peopleSubTab))S.peopleSubTab="dashboard";
   if(!S._peopleView||!["cards","table"].includes(S._peopleView))S._peopleView="cards";
   if(!S._peopleLogFilter)S._peopleLogFilter="all";
 }
@@ -541,7 +541,7 @@ function loadPeopleOps(){
     const view=localStorage.getItem("sc_people_view");
     if(view){
       const v=JSON.parse(view);
-      if(v.peopleSubTab&&["dashboard","team","agents","cover","logbook","events"].includes(v.peopleSubTab))S.peopleSubTab=v.peopleSubTab;
+      if(v.peopleSubTab&&["dashboard","team","agents","cover","org","logbook","events"].includes(v.peopleSubTab))S.peopleSubTab=v.peopleSubTab;
       if(v.peopleDashView&&["today_ops","week_risk","monthly_review"].includes(v.peopleDashView))S.peopleDashView=v.peopleDashView;
       if(v.peopleView&&["cards","table"].includes(v.peopleView))S._peopleView=v.peopleView;
       if(v.peopleLogFilter&&["all","note","followup","summary","event"].includes(v.peopleLogFilter))S._peopleLogFilter=v.peopleLogFilter;

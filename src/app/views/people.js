@@ -540,7 +540,7 @@ function rPeopleLogbookView(){
 function rPeople(el){
   _ensurePeopleOpsState();
   if(S.peopleSubTab==="cards")S.peopleSubTab="team";
-  if(!["dashboard","team","agents","cover","logbook","events"].includes(S.peopleSubTab))S.peopleSubTab="dashboard";
+  if(!["dashboard","team","agents","cover","org","logbook","events"].includes(S.peopleSubTab))S.peopleSubTab="dashboard";
   const scopeLeaders=_peopleScopeLeaders();
   if(scopeLeaders.length&&(!S.selectedTL||!scopeLeaders.includes(S.selectedTL)))S.selectedTL=scopeLeaders[0];
   savePeopleOps();
@@ -552,6 +552,7 @@ function rPeople(el){
     {id:"team",l:"Team"},
     {id:"agents",l:"Agents"},
     {id:"cover",l:"Cover"},
+    {id:"org",l:"Org"},
     {id:"logbook",l:"Logbook"},
     {id:"events",l:"Events"}
   ];
@@ -596,6 +597,8 @@ function rPeople(el){
     h+=rPeopleAgentsView();
   } else if(S.peopleSubTab==="cover"){
     h+=rPeopleCoverView();
+  } else if(S.peopleSubTab==="org"){
+    h+=rPeopleOrgView();
   } else if(S.peopleSubTab==="logbook"){
     h+=rPeopleLogbookView();
   } else if(S.peopleSubTab==="events"){

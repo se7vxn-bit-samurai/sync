@@ -84,7 +84,9 @@ function _swinRow(iso,d,e,source,leader,excs){
 }
 // Rows for one person, one per date from fromISO to toISO inclusive.
 function swinRows(name,fromISO,toISO){
-  const own=_swinIndex(name),leader=own.size?"":_swinLeaderOf(name),lead=leader?_swinIndex(leader):null;
+  // No rows of their own: follow the rota of whoever they report to on each date (a dated move
+  // switches rota on its effective date; history before it stays with the old leader).
+  const own=_swinIndex(name),leaderFor=iso=>own.size?"":(typeof baseLeaderOn==="function"?baseLeaderOn(name,iso):_swinLeaderOf(name));
   const excBy={};
   (typeof effExc==="function"?effExc():[]).forEach(ex=>{
     if(!ex||!ex.date||ex.date<fromISO||ex.date>toISO)return;
@@ -95,7 +97,8 @@ function swinRows(name,fromISO,toISO){
   for(let d=_swinDate(fromISO),end=_swinDate(toISO);d<=end;d=_swinAddDays(d,1)){
     const iso=excKey(d);
     let e=own.get(iso)||null,source=e?(e._bpFixed?"blueprint":"roster"):"none";
-    if(!e&&lead){e=lead.get(iso)||null;if(e)source="tl";}
+    const leader=e?"":leaderFor(iso);
+    if(!e&&leader&&leader!==name){e=_swinIndex(leader).get(iso)||null;if(e)source="tl";}
     const r=_swinRow(iso,d,e,source,leader,excBy[iso]||[]);
     // Following the TL's rota: the TL's own leave or sickness is not this person's. The team still
     // works, but the source has no shift for them, so it is a gap, not "Leave".
@@ -323,7 +326,10 @@ function renderScheduleWindow(){
 
   let h=`<div class="swin-hd"><div style="min-width:0;flex:1"><h2 id="swinTitle">${X(st.name)}</h2>`;
   h+=`<div class="swin-meta">${[team?X(team):"",leader?"Leader: "+X(leader):(Object.values(S.people||{}).some(p=>p&&p.teamLeader===st.name)?"Team leader":"No leader recorded"),S.activeDept?X(S.activeDept):""].filter(Boolean).join(" · ")}</div>`;
-  if(sum.inherited)h+=`<div class="swin-meta">No rows of their own in this range: shifts follow ${X(leader)}'s rota.</div>`;
+  if(sum.inherited){
+    const follow=[];rows.forEach(r=>{if(r.source==="tl"&&r.leader&&(!follow.length||follow[follow.length-1].name!==r.leader))follow.push({name:r.leader,from:r.iso});});
+    h+=`<div class="swin-meta">No rows of their own in this range: shifts follow ${follow.map((f,i)=>i?`${X(f.name)}'s from ${X(_swinDayLabel(f.from))}`:`${X(f.name)}'s rota`).join(", then ")}.</div>`;
+  }
   _swinCoverNotes(st.name,range.from,range.to).forEach(t=>{h+=`<div class="swin-meta swin-cover">${X(t)}</div>`;});
   if(labels.length)h+=`<div>${labels.map(l=>`<span class="swin-chip">${X(l)}</span>`).join("")}</div>`;
   h+=`</div><button type="button" id="swinClose" class="swin-x" onclick="closeScheduleWindow()" aria-label="Close schedule window">✕</button></div>`;
