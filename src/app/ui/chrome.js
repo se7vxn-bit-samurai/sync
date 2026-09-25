@@ -286,6 +286,7 @@ function renderTabs(){
       {id:"agents",label:"Agents",active:S.tab==="people"&&S.peopleSubTab==="agents",action:"railNavPeople('agents')"},
       {id:"leaders",label:"Leaders board",active:S.tab==="people"&&S.peopleSubTab==="leaders",action:"railNavPeople('leaders')"},
       {id:"cover",label:"Cover",active:S.tab==="people"&&S.peopleSubTab==="cover",action:"railNavPeople('cover')"},
+      {id:"absence",label:"Absence register",active:S.tab==="people"&&S.peopleSubTab==="absence",action:"railNavPeople('absence')"},
       {id:"org",label:"Org builder",active:S.tab==="people"&&S.peopleSubTab==="org",action:"railNavPeople('org')"},
       {id:"logbook",label:"Logbook",active:S.tab==="people"&&S.peopleSubTab==="logbook",action:"railNavPeople('logbook')"},
       {id:"events",label:"Events",active:S.tab==="people"&&S.peopleSubTab==="events",action:"railNavPeople('events')"}
