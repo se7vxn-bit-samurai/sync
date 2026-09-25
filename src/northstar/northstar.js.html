@@ -536,6 +536,9 @@ window.nsDownloadBlob=nsDownloadBlob;
 window._syncCollectLocalKeys=_syncCollectLocalKeys;
 // The Ops overview counts scoped OT wishes to decide whether to offer the OT+ workbench.
 window.nsScopedRows=nsScopedRows;
+// People-view edits write through to the canonical person; opening a project fills S.people.
+window.nsApplyRuntimePersonEdit=nsApplyRuntimePersonEdit;
+window.nsFillRuntimePeopleFromCanonical=nsFillRuntimePeopleFromCanonical;
 
 function nsOpenDatabase(){
   if(!window.indexedDB)return Promise.reject(new Error("IndexedDB unavailable"));
@@ -1371,22 +1374,73 @@ function nsExtractSyncLog(wb,source){
 
 function nsRuntimeRole(roleTitle){return /agent/i.test(roleTitle||"")&&!/lead|supervisor|manager/i.test(roleTitle||"")?"agent":"leader";}
 
-function nsSyncPeopleToRuntime(){
+// opts.onlyMissing: add the scoped canonical people S.people lacks and leave every existing entry
+// alone. Opening a project uses it. The additions are a projection of the canonical model, not an
+// edit, so writing them does not mark the device as having unsaved work.
+function nsSyncPeopleToRuntime(opts){
   const model=nsCanonical(),scopedPeople=nsScopedRows("people"),scopedActing=nsScopedRows("acting");if(!S.people||typeof S.people!=="object")S.people={};
-  const byId=new Map(scopedPeople.map(person=>[person.person_id,person]));
+  const byId=new Map(scopedPeople.map(person=>[person.person_id,person])),kept=opts&&opts.onlyMissing?new Set(Object.keys(S.people)):null;
   scopedPeople.forEach(person=>{
-    const name=person.full_name;if(!name)return;
+    const name=person.full_name;if(!name||kept&&kept.has(name))return;
     const current=S.people[name]||{};
     const manager=person.manager_name||(byId.get(person.reports_to_person_id)||{}).full_name||current.teamLeader||"";
-    const labels=[...new Set([...(current.labels||[]),...(person.labels||[])])];
+    // A browser edit (NorthStar editor, or a People-view edit written through by
+    // nsApplyRuntimePersonEdit) holds the whole label set, so a label removed there stays removed.
+    // Imported records only ever add labels.
+    const labels=person.source_id==="NS-BROWSER"?nsNormalizeLabels(person.labels):[...new Set([...(current.labels||[]),...(person.labels||[])])];
     S.people[name]=Object.assign({},current,{name,personId:person.person_id,role:nsRuntimeRole(person.role_type),roleType:person.role_type,title:person.job_title||person.role_type,jobTitle:person.job_title||current.jobTitle||"",team:person.home_team||current.team||"",department:person.home_department||current.department||"",teamLeader:manager,status:person.status||current.status||"Active",labels,roleLabels:labels,notes:person.notes||current.notes||""});
   });
   scopedActing.filter(item=>String(item.status||"Active").toLowerCase()!=="inactive").forEach(item=>{
-    const person=byId.get(item.person_id);if(!person)return;
+    const person=byId.get(item.person_id);if(!person||kept&&kept.has(person.full_name))return;
     const label=/supervisor/i.test(item.acting_role)?"Acting Supervisor":"Acting Leader";
     const runtime=S.people[person.full_name];runtime.labels=[...new Set([...(runtime.labels||[]),label])];runtime.roleLabels=runtime.labels;runtime.acting=true;
   });
-  try{savePeople();}catch(err){}
+  if(!kept){try{savePeople();}catch(err){}return;}
+  if(Object.keys(S.people).length===kept.size)return;
+  const applying=NS.applyingRemote;NS.applyingRemote=true;
+  try{savePeople();}catch(err){}finally{NS.applyingRemote=applying;}
+}
+// The universal workspace keys S.people by "Name · Project", so unqualified names would duplicate.
+function nsFillRuntimePeopleFromCanonical(){
+  if((typeof isUniversalWorkspace==="function"&&isUniversalWorkspace())||S._universalWorkspace===true)return;
+  nsSyncPeopleToRuntime({onlyMissing:true});
+}
+
+// The People views edit S.people directly, and nsSyncPeopleToRuntime maps the canonical people back
+// over it on every NorthStar save, import, snapshot restore and cloud load, so an edit that stopped
+// at S.people was reverted the next time any of those ran. This writes it through to the canonical
+// person as a browser edit: rank 0 outranks every import, and its labels become authoritative.
+// patch uses the runtime field names: team, teamLeader, status, labels. Every scoped match is
+// updated, since the universal workspace can hold one name in more than one project and each would
+// otherwise map its stale values back. A match already holding the patched values is left as it is,
+// so the NorthStar editor's own call into peopleSetRoleLabels does not stage it twice. Returns the
+// canonical records it changed.
+function nsApplyRuntimePersonEdit(name,patch){
+  const key=nsNameKey(name);if(!key||!patch||typeof patch!=="object")return[];
+  const scoped=nsScopedRows("people"),matches=scoped.filter(person=>nsNameKey(person.full_name)===key);if(!matches.length)return[];
+  const model=nsCanonical(),sourceMap=nsSourceDepartmentMap(model),now=nsNow(),has=field=>Object.prototype.hasOwnProperty.call(patch,field),changed=[];
+  matches.forEach(person=>{
+    const department=nsRecordDepartmentKey(person,model,sourceMap),changes={};
+    if(has("team"))changes.home_team=nsClean(patch.team);
+    if(has("teamLeader")){
+      const leaderName=nsClean(patch.teamLeader),leaderKey=nsNameKey(leaderName),leaders=leaderKey?scoped.filter(item=>nsNameKey(item.full_name)===leaderKey):[];
+      const leader=leaders.find(item=>nsRecordDepartmentKey(item,model,sourceMap)===department)||leaders[0];
+      changes.manager_name=leaderName;changes.reports_to_person_id=leader?leader.person_id:"";
+    }
+    if(has("status"))changes.status=nsClean(patch.status)||"Active";
+    if(has("labels"))changes.labels=nsNormalizeLabels(patch.labels);
+    if(!Object.entries(changes).some(([field,value])=>JSON.stringify(field==="labels"?nsNormalizeLabels(person.labels):person[field]??"")!==JSON.stringify(value)))return;
+    // A person scoped only through its source keeps that scope once the source becomes NS-BROWSER.
+    if(!nsDirectDepartmentKey(person)&&department)changes.department_key=department;
+    // Its labels turn authoritative with the stamp, so the ones S.people gathered from earlier merges
+    // are carried over rather than dropped by a team leader edit.
+    if(!has("labels")&&person.source_id!=="NS-BROWSER"){const runtime=S.people&&S.people[person.full_name];if(runtime)changes.labels=nsNormalizeLabels([...nsNormalizeLabels(person.labels),...nsNormalizeLabels(runtime.labels)]);}
+    Object.assign(person,changes,{source_id:"NS-BROWSER",authority_rank:0,last_modified_utc:now,sync_status:"Staged"});
+    nsStageChange("PeopleHub","People",person.person_id,"update",Object.assign({},person));
+    changed.push(person);
+  });
+  if(changed.length)nsPersist();
+  return changed;
 }
 
 function nsEnsureOrgUnits(){

@@ -44,21 +44,33 @@ function peopleAddAgentsToLeader(tlName,sourceId){
   const names=_parseAgentNameLines(el?el.value:"");
   if(!names.length){toast("Paste or type at least one agent name","warn");return;}
   let added=0,moved=0,skipped=0;
+  const assigned=[];
   names.forEach(name=>{
     if(name===tlName){skipped++;return;}
     const existing=S.people[name];
     if(existing&&existing.role==="leader"){skipped++;return;}
     if(existing&&existing.role==="agent"){
-      if(existing.teamLeader!==tlName){existing.teamLeader=tlName;existing.team=(S.people[tlName]||{}).team||existing.team||"Main";moved++;}
+      if(existing.teamLeader!==tlName){existing.teamLeader=tlName;existing.team=(S.people[tlName]||{}).team||existing.team||"Main";assigned.push(existing);moved++;}
       else skipped++;
       return;
     }
     S.people[name]={id:_personId(),name,aliases:[],role:"agent",team:(S.people[tlName]||{}).team||"Main",teamLeader:tlName,contractHours:0,contractType:null,fte:1,skills:[],platforms:[],restrictions:[],otEligible:true,otMaxWeekly:0,startDate:null,endDate:null,source:"manual",addedAt:new Date().toISOString()};
+    assigned.push(S.people[name]);
     added++;
   });
   if(el)el.value="";
   savePeople();
+  // A project person keeps the move only if the canonical record has it too; see nsApplyRuntimePersonEdit.
+  if(typeof nsApplyRuntimePersonEdit==="function")assigned.forEach(p=>nsApplyRuntimePersonEdit(p.name,{teamLeader:p.teamLeader,team:p.team}));
   toast(`${added} added${moved?`, ${moved} moved`:""}${skipped?`, ${skipped} skipped`:""}`,"ok");
+  rPeople($("ca"));
+}
+// People → Team: the "assign" select on an agent with no team leader.
+function peopleAssignTeamLeader(name,tlName){
+  const p=S.people[name];if(!p)return;
+  p.teamLeader=tlName;
+  savePeople();
+  if(typeof nsApplyRuntimePersonEdit==="function")nsApplyRuntimePersonEdit(name,{teamLeader:tlName});
   rPeople($("ca"));
 }
 function peopleRemoveAgent(name){

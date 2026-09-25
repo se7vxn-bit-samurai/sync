@@ -791,6 +791,8 @@ function peopleSetRoleLabels(name,labels){
   if(!name)return;
   const p=S.people[name]||(S.people[name]={name,role:gN().includes(name)?"leader":"agent"});
   const clean=[...new Set((labels||[]).map(x=>String(x||"").trim()).filter(Boolean))];
+  // labels too: peopleRoleLabels reads it, so a removed label otherwise stayed on show.
+  p.labels=clean;
   p.roleLabels=clean;
   p.role_labels=clean;
   p.specialTag=clean.join("; ");
@@ -802,6 +804,8 @@ function peopleSetRoleLabels(name,labels){
   p.supervisor=clean.some(x=>/supervisor/i.test(x));
   savePeople();
   savePeopleOps();
+  // Held on the canonical person as well, or the next NorthStar sync puts removed labels back.
+  if(typeof nsApplyRuntimePersonEdit==="function")nsApplyRuntimePersonEdit(name,{labels:clean});
   invalidateDerivedCache();
 }
 function openPeopleRoleLabelsModal(name){

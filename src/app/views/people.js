@@ -668,7 +668,7 @@ function rPeopleTeamView(){
       h+=`<div style="padding:5px 14px;display:flex;align-items:center;gap:6px;font-size:11px">`;
       h+=`<div class="tti-av" style="width:22px;height:22px;font-size:10px;flex-shrink:0">${X(ag.name.charAt(0))}</div>`;
       h+=`<span style="flex:1;color:var(--tm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${X(ag.name)}</span>`;
-      h+=`<select onchange="(function(tl){S.people['${XJS(ag.name)}'].teamLeader=tl;savePeople();rPeople($('ca'));})(this.value)" style="padding:2px 4px;border:1px solid var(--bdr);border-radius:4px;background:var(--card);color:var(--text);font-family:inherit;font-size:10px;max-width:80px">`;
+      h+=`<select onchange="peopleAssignTeamLeader('${XJS(ag.name)}',this.value)" style="padding:2px 4px;border:1px solid var(--bdr);border-radius:4px;background:var(--card);color:var(--text);font-family:inherit;font-size:10px;max-width:80px">`;
       h+=`<option value="">— assign —</option>`;
       leaderNames2.forEach(ln=>{h+=`<option value="${XA(ln)}">${X(ln.split(' ')[0])}</option>`;});
       h+=`</select>`;
