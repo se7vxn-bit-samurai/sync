@@ -556,6 +556,7 @@ function _peopleScopeLeaders(){
   const roster=getLeaders().map(l=>l.name);
   const parsed=gN().filter(name=>!((S.people||{})[name]&&(S.people||{})[name].role==="agent"));
   let all=[...new Set([...roster,...parsed])].sort((a,b)=>a.localeCompare(b));
+  if(typeof scopeIncludes==="function")all=all.filter(n=>scopeIncludes(n));
   if(S.emp!=="all"&&all.includes(S.emp))all=[S.emp];
   if(!all.length&&S.selectedTL)all=[S.selectedTL];
   return all;

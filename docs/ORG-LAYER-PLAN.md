@@ -643,6 +643,23 @@ has two new department tables, `reportingLines` and `orgChanges`, and exports `n
 
 ### L4: Scope bar
 
+**Status: built.** `src/app/people/scope.js`, tested in `tests/scope.spec.js`.
+- **Where it sits:** in the toolbar, before the person pill. Department (only when the data has
+  more than one), then leader as a tree (GM → managers → TLs, with how many people are under
+  each; people acting that day are listed under their own leader, marked "acting"), then a
+  "N in scope ✕" chip that clears it.
+- **What it includes:** the leader plus everyone below them on the scope date, plus the team of
+  anyone they are acting for that day. The scope date is today inside the month on screen,
+  otherwise that month's first day, so a dated move shows up in the month it starts.
+- **How views follow it:** it is applied in `activeLeaderFilter()`, so everything built on
+  `gD` / `gE` / `gN` follows (Cards, Table, leader lists, exports), plus the calendar (month grid,
+  Day and Week lists, Share day), People (Team, Agents) and Cover. The person pill narrows inside
+  the scope.
+- **Not scoped yet:** Ops analytics, Home intel and capacity history read entries directly and
+  still show the whole project. The chip's tooltip says so. The Org builder shows the whole org on
+  purpose.
+- **Storage:** one scope per project in `sc_scope`, synced with the other local stores.
+
 - One bar in the header: department · leader (includes everyone below them) · person · period.
 - Every view respects it; it persists per workspace.
 - It replaces the per-view team and person filters.
