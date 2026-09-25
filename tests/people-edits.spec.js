@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { openApp, PROFILE, workspaceRow, waitForPicker } = require('./helpers');
+const { openApp, PROFILE, workspaceRow, waitForPicker, createTestProject } = require('./helpers');
 
 // People-view edits on project people. S.people is a runtime copy: nsSyncPeopleToRuntime maps the
 // canonical people back over it on every NorthStar editor save, import, restore and cloud load. The
@@ -177,10 +177,10 @@ test.describe('opening a project', () => {
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('sc_cloud_sync') || '{}').dirty)).toBe(false);
   });
 
-  test('a new sample project opens with its people', async ({ page }) => {
+  test('a newly built project opens with its people', async ({ page }) => {
     await openApp(page);
     await page.waitForFunction(() => window.NorthStar && window.NorthStar.bootSettled, null, { timeout: 20_000 });
-    await page.evaluate(() => _syncCreateSampleProject());
+    await createTestProject(page);
     const names = await page.evaluate(() => Object.keys(S.people).sort());
     expect(names).toEqual(['Amara Okafor', 'Ben Sorensen', 'Chloe Duarte', 'Dmitri Volkov', 'Esi Mensah', 'Farid Haddad']);
   });

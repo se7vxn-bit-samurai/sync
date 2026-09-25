@@ -17,11 +17,15 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Sync">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- "black", not "black-translucent": translucent draws the page under the status bar and notch, so
+     the top of every screen sat in the status bar on iPhone. This keeps it below, like Android. -->
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="msapplication-TileColor" content="#0e0a14">
 <link rel="manifest" href='data:application/manifest+json,%7B%22name%22%3A%227OS%20Sync%22%2C%22short_name%22%3A%22Sync%22%2C%22display%22%3A%22standalone%22%2C%22display_override%22%3A%5B%22standalone%22%2C%22minimal-ui%22%5D%2C%22start_url%22%3A%22.%22%2C%22scope%22%3A%22.%22%2C%22background_color%22%3A%22%230e0a14%22%2C%22theme_color%22%3A%22%230e0a14%22%2C%22orientation%22%3A%22any%22%2C%22categories%22%3A%5B%22productivity%22%2C%22business%22%5D%7D'>
 <link rel="icon" href='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20rx%3D%2226%22%20fill%3D%22%23f8f3dc%22%2F%3E%3Cpath%20d%3D%22M32%2034%2064%2016%2096%2034M32%2094%2064%20112%2096%2094M32%2034v18M96%2034v18M32%2094V76M96%2094V76%22%20fill%3D%22none%22%20stroke%3D%22%230a1715%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3Cpath%20d%3D%22M86%2039H55L42%2051l44%2026-13%2012H41%22%20fill%3D%22none%22%20stroke%3D%22%230a1715%22%20stroke-width%3D%229%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3Cpath%20d%3D%22M34%2050%2055%2050%2075%2039%2095%2050M35%2078%2056%2078%2073%2089%2094%2078M56%2050%2056%2078M75%2039%2075%2089%22%20fill%3D%22none%22%20stroke%3D%22%232f7a63%22%20stroke-width%3D%223%22%20opacity%3D%22.86%22%2F%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2234%22%20r%3D%225%22%20fill%3D%22%230a1715%22%2F%3E%3Ccircle%20cx%3D%2296%22%20cy%3D%2234%22%20r%3D%225%22%20fill%3D%22%230a1715%22%2F%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2294%22%20r%3D%225%22%20fill%3D%22%230a1715%22%2F%3E%3Ccircle%20cx%3D%2296%22%20cy%3D%2294%22%20r%3D%225%22%20fill%3D%22%230a1715%22%2F%3E%3Ccircle%20cx%3D%2255%22%20cy%3D%2250%22%20r%3D%224%22%20fill%3D%22%239381ff%22%2F%3E%3Ccircle%20cx%3D%2275%22%20cy%3D%2239%22%20r%3D%224%22%20fill%3D%22%232f7a63%22%2F%3E%3Ccircle%20cx%3D%2256%22%20cy%3D%2278%22%20r%3D%224%22%20fill%3D%22%232f7a63%22%2F%3E%3Ccircle%20cx%3D%2273%22%20cy%3D%2289%22%20r%3D%224%22%20fill%3D%22%239381ff%22%2F%3E%3Ccircle%20cx%3D%2264%22%20cy%3D%2264%22%20r%3D%225%22%20fill%3D%22%230a1715%22%2F%3E%3C%2Fsvg%3E'>
-<link rel="apple-touch-icon" href='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20rx%3D%2226%22%20fill%3D%22%23f8f3dc%22%2F%3E%3Cpath%20d%3D%22M32%2034%2064%2016%2096%2034M32%2094%2064%20112%2096%2094M32%2034v18M96%2034v18M32%2094V76M96%2094V76%22%20fill%3D%22none%22%20stroke%3D%22%230a1715%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3Cpath%20d%3D%22M86%2039H55L42%2051l44%2026-13%2012H41%22%20fill%3D%22none%22%20stroke%3D%22%230a1715%22%20stroke-width%3D%229%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3Cpath%20d%3D%22M34%2050%2055%2050%2075%2039%2095%2050M35%2078%2056%2078%2073%2089%2094%2078M56%2050%2056%2078M75%2039%2075%2089%22%20fill%3D%22none%22%20stroke%3D%22%232f7a63%22%20stroke-width%3D%223%22%20opacity%3D%22.86%22%2F%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2234%22%20r%3D%225%22%20fill%3D%22%230a1715%22%2F%3E%3Ccircle%20cx%3D%2296%22%20cy%3D%2234%22%20r%3D%225%22%20fill%3D%22%230a1715%22%2F%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2294%22%20r%3D%225%22%20fill%3D%22%230a1715%22%2F%3E%3Ccircle%20cx%3D%2296%22%20cy%3D%2294%22%20r%3D%225%22%20fill%3D%22%230a1715%22%2F%3E%3Ccircle%20cx%3D%2255%22%20cy%3D%2250%22%20r%3D%224%22%20fill%3D%22%239381ff%22%2F%3E%3Ccircle%20cx%3D%2275%22%20cy%3D%2239%22%20r%3D%224%22%20fill%3D%22%232f7a63%22%2F%3E%3Ccircle%20cx%3D%2256%22%20cy%3D%2278%22%20r%3D%224%22%20fill%3D%22%232f7a63%22%2F%3E%3Ccircle%20cx%3D%2273%22%20cy%3D%2289%22%20r%3D%224%22%20fill%3D%22%239381ff%22%2F%3E%3Ccircle%20cx%3D%2264%22%20cy%3D%2264%22%20r%3D%225%22%20fill%3D%22%230a1715%22%2F%3E%3C%2Fsvg%3E'>
+<!-- iOS ignores SVG touch icons and falls back to a screenshot of the page: this must be a real,
+     opaque 180x180 PNG served next to index.html (deploy.yml and vercel.json publish it). -->
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <title>Sync</title>
 <script id="sync-xlsx-parser">
 /* Vendored SheetJS Community Edition 0.20.3. Source: https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js */
@@ -435,7 +439,10 @@ html{min-height:100%;background:var(--bg);overflow-x:hidden}body{min-height:100v
 @keyframes slideInLeft{from{transform:translateX(-100%)}to{transform:translateX(0)}}
 body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(900px 700px at 15% 10%,var(--glow1),transparent 60%),radial-gradient(700px 600px at 85% 20%,var(--glow2),transparent 60%),radial-gradient(800px 600px at 50% 100%,rgba(122,180,255,.07),transparent 60%)}
 body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.55;background-image:radial-gradient(circle at 1px 1px,var(--dot) 0 1px,transparent 1.2px);background-size:28px 28px}
-.app{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;position:relative;z-index:1}
+.app{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;position:relative;z-index:1;padding-top:var(--sat);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+/* Notch / status bar. viewport-fit=cover lets the page run under both; the shell pads itself clear
+   and the phone heights below subtract --sat, so the bottom nav still ends at the screen edge. */
+:root{--sat:env(safe-area-inset-top,0px)}
 /* ── Department strip ── */
 .dept-strip{display:none;align-items:center;gap:0;background:rgba(5,8,16,.9);border-bottom:1px solid var(--bdr);padding:0 12px;overflow-x:auto;min-height:34px;flex-shrink:0}
 .dept-strip.show{display:flex}
@@ -833,6 +840,9 @@ body.th-press .mnav .mlbl,body.th-newsprint .mnav .mlbl{color:var(--ink)}
 *::-webkit-scrollbar-corner{background:transparent}
 /* Landing card theme tokens */
 /* ── v60: Landing card --lc-* tokens — Surge / Tide / Press / Newsprint ── */
+/* Landing text tokens: --lc-faint carries real copy (stat captions, file types, the Google button,
+   the privacy line), so it holds ~4.5:1 against --lc-bg and --lc-very-faint ~3:1. The dark themes
+   had both near 1.3:1, which read as blank on a phone. */
 :root{
   /* Surge — violet dark / bioluminescent deep space */
   --lc-nature-bg:radial-gradient(ellipse 70% 50% at 88% 2%,rgba(140,167,244,.13) 0%,transparent 55%),radial-gradient(ellipse 60% 65% at 6% 96%,rgba(195,73,238,.18) 0%,transparent 52%),linear-gradient(155deg,#0e0a14 0%,#17102a 55%,#1e1535 100%);
@@ -841,7 +851,7 @@ body.th-press .mnav .mlbl,body.th-newsprint .mnav .mlbl{color:var(--ink)}
   --lc-glow1:rgba(195,73,238,.12);--lc-glow2:rgba(140,167,244,.08);
   --lc-accent:#c349ee;--lc-accent-faint:rgba(195,73,238,.12);--lc-accent-dashed:rgba(195,73,238,.3);
   --lc-title:#ecdeff;--lc-title-sub:#9b7dbf;--lc-feat-head:#d0b8f0;--lc-feat-body:#5a3d80;
-  --lc-desc:#7a5a9a;--lc-label:#5a3d80;--lc-muted:#3d2868;--lc-faint:#2e1d50;--lc-very-faint:#221540;
+  --lc-desc:#7a5a9a;--lc-label:#9a84c4;--lc-muted:#8f78b8;--lc-faint:#8a74b0;--lc-very-faint:#6f5a96;
   --lc-stat-bg:rgba(14,10,20,.96);--lc-stat-sep:rgba(195,73,238,.14);
   --lc-dz-bg:rgba(16,11,24,.65);--lc-new-bg:rgba(20,14,32,.55);--lc-new-border:rgba(195,73,238,.2);
   --lc-sep-faint:rgba(195,73,238,.12);--lc-kbd-border:rgba(195,73,238,.16);
@@ -855,7 +865,7 @@ body.th-tide{
   --lc-glow1:rgba(77,184,200,.12);--lc-glow2:rgba(40,100,110,.07);
   --lc-accent:#4db8c8;--lc-accent-faint:rgba(77,184,200,.12);--lc-accent-dashed:rgba(77,184,200,.3);
   --lc-title:#d8f0f4;--lc-title-sub:#4db8c8;--lc-feat-head:#b8dce0;--lc-feat-body:#4a6868;
-  --lc-desc:#5a7878;--lc-label:#486870;--lc-muted:#384c50;--lc-faint:#2a3c40;--lc-very-faint:#1e2c30;
+  --lc-desc:#5a7878;--lc-label:#80a4aa;--lc-muted:#7c9a9e;--lc-faint:#7a979b;--lc-very-faint:#5f7d81;
   --lc-stat-bg:rgba(18,22,22,.95);--lc-stat-sep:rgba(77,184,200,.12);
   --lc-dz-bg:rgba(20,26,26,.62);--lc-new-bg:rgba(22,28,28,.52);--lc-new-border:rgba(77,184,200,.2);
   --lc-sep-faint:rgba(77,184,200,.12);--lc-kbd-border:rgba(77,184,200,.15);
@@ -869,7 +879,7 @@ body.th-press{
   --lc-glow1:rgba(160,120,70,.06);--lc-glow2:rgba(120,90,50,.04);
   --lc-accent:#6B4C2A;--lc-accent-faint:rgba(107,76,42,.12);--lc-accent-dashed:rgba(107,76,42,.38);
   --lc-title:#27271F;--lc-title-sub:#6B4C2A;--lc-feat-head:#27271F;--lc-feat-body:#5a4838;
-  --lc-desc:#6a5848;--lc-label:#7a6040;--lc-muted:#6a5028;--lc-faint:#8a7040;--lc-very-faint:#9a8050;
+  --lc-desc:#6a5848;--lc-label:#7a6040;--lc-muted:#6a5028;--lc-faint:#6e5428;--lc-very-faint:#7d6334;
   --lc-stat-bg:rgba(235,215,185,.92);--lc-stat-sep:rgba(107,76,42,.15);
   --lc-dz-bg:rgba(245,235,224,.78);--lc-new-bg:rgba(235,220,200,.75);--lc-new-border:rgba(107,76,42,.28);
   --lc-sep-faint:rgba(107,76,42,.16);--lc-kbd-border:rgba(107,76,42,.22);
@@ -883,7 +893,7 @@ body.th-newsprint{
   --lc-glow1:rgba(147,129,255,.07);--lc-glow2:rgba(13,59,102,.04);
   --lc-accent:#9381FF;--lc-accent-faint:rgba(147,129,255,.14);--lc-accent-dashed:rgba(147,129,255,.38);
   --lc-title:#0D3B66;--lc-title-sub:#9381FF;--lc-feat-head:#0D3B66;--lc-feat-body:#4a5070;
-  --lc-desc:#5a6080;--lc-label:#4a6080;--lc-muted:#5a6878;--lc-faint:#7a8090;--lc-very-faint:#9098a8;
+  --lc-desc:#5a6080;--lc-label:#4a6080;--lc-muted:#5a6878;--lc-faint:#5a6072;--lc-very-faint:#6c7486;
   --lc-stat-bg:rgba(240,232,195,.92);--lc-stat-sep:rgba(13,59,102,.12);
   --lc-dz-bg:rgba(255,252,230,.75);--lc-new-bg:rgba(245,240,210,.72);--lc-new-border:rgba(13,59,102,.24);
   --lc-sep-faint:rgba(13,59,102,.14);--lc-kbd-border:rgba(13,59,102,.2);
@@ -968,7 +978,7 @@ body.th-newsprint{
 .lc-roster-label{font-family:'DM Mono',monospace;font-size:clamp(9px,0.8vw,10px);letter-spacing:.12em;text-transform:uppercase;color:var(--lc-faint)}
 /* ── LC cloud sync widget ── */
 .lc-sync-widget{width:100%;display:flex;flex-direction:column;gap:5px;flex-shrink:0}
-/* Projects & Ops — the landing panel's main way back to saved work, signed in or not */
+/* Projects — the landing panel's main way back to saved work, signed in or not */
 .lc-projects-ops{width:100%;margin:clamp(8px,1.2vh,12px) 0 auto;display:flex;align-items:center;gap:12px;padding:clamp(11px,1.7vh,16px) 14px;border:1.5px solid var(--lc-accent);border-radius:10px;background:var(--lc-accent-faint);color:var(--lc-feat-head);cursor:pointer;text-align:left;font:inherit;flex-shrink:0;transition:background .15s,box-shadow .15s}
 .lc-projects-ops:hover{background:color-mix(in srgb,var(--lc-accent) 20%,transparent);box-shadow:0 0 0 3px var(--lc-accent-faint)}
 .lc-projects-ops:focus-visible{outline:2px solid var(--lc-accent);outline-offset:2px}
@@ -977,7 +987,7 @@ body.th-newsprint{
 .lc-po-title{font-family:'DM Mono',monospace;font-size:clamp(12px,1.1vw,14px);font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--lc-accent)}
 .lc-po-sub{font-size:clamp(10px,.85vw,11px);color:var(--lc-desc);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lc-po-arrow{color:var(--lc-accent);font-size:16px;flex-shrink:0}
-/* Projects & Ops panel (a qol modal) */
+/* Projects panel (a qol modal) */
 #syncProjectsPanel .qol-modal-panel{width:min(620px,96vw)}
 .spp{display:flex;flex-direction:column;gap:12px}
 .spp-sec{border:1px solid var(--bdr);border-radius:10px;padding:12px 13px;display:flex;flex-direction:column;gap:9px;background:color-mix(in srgb,var(--bg) 70%,transparent);min-width:0}
@@ -1494,7 +1504,7 @@ body[data-theme="tide"]:is([data-variant="seafoam-day"],[data-variant="ice-sheet
 .sync-dashboard .sd-status .sd-ledger-row b{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--tm);font-weight:600}
 .sync-dashboard .sd-status .sd-ledger-row span{font-family:'JetBrains Mono','DM Mono',monospace;font-size:13px;font-weight:700;color:var(--text)}
 .sync-dashboard .sd-btn.primary{border-color:var(--accent);color:var(--accent);font-weight:600;white-space:nowrap}
-@media(max-width:900px){.sync-dashboard .sd-status{grid-template-columns:repeat(2,minmax(0,1fr))}.sync-dashboard .sd-status .sd-btn{grid-column:1/-1;min-height:42px}}
+@media(max-width:900px){.sync-dashboard .sd-status{grid-template-columns:repeat(2,minmax(0,1fr))}.sync-dashboard .sd-status .sd-btn{grid-column:1/-1;min-height:42px}.sync-dashboard .sd-status .sd-ledger-row:nth-of-type(odd):last-of-type{grid-column:1/-1}}
 .sync-dashboard .sd-ledger-row span{font-family:'DM Mono',monospace;color:var(--accent)}
 /* The Ops workspace overview (_opsMetric) uses the same KPI tiles; unscoped there it rendered as plain stacked text. */
 .sync-dashboard .sd-kpis,.ops-hq .sd-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:14px}
@@ -2422,7 +2432,7 @@ button:active,
   --lc-bg:#0d1014;--lc-right-bg:rgba(13,16,20,.82);--lc-border:rgba(90,138,176,.18);--lc-rule:rgba(90,138,176,.32);--lc-grid:rgba(200,212,224,.028);
   --lc-glow1:rgba(90,138,176,.12);--lc-glow2:rgba(160,112,144,.08);--lc-accent:#5a8ab0;--lc-accent-faint:rgba(90,138,176,.12);--lc-accent-dashed:rgba(90,138,176,.3);
   --lc-title:#c8d4e0;--lc-title-sub:#7890a0;--lc-feat-head:#c8d4e0;--lc-feat-body:#7890a0;
-  --lc-desc:#7890a0;--lc-label:#485f70;--lc-muted:#485f70;--lc-faint:#2e3f50;--lc-very-faint:#243040;
+  --lc-desc:#7890a0;--lc-label:#7c90a2;--lc-muted:#7c90a2;--lc-faint:#7a8ea0;--lc-very-faint:#5e7284;
   --lc-stat-bg:rgba(13,16,20,.96);--lc-stat-sep:rgba(90,138,176,.14);--lc-dz-bg:rgba(20,28,42,.65);--lc-new-bg:rgba(20,28,42,.55);--lc-new-border:rgba(90,138,176,.2);
   --lc-sep-faint:rgba(90,138,176,.12);--lc-kbd-border:rgba(90,138,176,.16);--lc-or:#2e3f50;--lc-diamond:#485f70;
 }
@@ -2518,53 +2528,56 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
   .app{width:100%;height:100dvh;min-height:100svh}
 
   /* Landing */
-  .uz{height:100dvh;min-height:100svh;padding:0;align-items:flex-start;overflow-y:auto;overscroll-behavior-y:contain}
-  .lc-root{width:100%;max-width:none;min-height:100dvh;height:auto;display:flex;flex-direction:column;border:0;border-radius:0;overflow:visible}
+  /* Fills what .app leaves below the notch and the project tab strip, rather than a fixed 100dvh that
+     pushed its bottom off-screen whenever the strip showed. */
+  .uz{flex:1 1 auto;height:auto;min-height:0;padding:0;align-items:flex-start;overflow-y:auto;overscroll-behavior-y:contain}
+  .lc-root{width:100%;max-width:none;min-height:calc(100dvh - var(--sat));height:auto;display:flex;flex-direction:column;border:0;border-radius:0;overflow:visible}
   .lc-grid{background-size:40px 40px}
   .lc-left{padding:24px 18px 0;border-right:0;border-bottom:1px solid var(--lc-border);overflow:visible}
   .lc-eyebrow{margin-bottom:18px}
-  .lc-eyebrow-text{font-size:8px;letter-spacing:.16em}
+  .lc-eyebrow-text{font-size:9px;letter-spacing:.08em}
   .lc-title-block{margin-bottom:0}
   .lc-brand-lockup{gap:10px;margin-bottom:14px}
   .lc-sigil{width:40px}
-  .lc-kicker{font-size:7px;margin-bottom:2px}
+  .lc-kicker,.lc-system-badge{display:none}
   .lc-title{font-size:clamp(18px,6vw,24px);line-height:1}
-  .lc-title-sub{font-size:8px;margin-bottom:0}
+  .lc-title-sub{font-size:10px;margin-bottom:0}
   .lc-desc{font-size:16px;line-height:1.45;max-width:30rem}
   .lc-features{display:none}
   .lc-stats{width:calc(100% + 36px);margin:22px -18px 0}
   .lc-stat{padding:12px 6px}
   .lc-stat-n{font-size:17px}
-  .lc-stat-l{font-size:7px;letter-spacing:.1em}
+  .lc-stat-l{font-size:9px;letter-spacing:.04em}
   .lc-right{padding:18px 16px calc(20px + env(safe-area-inset-bottom));overflow:visible}
-  .lc-right-label{font-size:8px;margin-bottom:12px}
+  .lc-right-label{font-size:10px;margin-bottom:12px}
   .lc-mode-toggle{margin-bottom:12px}
-  .lc-mode-btn{min-height:48px;font-size:8px}
+  .lc-mode-btn{min-height:48px;font-size:10px}
   .lc-mode-btn .lc-mbtn-icon{font-size:14px;margin-bottom:3px}
   .lc-dz{min-height:118px;padding:20px 12px;margin-bottom:10px;display:flex;flex-direction:column;justify-content:center}
   .lc-dz-arrow{font-size:20px}
   .lc-dz-head{font-size:16px}
   .lc-dz-sub{font-size:13px}
-  .lc-type{font-size:8px;padding:3px 7px}
+  .lc-type{font-size:10px;padding:3px 7px}
   .lc-paste-btn,.lc-new-btn,.lc-roster-btn{min-height:48px;padding:10px 12px;margin-bottom:8px}
-  .lc-paste-label,.lc-roster-label{font-size:9px}
+  .lc-paste-label,.lc-roster-label{font-size:10px}
   .lc-paste-kbd{display:none}
   .lc-new-head{font-size:14px}
   .lc-new-sub{font-size:12px}
   .lc-roster-btn{margin-bottom:0}
   .lc-footer{padding-top:16px}
-  .lc-privacy span,.lc-clear{font-size:7px}
+  .lc-privacy span,.lc-clear{font-size:9px}
+  .lc-sync-caption{font-size:10px;letter-spacing:.06em;line-height:1.5}
   .lc-th-dot{width:15px;height:15px}
 
   /* App shell */
-  #mv{height:100dvh;min-height:0}
+  #mv{height:calc(100dvh - var(--sat));min-height:0}
   .mf-masthead{height:48px;min-height:48px;padding:0 12px;flex-wrap:nowrap;gap:6px;position:relative}
   .mf-mh-left{min-width:0;gap:6px}
   .mf-mh-brand{font-size:18px}
   .mf-mh-dept{max-width:45vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .mf-mh-sep,.mf-mh-center,.mf-mh-right{display:none!important}
   .mf-mh-stat{font-size:10px;white-space:nowrap}
-  .mf-body{height:calc(100dvh - 48px);min-height:0;flex-direction:column}
+  .mf-body{height:calc(100dvh - 48px - var(--sat));min-height:0;flex-direction:column}
   .mf-content-col{order:1;width:100%;min-height:0}
 
   /* Mobile toolbar */
@@ -2594,7 +2607,7 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
   .mf-rail-item .ri-label,.mf-rail.collapsed .mf-rail-item .ri-label{display:flex;align-items:center;gap:3px;width:auto;max-width:100%;height:auto;opacity:1;overflow:visible;font-size:10px;line-height:1;color:var(--ink3,var(--tm))}
   .mf-rail-item.active{background:var(--al);box-shadow:inset 0 2px 0 var(--accent)}
   .mf-rail-item.active .ri-label{color:var(--accent)}
-  .mf-rail-group{width:25%;height:54px;margin:0}
+  .mf-rail-group{flex:1 1 0;width:auto;min-width:0;height:54px;margin:0}
   .mf-rail-parent,.mf-rail.collapsed .mf-rail-parent{width:100%;height:54px;min-height:54px;padding:5px 4px 4px;display:flex;flex-direction:column;justify-content:center;gap:4px;border-radius:8px}
   .mf-rail-parent .ri-icon svg{width:18px;height:18px}
   .mf-rail-parent .ri-label,.mf-rail.collapsed .mf-rail-parent .ri-label{display:flex;width:auto;height:auto;opacity:1;overflow:visible;font-size:10px;line-height:1;color:var(--ink3,var(--tm))}
@@ -2916,17 +2929,8 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
         </div>
       </div>
 
-      <!-- First run only: every other route in requires the user to already have a roster
-           spreadsheet in hand, which makes the product impossible to evaluate before committing
-           real data to it. Shown only while there are genuinely no saved projects — see
-           _syncRenderSampleOffer. -->
-      <button id="lcSampleBtn" onclick="_syncCreateSampleProject()" class="lc-roster-btn" style="display:none">
-        <span style="font-size:13px;opacity:.5">✨</span>
-        <span class="lc-roster-label">Explore with a sample project</span>
-      </button>
-
-      <!-- Two ways in up front: a file, or the sample. Everything else is for people who already
-           know they need it, so it waits one click away. -->
+      <!-- One way in up front: a file. Everything else is for people who already know they need it,
+           so it waits one click away. The app ships no sample or demo data. -->
       <details class="lc-more">
         <summary class="lc-more-summary">More ways to start</summary>
         <div class="lc-more-body">
@@ -2965,11 +2969,11 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
       <!-- Cloud sync (Supabase) -->
       <div id="syncLcWidget" class="lc-sync-widget"></div>
 
-      <!-- Projects & Ops — always here, signed in or not. Opens one panel with every project on this
+      <!-- Projects — always here, signed in or not. Opens one panel with every project on this
            device and, signed in, the cloud copy and its save/sync actions (_syncOpenProjectsPanel). -->
       <button id="lcProjectsOpsBtn" type="button" class="lc-projects-ops" onclick="_syncOpenProjectsPanel()" aria-haspopup="dialog">
         <span class="lc-po-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2 5.5A1.5 1.5 0 0 1 3.5 4h3.3l1.6 1.8h6.1A1.5 1.5 0 0 1 16 7.3v6.2a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 2 13.5v-8Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M2 8.5h14" stroke="currentColor" stroke-width="1.2"/></svg></span>
-        <span class="lc-po-text"><span class="lc-po-title">Projects &amp; Ops</span><span id="lcProjectsOpsSub" class="lc-po-sub">Files saved on this device</span></span>
+        <span class="lc-po-text"><span class="lc-po-title">Projects</span><span id="lcProjectsOpsSub" class="lc-po-sub">Files saved on this device</span></span>
         <span class="lc-po-arrow" aria-hidden="true">→</span>
       </button>
 
@@ -4691,7 +4695,7 @@ function rSyncDashboard(el){
   const peopleLine=peopleIntel?peopleIntel.ready+' OT ready - '+peopleIntel.issues.length+' structure':'people signals '+attention;
   const calendarLine=working.length+' working - '+off.length+' off - '+todayHours+'h';
   const sourceRows=typeof _opsSourceRows==="function"?_opsSourceRows():[];
-  const sourceLine=sourceRows.length+(sourceRows.length===1?' file':' files')+' - '+sourceRows.reduce((n,r)=>n+(Number(r.rows)||0),0)+' rows';
+  const sourceLine=sourceRows.length+(sourceRows.length===1?' file':' files')+' · '+sourceRows.reduce((n,r)=>n+(Number(r.rows)||0),0)+' rows';
   const calendarMini='<div class="sd-list-row"><span class="name">Today</span><span class="meta">'+working.length+' / '+people.length+'</span></div><div class="sd-list-row"><span class="name">Window</span><span class="meta">'+X((S.tz?"SA":"UK")+' floor')+'</span></div>';
   const peopleMini='<div class="sd-list-row"><span class="name">People</span><span class="meta">'+people.length+'</span></div><div class="sd-list-row"><span class="name">OT readiness</span><span class="meta">'+(peopleIntel?peopleIntel.ready+' ready':'--')+'</span></div>';
   const monthParts=S.month?S.month.split("-").map(Number):[today.getFullYear(),today.getMonth()];
@@ -4753,7 +4757,7 @@ function rSyncDashboard(el){
         '<div class="sd-ledger-row"><b>On floor</b><span>'+working.length+' / '+people.length+'</span></div>'+
         '<div class="sd-ledger-row"><b>Off / leave</b><span>'+off.length+' / '+people.length+'</span></div>'+
         '<div class="sd-ledger-row"><b>Alerts</b><span>'+issueOpen+' open</span></div>'+
-        '<div class="sd-ledger-row"><b>Scope</b><span>'+people.length+' people - '+leaders.length+' leaders</span></div>'+
+        '<div class="sd-ledger-row"><b>Scope</b><span>'+people.length+' people · '+leaders.length+' leaders</span></div>'+
         '<div class="sd-ledger-row"><b>Sources</b><span>'+X(sourceLine)+'</span></div>'+
         '<button class="sd-btn primary" onclick="browseScheduleFile()">Import file</button>'+
       '</section>'+
@@ -5641,7 +5645,7 @@ function _collectCommandPaletteActions(){
       });
     });
   }catch(err){}
-  actions.push({id:"projects-ops",label:"Projects & Ops",hint:"Projects on this device, cloud save and sync",keywords:"projects ops files cloud sync save load account device",group:"Projects",run:()=>{if(typeof _syncOpenProjectsPanel==="function")_syncOpenProjectsPanel();}});
+  actions.push({id:"projects-ops",label:"Projects",hint:"Projects on this device, cloud save and sync",keywords:"projects ops files cloud sync save load account device",group:"Projects",run:()=>{if(typeof _syncOpenProjectsPanel==="function")_syncOpenProjectsPanel();}});
   actions.push({id:"project-picker",label:"Switch project…",hint:"Back to your projects",keywords:"projects switch picker choose continue workspace",group:"Projects",run:()=>{if(typeof _syncShowProjectPicker==="function")_syncShowProjectPicker();}});
   actions.push({id:"save-snapshot",label:"Save snapshot",hint:"Restore point on this device",keywords:"snapshot backup restore point version history save",group:"Operations",run:()=>{if(typeof _syncSaveSnapshotNow==="function")_syncSaveSnapshotNow();}});
   actions.push({id:"backups",label:"Snapshots & backups",hint:"Restore a previous version",keywords:"snapshot backup restore version history rollback undo",group:"Operations",run:()=>{openSettings();}});
@@ -13360,8 +13364,8 @@ function renderTabs(){
   const opsSection=opsSectionFor();
   S._railOpsSection=S.tab==="analytics"?opsSection.id:null;
   const g=_ensureRailGroups();
+  // Screens first, Home leading; Projects last, since it opens the project panel rather than a screen.
   const groups=[
-    {id:"projects",label:"Projects & Ops",active:false,action:"_syncOpenProjectsPanel()",icon:`<svg width="14" height="14" viewBox="0 0 18 18" fill="none"><path d="M2 5.5A1.5 1.5 0 0 1 3.5 4h3.3l1.6 1.8h6.1A1.5 1.5 0 0 1 16 7.3v6.2a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 2 13.5v-8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>`},
     {id:"dashboard",label:"Home",active:S.tab==="dashboard",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="1.5" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/><rect x="8" y="1.5" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/><rect x="1.5" y="8" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/><rect x="8" y="8" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.1"/></svg>`,action:"railNavDashboard()",children:[]},
     {id:"calendar",label:"Calendar",active:S.tab==="calendar",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.2"/><line x1="1" y1="5" x2="13" y2="5" stroke="currentColor" stroke-width="1"/><line x1="4" y1="1" x2="4" y2="3" stroke="currentColor" stroke-width="1.2"/><line x1="10" y1="1" x2="10" y2="3" stroke="currentColor" stroke-width="1.2"/></svg>`,children:[
       {id:"day",label:"Calendar",active:S.tab==="calendar"&&S.calSubTab==="day",action:"railNavCalendar('day')"},
@@ -13379,7 +13383,8 @@ function renderTabs(){
     ]},
     {id:"analytics",label:"Ops",active:S.tab==="analytics",icon:`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="8" width="3" height="5" rx="0.5" stroke="currentColor" stroke-width="1"/><rect x="5.5" y="4" width="3" height="9" rx="0.5" stroke="currentColor" stroke-width="1"/><rect x="10" y="1" width="3" height="12" rx="0.5" stroke="currentColor" stroke-width="1"/></svg>`,children:[
       ...OPS_SECTIONS.map(sec=>({id:sec.id,label:sec.label,badge:sec.badge?alertsBadge:"",active:S.tab==="analytics"&&opsSection.id===sec.id,action:_opsNavAction(sec.tabs[0][0],sec.tabs[0][1])}))
-    ]}
+    ]},
+    {id:"projects",label:"Projects",active:false,action:"_syncOpenProjectsPanel()",icon:`<svg width="14" height="14" viewBox="0 0 18 18" fill="none"><path d="M2 5.5A1.5 1.5 0 0 1 3.5 4h3.3l1.6 1.8h6.1A1.5 1.5 0 0 1 16 7.3v6.2a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 2 13.5v-8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>`}
   ];
   groups.forEach(group=>{if(group.active)g[group.id]=true;});
   const navEl=$("mfRailNav");
@@ -13501,7 +13506,7 @@ function renderInfoBar(){
   const scopedEntries=getScopedEntriesByTeamLeader();
   const scopedNames=new Set(scopedEntries.map(e=>e.name));
   const ec=[...new Set(scopedEntries.map(e=>e.name))].length;
-  const lcEl=$("mhLeaderCount");if(lcEl)lcEl.textContent=ec+' tl';
+  const lcEl=$("mhLeaderCount");if(lcEl)lcEl.textContent=ec+(ec===1?' leader':' leaders');
   let loadBit="";
   if(S.loadedAt){
     const _ageMins=Math.round((Date.now()-S.loadedAt)/60000);
@@ -16743,7 +16748,7 @@ function renderSettings(){
   // Use h variable for the rest of the building (alias)
   let h='';
   if(section==='account')h+=_syncRenderSettingsAccountSection()+_syncRenderSettingsSnapshotSection();
-  if(section==='workspace')h+=`<section><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Workspace</div><p style="font-size:12px;color:var(--tm);line-height:1.5;margin:0 0 12px">Keep your working context close to the schedule. Filters and notes are saved on this device.</p><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();_syncOpenProjectsPanel()">Projects &amp; Ops</button><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();triggerRosterUpload()">Add roster</button><textarea id="syncSettingsScratchpad" placeholder="Quick notes, reminders, todos…" oninput="S.scratchpad=this.value;_saveScratchpad()" style="width:100%;box-sizing:border-box;min-height:110px;padding:8px 10px;border-radius:7px;border:1px solid var(--bdr);background:var(--card);color:var(--text);font-size:12px;font-family:inherit;resize:vertical">${X(S.scratchpad||'')}</textarea><div style="font-size:10px;color:var(--tm);margin-top:4px">Saved locally</div></section>`;
+  if(section==='workspace')h+=`<section><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Workspace</div><p style="font-size:12px;color:var(--tm);line-height:1.5;margin:0 0 12px">Keep your working context close to the schedule. Filters and notes are saved on this device.</p><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();_syncOpenProjectsPanel()">Projects</button><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();triggerRosterUpload()">Add roster</button><textarea id="syncSettingsScratchpad" placeholder="Quick notes, reminders, todos…" oninput="S.scratchpad=this.value;_saveScratchpad()" style="width:100%;box-sizing:border-box;min-height:110px;padding:8px 10px;border-radius:7px;border:1px solid var(--bdr);background:var(--card);color:var(--text);font-size:12px;font-family:inherit;resize:vertical">${X(S.scratchpad||'')}</textarea><div style="font-size:10px;color:var(--tm);margin-top:4px">Saved locally</div></section>`;
   if(section==='preferences')h+=`<section><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Appearance</div><div style="display:flex;gap:6px;margin-bottom:12px">${Object.entries(TH).map(([k,t])=>`<button onclick="setTh('${k}');renderSettings()" style="flex:1;padding:8px 4px;border:1px solid ${S.th===k?'var(--accent)':'var(--bdr)'};border-radius:8px;background:${S.th===k?'var(--al)':'none'};color:var(--text);font:11px inherit;cursor:pointer"><span style="display:block;width:12px;height:12px;border-radius:50%;background:${t.d};margin:0 auto 4px"></span>${t.n}</button>`).join('')}</div><div style="display:flex;gap:4px;margin-bottom:10px">${['compact','comfortable','spacious'].map(d=>`<button onclick="setDensity('${d}');renderSettings()" style="flex:1;padding:7px;border:1px solid ${S.density===d?'var(--accent)':'var(--bdr)'};border-radius:6px;background:${S.density===d?'var(--al)':'none'};color:var(--text);font:11px inherit;cursor:pointer">${d[0].toUpperCase()+d.slice(1)}</button>`).join('')}</div><label style="display:block;font-size:12px;margin:8px 0"><input type="checkbox" ${S.cbMode?'checked':''} onchange="setCbMode(this.checked);renderSettings()"> Colour-blind mode</label><label style="display:block;font-size:12px;margin:8px 0"><input type="checkbox" ${S.tz?'checked':''} onchange="setTimezoneEnabled(this.checked);renderSettings()"> UK → SA timezone</label><label style="display:block;font-size:12px;margin:8px 0"><input type="checkbox" ${S.hlToday?'checked':''} onchange="setTodayHighlight(this.checked);renderSettings()"> Highlight today in calendar</label></section>`;
   if(section==='data')h+=`<section><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Data &amp; exports</div><p style="font-size:12px;color:var(--tm);line-height:1.5;margin:0 0 12px">Create a portable export or open the dedicated data views without crowding your daily workspace.</p><button class="btn bp" style="margin:0 8px 8px 0" onclick="closeSettings();expSavePlus('all')">Save+ export</button><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();expCurrentMonth()">Styled report</button><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();S.anView='rawdata';setTab('analytics')">Raw data</button><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();runRulesValidation()">Validate</button></section>`;
   if(section==='advanced')h+=`<section><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Advanced</div><p style="font-size:12px;color:var(--tm);line-height:1.5;margin:0 0 12px">Destructive actions are separated from everyday settings.</p><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();if(S.activeDept)removeDept(S.activeDept)">Close workspace</button><button class="btn" style="margin:0 8px 8px 0;color:#dc2626;border-color:rgba(220,38,38,.3)" onclick="if(confirm('Clear all stored data?')){closeSettings();clearAllData()}">Clear all data</button><div style="font-size:11px;color:var(--tm);margin-top:12px">${APP_BUILD}</div></section>`;
@@ -29122,12 +29127,10 @@ async function _syncRenderProjectPicker(){
     // Cached projects are deliberately available offline too. The picker is the only route that
     // can activate one, regardless of whether it originally came from a cloud sync or a file.
     const projects=(typeof nsListCanonicalProjects==='function')?nsListCanonicalProjects():[];
-    // One walk of the workspace feeds the picker, the Projects & Ops button and an open panel.
+    // One walk of the workspace feeds the picker, the Projects button and an open panel.
     _syncKnownProjects=projects;
     _syncRenderProjectsOpsButton();
     if(_syncProjectsPanelOpen())_syncRenderProjectsPanel();
-    const anyProjects=projects.length>0;
-    _syncRenderSampleOffer(anyProjects);
     if(projects.length>=1){
       // Only touch the DOM when something changed. Swapping identical markup (hydration landing,
       // a manual sync) could eat a tap that landed mid-swap.
@@ -29317,21 +29320,6 @@ function _syncRestoreScrollForTab(){
     }catch(err){}
   });
 }
-// Offered only while the account genuinely has nothing — once there is a real project, a sample
-// one is clutter competing with it.
-function _syncRenderSampleOffer(hasProjects){
-  const btn=document.getElementById('lcSampleBtn');
-  if(btn)btn.style.display=hasProjects?'none':'';
-}
-function _syncCreateSampleProject(){
-  if(typeof nsCreateSampleProject!=='function'){toast('Sample project unavailable','err');return;}
-  const result=nsCreateSampleProject('Sample Team');
-  if(!result){toast('Could not create the sample project','err');return;}
-  toast(`Sample project ready — ${result.people} people, ${result.schedule} shifts`,'ok');
-  _syncOpenProject(result.name);
-  _syncRenderProjectPicker();
-  _syncMarkLocalChange();
-}
 // Back to the project splash from inside the app — the palette's "Switch project…" and the
 // counterpart to _syncOpenProject. Keeps the loaded project in memory (nothing is cleared) so
 // coming straight back is instant; only the viewport changes.
@@ -29357,7 +29345,7 @@ function _syncCloseWorkspaceToLanding(){
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   PROJECTS & OPS PANEL
+   PROJECTS PANEL
 
    The old entry point was a small link that only existed signed in,
    and all it did was re-render the landing screen — which, with no
@@ -29388,7 +29376,7 @@ function _syncRenderProjectsOpsButton(){
 function _syncOpenProjectsPanel(){
   try{if(typeof nsListCanonicalProjects==='function')_syncKnownProjects=nsListCanonicalProjects();}catch(err){}
   if(typeof _qolModal!=='function'){_syncShowProjectPicker();return;}
-  _qolModal('syncProjectsPanel','Projects & Ops',_syncProfileCache?'Projects on this device and the copy in your account':'Projects saved on this device','<div id="syncProjectsPanelBody" class="spp"></div>','');
+  _qolModal('syncProjectsPanel','Projects',_syncProfileCache?'Projects on this device and the copy in your account':'Projects saved on this device','<div id="syncProjectsPanelBody" class="spp"></div>','');
   _syncRenderProjectsPanel();
   _syncRenderProjectsOpsButton();
 }
@@ -29436,7 +29424,6 @@ function _syncProjectsPanelHtml(){
     h+=`<div class="spp-empty">${signedIn&&pulling?'Looking for projects saved to your account…':'No projects saved on this device yet.'}</div>`;
   }
   h+=`<div class="spp-actions spp-actions-secondary"><button type="button" class="btn" onclick="_syncCloseProjectsPanel();browseScheduleFile()">+ Import a roster</button>`;
-  if(!projects.length)h+=`<button type="button" class="btn" onclick="_syncCloseProjectsPanel();_syncCreateSampleProject()">Try a sample project</button>`;
   h+=`<button type="button" class="btn" onclick="_syncExportBackup()">Export backup file</button></div></section>`;
   return h;
 }
@@ -29513,8 +29500,8 @@ function _syncOpenProject(name){
   const deptKey=(typeof nsDepartmentKey==='function')?nsDepartmentKey(name):'';
   if(deptKey)_syncRecordProjectOpened(deptKey);
   if(typeof nsRestoreEntriesFromCanonical==='function')nsRestoreEntriesFromCanonical();
-  // Nothing else maps this project's people into S.people once it is active (a sample project
-  // mapped them before S.activeDept was set, so opened with nobody). Existing entries are kept.
+  // Nothing else maps this project's people into S.people once it is active (a project built
+  // before S.activeDept was set would otherwise open with nobody). Existing entries are kept.
   if(typeof nsFillRuntimePeopleFromCanonical==='function')nsFillRuntimePeopleFromCanonical();
   if(!S.workspace||typeof S.workspace!=='object')S.workspace={};
   if(!S.workspace[name])S.workspace[name]={};
@@ -34047,7 +34034,7 @@ function syncPullWorkspace(opts){
     // A plain request shares the running pull; choosing the cloud copy must still run after it.
     return opts.takeCloud?_syncPullInFlight.then(()=>syncPullWorkspace(opts)):_syncPullInFlight;
   }
-  // Announced so an open Projects & Ops panel can show the check in progress, then its outcome.
+  // Announced so an open Projects panel can show the check in progress, then its outcome.
   _syncPullInFlight=_syncPullOnce(opts).finally(()=>{_syncPullInFlight=null;window.dispatchEvent(new Event("sync:pull-settled"));});
   window.dispatchEvent(new Event("sync:pull-started"));
   return _syncPullInFlight;
@@ -34493,102 +34480,6 @@ async function nsRestoreSnapshot(id){
     return{ok:false,error:(err&&err.message)||"Restore failed"};
   }
 }
-/* ═══════════════════════════════════════════════════════════════
-   SAMPLE PROJECT
-
-   Every way into this app previously required the user to already
-   have a roster spreadsheet, correctly shaped, in hand — so the
-   product could not be evaluated before real data was committed to
-   it. This builds a small but genuinely representative project
-   (teams, shifts, days off, a weekend) directly in the canonical
-   store, using the same record shapes an import produces, so every
-   downstream surface treats it as an ordinary project: it can be
-   renamed, deleted, synced and exported like any other.
-   ═══════════════════════════════════════════════════════════════ */
-const NS_SAMPLE_PEOPLE=[
-  {name:"Amara Okafor",team:"Early",role:"Team leader"},
-  {name:"Ben Sorensen",team:"Early",role:"Advisor"},
-  {name:"Chloe Duarte",team:"Early",role:"Advisor"},
-  {name:"Dmitri Volkov",team:"Late",role:"Team leader"},
-  {name:"Esi Mensah",team:"Late",role:"Advisor"},
-  {name:"Farid Haddad",team:"Late",role:"Advisor"}
-];
-function nsCreateSampleProject(preferredName){
-  try{
-    const model=nsCanonical();
-    let name=nsClean(preferredName)||"Sample Team";
-    const taken=new Set((typeof nsListCanonicalProjects==="function"?nsListCanonicalProjects():[]).map(p=>nsDepartmentKey(p.name)));
-    let n=2;
-    while(taken.has(nsDepartmentKey(name)))name=(nsClean(preferredName)||"Sample Team")+" ("+n++ +")";
-    const sourceId=nsId("src","sample|"+name+"|"+Date.now());
-    const loadedAt=nsNow();
-    model.sources.push({
-      source_id:sourceId,
-      source_name:"Sample roster",
-      source_kind:"sample",
-      department_name:name,
-      loaded_at:loadedAt,
-      sheets:1,
-      source_rows:0
-    });
-    NS_SAMPLE_PEOPLE.forEach((person,index)=>{
-      model.people.push({
-        person_id:nsId("per",name+"|"+person.name),
-        full_name:person.name,
-        home_department:name,
-        team_name:person.team,
-        role:person.role,
-        authority_rank:index===0||index===3?2:1,
-        source_id:sourceId
-      });
-    });
-    // Four weeks starting from the Monday of the current week, so the calendar, month views and
-    // "today" highlighting all have something real to show the moment it opens.
-    const start=new Date();
-    start.setHours(0,0,0,0);
-    start.setDate(start.getDate()-((start.getDay()+6)%7));
-    const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-    const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-    let rows=0;
-    for(let day=0;day<28;day++){
-      const date=new Date(start);
-      date.setDate(start.getDate()+day);
-      const weekday=date.getDay();
-      NS_SAMPLE_PEOPLE.forEach((person,index)=>{
-        // A rolling days-off pattern per person rather than a fixed weekend for everyone, so
-        // coverage, fairness and the off-day surfaces have something non-trivial to read.
-        const offset=(day+index*2)%7;
-        const isOff=offset===5||offset===6;
-        const early=person.team==="Early";
-        model.schedule.push({
-          schedule_id:nsId("sch",name+"|"+person.name+"|"+iso(date)),
-          person_name:person.name,
-          department:name,
-          team_name:person.team,
-          source_id:sourceId,
-          date:iso(date),
-          day_of_week:DAYS[weekday],
-          is_off:isOff,
-          off_type:isOff?"OFF":"",
-          uk_start:isOff?"":(early?"07:00":"12:00"),
-          uk_end:isOff?"":(early?"15:00":"20:00"),
-          authority_rank:1,
-          imported_at:loadedAt
-        });
-        rows++;
-      });
-    }
-    const source=model.sources[model.sources.length-1];
-    if(source)source.source_rows=rows;
-    if(typeof nsSyncPeopleToRuntime==="function")nsSyncPeopleToRuntime();
-    nsPersist();
-    return{name,people:NS_SAMPLE_PEOPLE.length,schedule:rows};
-  }catch(err){
-    console.error("[sync] creating the sample project failed",err);
-    return null;
-  }
-}
-window.nsCreateSampleProject=nsCreateSampleProject;
 
 window.nsSaveSnapshot=nsSaveSnapshot;
 window.nsListSnapshots=nsListSnapshots;

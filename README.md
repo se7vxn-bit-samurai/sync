@@ -46,12 +46,18 @@ Where Chromium is preinstalled at a fixed path (e.g. cloud sandboxes), point the
 
 Covers sign-in and the cloud pull, 0/1/2/7-project pickers, people-only projects, resuming a
 project's exact view context, deletion when the cloud save fails, concurrent edits from two devices,
-offline then reconnect, the boot push gate, backup export, snapshots and restore, the sample
-project, the command palette, "what changed since last time", and keyboard/mobile project selection.
+offline then reconnect, the boot push gate, backup export, snapshots and restore, the absence of any
+sample data, the command palette, "what changed since last time", and keyboard/mobile project selection.
 `cross-device-sync.spec.js` covers a second device loading an older cloud save, keeping it across
-a reload, and both-sides-changed comparisons. `projects-ops.spec.js` covers the Projects & Ops panel
+a reload, and both-sides-changed comparisons. `projects-ops.spec.js` covers the Projects panel
 (signed in and out, from the landing screen and inside a project) and People edits — logbook, agent
 notes and statuses — reaching a second device and surviving its next save.
+
+`mobile-shell.spec.js` covers the phone bar (Home, Calendar, People, Ops, Projects), the iOS
+home-screen icon and status bar, and the shell clearing a notch inset.
+
+Tests build their projects with `createTestProject` in `tests/helpers.js`. The app itself ships no
+sample or demo data.
 
 Data-integrity regressions have their own specs: `parser.spec.js` (17 roster fixtures across the
 13/14-person boundary, dd/mm CSVs, and the lossy-parse guard), `persistence.spec.js` (a schedule

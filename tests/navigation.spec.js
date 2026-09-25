@@ -1,10 +1,10 @@
 const { test, expect } = require('@playwright/test');
-const { openApp, PROFILE, buildWorkspace, workspaceRow } = require('./helpers');
+const { openApp, PROFILE, buildWorkspace, workspaceRow, createTestProject } = require('./helpers');
 
-// The sample project is the app's own realistic data: real shift times, one imported source.
-async function openSample(page) {
+// A realistic project: real shift times, one imported source.
+async function openProject(page) {
   await openApp(page, { profile: PROFILE, workspaceRow: workspaceRow(buildWorkspace(0)) });
-  await page.evaluate(() => _syncCreateSampleProject());
+  await createTestProject(page);
   await expect(page.locator('#mv')).toBeVisible();
   await page.waitForFunction(() => S.entries.length > 100);
   // The boot splash sits over everything until finishBoot() removes it (up to ~3s after load);
@@ -17,7 +17,7 @@ const nav = (page, fn, arg) => page.evaluate(fn, arg);
 test.describe('Ops sidebar', () => {
   test('lists six sections, and every page of a section is a tab inside it', async ({ page }) => {
     test.skip(test.info().project.name !== 'desktop-chromium', 'the rail is collapsed into a bottom bar on phones');
-    await openSample(page);
+    await openProject(page);
     await nav(page, () => railNavOps('overview'));
     await expect(page.locator(opsRail)).toHaveText(['Overview', 'Analytics', 'Alerts', 'Blueprint', 'People & Org', 'Data']);
 
@@ -39,14 +39,14 @@ test.describe('Ops sidebar', () => {
 
   test('pages opened from inside a section keep that section highlighted', async ({ page }) => {
     test.skip(test.info().project.name !== 'desktop-chromium', 'the rail is collapsed into a bottom bar on phones');
-    await openSample(page);
+    await openProject(page);
     await nav(page, () => { railNavOps('data-control'); S.opsView = 'conflicts'; rOps($('ca')); });
     await expect(page.locator(`${opsRail}.active`)).toHaveText('Data');
     await expect(page.locator('#opsSectionNav')).toContainText('Data control');
   });
 
   test('the tab strip is gone outside Ops', async ({ page }) => {
-    await openSample(page);
+    await openProject(page);
     await nav(page, () => railNavAnalytics('coverage'));
     await expect(page.locator('#opsSectionNav')).toBeVisible();
     await nav(page, () => railNavCalendar('day'));
@@ -55,7 +55,7 @@ test.describe('Ops sidebar', () => {
 
   test('on a phone, the toolbar does not cover the top of the page', async ({ page }) => {
     test.skip(test.info().project.name !== 'mobile-chromium', 'phone layout only');
-    await openSample(page);
+    await openProject(page);
     await nav(page, () => railNavAnalytics('dashboard'));
     const firstTab = page.locator('#opsSectionNav .pst-btn').first();
     await expect(firstTab).toBeVisible();
@@ -70,7 +70,7 @@ test.describe('Ops sidebar', () => {
 
 test.describe('screens agree with each other', () => {
   test('shift times follow the SA/UK setting on every screen', async ({ page }) => {
-    await openSample(page);
+    await openProject(page);
     for (const tz of [true, false]) {
       await nav(page, (on) => { S.tz = on; railNavDashboard(); }, tz);
       const home = await page.locator('#ca .sd-list-row', { hasText: 'Amara Okafor' }).first().locator('.meta').innerText();
@@ -81,9 +81,9 @@ test.describe('screens agree with each other', () => {
   });
 
   test('Home, Ops and Data control report the same sources', async ({ page }) => {
-    await openSample(page);
+    await openProject(page);
     await nav(page, () => railNavDashboard());
-    await expect(page.locator('#ca .sd-ledger-row', { hasText: 'Sources' })).toContainText('1 file - 168 rows');
+    await expect(page.locator('#ca .sd-ledger-row', { hasText: 'Sources' })).toContainText('1 file · 168 rows');
     await nav(page, () => railNavOps('overview'));
     await expect(page.locator('#ca .an-card', { hasText: 'Sources' }).first()).toContainText('1 loaded');
     await expect(page.locator('#ca')).not.toContainText('Parsed schedule rows');
@@ -92,7 +92,7 @@ test.describe('screens agree with each other', () => {
   });
 
   test('blueprint slots describe the blueprint, not the team health score', async ({ page }) => {
-    await openSample(page);
+    await openProject(page);
     await nav(page, () => railNavDashboard());
     const plan = page.locator('#ca .sd-panel', { hasText: 'Schedule plan' });
     await expect(plan).toContainText('No blueprint yet');
@@ -103,7 +103,7 @@ test.describe('screens agree with each other', () => {
   });
 
   test('no build notes leak into the Ops screens', async ({ page }) => {
-    await openSample(page);
+    await openProject(page);
     for (const view of ['overview', 'decisions', 'sources', 'events', 'logbook']) {
       await nav(page, (v) => railNavOps(v), view);
       await expect(page.locator('#ca')).not.toContainText(/ops hub|port map|port target|people memory/i);
@@ -112,10 +112,10 @@ test.describe('screens agree with each other', () => {
 });
 
 test.describe('fewer choices up front', () => {
-  test('the landing page offers a file or the sample; the rest waits behind one click', async ({ page }) => {
+  test('the landing page offers a file; the rest waits behind one click', async ({ page }) => {
     await openApp(page, { profile: PROFILE, workspaceRow: workspaceRow(buildWorkspace(0)) });
     await expect(page.locator('#dz')).toBeVisible();
-    await expect(page.locator('#lcSampleBtn')).toBeVisible();
+    await expect(page.locator('#lcSampleBtn')).toHaveCount(0);
     for (const hidden of ['#lcModeWfm', '.lc-paste-btn', '.lc-new-btn']) await expect(page.locator(hidden)).toBeHidden();
     await page.locator('.lc-more-summary').click();
     await page.locator('#lcModeWfm').click();
@@ -125,7 +125,7 @@ test.describe('fewer choices up front', () => {
   });
 
   test('Home opens on the numbers and today, not a hero or a clock widget', async ({ page }) => {
-    await openSample(page);
+    await openProject(page);
     await nav(page, () => railNavDashboard());
     await expect(page.locator('#ca .sd-status')).toBeVisible();
     await expect(page.locator('#ca .sd-hero')).toHaveCount(0);

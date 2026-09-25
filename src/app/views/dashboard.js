@@ -541,7 +541,7 @@ function rSyncDashboard(el){
   const peopleLine=peopleIntel?peopleIntel.ready+' OT ready - '+peopleIntel.issues.length+' structure':'people signals '+attention;
   const calendarLine=working.length+' working - '+off.length+' off - '+todayHours+'h';
   const sourceRows=typeof _opsSourceRows==="function"?_opsSourceRows():[];
-  const sourceLine=sourceRows.length+(sourceRows.length===1?' file':' files')+' - '+sourceRows.reduce((n,r)=>n+(Number(r.rows)||0),0)+' rows';
+  const sourceLine=sourceRows.length+(sourceRows.length===1?' file':' files')+' · '+sourceRows.reduce((n,r)=>n+(Number(r.rows)||0),0)+' rows';
   const calendarMini='<div class="sd-list-row"><span class="name">Today</span><span class="meta">'+working.length+' / '+people.length+'</span></div><div class="sd-list-row"><span class="name">Window</span><span class="meta">'+X((S.tz?"SA":"UK")+' floor')+'</span></div>';
   const peopleMini='<div class="sd-list-row"><span class="name">People</span><span class="meta">'+people.length+'</span></div><div class="sd-list-row"><span class="name">OT readiness</span><span class="meta">'+(peopleIntel?peopleIntel.ready+' ready':'--')+'</span></div>';
   const monthParts=S.month?S.month.split("-").map(Number):[today.getFullYear(),today.getMonth()];
@@ -603,7 +603,7 @@ function rSyncDashboard(el){
         '<div class="sd-ledger-row"><b>On floor</b><span>'+working.length+' / '+people.length+'</span></div>'+
         '<div class="sd-ledger-row"><b>Off / leave</b><span>'+off.length+' / '+people.length+'</span></div>'+
         '<div class="sd-ledger-row"><b>Alerts</b><span>'+issueOpen+' open</span></div>'+
-        '<div class="sd-ledger-row"><b>Scope</b><span>'+people.length+' people - '+leaders.length+' leaders</span></div>'+
+        '<div class="sd-ledger-row"><b>Scope</b><span>'+people.length+' people · '+leaders.length+' leaders</span></div>'+
         '<div class="sd-ledger-row"><b>Sources</b><span>'+X(sourceLine)+'</span></div>'+
         '<button class="sd-btn primary" onclick="browseScheduleFile()">Import file</button>'+
       '</section>'+

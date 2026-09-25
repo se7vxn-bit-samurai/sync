@@ -8,7 +8,7 @@ const path = require('path');
 // the multi-file web build instead, so both artifacts are verified by identical tests.
 const ROOT = path.resolve(process.env.SYNC_SERVE_ROOT || path.join(__dirname, '..'));
 const PORT = Number(process.env.PORT || 4173);
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.css': 'text/css; charset=utf-8' };
+const TYPES = { '.png': 'image/png', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.css': 'text/css; charset=utf-8' };
 
 http
   .createServer((req, res) => {

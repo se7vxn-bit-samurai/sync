@@ -999,12 +999,10 @@ async function _syncRenderProjectPicker(){
     // Cached projects are deliberately available offline too. The picker is the only route that
     // can activate one, regardless of whether it originally came from a cloud sync or a file.
     const projects=(typeof nsListCanonicalProjects==='function')?nsListCanonicalProjects():[];
-    // One walk of the workspace feeds the picker, the Projects & Ops button and an open panel.
+    // One walk of the workspace feeds the picker, the Projects button and an open panel.
     _syncKnownProjects=projects;
     _syncRenderProjectsOpsButton();
     if(_syncProjectsPanelOpen())_syncRenderProjectsPanel();
-    const anyProjects=projects.length>0;
-    _syncRenderSampleOffer(anyProjects);
     if(projects.length>=1){
       // Only touch the DOM when something changed. Swapping identical markup (hydration landing,
       // a manual sync) could eat a tap that landed mid-swap.
@@ -1194,21 +1192,6 @@ function _syncRestoreScrollForTab(){
     }catch(err){}
   });
 }
-// Offered only while the account genuinely has nothing — once there is a real project, a sample
-// one is clutter competing with it.
-function _syncRenderSampleOffer(hasProjects){
-  const btn=document.getElementById('lcSampleBtn');
-  if(btn)btn.style.display=hasProjects?'none':'';
-}
-function _syncCreateSampleProject(){
-  if(typeof nsCreateSampleProject!=='function'){toast('Sample project unavailable','err');return;}
-  const result=nsCreateSampleProject('Sample Team');
-  if(!result){toast('Could not create the sample project','err');return;}
-  toast(`Sample project ready — ${result.people} people, ${result.schedule} shifts`,'ok');
-  _syncOpenProject(result.name);
-  _syncRenderProjectPicker();
-  _syncMarkLocalChange();
-}
 // Back to the project splash from inside the app — the palette's "Switch project…" and the
 // counterpart to _syncOpenProject. Keeps the loaded project in memory (nothing is cleared) so
 // coming straight back is instant; only the viewport changes.
@@ -1234,7 +1217,7 @@ function _syncCloseWorkspaceToLanding(){
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   PROJECTS & OPS PANEL
+   PROJECTS PANEL
 
    The old entry point was a small link that only existed signed in,
    and all it did was re-render the landing screen — which, with no
@@ -1265,7 +1248,7 @@ function _syncRenderProjectsOpsButton(){
 function _syncOpenProjectsPanel(){
   try{if(typeof nsListCanonicalProjects==='function')_syncKnownProjects=nsListCanonicalProjects();}catch(err){}
   if(typeof _qolModal!=='function'){_syncShowProjectPicker();return;}
-  _qolModal('syncProjectsPanel','Projects & Ops',_syncProfileCache?'Projects on this device and the copy in your account':'Projects saved on this device','<div id="syncProjectsPanelBody" class="spp"></div>','');
+  _qolModal('syncProjectsPanel','Projects',_syncProfileCache?'Projects on this device and the copy in your account':'Projects saved on this device','<div id="syncProjectsPanelBody" class="spp"></div>','');
   _syncRenderProjectsPanel();
   _syncRenderProjectsOpsButton();
 }
@@ -1313,7 +1296,6 @@ function _syncProjectsPanelHtml(){
     h+=`<div class="spp-empty">${signedIn&&pulling?'Looking for projects saved to your account…':'No projects saved on this device yet.'}</div>`;
   }
   h+=`<div class="spp-actions spp-actions-secondary"><button type="button" class="btn" onclick="_syncCloseProjectsPanel();browseScheduleFile()">+ Import a roster</button>`;
-  if(!projects.length)h+=`<button type="button" class="btn" onclick="_syncCloseProjectsPanel();_syncCreateSampleProject()">Try a sample project</button>`;
   h+=`<button type="button" class="btn" onclick="_syncExportBackup()">Export backup file</button></div></section>`;
   return h;
 }
@@ -1390,8 +1372,8 @@ function _syncOpenProject(name){
   const deptKey=(typeof nsDepartmentKey==='function')?nsDepartmentKey(name):'';
   if(deptKey)_syncRecordProjectOpened(deptKey);
   if(typeof nsRestoreEntriesFromCanonical==='function')nsRestoreEntriesFromCanonical();
-  // Nothing else maps this project's people into S.people once it is active (a sample project
-  // mapped them before S.activeDept was set, so opened with nobody). Existing entries are kept.
+  // Nothing else maps this project's people into S.people once it is active (a project built
+  // before S.activeDept was set would otherwise open with nobody). Existing entries are kept.
   if(typeof nsFillRuntimePeopleFromCanonical==='function')nsFillRuntimePeopleFromCanonical();
   if(!S.workspace||typeof S.workspace!=='object')S.workspace={};
   if(!S.workspace[name])S.workspace[name]={};
