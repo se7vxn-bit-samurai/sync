@@ -61,7 +61,7 @@ NS.classifyIdentity=nsClassifyIdentityLabel;
 function nsEmptyCanonical(){
   return{
     schema:NS_SCHEMA,version:NS_VERSION,updated_at:nsNow(),
-    people:[],roles:[],acting:[],teams:[],orgUnits:[],aliases:[],
+    people:[],roles:[],acting:[],reportingLines:[],orgChanges:[],teams:[],orgUnits:[],aliases:[],
     schedule:[],otWishes:[],otDecisions:[],leave:[],fairness:[],sourceLinks:[],
     sources:[],syncLog:[],imports:[],sharedScheduleGroups:[],
     publishQueue:[],conflicts:[],conflictRules:[],ruleLibraryRevisions:[],alertActions:[],exportPresets:[],performanceRuns:[]
@@ -70,7 +70,7 @@ function nsEmptyCanonical(){
 
 function nsNormalizeCanonical(value){
   const out=Object.assign(nsEmptyCanonical(),value&&typeof value==="object"?value:{});
-  ["people","roles","acting","teams","orgUnits","aliases","schedule","otWishes","otDecisions","leave","fairness","sourceLinks","sources","syncLog","imports","sharedScheduleGroups","publishQueue","conflicts","conflictRules","ruleLibraryRevisions","alertActions","exportPresets","performanceRuns"].forEach(key=>{
+  ["people","roles","acting","reportingLines","orgChanges","teams","orgUnits","aliases","schedule","otWishes","otDecisions","leave","fairness","sourceLinks","sources","syncLog","imports","sharedScheduleGroups","publishQueue","conflicts","conflictRules","ruleLibraryRevisions","alertActions","exportPresets","performanceRuns"].forEach(key=>{
     if(!Array.isArray(out[key]))out[key]=[];
   });
   out.schema=NS_SCHEMA;out.version=NS_VERSION;
@@ -86,7 +86,7 @@ function nsCanonical(){
   return S.nsCanonical;
 }
 
-const NS_DEPARTMENT_TABLES=new Set(["people","roles","acting","teams","orgUnits","aliases","schedule","otWishes","otDecisions","leave","fairness","sourceLinks","sources","syncLog","imports","sharedScheduleGroups","publishQueue","conflicts","alertActions","performanceRuns"]);
+const NS_DEPARTMENT_TABLES=new Set(["people","roles","acting","reportingLines","orgChanges","teams","orgUnits","aliases","schedule","otWishes","otDecisions","leave","fairness","sourceLinks","sources","syncLog","imports","sharedScheduleGroups","publishQueue","conflicts","alertActions","performanceRuns"]);
 function nsDepartmentKey(value){return nsNameKey(nsClean(value||""))||"default";}
 function nsActiveDepartmentKey(){return nsDepartmentKey(S.activeDept||"default");}
 function nsDirectDepartmentKey(record){
@@ -175,7 +175,7 @@ window.nsClearLocalWorkspaceCache=nsClearLocalWorkspaceCache;
    <script src> AFTER that script runs, so both are already globals
    by the time any of this executes.
    ═══════════════════════════════════════════════════════════════ */
-const SYNC_LOCAL_KEYS=["sc_settings","sc_planner","sc_blueprints","sc_positions","sc_exceptions","sc_leaverequests","sc_dayclosed","sc_coaching","sc_qol_state","sc_att","sc_hc","sc_notes","sc_people","sc_rosterfile","sc_otplan","sc_leaderplanner","sc_shiftlib","sc_coveragereq","sc_forecast","sc_coachquality","sc_agentstatuses","sc_agentnotes","sc_name_remaps","sc_people_view","sc_people_home","sc_people_logbook","sc_view_state"];
+const SYNC_LOCAL_KEYS=["sc_settings","sc_planner","sc_blueprints","sc_positions","sc_exceptions","sc_leaverequests","sc_dayclosed","sc_coaching","sc_qol_state","sc_att","sc_hc","sc_notes","sc_people","sc_rosterfile","sc_otplan","sc_leaderplanner","sc_shiftlib","sc_coveragereq","sc_forecast","sc_coachquality","sc_agentstatuses","sc_agentnotes","sc_name_remaps","sc_people_view","sc_people_home","sc_people_logbook","sc_view_state","sc_swin_sent"];
 
 function _syncCollectLocalKeys(){
   const out={};
@@ -1282,23 +1282,25 @@ function nsRuntimeRole(roleTitle){return /agent/i.test(roleTitle||"")&&!/lead|su
 // alone. Opening a project uses it. The additions are a projection of the canonical model, not an
 // edit, so writing them does not mark the device as having unsaved work.
 function nsSyncPeopleToRuntime(opts){
-  const model=nsCanonical(),scopedPeople=nsScopedRows("people"),scopedActing=nsScopedRows("acting");if(!S.people||typeof S.people!=="object")S.people={};
+  const model=nsCanonical(),scopedPeople=nsScopedRows("people");if(!S.people||typeof S.people!=="object")S.people={};
   const byId=new Map(scopedPeople.map(person=>[person.person_id,person])),kept=opts&&opts.onlyMissing?new Set(Object.keys(S.people)):null;
+  const lineIndex=nsLinesIndex(),todayISO=nsISODate(new Date());
   scopedPeople.forEach(person=>{
     const name=person.full_name;if(!name||kept&&kept.has(name))return;
     const current=S.people[name]||{};
-    const manager=person.manager_name||(byId.get(person.reports_to_person_id)||{}).full_name||current.teamLeader||"";
+    // Dated reporting lines decide today's leader. A move dated in the future leaves the person with
+    // their old leader until that day; on the day, the person record catches up here.
+    const lineLeader=nsLineLeaderOn(person.person_id,todayISO,lineIndex);
+    if(lineLeader!==null&&lineLeader!==(person.reports_to_person_id||"")){person.reports_to_person_id=lineLeader;person.manager_name=lineLeader?(byId.get(lineLeader)||{}).full_name||nsPersonName(lineLeader):"";}
+    const manager=lineLeader!==null?(lineLeader?(byId.get(lineLeader)||{}).full_name||nsPersonName(lineLeader):""):(person.manager_name||(byId.get(person.reports_to_person_id)||{}).full_name||current.teamLeader||"");
     // A browser edit (NorthStar editor, or a People-view edit written through by
     // nsApplyRuntimePersonEdit) holds the whole label set, so a label removed there stays removed.
     // Imported records only ever add labels.
     const labels=person.source_id==="NS-BROWSER"?nsNormalizeLabels(person.labels):[...new Set([...(current.labels||[]),...(person.labels||[])])];
-    S.people[name]=Object.assign({},current,{name,personId:person.person_id,role:nsRuntimeRole(person.role_type),roleType:person.role_type,title:person.job_title||person.role_type,jobTitle:person.job_title||current.jobTitle||"",team:person.home_team||current.team||"",department:person.home_department||current.department||"",teamLeader:manager,status:person.status||current.status||"Active",labels,roleLabels:labels,notes:person.notes||current.notes||""});
+    S.people[name]=Object.assign({},current,{name,personId:person.person_id,role:nsRuntimeRole(person.role_type),roleType:person.role_type,title:person.job_title||person.role_type,jobTitle:person.job_title||current.jobTitle||"",team:person.home_team||current.team||"",department:person.home_department||current.department||"",teamLeader:manager,status:person.status||current.status||"Active",labels,roleLabels:labels,notes:person.notes||current.notes||"",readiness:person.readiness_notes||current.readiness||""});
   });
-  scopedActing.filter(item=>String(item.status||"Active").toLowerCase()!=="inactive").forEach(item=>{
-    const person=byId.get(item.person_id);if(!person||kept&&kept.has(person.full_name))return;
-    const label=/supervisor/i.test(item.acting_role)?"Acting Supervisor":"Acting Leader";
-    const runtime=S.people[person.full_name];runtime.labels=[...new Set([...(runtime.labels||[]),label])];runtime.roleLabels=runtime.labels;runtime.acting=true;
-  });
+  // Acting cover is dated (model.acting, read through nsActingRows). It used to stamp a permanent
+  // "Acting Leader" label and acting=true here, so anyone who covered once showed as acting forever.
   if(!kept){try{savePeople();}catch(err){}return;}
   if(Object.keys(S.people).length===kept.size)return;
   const applying=NS.applyingRemote;NS.applyingRemote=true;
@@ -1322,7 +1324,7 @@ function nsFillRuntimePeopleFromCanonical(){
 function nsApplyRuntimePersonEdit(name,patch){
   const key=nsNameKey(name);if(!key||!patch||typeof patch!=="object")return[];
   const scoped=nsScopedRows("people"),matches=scoped.filter(person=>nsNameKey(person.full_name)===key);if(!matches.length)return[];
-  const model=nsCanonical(),sourceMap=nsSourceDepartmentMap(model),now=nsNow(),has=field=>Object.prototype.hasOwnProperty.call(patch,field),changed=[];
+  const model=nsCanonical(),sourceMap=nsSourceDepartmentMap(model),now=nsNow(),has=field=>Object.prototype.hasOwnProperty.call(patch,field),changed=[],lineMoves=[];
   matches.forEach(person=>{
     const department=nsRecordDepartmentKey(person,model,sourceMap),changes={};
     if(has("team"))changes.home_team=nsClean(patch.team);
@@ -1333,16 +1335,20 @@ function nsApplyRuntimePersonEdit(name,patch){
     }
     if(has("status"))changes.status=nsClean(patch.status)||"Active";
     if(has("labels"))changes.labels=nsNormalizeLabels(patch.labels);
+    if(has("readiness"))changes.readiness_notes=String(patch.readiness||"").trim();
     if(!Object.entries(changes).some(([field,value])=>JSON.stringify(field==="labels"?nsNormalizeLabels(person.labels):person[field]??"")!==JSON.stringify(value)))return;
     // A person scoped only through its source keeps that scope once the source becomes NS-BROWSER.
     if(!nsDirectDepartmentKey(person)&&department)changes.department_key=department;
     // Its labels turn authoritative with the stamp, so the ones S.people gathered from earlier merges
     // are carried over rather than dropped by a team leader edit.
     if(!has("labels")&&person.source_id!=="NS-BROWSER"){const runtime=S.people&&S.people[person.full_name];if(runtime)changes.labels=nsNormalizeLabels([...nsNormalizeLabels(person.labels),...nsNormalizeLabels(runtime.labels)]);}
+    const leaderBefore=has("teamLeader")?nsLineLeaderOn(person.person_id,nsISODate(new Date())):null;
     Object.assign(person,changes,{source_id:"NS-BROWSER",authority_rank:0,last_modified_utc:now,sync_status:"Staged"});
     nsStageChange("PeopleHub","People",person.person_id,"update",Object.assign({},person));
+    if(leaderBefore!==null&&leaderBefore!==(changes.reports_to_person_id||""))lineMoves.push(person);
     changed.push(person);
   });
+  lineMoves.forEach(person=>nsOrgMove([person.full_name],person.manager_name||"",nsISODate(new Date()),"People view"));
   if(changed.length)nsPersist();
   return changed;
 }
@@ -2186,7 +2192,7 @@ function nsRenderOrganisation(el){
   nsMergeRuntimePeopleDirectory();const model=nsCanonical(),all=nsAllPeople(),departments=nsOrgDepartments(),teams=nsOrgTeams();
   const search=String(S.nsOrgSearch||"").toLowerCase(),dept=S.nsOrgDept||"all",team=S.nsOrgTeam||"all";
   const people=all.filter(person=>(dept==="all"||person.home_department===dept)&&(team==="all"||person.home_team===team)&&(!search||[person.full_name,person.job_title,person.role_type,person.home_department,person.home_team,...nsPersonLabels(person)].join(" ").toLowerCase().includes(search)));
-  const acting=model.acting.filter(item=>String(item.status||"Active").toLowerCase()==="active"),ready=all.filter(nsCoverReady);
+  const todayISO=nsISODate(new Date()),acting=nsScopedRows("acting").filter(item=>String(item.status||"Active").toLowerCase()==="active"&&(!item.starts||nsISODate(item.starts)<=todayISO)&&(!item.ends||nsISODate(item.ends)>=todayISO)),ready=all.filter(nsCoverReady);
   const rows=people.map(person=>{
     const labels=nsPersonLabels(person),manager=person.manager_name||nsPersonName(person.reports_to_person_id)||"-";
     return`<tr><td><b>${nsEsc(person.full_name)}</b><div style="color:var(--tm);font:9px var(--mono);margin-top:2px">${nsEsc(person.person_id)}</div></td><td><b>${nsEsc(person.job_title||"-")}</b><div style="color:var(--tm);margin-top:2px">${nsEsc(person.role_type||"Unassigned")}</div></td><td>${nsEsc(person.home_department||"-")}<div style="color:var(--tm);margin-top:2px">${nsEsc(person.home_team||"-")}</div></td><td>${nsEsc(manager)}</td><td><div class="ns-labels">${labels.map(label=>`<span class="ns-label">${nsEsc(label)}</span>`).join("")||'<span class="ns-label">none</span>'}</div></td><td>${nsCoverReady(person)?'<span class="ns-label ready">Eligible</span>':'<span class="ns-label">Standard</span>'}</td><td style="white-space:nowrap"><button class="ns-btn" onclick="nsOpenPersonEditor('${nsJs(person.person_id)}')">Edit</button> <button class="ns-btn" onclick="nsOpenActingEditor('${nsJs(person.person_id)}')">Acting</button></td></tr>`;
@@ -2195,7 +2201,7 @@ function nsRenderOrganisation(el){
   const body=`<div class="ns-toolbar"><input class="grow" value="${nsEsc(S.nsOrgSearch||"")}" oninput="S.nsOrgSearch=this.value;rOps($('ca'))" placeholder="Search people, roles, labels"><select onchange="S.nsOrgDept=this.value;rOps($('ca'))"><option value="all">All departments</option>${departments.map(name=>`<option${dept===name?' selected':''}>${nsEsc(name)}</option>`).join("")}</select><select onchange="S.nsOrgTeam=this.value;rOps($('ca'))"><option value="all">All teams</option>${teams.map(name=>`<option${team===name?' selected':''}>${nsEsc(name)}</option>`).join("")}</select><button class="ns-btn" onclick="nsOpenOrgUnitEditor()">Add unit</button><button class="ns-btn primary" onclick="nsOpenPersonEditor()">Add person</button></div>
     <div class="ns-kpis"><div class="ns-kpi"><b>${departments.length}</b><span>Departments</span></div><div class="ns-kpi"><b>${teams.length}</b><span>Teams</span></div><div class="ns-kpi"><b>${ready.length}</b><span>Cover-ready leaders</span></div><div class="ns-kpi"><b>${acting.length}</b><span>Active acting assignments</span></div></div>
     <div class="ns-split"><section class="ns-panel"><div class="ns-panel-hd"><h3>People and roles</h3><span>${people.length} shown</span></div><div class="ns-table-wrap" style="max-height:560px"><table class="ns-table"><thead><tr><th>Person</th><th>Title / operational role</th><th>Unit</th><th>Reports to</th><th>Labels</th><th>Coverage</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="7"><div class="ns-empty">No people match this scope.</div></td></tr>'}</tbody></table></div></section>
-    <div style="display:flex;flex-direction:column;gap:10px"><section class="ns-panel"><div class="ns-panel-hd"><h3>Organogram</h3><span>reporting lines</span></div><div class="ns-panel-body ns-tree" style="max-height:310px;overflow:auto">${nsRenderOrgTree(people)}</div></section><section class="ns-panel"><div class="ns-panel-hd"><h3>Coverage-ready leadership</h3><span>YAT + acting + supervisors</span></div><div class="ns-panel-body" style="max-height:240px;overflow:auto;padding:0">${readyRows}</div></section></div></div>`;
+    <div style="display:flex;flex-direction:column;gap:10px"><section class="ns-panel"><div class="ns-panel-hd"><h3>Organogram</h3><span>reporting lines · <button class="ns-btn" onclick="railNavPeople('org')">Open Org builder</button></span></div><div class="ns-panel-body ns-tree" style="max-height:310px;overflow:auto">${nsRenderOrgTree(people)}</div></section><section class="ns-panel"><div class="ns-panel-hd"><h3>Coverage-ready leadership</h3><span>YAT + acting + supervisors</span></div><div class="ns-panel-body" style="max-height:240px;overflow:auto;padding:0">${readyRows}</div></section></div></div>`;
   el.innerHTML=nsOpsShell("organisation",body);
 }
 
@@ -2239,11 +2245,183 @@ function nsSaveActing(personId){
   const person=nsPersonById(personId);if(!person)return;
   const role=document.getElementById("nsActingRole")?.value||"Acting Team Lead",starts=document.getElementById("nsActingStarts")?.value||new Date().toISOString().slice(0,10),id=nsId("NS-ACT",personId+"|"+starts+"|"+role);
   const record={acting_assignment_id:id,person_id:personId,person_name:person.full_name,acting_role:role,acting_for_person_id:document.getElementById("nsActingFor")?.value||"",acting_scope:nsClean(document.getElementById("nsActingScope")?.value),starts,ends:document.getElementById("nsActingEnds")?.value||"",status:"Active",notes:"",source_id:"NS-BROWSER",authority_rank:0,updated_at:nsNow(),sync_status:"Staged"};
-  nsUpsert("acting",[record],row=>row.acting_assignment_id,0);const label=/supervisor/i.test(role)?"Acting Supervisor":"Acting Leader";person.labels=[...new Set([...(person.labels||[]),label])];person.source_id="NS-BROWSER";person.authority_rank=0;
-  nsStageChange("PeopleHub","Acting",id,"create",record);nsSyncPeopleToRuntime();if(typeof peopleSetRoleLabels==="function")peopleSetRoleLabels(person.full_name,person.labels);nsPersist();document.getElementById("nsActingEditor")?.remove();rOps($("ca"));toast(person.full_name+" is now cover-ready","ok");
+  nsUpsert("acting",[record],row=>row.acting_assignment_id,0);
+  nsStageChange("PeopleHub","Acting",id,"create",record);nsSyncPeopleToRuntime();nsPersist();document.getElementById("nsActingEditor")?.remove();rOps($("ca"));toast(person.full_name+" is covering from "+starts+(record.ends?" to "+record.ends:""),"ok");
+}
+
+// ── Dated acting cover for the app side (src/app/people/cover.js) ──
+// Person names are resolved here because the people records live in this closure. Rows are scoped
+// to the open project like every other department table.
+function nsActingRows(){
+  return nsScopedRows("acting").map(row=>({id:row.acting_assignment_id,personId:row.person_id||"",personName:nsPersonName(row.person_id)||row.person_name||"",role:row.acting_role||"Acting Team Lead",forId:row.acting_for_person_id||"",forName:row.acting_for_person_id?(nsPersonName(row.acting_for_person_id)||row.acting_for_name||""):(row.acting_for_name||""),scope:row.acting_scope||"",starts:nsISODate(row.starts)||"",ends:nsISODate(row.ends)||"",status:row.status||"Active",notes:row.notes||""})).filter(row=>row.personName);
+}
+function nsPersonIdByName(name){const key=nsNameKey(name);const person=key?nsScopedRows("people").find(item=>nsNameKey(item.full_name)===key):null;return person?person.person_id:"";}
+// Creates a cover record, or updates one when fields.id names an existing record. Returns its id.
+function nsSaveActingCover(fields){
+  if(!fields||typeof fields!=="object")return"";
+  const model=nsCanonical(),existing=fields.id?(model.acting||[]).find(row=>row.acting_assignment_id===fields.id):null;
+  if(existing){
+    const changes={};
+    ["starts","ends","status","notes","acting_role","acting_scope"].forEach(field=>{const key={acting_role:"role",acting_scope:"scope"}[field]||field;if(Object.prototype.hasOwnProperty.call(fields,key))changes[field]=field==="starts"||field==="ends"?nsISODate(fields[key]):nsClean(fields[key]);});
+    Object.assign(existing,changes,{source_id:"NS-BROWSER",authority_rank:0,updated_at:nsNow(),sync_status:"Staged"});
+    nsStageChange("PeopleHub","Acting",existing.acting_assignment_id,"update",Object.assign({},existing));
+    nsPersist();
+    return existing.acting_assignment_id;
+  }
+  const person=nsPersonById(fields.personId)||nsPersonById(nsPersonIdByName(fields.personName));if(!person)return"";
+  const forId=fields.forId||nsPersonIdByName(fields.forName)||"",starts=nsISODate(fields.starts)||nsISODate(new Date()),role=nsClean(fields.role)||"Acting Team Lead";
+  const id=nsId("NS-ACT",person.person_id+"|"+starts+"|"+role+"|"+forId);
+  const record={acting_assignment_id:id,person_id:person.person_id,person_name:person.full_name,acting_role:role,acting_for_person_id:forId,acting_scope:nsClean(fields.scope),starts,ends:nsISODate(fields.ends)||"",status:"Active",notes:nsClean(fields.notes),source_id:"NS-BROWSER",authority_rank:0,updated_at:nsNow(),sync_status:"Staged"};
+  nsUpsert("acting",[record],row=>row.acting_assignment_id,0);
+  nsStageChange("PeopleHub","Acting",id,"create",record);
+  nsPersist();
+  return id;
 }
 
 Object.assign(window,{nsOpenPersonEditor,nsSavePersonEditor,nsOpenOrgUnitEditor,nsSaveOrgUnit,nsOpenActingEditor,nsSaveActing});
+window.nsActingRows=nsActingRows;
+window.nsSaveActingCover=nsSaveActingCover;
+
+// ── Org builder: dated reporting lines and a change log with undo (src/app/views/org.js) ──
+// A reporting line says who someone reports to between two dates (open-ended when effective_to is
+// blank; from the beginning when effective_from is blank). Every org edit is one batch in
+// orgChanges holding the reverse of each step it took, so a batch undoes as a unit.
+function nsAddDaysISO(iso,n){const d=new Date(iso+"T00:00:00");d.setDate(d.getDate()+n);return nsISODate(d);}
+function nsLinesIndex(){
+  const index=new Map();
+  nsScopedRows("reportingLines").forEach(line=>{if(line.status==="Superseded")return;if(!index.has(line.person_id))index.set(line.person_id,[]);index.get(line.person_id).push(line);});
+  return index;
+}
+// Who someone reports to on a date: a person_id, "" for nobody, or null when no dated line covers it.
+function nsLineLeaderOn(personId,iso,index){
+  const lines=(index||nsLinesIndex()).get(personId)||[];
+  let hit=null;
+  lines.forEach(line=>{if((!line.effective_from||line.effective_from<=iso)&&(!line.effective_to||line.effective_to>=iso)&&(!hit||(line.effective_from||"")>(hit.effective_from||"")))hit=line;});
+  return hit?(hit.reports_to_person_id||""):null;
+}
+function nsOrgLines(){
+  return nsScopedRows("reportingLines").filter(line=>line.status!=="Superseded").map(line=>({id:line.line_id,personId:line.person_id,personName:nsPersonName(line.person_id),leaderId:line.reports_to_person_id||"",leaderName:line.reports_to_person_id?nsPersonName(line.reports_to_person_id):"",from:line.effective_from||"",to:line.effective_to||""}));
+}
+function nsOrgChanges(){
+  return nsScopedRows("orgChanges").slice().sort((a,b)=>String(b.at).localeCompare(String(a.at))).map(c=>({id:c.change_id,kind:c.kind,summary:c.summary,effective:c.effective_from||"",at:c.at,by:c.by||"",items:c.items||[],undone:c.undone_at||""}));
+}
+// Runs steps against the model and returns the steps that reverse them, newest first.
+function nsOrgRunOps(ops){
+  const model=nsCanonical(),undo=[];
+  (ops||[]).forEach(op=>{
+    if(op.op==="lineCreate"){const line=nsStampDepartment([Object.assign({},op.line)])[0];model.reportingLines.push(line);undo.unshift({op:"lineDelete",line_id:line.line_id});}
+    else if(op.op==="lineDelete"){const i=model.reportingLines.findIndex(line=>line.line_id===op.line_id);if(i>=0){const line=model.reportingLines.splice(i,1)[0];undo.unshift({op:"lineCreate",line});}}
+    else if(op.op==="lineSet"){const line=model.reportingLines.find(item=>item.line_id===op.line_id);if(line){undo.unshift({op:"lineSet",line_id:op.line_id,field:op.field,value:line[op.field]??""});line[op.field]=op.value;}}
+    else if(op.op==="personSet"){const person=nsPersonById(op.person_id);if(person){undo.unshift({op:"personSet",person_id:op.person_id,field:op.field,value:person[op.field]??""});person[op.field]=op.value;Object.assign(person,{source_id:"NS-BROWSER",authority_rank:0,last_modified_utc:nsNow(),sync_status:"Staged"});}}
+    else if(op.op==="personCreate"){const person=nsStampDepartment([Object.assign({},op.person)])[0];model.people.push(person);undo.unshift({op:"personDelete",person_id:person.person_id});}
+    else if(op.op==="personDelete"){const person=nsPersonById(op.person_id),i=person?model.people.indexOf(person):-1;if(i>=0){model.people.splice(i,1);if(S.people&&S.people[person.full_name])delete S.people[person.full_name];undo.unshift({op:"personCreate",person});}}
+  });
+  return undo;
+}
+function nsOrgCommit(kind,summary,effective,items,ops,by){
+  const model=nsCanonical(),undo=nsOrgRunOps(ops);
+  const entry=nsStampDepartment([{change_id:nsId("NS-ORG",kind+"|"+nsNow()+"|"+Math.random()),kind,summary,effective_from:effective||"",at:nsNow(),by:nsClean(by),items,undo,undone_at:"",source_id:"NS-BROWSER"}])[0];
+  model.orgChanges.push(entry);
+  nsStageChange("PeopleHub","Org",entry.change_id,kind,{summary,effective_from:effective||"",items});
+  nsSyncPeopleToRuntime();nsPersist();
+  return entry.change_id;
+}
+function nsOrgUndo(changeId){
+  const entry=nsScopedRows("orgChanges").find(c=>c.change_id===changeId);
+  if(!entry||entry.undone_at)return false;
+  nsOrgRunOps(entry.undo||[]);
+  entry.undone_at=nsNow();
+  nsStageChange("PeopleHub","Org",entry.change_id,"undo",{summary:entry.summary});
+  nsSyncPeopleToRuntime();nsPersist();
+  return true;
+}
+function nsLeaderIdOn(person,iso,index){
+  const line=nsLineLeaderOn(person.person_id,iso,index);
+  return line!==null?line:(person.reports_to_person_id||nsPersonIdByName(person.manager_name)||"");
+}
+// Adds the steps that make `person` report to `leader` (a person record or null) from `eff`.
+function nsOrgMovePlan(person,leader,eff,ops,items){
+  const index=nsLinesIndex(),beforeId=nsLeaderIdOn(person,eff,index),newId=leader?leader.person_id:"";
+  if(beforeId===newId)return;
+  const lines=index.get(person.person_id)||[],dayBefore=nsAddDaysISO(eff,-1),today=nsISODate(new Date()),seed=Math.random().toString(36).slice(2);
+  // First dated move: keep the leader they had before, so history before `eff` does not change.
+  if(!lines.length&&beforeId)ops.push({op:"lineCreate",line:{line_id:nsId("NS-RL",person.person_id+"|base|"+seed),person_id:person.person_id,reports_to_person_id:beforeId,effective_from:"",effective_to:dayBefore,status:"Active",source_id:"NS-BROWSER"}});
+  lines.forEach(line=>{
+    if(line.effective_from&&line.effective_from>=eff)ops.push({op:"lineSet",line_id:line.line_id,field:"status",value:"Superseded"});
+    else if(!line.effective_to||line.effective_to>=eff)ops.push({op:"lineSet",line_id:line.line_id,field:"effective_to",value:dayBefore});
+  });
+  ops.push({op:"lineCreate",line:{line_id:nsId("NS-RL",person.person_id+"|"+eff+"|"+seed),person_id:person.person_id,reports_to_person_id:newId,effective_from:eff,effective_to:"",status:"Active",source_id:"NS-BROWSER"}});
+  if(eff<=today){ops.push({op:"personSet",person_id:person.person_id,field:"reports_to_person_id",value:newId});ops.push({op:"personSet",person_id:person.person_id,field:"manager_name",value:leader?leader.full_name:""});}
+  items.push({person_id:person.person_id,person_name:person.full_name,field:"leader",before:nsPersonName(beforeId)||"",after:leader?leader.full_name:""});
+}
+// True when `leader` already reports (directly or not) to `person` on that date: the move would loop.
+function nsOrgWouldLoop(person,leader,eff){
+  const index=nsLinesIndex();let cur=leader,guard=0;
+  while(cur&&guard++<50){if(cur.person_id===person.person_id)return true;const up=nsLeaderIdOn(cur,eff,index);cur=up?nsPersonById(up):null;}
+  return false;
+}
+function nsOrgMove(names,leaderName,effective,by){
+  const eff=nsISODate(effective)||nsISODate(new Date()),leader=leaderName?nsPersonById(nsPersonIdByName(leaderName)):null;
+  if(leaderName&&!leader)return{error:"Not in this project's people: "+leaderName};
+  const ops=[],items=[],loops=[];
+  [...new Set(names||[])].forEach(name=>{
+    const person=nsPersonById(nsPersonIdByName(name));if(!person||leader&&person.person_id===leader.person_id)return;
+    if(leader&&nsOrgWouldLoop(person,leader,eff)){loops.push(person.full_name);return;}
+    nsOrgMovePlan(person,leader,eff,ops,items);
+  });
+  if(loops.length&&!items.length)return{error:`${leader.full_name} already reports to ${loops.join(", ")}, so that move would make a loop`};
+  if(!items.length)return{error:"Nothing to change: they already report to "+(leader?leader.full_name:"nobody")+" on "+eff};
+  const who=items.length>3?items.length+" people":items.map(item=>item.person_name).join(", ");
+  return{id:nsOrgCommit("move",`Moved ${who} to ${leader?leader.full_name:"no leader"}`,eff,items,ops,by),count:items.length,skipped:loops};
+}
+function nsOrgSetRole(names,role,effective,by){
+  const value=nsClean(role);if(!value)return{error:"Pick a role"};
+  const ops=[],items=[];
+  [...new Set(names||[])].forEach(name=>{
+    const person=nsPersonById(nsPersonIdByName(name));if(!person||person.role_type===value)return;
+    ops.push({op:"personSet",person_id:person.person_id,field:"role_type",value});
+    if(!person.job_title||person.job_title===person.role_type)ops.push({op:"personSet",person_id:person.person_id,field:"job_title",value});
+    items.push({person_id:person.person_id,person_name:person.full_name,field:"role",before:person.role_type||"",after:value});
+  });
+  if(!items.length)return{error:"Nothing to change"};
+  const who=items.length>3?items.length+" people":items.map(item=>item.person_name).join(", ");
+  return{id:nsOrgCommit("role",`${who}: role set to ${value}`,nsISODate(effective)||nsISODate(new Date()),items,ops,by),count:items.length};
+}
+// rows: [{name, role, reportsTo}] from an organogram sheet. Creates missing people, then applies
+// leader and role changes, all as one batch. A blank "reports to" leaves the leader unchanged.
+function nsOrgImport(rows,effective,by){
+  const eff=nsISODate(effective)||nsISODate(new Date()),ops=[],items=[],created=new Map(),dept=S.activeDept||"";
+  const find=name=>nsPersonById(nsPersonIdByName(name))||created.get(nsNameKey(name))||null;
+  const ensure=(name,role)=>{
+    let person=find(name);if(person)return person;
+    person={person_id:nsId("NS-P",nsNameKey(name)+"|"+nsActiveDepartmentKey()),full_name:nsClean(name),role_type:nsClean(role)||"Agent",job_title:nsClean(role),home_department:dept,home_team:"",reports_to_person_id:"",manager_name:"",status:"Active",labels:[],notes:"",source_id:"NS-BROWSER",authority_rank:0,imported_at:nsNow()};
+    created.set(nsNameKey(name),person);ops.push({op:"personCreate",person});
+    items.push({person_id:person.person_id,person_name:person.full_name,field:"created",before:"",after:person.role_type});
+    return person;
+  };
+  const clean=(rows||[]).map(row=>({name:nsClean(row.name),role:nsClean(row.role),reportsTo:nsClean(row.reportsTo)})).filter(row=>row.name&&nsClassifyIdentityLabel(row.name).valid);
+  clean.forEach(row=>ensure(row.name,row.role));
+  clean.forEach(row=>{if(row.reportsTo)ensure(row.reportsTo,"Team Leader");});
+  clean.forEach(row=>{
+    const person=find(row.name),isNew=created.has(nsNameKey(row.name));
+    if(!isNew&&row.role&&row.role!==person.role_type){ops.push({op:"personSet",person_id:person.person_id,field:"role_type",value:row.role});items.push({person_id:person.person_id,person_name:person.full_name,field:"role",before:person.role_type||"",after:row.role});}
+    if(!row.reportsTo)return;
+    const leader=find(row.reportsTo);if(!leader||leader.person_id===person.person_id)return;
+    if(isNew){person.reports_to_person_id=leader.person_id;person.manager_name=leader.full_name;return;}
+    if(!created.has(nsNameKey(leader.full_name))&&nsOrgWouldLoop(person,leader,eff))return;
+    nsOrgMovePlan(person,leader,eff,ops,items);
+  });
+  if(!items.length)return{error:"The sheet matches the current org: nothing to change"};
+  const count=field=>items.filter(item=>item.field===field).length;
+  const summary=`Organogram import: ${count("created")} added, ${count("leader")} moved, ${count("role")} role changes`;
+  return{id:nsOrgCommit("import",summary,eff,items,ops,by),created:count("created"),moved:count("leader"),roles:count("role")};
+}
+window.nsOrgLines=nsOrgLines;
+window.nsOrgChanges=nsOrgChanges;
+window.nsOrgMove=nsOrgMove;
+window.nsOrgSetRole=nsOrgSetRole;
+window.nsOrgImport=nsOrgImport;
+window.nsOrgUndo=nsOrgUndo;
 
 function nsOTDecisionKey(record){return(record.person_id||nsNameKey(record.person_name))+"|"+record.date+"|"+(record.slot||"FULL");}
 function nsOTMonths(){const dates=[...nsScopedRows("otWishes"),...nsScopedRows("otDecisions")].map(row=>row.date).filter(Boolean);return[...new Set(dates.map(date=>date.slice(0,7)))].sort();}

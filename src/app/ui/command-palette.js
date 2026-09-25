@@ -154,6 +154,9 @@ function _collectCommandPaletteActions(){
     });
     actions.push({id:"pin:"+name,label:((S.pinnedPeople||[]).includes(name)?"Unpin ":"Pin ")+name,hint:"Pinned people",keywords:"pin favorite person "+name,run:()=>togglePinnedPerson(name)});
   });
+  if(typeof _swinAllNames==="function")_swinAllNames().slice(0,300).forEach(name=>{
+    actions.push({id:"schedule:"+name,label:"Schedule: "+name,hint:"Schedule window · UK and SA times · send",group:"People",keywords:"schedule window roster shifts times sa uk share send whatsapp png "+name,run:()=>openScheduleWindow(name)});
+  });
   (S.months||[]).forEach(mk=>{
     actions.push({
       id:"month:"+mk,

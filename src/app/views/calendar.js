@@ -182,7 +182,13 @@ function rCal(el){
         const isAbsent=daySwaps.find(sw=>sw.absentLeader===e.name);
         if(isCovering)mid+=`<span class="swap-tag" title="Covering ${isCovering.absentLeader}${isCovering.originalShift?' · '+isCovering.originalShift:''}">⇄ covering</span>`;
         if(isAbsent)mid+=`<span class="swap-tag absent" title="Absent — covered by ${isAbsent.coverLeader}">⇄ absent</span>`;
+        if(typeof actingOn==="function"){
+          const _act=actingOn(e.name,selDate),_cov=coverOn(e.name,selDate);
+          if(_act)mid+=`<span class="swap-tag cover-tag" title="${XA(coverLabel(_act)+", "+coverSpanText(_act))}">acting for ${X((_act.forName||"vacancy").split(" ")[0])}</span>`;
+          if(_cov)mid+=`<span class="swap-tag cover-tag" title="${XA(_cov.personName+" covers, "+coverSpanText(_cov))}">covered by ${X(_cov.personName.split(" ")[0])}</span>`;
+        }
         mid+=`<button class="dd-mini-btn" onclick="navToPerson('${esc}')" title="Open month card">Month</button>`;
+        mid+=`<button class="dd-mini-btn swin-open-btn" onclick="openScheduleWindow('${esc}',{y:${selDate.getFullYear()},m:${selDate.getMonth()}})" title="Schedule window: UK and SA times, send">Schedule</button>`;
         mid+=renderInlineNoteButton("person",e.name,e.name,"compact");
         const _excWithAgent=personExcs.find(ex=>ex.agentName);
         mid+=`<button class="exc-flag${hasExc?' has-exc':''}" onclick="${_excWithAgent?`openAgentDrawer('${XJS(_excWithAgent.agentName)}')`:`S._excFormOpen=S._excFormOpen==='${XJ(formKey)}'?null:'${XJ(formKey)}';ren()`}">${hasExc?'⚡'+personExcs.length:'+ Flag'}</button>`;
@@ -250,6 +256,8 @@ function rCal(el){
         mid+=`<div class="${rowCls}">`;
         mid+=`<span class="ri-name" style="cursor:pointer" onclick="openDayInvestigation('${XJS(e.name)}','${excKey(selDate)}','calendar')">${X(e.name)}${tag}</span>`;
         mid+=`<span class="ri-shift s-off">${e.offL||'OFF'}</span>`;
+        const _cov=typeof coverOn==="function"?coverOn(e.name,selDate):null;
+        if(_cov)mid+=`<span class="swap-tag cover-tag" title="${XA(_cov.personName+" covers, "+coverSpanText(_cov))}">covered by ${X(_cov.personName.split(" ")[0])}</span>`;
         mid+=renderInlineNoteButton("person",e.name,e.name,"compact");
         if(covered){
           mid+=`<span class="swap-tag" style="margin-left:auto" title="Covered by ${covered.coverLeader}">⇄ ${X(covered.coverLeader.split(' ')[0])}</span>`;

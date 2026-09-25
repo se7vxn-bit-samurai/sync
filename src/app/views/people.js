@@ -95,6 +95,7 @@ function rPeopleAgentsView(){
     h+=`<div style="font-size:12px;color:var(--tm)">${leaderName?"TL: "+X(leaderName):""}</div>`;
     h+=`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${renderPeopleBadges(sel,"agent")}</div>`;
     h+=`</div>`;
+    h+=`<button class="swin-open-btn" onclick="openScheduleWindow('${XJS(sel)}')" title="Any date range, UK and SA times, send to ${XA(sel.split(" ")[0])}" style="padding:5px 9px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer">Schedule</button>`;
     h+=`<button onclick="openPeopleRoleLabelsModal('${XJS(sel)}')" style="padding:5px 9px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer">Labels</button>`;
     h+=`<span class="qol-inline-tools">${renderPinButton(sel)}${renderInlineNoteButton("person",sel,sel)}</span>`;
     h+=`<span style="padding:4px 12px;border-radius:8px;background:${cssAlpha(statusDef.col,10)};color:${statusDef.col};font-size:12px;font-weight:600">${statusDef.icon} ${statusDef.label}</span>`;
@@ -539,7 +540,7 @@ function rPeopleLogbookView(){
 function rPeople(el){
   _ensurePeopleOpsState();
   if(S.peopleSubTab==="cards")S.peopleSubTab="team";
-  if(!["dashboard","team","agents","logbook","events"].includes(S.peopleSubTab))S.peopleSubTab="dashboard";
+  if(!["dashboard","team","agents","cover","org","logbook","events"].includes(S.peopleSubTab))S.peopleSubTab="dashboard";
   const scopeLeaders=_peopleScopeLeaders();
   if(scopeLeaders.length&&(!S.selectedTL||!scopeLeaders.includes(S.selectedTL)))S.selectedTL=scopeLeaders[0];
   savePeopleOps();
@@ -550,6 +551,8 @@ function rPeople(el){
     {id:"dashboard",l:"People overview"},
     {id:"team",l:"Team"},
     {id:"agents",l:"Agents"},
+    {id:"cover",l:"Cover"},
+    {id:"org",l:"Org"},
     {id:"logbook",l:"Logbook"},
     {id:"events",l:"Events"}
   ];
@@ -592,6 +595,10 @@ function rPeople(el){
     h+=rPeopleTeamView();
   } else if(S.peopleSubTab==="agents"){
     h+=rPeopleAgentsView();
+  } else if(S.peopleSubTab==="cover"){
+    h+=rPeopleCoverView();
+  } else if(S.peopleSubTab==="org"){
+    h+=rPeopleOrgView();
   } else if(S.peopleSubTab==="logbook"){
     h+=rPeopleLogbookView();
   } else if(S.peopleSubTab==="events"){
@@ -705,6 +712,7 @@ function _renderTLDetailPanel(tlName,todayISO,today){
   const hs=S.month?computeHealthScore(S.entries.filter(e=>e.name===tlName&&e.date&&e.date.getMonth()===parseInt(S.month.split("-")[1])&&e.date.getFullYear()===parseInt(S.month.split("-")[0])),tlName,S.month,bp,pos,dk):null;
 
   let h="";
+  if(typeof coverBannerHTML==="function")h+=coverBannerHTML(tlName);
 
   // TL header card
   h+=`<div style="background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:12px">`;

@@ -195,6 +195,7 @@ function renderAgentDrawerContent(agentName){
   if(!el)return;
   const person=S.people[agentName]||{name:agentName,role:"agent",teamLeader:"",team:""};
   const leaderName=person.teamLeader||"";
+  const ledBy=typeof leaderOn==="function"?leaderOn(agentName,new Date()):{cover:null};
   const today=new Date();
   const todayISO=excKey(today);
   const status=getAgentStatus(agentName,today);
@@ -206,7 +207,7 @@ function renderAgentDrawerContent(agentName){
   h+=`<div style="flex:1;min-width:0"><div class="agent-drawer-name">${X(agentName)}</div>`;
   h+=`<div class="agent-drawer-meta">`;
   if(person.team&&person.team!=="Main")h+=`${X(person.team)} · `;
-  if(leaderName)h+=`TL: ${X(leaderName.split(" ")[0])}`;
+  if(leaderName)h+=ledBy.cover?`TL: ${X(ledBy.name.split(" ")[0])} <span title="${XA(ledBy.name+" is acting for "+leaderName+", "+coverSpanText(ledBy.cover))}">(acting for ${X(leaderName.split(" ")[0])})</span>`:`TL: ${X(leaderName.split(" ")[0])}`;
   h+=`</div></div>`;
   h+=`<button class="agent-drawer-close" onclick="closeAgentDrawer()">✕</button>`;
   h+=`</div>`;
@@ -234,6 +235,7 @@ function renderAgentDrawerContent(agentName){
   h+=`<div class="agent-drawer-section">`;
   h+=`<div class="ads-hd">Schedule — this week`;
   if(leaderName){h+=` <span style="font-size:11px;font-weight:400;color:var(--tm);cursor:pointer" onclick="closeAgentDrawer();navToPerson('${XJS(leaderName)}')" title="Open ${XA(leaderName)} schedule card">→ ${X(leaderName.split(" ")[0])}</span>`;}
+  h+=` <button type="button" class="swin-open-btn" onclick="closeAgentDrawer();openScheduleWindow('${XJS(agentName)}')" title="Any date range, UK and SA times, send to ${XA(agentName.split(" ")[0])}" style="margin-left:auto;font-size:11px;padding:2px 8px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--accent);font-family:inherit;cursor:pointer">Full schedule</button>`;
   h+=`</div>`;
   // Get the week Mon–Sun for today
   const wMon=new Date(today);wMon.setDate(wMon.getDate()-((wMon.getDay()+6)%7));wMon.setHours(0,0,0,0);
@@ -439,7 +441,7 @@ function _ensurePeopleOpsState(){
   if(!S.peopleHomeNotes||typeof S.peopleHomeNotes!=="object")S.peopleHomeNotes={};
   if(!Array.isArray(S.peopleLogbook))S.peopleLogbook=[];
   if(!S.peopleDashView||!["today_ops","week_risk","monthly_review"].includes(S.peopleDashView))S.peopleDashView="today_ops";
-  if(!S.peopleSubTab||!["dashboard","team","agents","logbook","events"].includes(S.peopleSubTab))S.peopleSubTab="dashboard";
+  if(!S.peopleSubTab||!["dashboard","team","agents","cover","org","logbook","events"].includes(S.peopleSubTab))S.peopleSubTab="dashboard";
   if(!S._peopleView||!["cards","table"].includes(S._peopleView))S._peopleView="cards";
   if(!S._peopleLogFilter)S._peopleLogFilter="all";
 }
@@ -539,7 +541,7 @@ function loadPeopleOps(){
     const view=localStorage.getItem("sc_people_view");
     if(view){
       const v=JSON.parse(view);
-      if(v.peopleSubTab&&["dashboard","team","agents","logbook","events"].includes(v.peopleSubTab))S.peopleSubTab=v.peopleSubTab;
+      if(v.peopleSubTab&&["dashboard","team","agents","cover","org","logbook","events"].includes(v.peopleSubTab))S.peopleSubTab=v.peopleSubTab;
       if(v.peopleDashView&&["today_ops","week_risk","monthly_review"].includes(v.peopleDashView))S.peopleDashView=v.peopleDashView;
       if(v.peopleView&&["cards","table"].includes(v.peopleView))S._peopleView=v.peopleView;
       if(v.peopleLogFilter&&["all","note","followup","summary","event"].includes(v.peopleLogFilter))S._peopleLogFilter=v.peopleLogFilter;
@@ -756,9 +758,13 @@ function _peopleFlagText(p){
 function peopleIsYAT(name){
   const p=(S.people||{})[name]||{};
   const txt=_peopleFlagText(p);
-  return p.yat===true||p.isYAT===true||txt.includes("yat")||txt.includes("young aspiring");
+  const labels=[p.labels,p.roleLabels].flat().filter(Boolean).map(x=>String(x).trim().toLowerCase());
+  return p.yat===true||p.isYAT===true||labels.includes("yat")||txt.includes("yat")||txt.includes("young aspiring");
 }
-function peopleIsActing(name){
+// With dated cover (people/cover.js) a person is acting only inside a record's dates. Without any
+// dated record, the older undated flags and labels still decide.
+function peopleIsActing(name,date){
+  if(typeof coverHasDated==="function"&&coverHasDated(name))return!!actingOn(name,date||new Date());
   const p=(S.people||{})[name]||{};
   const txt=_peopleFlagText(p);
   return p.acting===true||p.actingTL===true||String(p.role||"").toLowerCase().includes("acting")||txt.includes("acting");
@@ -773,7 +779,11 @@ function peopleRoleLabels(nameOrPerson){
     else if(v)raw.push(...String(v).split(/[;,|]/));
   });
   if(peopleIsYAT(p.name))raw.push("YAT");
-  if(peopleIsActing(p.name))raw.push(String(p.role||"").toLowerCase().includes("supervisor")?"Acting Supervisor":"Acting Leader");
+  if(typeof coverHasDated==="function"&&p.name&&coverHasDated(p.name)){
+    // Dated cover owns the acting label: drop stored ones, add today's if a record is active.
+    for(let i=raw.length-1;i>=0;i--)if(/^\s*acting\b/i.test(String(raw[i])))raw.splice(i,1);
+    const a=actingOn(p.name,new Date());if(a)raw.push(coverLabel(a));
+  }else if(peopleIsActing(p.name))raw.push(String(p.role||"").toLowerCase().includes("supervisor")?"Acting Supervisor":"Acting Leader");
   if(String(p.role||"").toLowerCase().includes("supervisor")||p.supervisor===true)raw.push("Supervisor");
   const known=PEOPLE_ROLE_LABEL_OPTIONS.map(x=>x.toLowerCase());
   return [...new Set(raw.map(x=>String(x||"").trim()).filter(Boolean).map(x=>{

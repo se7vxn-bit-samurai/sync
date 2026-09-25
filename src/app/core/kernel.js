@@ -389,7 +389,10 @@ function mkE(name,date,day,raw,team,weekLabel){
   return{name,date,day,ukS,ukE,isOff:off,offL,raw:cs,team:team||"Main",week:weekLabel||"",_fileWeek:weekLabel||"",note:note||""};
 }
 
-function u2s(t,d){if(!t)return t;const dt=d||new Date(),y=dt.getFullYear(),ml=new Date(y,2,31),bs=new Date(y,2,31-ml.getDay(),1,0),ol=new Date(y,9,31),be=new Date(y,9,31-ol.getDay(),1,0),off=(dt>=bs&&dt<be)?1:2;const m=t.match(/^(\d{2}):(\d{2})$/);if(!m)return t;let h=+m[1]+off;if(h>=24)h-=24;return P(h)+":"+m[2];}
+// UK clock time -> SA clock time. SA is UTC+2 all year; the UK changes at 01:00 GMT on the last
+// Sunday of March and October. The comparison uses the shift's own time on its date, so a 09:00
+// shift on the changeover Sunday already gets the new offset (comparing the date's midnight did not).
+function u2s(t,d){if(!t)return t;const m=String(t).match(/^(\d{2}):(\d{2})$/);if(!m)return t;const dt=d||new Date(),y=dt.getFullYear(),ml=new Date(y,2,31),bs=new Date(y,2,31-ml.getDay(),1,0),ol=new Date(y,9,31),be=new Date(y,9,31-ol.getDay(),1,0),at=new Date(y,dt.getMonth(),dt.getDate(),+m[1],+m[2]),off=(at>=bs&&at<be)?1:2;let h=+m[1]+off;if(h>=24)h-=24;return P(h)+":"+m[2];}
 function calcHrs(s,e){if(!s||!e)return 0;const[sh,sm]=s.split(":").map(Number),[eh,em]=e.split(":").map(Number);let h=(eh*60+em)-(sh*60+sm);if(h<0)h+=1440;return Math.round(h/60*100)/100;}
 function calcEffectivePct(workingEntries,unplannedEvents){
   if(!workingEntries||!workingEntries.length)return 100;

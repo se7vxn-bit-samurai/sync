@@ -4,6 +4,8 @@ document.addEventListener("keydown",e=>{
   if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&key==="s"){e.preventDefault();if(typeof _syncManualSave==='function')_syncManualSave();return;}
   if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&key==="k"){e.preventDefault();openCommandPalette();return;}
   if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&key==="z"){e.preventDefault();undoLastAction();return;}
+  // The Schedule Window is modal: arrows and letter shortcuts must not change the view behind it.
+  if(typeof _swinIsOpen==="function"&&_swinIsOpen()){if(e.key==="Escape")closeScheduleWindow();return;}
   if(!S.wb||e.target.tagName==="INPUT"||e.target.tagName==="SELECT"||e.target.tagName==="TEXTAREA")return;
   // Month nav works on all tabs — use Alt+arrow to avoid colliding with scroll
   if(e.key==="ArrowLeft"&&!e.shiftKey&&!e.altKey){e.preventDefault();navM(-1);}
