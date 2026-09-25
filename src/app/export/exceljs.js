@@ -565,7 +565,9 @@ function buildSheetExceptions(wb){
   excs.forEach(ex=>{
     const parts=ex.date.split('-').map(Number);
     const d=new Date(parts[0],parts[1]-1,parts[2]);
-    ws.addRow([safeExcelDate(d),ex.person||'',ex.agentName||'',ex.type,ex.severity,ex.hoursLost,ex.hoursWorked,ex.scheduledHrs||'',ex.notes||'',ex.loggedAt||'',ex.source||'manual',ex.authorName||'']);
+    // Reasons for sick, family and no-show events are health-related: left out unless included (people/absence.js).
+    const note=typeof absenceExportNote==="function"?absenceExportNote(ex):(ex.notes||'');
+    ws.addRow([safeExcelDate(d),ex.person||'',ex.agentName||'',ex.type,ex.severity,ex.hoursLost,ex.hoursWorked,ex.scheduledHrs||'',note,ex.loggedAt||'',ex.source||'manual',ex.authorName||'']);
     ws.getCell(ws.lastRow.number,1).numFmt='dd-mmm-yyyy';
   });
   [14,20,20,14,12,10,12,14,30,20,12,16].forEach((w,i)=>{ws.getColumn(i+1).width=w;});

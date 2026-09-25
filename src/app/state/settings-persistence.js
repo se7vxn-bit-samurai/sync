@@ -181,7 +181,7 @@ function loadSettings(){
       if(typeof s.cbMode==="boolean"){S.cbMode=s.cbMode;document.body.classList.toggle("cb-mode",S.cbMode);}
       if(s.density&&["compact","comfortable","spacious"].includes(s.density)){S.density=s.density;document.body.classList.remove("density-compact","density-spacious");if(s.density==="compact")document.body.classList.add("density-compact");else if(s.density==="spacious")document.body.classList.add("density-spacious");}
       if(s.tab)S.tab=s.tab;
-      if(s.peopleSubTab&&["dashboard","team","agents","leaders","cover","org","logbook","events"].includes(s.peopleSubTab))S.peopleSubTab=s.peopleSubTab;
+      if(s.peopleSubTab&&["dashboard","team","agents","leaders","cover","absence","org","logbook","events"].includes(s.peopleSubTab))S.peopleSubTab=s.peopleSubTab;
       if(s.peopleDashView&&["today_ops","week_risk","monthly_review"].includes(s.peopleDashView))S.peopleDashView=s.peopleDashView;
       if(s.peopleView&&["cards","table"].includes(s.peopleView))S._peopleView=s.peopleView;
       if(s.peopleLogFilter&&["all","note","followup","summary","event"].includes(s.peopleLogFilter))S._peopleLogFilter=s.peopleLogFilter;
@@ -1247,7 +1247,7 @@ function _syncCloseWorkspaceToLanding(){
    ═══════════════════════════════════════════════════════════════ */
 let _syncKnownProjects=[];
 let _syncPanelBusy='';
-const SYNC_CHANGE_LABELS={canonical:'Project people & schedule',sc_people:'Agent details',sc_rosterfile:'Agent roster',sc_agentnotes:'Agent notes',sc_agentstatuses:'Agent statuses',sc_people_logbook:'Logbook',sc_people_home:'Home notes',sc_exceptions:'Exceptions & absences',sc_leaverequests:'Leave requests',sc_dayclosed:'Day close-outs',sc_notes:'Shift notes',sc_att:'Attendance',sc_hc:'Headcount',sc_planner:'Planner edits',sc_blueprints:'Blueprints',sc_positions:'Positions',sc_coaching:'Coaching plan',sc_coachquality:'Coaching sessions',sc_otplan:'OT plan',sc_leaderplanner:'Leader planner',sc_shiftlib:'Shift library',sc_coveragereq:'Coverage targets',sc_forecast:'Forecast',sc_name_remaps:'Name changes',sc_swin_sent:'Schedules sent',sc_scope:'Scope',sc_qol_state:'Saved views',sc_settings:'Settings'};
+const SYNC_CHANGE_LABELS={canonical:'Project people & schedule',sc_people:'Agent details',sc_rosterfile:'Agent roster',sc_agentnotes:'Agent notes',sc_agentstatuses:'Agent statuses',sc_people_logbook:'Logbook',sc_people_home:'Home notes',sc_exceptions:'Exceptions & absences',sc_leaverequests:'Leave requests',sc_dayclosed:'Day close-outs',sc_notes:'Shift notes',sc_att:'Attendance',sc_hc:'Headcount',sc_planner:'Planner edits',sc_blueprints:'Blueprints',sc_positions:'Positions',sc_coaching:'Coaching plan',sc_coachquality:'Coaching sessions',sc_otplan:'OT plan',sc_leaderplanner:'Leader planner',sc_shiftlib:'Shift library',sc_coveragereq:'Coverage targets',sc_forecast:'Forecast',sc_name_remaps:'Name changes',sc_swin_sent:'Schedules sent',sc_scope:'Scope',sc_leave_types:'Leave types',sc_qol_state:'Saved views',sc_settings:'Settings'};
 function _syncChangeSummary(){
   const keys=typeof window._syncChangedKeys==='function'?window._syncChangedKeys():[];
   const labels=[...new Set(keys.map(key=>SYNC_CHANGE_LABELS[key]||'Workspace'))];

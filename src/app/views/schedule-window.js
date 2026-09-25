@@ -60,7 +60,7 @@ function _swinOffKind(e){
   return{kind:"off",status:"Off"};
 }
 function _swinRow(iso,d,e,source,leader,excs){
-  const r={iso,date:d,dow:SWIN_DOW[d.getDay()],source,leader:source==="tl"?leader:"",ph:isPH(d),excs,
+  const r={iso,date:d,dow:SWIN_DOW[d.getDay()],source,leader:source==="tl"?leader:"",ph:isPH(d),ukbh:typeof ukBankHoliday==="function"?ukBankHoliday(d):null,excs,
     kind:"none",code:"No row",status:"No row",type:"none",ukS:"",ukE:"",saS:"",saE:"",hrs:0,overnight:false};
   if(!e)return r;
   if(e.isOff){
@@ -258,7 +258,8 @@ function _swinStatusCell(r,name){
   let h=`<span class="swin-tag ${cls}">${X(r.status)}</span>`;
   const codeU=String(r.code||"").toUpperCase();
   if(r.kind==="off"&&codeU&&codeU!=="OFF"&&codeU!==r.status.toUpperCase())h+=` <span class="swin-tag t-off">${X(r.code)}</span>`;
-  if(r.ph)h+=` <span class="swin-tag t-ph" title="${XA(r.ph.name)}">PH</span>`;
+  if(r.ph)h+=` <span class="swin-tag t-ph" title="${XA("SA public holiday: "+r.ph.name)}">PH</span>`;
+  if(r.ukbh)h+=` <span class="swin-tag t-uk" title="${XA("UK bank holiday: "+r.ukbh.name)}">UK</span>`;
   if(typeof actingOn==="function"){
     const a=actingOn(name,r.iso);
     if(a)h+=` <span class="swin-tag t-act" title="${XA(coverLabel(a)+", "+coverSpanText(a))}">Acting for ${X((a.forName||"vacancy").split(" ")[0])}</span>`;

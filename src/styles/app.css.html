@@ -1954,6 +1954,8 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .swin-tag.t-leave{color:var(--accent)}
 .swin-tag.t-none{color:var(--wknd);border-style:dashed}
 .swin-tag.t-ph{color:var(--wknd)}
+.swin-tag.t-uk{color:var(--mid);border-style:dotted}
+.cal-d.uk-badge{position:absolute;top:1px;right:2px;font-size:7px;font-weight:700;color:var(--mid);letter-spacing:.2px}
 .swin-tag.t-exc{color:var(--text);border-color:var(--bdr)}
 .swin-tag.t-chg{color:var(--wknd);font-size:9px}
 .swin-tag.t-act{color:var(--accent);border-style:solid;font-weight:600}
@@ -2023,6 +2025,13 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .ldr-tbl td.ldr-hot{color:var(--wknd);font-weight:700}
 .ldr-tbl tr.ldr-warn td:first-child{box-shadow:inset 3px 0 0 var(--wknd)}
 .ldr-tbl tr.ldr-bad td:first-child{box-shadow:inset 3px 0 0 #dc2626}
+/* People → Absence (src/app/views/absence.js) */
+.abs-privacy{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;font-size:12px;padding:8px 12px;border:1px solid var(--bdr);border-left:3px solid var(--tm);border-radius:8px;background:var(--card)}
+.abs-privacy.on{border-left-color:var(--wknd)}
+.abs-privacy label{display:inline-flex;align-items:center;gap:6px;color:var(--text)}
+.abs-flag{font-size:12px;padding:6px 10px;border-radius:6px;border:1px solid var(--bdr);border-left:3px solid var(--wknd);margin:4px 0;background:var(--card)}
+tr.abs-detail td{background:var(--card)}
+#absTypes summary{cursor:pointer}
 /* People → Org (src/app/views/org.js) */
 .org-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;font-size:12px;color:var(--tm)}
 .org-bar>b{font-size:15px;color:var(--text)}

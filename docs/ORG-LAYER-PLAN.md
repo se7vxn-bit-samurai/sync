@@ -698,6 +698,31 @@ has two new department tables, `reportingLines` and `orgChanges`, and exports `n
 
 ### L6: Leave and absence register, plus UK bank holidays
 
+**Status: built.** People → Absence (`src/app/views/absence.js`), engine
+`src/app/people/absence.js`, UK calendar `src/app/core/uk-holidays.js`. Tested in
+`tests/absence.spec.js`.
+- **Where absence comes from:** for each person and date, one source wins, strongest first:
+  logged exceptions, then People statuses, then the person's own roster markers. A TL's leave on
+  a rota someone follows is not theirs.
+- **Occasions:** absence days separated only by days the person was not due to work join into one
+  occasion. Sick on Friday and Monday, with the weekend off, is one occasion of two days.
+- **Flags** (shown only when sensitive detail is on): more than 2 consecutive sick days, or the
+  3rd (and later) sick occasion within 8 weeks (BCEA s23); more than 3 family-responsibility days
+  in 12 months.
+- **Patterns** need at least two separate occasions: absences that start on a Monday, end on a
+  Friday or sit next to a day off or public holiday; unplanned days clustered on Mondays and
+  Fridays.
+- **Leave types:** the SA BCEA defaults can be renamed, given different roster codes, or extended
+  with custom types. Stored in `sc_leave_types`, which syncs.
+- **Sensitive detail** (flags, patterns, reasons) is off by default and set per device in
+  `sc_absence_privacy`, which does not sync. The register's CSV and the workbook's Exceptions sheet
+  leave health-related reasons (sick, family, no-show) out unless "Include in exports" is on.
+- **UK bank holidays:** England & Wales, with substitute days and the one-offs since 2020. Shown in
+  the calendar grid, the Schedule Window and the register's "next 60 days" list, beside SA public
+  holidays.
+- **Not done:** Ops → Analytics → Absence (the monthly breakdown) is unchanged and does not apply
+  the sensitivity setting yet.
+
 | Part | Spec |
 |---|---|
 | Leave types | SA BCEA defaults: Annual, Sick, Family responsibility, Maternity/Parental, Unpaid, Study. Configurable. |
@@ -724,3 +749,5 @@ format is dropped.
 | 4 | L4 Scope bar | L3 (leader tree) | M |
 | 5 | L5 Leaders board | L4 | S |
 | 6 | L6 Leave/absence + UK holidays | — | M |
+
+All six local-track items are built (L1–L6). Next is Phase 1 of the org layer (section 12).
