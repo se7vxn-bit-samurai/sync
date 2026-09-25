@@ -37,6 +37,10 @@ function rCal(el){
   const startPad=(first.getDay()+6)%7;
   const idx=getDataIndexes();
   let monthEntries=S.team!=="all"?(idx.byMonthTeam[S.month+"|"+S.team]||[]):(idx.byMonth[S.month]||[]);
+  // Scope bar: the calendar shows only the chosen leader's tree / department (the person pill does
+  // not narrow it; the Day view is the whole scoped floor).
+  const _scope=typeof scopeNames==="function"?scopeNames():null;
+  if(_scope)monthEntries=monthEntries.filter(e=>_scope.has(e.name));
   const dateMap={};
   monthEntries.forEach(e=>{if(!e.date||e.date.getMonth()!==m||e.date.getFullYear()!==y)return;const d=e.date.getDate();if(!dateMap[d])dateMap[d]={work:0,off:0,entries:[]};if(e.isOff)dateMap[d].off++;else dateMap[d].work++;dateMap[d].entries.push(e);});
   if(!S.calDay||S.calDay.getMonth()!==m||S.calDay.getFullYear()!==y){
@@ -439,7 +443,7 @@ function navToPerson(name){_navPush();S.emp=name;S.tab="people";S.peopleSubTab="
 function shareDay(){
   if(!S.calDay)return;
   const d=S.calDay;
-  const dayEntries=S.entries.filter(e=>e.date&&e.date.getFullYear()===d.getFullYear()&&e.date.getMonth()===d.getMonth()&&e.date.getDate()===d.getDate());
+  const dayEntries=S.entries.filter(e=>e.date&&e.date.getFullYear()===d.getFullYear()&&e.date.getMonth()===d.getMonth()&&e.date.getDate()===d.getDate()&&(typeof scopeIncludes!=="function"||scopeIncludes(e.name)));
   const working=dayEntries.filter(e=>!e.isOff).sort((a,b)=>((a.ukS||"99")>(b.ukS||"99")?1:-1));
   const off=dayEntries.filter(e=>e.isOff);
   const dayStr=DOW[d.getDay()]+", "+fDF(d);

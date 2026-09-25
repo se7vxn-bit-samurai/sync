@@ -44,9 +44,10 @@ function _coverGapHTML(g){
 
 function rPeopleCoverView(){
   const today=_coverTodayISO(),to=excKey(_swinAddDays(new Date(),_coverUI.days-1));
-  const gaps=coverGaps(today,to),clashes=coverClashes();
+  const inScope=n=>typeof scopeIncludes!=="function"||scopeIncludes(n);
+  const gaps=coverGaps(today,to).filter(g=>inScope(g.leader)),clashes=coverClashes();
   const recent=excKey(_swinAddDays(new Date(),-30));
-  const booked=coverRows().filter(r=>coverState(r)!=="cancelled"&&!(r.ends&&r.ends<recent)).sort((a,b)=>(a.starts||"").localeCompare(b.starts||"")||a.personName.localeCompare(b.personName));
+  const booked=coverRows().filter(r=>coverState(r)!=="cancelled"&&!(r.ends&&r.ends<recent)&&(inScope(r.personName)||inScope(r.forName))).sort((a,b)=>(a.starts||"").localeCompare(b.starts||"")||a.personName.localeCompare(b.personName));
   const names=_swinAllNames(),leaders=coverLeaders(),f=_coverUI.form;
   if(!f.starts)f.starts=today;
   if(!f.forName&&leaders.length)f.forName=leaders[0];
@@ -87,7 +88,7 @@ function rPeopleCoverView(){
   // Pool: development labels, or anyone who has acted.
   const since=excKey(_swinAddDays(new Date(),-COVER_LOOKBACK_DAYS));
   const actors=new Set(coverRows().filter(r=>coverState(r)!=="cancelled").map(r=>r.personName));
-  const pool=Object.values(S.people||{}).filter(p=>p&&p.name&&(actors.has(p.name)||peopleRoleLabels(p.name).some(l=>/^(YAT|Senior Agent|Supervisor|SME)$/i.test(l)))).map(p=>p.name).sort((a,b)=>a.localeCompare(b));
+  const pool=Object.values(S.people||{}).filter(p=>p&&p.name&&inScope(p.name)&&(actors.has(p.name)||peopleRoleLabels(p.name).some(l=>/^(YAT|Senior Agent|Supervisor|SME)$/i.test(l)))).map(p=>p.name).sort((a,b)=>a.localeCompare(b));
   h+=`<section class="cov-sec" id="covPool"><h3>YAT and cover pool (${pool.length})</h3>`;
   if(pool.length){
     h+=`<div class="cov-tbl-wrap"><table class="cov-tbl"><thead><tr><th>Name</th><th>Leader</th><th>Labels</th><th>Acted (6 mo)</th><th>Teams covered</th><th>Last acted</th><th>Now / next</th><th>Readiness</th></tr></thead><tbody>`;

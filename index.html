@@ -2158,6 +2158,10 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .cov-ready{width:170px}
 .cov-banner{padding:8px 12px;border-radius:8px;border:1px solid var(--bdr);border-left:3px solid var(--accent);background:var(--card);font-size:12px;margin-bottom:10px}
 .swap-tag.cover-tag{border-color:var(--accent);color:var(--accent)}
+/* Scope bar (src/app/people/scope.js) */
+.sb-scope{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.sb-scope-leader{max-width:230px}
+.sb-scope-chip{font:inherit;font-size:10px;font-weight:600;color:var(--accent);background:var(--al);border:1px solid var(--accent);border-radius:16px;padding:3px 10px;cursor:pointer;white-space:nowrap}
 /* People → Org (src/app/views/org.js) */
 .org-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;font-size:12px;color:var(--tm)}
 .org-bar>b{font-size:15px;color:var(--text)}
@@ -3869,7 +3873,7 @@ function getDataIndexes(opts){
 }
 function filteredStateKey(){
   const cal=S.calDay&&S.tab==="calendar"?excKey(S.calDay):"";
-  return [S.entriesVer||0,S.team,S.emp,S.dayFilter,S.month,S.shiftFilter,S.tz?"sa":"uk",cal,S.focusMode||"month"].join("|");
+  return [S.entriesVer||0,S.team,S.emp,S.dayFilter,S.month,S.shiftFilter,S.tz?"sa":"uk",cal,S.focusMode||"month",typeof scopeKey==="function"?scopeKey():"",S._empMulti&&Array.isArray(S._empMultiSet)?S._empMultiSet.join(","):""].join("|");
 }
 function getMonthMeta(){
   const cache=ensureCache();
@@ -13160,6 +13164,9 @@ function activeLeaderFilter(){
     return{mode:'multi',set:new Set(S._empMultiSet)};
   }
   if(S.emp&&S.emp!=='all')return{mode:'single',name:S.emp};
+  // Scope bar (people/scope.js): the chosen leader's whole tree and/or department.
+  const scope=typeof scopeNames==="function"?scopeNames():null;
+  if(scope)return{mode:'multi',set:scope};
   return{mode:'all'};
 }
 function _empFilterEntries(ent){
@@ -13245,6 +13252,9 @@ function renderToolbar(){
   // ── Search (first item, far-left) ──
   const srchVal=S.srch||'';
   h+=`<div class="sb-search-wrap"><span class="sb-search-ico">🔍</span><input class="sb-search" id="srchInp" type="text" placeholder="Search people, shifts..." value="${X(srchVal)}" oninput="S.srch=this.value;renderSearchDropdown()" onkeydown="srchKey(event,0)" onfocus="if(S.srch)renderSearchDropdown()" autocomplete="off"><div id="srchDd"></div></input></div>`;
+
+  // ── Scope (people/scope.js): department · leader tree, then the person pill below ──
+  if(typeof scopeBarHTML==="function")h+=scopeBarHTML();
 
   // ── Leader dropdown (pill) ──
   h+=`<select class="sb-leader" onchange="setLeader(this.value)" title="Filter by person"><option value="all">All (${names.length})</option>${names.map(n=>{const ac=getAgentCount(n);return`<option value="${X(n)}"${n===S.emp?' selected':''}>${X(n)}${ac>0?' ('+ac+')':''}</option>`;}).join('')}</select>`;
@@ -13837,6 +13847,10 @@ function rCal(el){
   const startPad=(first.getDay()+6)%7;
   const idx=getDataIndexes();
   let monthEntries=S.team!=="all"?(idx.byMonthTeam[S.month+"|"+S.team]||[]):(idx.byMonth[S.month]||[]);
+  // Scope bar: the calendar shows only the chosen leader's tree / department (the person pill does
+  // not narrow it; the Day view is the whole scoped floor).
+  const _scope=typeof scopeNames==="function"?scopeNames():null;
+  if(_scope)monthEntries=monthEntries.filter(e=>_scope.has(e.name));
   const dateMap={};
   monthEntries.forEach(e=>{if(!e.date||e.date.getMonth()!==m||e.date.getFullYear()!==y)return;const d=e.date.getDate();if(!dateMap[d])dateMap[d]={work:0,off:0,entries:[]};if(e.isOff)dateMap[d].off++;else dateMap[d].work++;dateMap[d].entries.push(e);});
   if(!S.calDay||S.calDay.getMonth()!==m||S.calDay.getFullYear()!==y){
@@ -14239,7 +14253,7 @@ function navToPerson(name){_navPush();S.emp=name;S.tab="people";S.peopleSubTab="
 function shareDay(){
   if(!S.calDay)return;
   const d=S.calDay;
-  const dayEntries=S.entries.filter(e=>e.date&&e.date.getFullYear()===d.getFullYear()&&e.date.getMonth()===d.getMonth()&&e.date.getDate()===d.getDate());
+  const dayEntries=S.entries.filter(e=>e.date&&e.date.getFullYear()===d.getFullYear()&&e.date.getMonth()===d.getMonth()&&e.date.getDate()===d.getDate()&&(typeof scopeIncludes!=="function"||scopeIncludes(e.name)));
   const working=dayEntries.filter(e=>!e.isOff).sort((a,b)=>((a.ukS||"99")>(b.ukS||"99")?1:-1));
   const off=dayEntries.filter(e=>e.isOff);
   const dayStr=DOW[d.getDay()]+", "+fDF(d);
@@ -29513,7 +29527,7 @@ function _syncCloseWorkspaceToLanding(){
    ═══════════════════════════════════════════════════════════════ */
 let _syncKnownProjects=[];
 let _syncPanelBusy='';
-const SYNC_CHANGE_LABELS={canonical:'Project people & schedule',sc_people:'Agent details',sc_rosterfile:'Agent roster',sc_agentnotes:'Agent notes',sc_agentstatuses:'Agent statuses',sc_people_logbook:'Logbook',sc_people_home:'Home notes',sc_exceptions:'Exceptions & absences',sc_leaverequests:'Leave requests',sc_dayclosed:'Day close-outs',sc_notes:'Shift notes',sc_att:'Attendance',sc_hc:'Headcount',sc_planner:'Planner edits',sc_blueprints:'Blueprints',sc_positions:'Positions',sc_coaching:'Coaching plan',sc_coachquality:'Coaching sessions',sc_otplan:'OT plan',sc_leaderplanner:'Leader planner',sc_shiftlib:'Shift library',sc_coveragereq:'Coverage targets',sc_forecast:'Forecast',sc_name_remaps:'Name changes',sc_swin_sent:'Schedules sent',sc_qol_state:'Saved views',sc_settings:'Settings'};
+const SYNC_CHANGE_LABELS={canonical:'Project people & schedule',sc_people:'Agent details',sc_rosterfile:'Agent roster',sc_agentnotes:'Agent notes',sc_agentstatuses:'Agent statuses',sc_people_logbook:'Logbook',sc_people_home:'Home notes',sc_exceptions:'Exceptions & absences',sc_leaverequests:'Leave requests',sc_dayclosed:'Day close-outs',sc_notes:'Shift notes',sc_att:'Attendance',sc_hc:'Headcount',sc_planner:'Planner edits',sc_blueprints:'Blueprints',sc_positions:'Positions',sc_coaching:'Coaching plan',sc_coachquality:'Coaching sessions',sc_otplan:'OT plan',sc_leaderplanner:'Leader planner',sc_shiftlib:'Shift library',sc_coveragereq:'Coverage targets',sc_forecast:'Forecast',sc_name_remaps:'Name changes',sc_swin_sent:'Schedules sent',sc_scope:'Scope',sc_qol_state:'Saved views',sc_settings:'Settings'};
 function _syncChangeSummary(){
   const keys=typeof window._syncChangedKeys==='function'?window._syncChangedKeys():[];
   const labels=[...new Set(keys.map(key=>SYNC_CHANGE_LABELS[key]||'Workspace'))];
@@ -30405,7 +30419,7 @@ function renderChangeLogPanel(){
 
 /* ═══ CLEAR ALL STORED DATA ═══ */
 function _clearAllDataStorageKeys(){
-  const base=["sc_att","sc_settings","sc_state_schema","sc_planner","sc_hc","sc_notes","sc_blueprints","sc_positions","sc_exceptions","sc_leaverequests","sc_dayclosed","sc_coaching","sc_leaderplanner","sc_people","sc_rosterfile","sc_shiftlib","sc_coachquality","sc_coveragereq","sc_otplan","sc_agentstatuses","sc_agentnotes","sc_forecast","sc_people_view","sc_people_home","sc_people_logbook","sc_cards_zip_presets","sc_qol_state","sc_swin_sent",QOL_SHARED_STORAGE_KEY];
+  const base=["sc_att","sc_settings","sc_state_schema","sc_planner","sc_hc","sc_notes","sc_blueprints","sc_positions","sc_exceptions","sc_leaverequests","sc_dayclosed","sc_coaching","sc_leaderplanner","sc_people","sc_rosterfile","sc_shiftlib","sc_coachquality","sc_coveragereq","sc_otplan","sc_agentstatuses","sc_agentnotes","sc_forecast","sc_people_view","sc_people_home","sc_people_logbook","sc_cards_zip_presets","sc_qol_state","sc_swin_sent","sc_scope",QOL_SHARED_STORAGE_KEY];
   const aliases=Object.values(STORAGE_REBRAND_COMPAT).flat();
   let dynamic=[];
   try{dynamic=Object.keys(localStorage).filter(k=>k.startsWith("sc_snap_")||k.startsWith("sc_swaps_")||k.startsWith("7os_snap_")||k.startsWith("7os_swaps_")||k.startsWith("mfs_snap_")||k.startsWith("mfs_swaps_"));}catch(e){dynamic=[];}
@@ -31121,6 +31135,7 @@ function _peopleScopeLeaders(){
   const roster=getLeaders().map(l=>l.name);
   const parsed=gN().filter(name=>!((S.people||{})[name]&&(S.people||{})[name].role==="agent"));
   let all=[...new Set([...roster,...parsed])].sort((a,b)=>a.localeCompare(b));
+  if(typeof scopeIncludes==="function")all=all.filter(n=>scopeIncludes(n));
   if(S.emp!=="all"&&all.includes(S.emp))all=[S.emp];
   if(!all.length&&S.selectedTL)all=[S.selectedTL];
   return all;
@@ -32555,7 +32570,7 @@ async function expCardsBatchZip(opts){
 
 // ── People → Agents view (ported from Base) ──
 function rPeopleAgentsView(){
-  let allAgents=Object.values(S.people).filter(p=>p.role==="agent");
+  let allAgents=Object.values(S.people).filter(p=>p.role==="agent"&&(typeof scopeIncludes!=="function"||scopeIncludes(p.name)));
   if(S.emp!=="all")allAgents=allAgents.filter(a=>a.teamLeader===S.emp);
   allAgents=allAgents.sort((a,b)=>a.name.localeCompare(b.name));
   const now=new Date();
@@ -34504,9 +34519,10 @@ function _coverGapHTML(g){
 
 function rPeopleCoverView(){
   const today=_coverTodayISO(),to=excKey(_swinAddDays(new Date(),_coverUI.days-1));
-  const gaps=coverGaps(today,to),clashes=coverClashes();
+  const inScope=n=>typeof scopeIncludes!=="function"||scopeIncludes(n);
+  const gaps=coverGaps(today,to).filter(g=>inScope(g.leader)),clashes=coverClashes();
   const recent=excKey(_swinAddDays(new Date(),-30));
-  const booked=coverRows().filter(r=>coverState(r)!=="cancelled"&&!(r.ends&&r.ends<recent)).sort((a,b)=>(a.starts||"").localeCompare(b.starts||"")||a.personName.localeCompare(b.personName));
+  const booked=coverRows().filter(r=>coverState(r)!=="cancelled"&&!(r.ends&&r.ends<recent)&&(inScope(r.personName)||inScope(r.forName))).sort((a,b)=>(a.starts||"").localeCompare(b.starts||"")||a.personName.localeCompare(b.personName));
   const names=_swinAllNames(),leaders=coverLeaders(),f=_coverUI.form;
   if(!f.starts)f.starts=today;
   if(!f.forName&&leaders.length)f.forName=leaders[0];
@@ -34547,7 +34563,7 @@ function rPeopleCoverView(){
   // Pool: development labels, or anyone who has acted.
   const since=excKey(_swinAddDays(new Date(),-COVER_LOOKBACK_DAYS));
   const actors=new Set(coverRows().filter(r=>coverState(r)!=="cancelled").map(r=>r.personName));
-  const pool=Object.values(S.people||{}).filter(p=>p&&p.name&&(actors.has(p.name)||peopleRoleLabels(p.name).some(l=>/^(YAT|Senior Agent|Supervisor|SME)$/i.test(l)))).map(p=>p.name).sort((a,b)=>a.localeCompare(b));
+  const pool=Object.values(S.people||{}).filter(p=>p&&p.name&&inScope(p.name)&&(actors.has(p.name)||peopleRoleLabels(p.name).some(l=>/^(YAT|Senior Agent|Supervisor|SME)$/i.test(l)))).map(p=>p.name).sort((a,b)=>a.localeCompare(b));
   h+=`<section class="cov-sec" id="covPool"><h3>YAT and cover pool (${pool.length})</h3>`;
   if(pool.length){
     h+=`<div class="cov-tbl-wrap"><table class="cov-tbl"><thead><tr><th>Name</th><th>Leader</th><th>Labels</th><th>Acted (6 mo)</th><th>Teams covered</th><th>Last acted</th><th>Now / next</th><th>Readiness</th></tr></thead><tbody>`;
@@ -34817,6 +34833,130 @@ function rPeopleOrgView(){
   return h;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   SCOPE — department · leader (whole tree) · person · period
+   One scope per project, kept in sc_scope and synced like the other
+   local stores. Choosing a leader includes everyone below them on
+   the scope date (dated reporting lines), plus the team of anyone
+   they are acting for that day. activeLeaderFilter() applies it, so
+   every view built on gD / gE / gN follows it; the person filter
+   (S.emp) narrows further. This is the local version of the org
+   layer's visible_people(user, date).
+   ═══════════════════════════════════════════════════════════════ */
+const SCOPE_KEY="sc_scope";
+let _scopeParsed={raw:undefined,obj:{}},_scopeMemo={key:"",set:null};
+
+function _scopeAll(){
+  let raw=null;
+  try{
+    if(typeof _persistPendingSet!=="undefined"&&_persistPendingSet.has(SCOPE_KEY))raw=_persistPendingSet.get(SCOPE_KEY);
+    else if(typeof _persistPendingRemove!=="undefined"&&_persistPendingRemove.has(SCOPE_KEY))raw=null;
+    else raw=localStorage.getItem(SCOPE_KEY);
+  }catch(e){raw=null;}
+  if(raw!==_scopeParsed.raw){
+    let o={};try{o=raw?JSON.parse(raw):{};}catch(e){o={};}
+    _scopeParsed={raw,obj:o&&typeof o==="object"&&!Array.isArray(o)?o:{}};
+  }
+  return _scopeParsed.obj;
+}
+function scopeGet(){const s=_scopeAll()[S.activeDept||""]||{};return{leader:String(s.leader||""),dept:String(s.dept||"")};}
+function scopeSet(patch){
+  const all=Object.assign({},_scopeAll()),k=S.activeDept||"",cur=Object.assign({leader:"",dept:""},all[k]||{},patch||{});
+  if(!cur.leader&&!cur.dept)delete all[k];else all[k]={leader:cur.leader,dept:cur.dept};
+  if(Object.keys(all).length)_persistSet(SCOPE_KEY,JSON.stringify(all));else _persistRemove(SCOPE_KEY);
+  _scopeMemo.key="";
+}
+// The date the tree is read on: today inside the month on screen, otherwise that month's first day.
+function scopeRefISO(){
+  const today=_coverTodayISO();
+  if(!S.month||!/^\d{4}-\d{1,2}$/.test(S.month))return today;
+  const[y,m]=S.month.split("-").map(Number),first=excKey(new Date(y,m,1)),last=excKey(new Date(y,m+1,0));
+  return today>=first&&today<=last?today:first;
+}
+function _scopeKnown(name){return!!name&&(!!(S.people||{})[name]||(S.entries||[]).some(e=>e.name===name));}
+function scopeTree(leader,iso,st){
+  st=st||orgStructure(iso);
+  const out=new Set([leader]),queue=[leader];
+  const acting=typeof actingOn==="function"?actingOn(leader,iso):null;
+  if(acting&&acting.forName&&!out.has(acting.forName)){out.add(acting.forName);queue.push(acting.forName);}
+  while(queue.length){const n=queue.shift();(st.reports.get(n)||[]).forEach(c=>{if(!out.has(c)){out.add(c);queue.push(c);}});}
+  return out;
+}
+function scopeDepartments(){
+  const set=new Set();
+  (S.entries||[]).forEach(e=>{if(e&&e.workspaceDepartment)set.add(e.workspaceDepartment);});
+  if(!set.size)Object.values(S.people||{}).forEach(p=>{if(p&&p.department)set.add(p.department);});
+  return[...set].sort((a,b)=>a.localeCompare(b));
+}
+function _scopeDeptNames(dept){
+  const set=new Set();
+  (S.entries||[]).forEach(e=>{if(e&&(e.workspaceDepartment||"")===dept)set.add(e.name);});
+  Object.values(S.people||{}).forEach(p=>{if(p&&p.name&&(p.workspaceDepartment===dept||p.department===dept))set.add(p.name);});
+  return set;
+}
+// The names in scope, or null when nothing is scoped.
+function scopeNames(){
+  const sc=scopeGet();if(!sc.leader&&!sc.dept)return null;
+  const iso=scopeRefISO(),key=sc.leader+"|"+sc.dept+"|"+_scopeDataKey(iso);
+  if(_scopeMemo.key===key)return _scopeMemo.set;
+  let set=null;
+  if(sc.leader&&_scopeKnown(sc.leader))set=scopeTree(sc.leader,iso);
+  if(sc.dept){const d=_scopeDeptNames(sc.dept);set=set?new Set([...set].filter(n=>d.has(n))):d;}
+  _scopeMemo={key,set};
+  return set;
+}
+function scopeIncludes(name){const s=scopeNames();return!s||s.has(name);}
+function scopeKey(){const sc=scopeGet(),s=scopeNames();return s?sc.leader+"/"+sc.dept+"/"+s.size+"/"+scopeRefISO():"";}
+// Leaders for the picker, as a tree: anyone with people reporting to them on the scope date, and
+// anyone acting that day (listed under their own leader).
+let _scopeOptMemo={key:"",out:[]};
+function _scopeDataKey(iso){const m=S.nsCanonical;return[S.activeDept||"",iso,S.entriesVer||0,Object.keys(S.people||{}).length,m?(m.updated_at||""):"",typeof coverRows==="function"?coverRows().length:0].join("|");}
+function scopeLeaderOptions(){
+  const iso=scopeRefISO(),key=_scopeDataKey(iso);
+  if(_scopeOptMemo.key===key)return _scopeOptMemo.out;
+  const out=_scopeLeaderOptionsFresh(iso);
+  _scopeOptMemo={key,out};
+  return out;
+}
+function _scopeLeaderOptionsFresh(iso){
+  const st=orgStructure(iso),people=S.people||{};
+  const leaders=new Set([...st.reports.keys()].filter(n=>people[n])),acting=new Set();
+  if(typeof coverRows==="function")coverRows().forEach(r=>{if(coverState(r,iso)==="active"&&people[r.personName]){leaders.add(r.personName);acting.add(r.personName);}});
+  const children=new Map(),roots=[];
+  [...leaders].sort((a,b)=>a.localeCompare(b)).forEach(n=>{
+    const up=st.leaderOf.get(n);
+    if(up&&up!==n&&leaders.has(up)){if(!children.has(up))children.set(up,[]);children.get(up).push(n);}else roots.push(n);
+  });
+  const out=[],seen=new Set();
+  const walk=(n,depth)=>{if(seen.has(n))return;seen.add(n);out.push({name:n,depth,size:scopeTree(n,iso,st).size-1,acting:acting.has(n)});(children.get(n)||[]).forEach(c=>walk(c,depth+1));};
+  roots.forEach(r=>walk(r,0));
+  return out;
+}
+function _scopeApplied(){
+  S.emp="all";S._empMulti=false;S._empMultiSet=[];
+  _scopeMemo.key="";_scopeOptMemo.key="";
+  if(typeof invalidateDerivedCache==="function")invalidateDerivedCache();
+  rerenderCurrentSurface();rerenderChromeOnly();
+}
+function setScopeLeader(name){scopeSet({leader:name||""});_scopeApplied();}
+function setScopeDept(dept){scopeSet({dept:dept||""});_scopeApplied();}
+function clearScope(){scopeSet({leader:"",dept:""});_scopeApplied();}
+function scopeBarHTML(){
+  const opts=scopeLeaderOptions(),depts=scopeDepartments(),sc=scopeGet();
+  if(!opts.length&&depts.length<2&&!sc.leader&&!sc.dept)return"";
+  let h=`<div class="sb-scope" role="group" aria-label="Scope">`;
+  if(depts.length>1||sc.dept)h+=`<select id="scopeDept" class="sb-leader" onchange="setScopeDept(this.value)" title="Department"><option value="">All departments</option>${depts.map(d=>`<option value="${XA(d)}"${d===sc.dept?" selected":""}>${X(d)}</option>`).join("")}</select>`;
+  if(opts.length||sc.leader){
+    h+=`<select id="scopeLeader" class="sb-leader sb-scope-leader" onchange="setScopeLeader(this.value)" title="Leader: includes everyone below them"><option value="">All leaders</option>`;
+    h+=opts.map(o=>`<option value="${XA(o.name)}"${o.name===sc.leader?" selected":""}>${" ".repeat(o.depth)}${o.depth?"↳ ":""}${X(o.name)} (${o.size})${o.acting?" · acting":""}</option>`).join("");
+    if(sc.leader&&!opts.some(o=>o.name===sc.leader))h+=`<option value="${XA(sc.leader)}" selected>${X(sc.leader)}</option>`;
+    h+=`</select>`;
+  }
+  const set=scopeNames();
+  if(set)h+=`<button type="button" class="sb-scope-chip" id="scopeChip" onclick="clearScope()" title="Calendar, Cards, Table, People, Cover and exports follow this scope. Ops analytics still show the whole project. Click to clear.">${set.size} in scope ✕</button>`;
+  return h+`</div>`;
+}
+
 </script>
 <script>
 (function(){
@@ -34995,7 +35135,7 @@ window.nsClearLocalWorkspaceCache=nsClearLocalWorkspaceCache;
    <script src> AFTER that script runs, so both are already globals
    by the time any of this executes.
    ═══════════════════════════════════════════════════════════════ */
-const SYNC_LOCAL_KEYS=["sc_settings","sc_planner","sc_blueprints","sc_positions","sc_exceptions","sc_leaverequests","sc_dayclosed","sc_coaching","sc_qol_state","sc_att","sc_hc","sc_notes","sc_people","sc_rosterfile","sc_otplan","sc_leaderplanner","sc_shiftlib","sc_coveragereq","sc_forecast","sc_coachquality","sc_agentstatuses","sc_agentnotes","sc_name_remaps","sc_people_view","sc_people_home","sc_people_logbook","sc_view_state","sc_swin_sent"];
+const SYNC_LOCAL_KEYS=["sc_settings","sc_planner","sc_blueprints","sc_positions","sc_exceptions","sc_leaverequests","sc_dayclosed","sc_coaching","sc_qol_state","sc_att","sc_hc","sc_notes","sc_people","sc_rosterfile","sc_otplan","sc_leaderplanner","sc_shiftlib","sc_coveragereq","sc_forecast","sc_coachquality","sc_agentstatuses","sc_agentnotes","sc_name_remaps","sc_people_view","sc_people_home","sc_people_logbook","sc_view_state","sc_swin_sent","sc_scope"];
 
 function _syncCollectLocalKeys(){
   const out={};

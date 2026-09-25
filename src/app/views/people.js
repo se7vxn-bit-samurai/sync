@@ -1,5 +1,5 @@
 function rPeopleAgentsView(){
-  let allAgents=Object.values(S.people).filter(p=>p.role==="agent");
+  let allAgents=Object.values(S.people).filter(p=>p.role==="agent"&&(typeof scopeIncludes!=="function"||scopeIncludes(p.name)));
   if(S.emp!=="all")allAgents=allAgents.filter(a=>a.teamLeader===S.emp);
   allAgents=allAgents.sort((a,b)=>a.name.localeCompare(b.name));
   const now=new Date();

@@ -86,6 +86,7 @@
     "app/views/cover.js",
     "app/people/org.js",
     "app/views/org.js",
+    "app/people/scope.js",
     "app/_close.html",
     "northstar/northstar.js.html",
     "assets/v31-templates.js.html",
