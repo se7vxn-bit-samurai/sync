@@ -72,7 +72,7 @@ const APP_MODULES = [
   ['app/state/undo.js',                 'function _isPlainObject('],
   ['app/state/selectors.js',            'function _rebuildMonthsFromEntries('],
   ['app/render/scheduler.js',           'function domKey('],
-  ['app/views/dashboard.js',            'function rSyncDashboardLegacy('],
+  ['app/views/dashboard.js',            'function dashboardWidgetTitle('],
   ['app/views/ops.js',                  'function _opsScope('],
   ['app/app/navigation.js',             'function _rerenderCurrentSurfaceNow('],
   ['app/qol/shared-state.js',           'const QOL_SCHEMA'],

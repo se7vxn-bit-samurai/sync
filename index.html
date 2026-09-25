@@ -4152,66 +4152,6 @@ function rerenderAnalyticsSurface(mode){
   _queueRenderTask("analytics",()=>_rerenderAnalyticsSurfaceNow(m));
   return true;
 }
-function rSyncDashboardLegacy(el){
-  const all=gD();
-  const today=new Date();today.setHours(0,0,0,0);
-  const todayKey=excKey(today);
-  const monthName=monthLabel();
-  if(!all.length){
-    el.innerHTML=`<div class="sync-dashboard"><div class="sd-main"><section class="sd-hero"><div class="sd-hero-copy"><div class="sd-eyebrow">7OS Sync</div><div class="sd-title">Sync Dashboard</div><div class="sd-sub">Load a schedule file to open the live Sync overview: day cover, people state, alerts, cards, and blueprint readiness.</div><div class="sd-actions"><button class="sd-btn" onclick="browseScheduleFile()">Drop / browse files</button><button class="sd-btn" onclick="railNavAnalytics('blueprint')">New blueprint</button><button class="sd-btn" onclick="railNavAnalytics('data')">Sources</button></div></div><div class="sd-ledger"><div class="sd-ledger-row"><b>Scope</b><span>0 people</span></div><div class="sd-ledger-row"><b>Alerts</b><span>0 open</span></div><div class="sd-ledger-row"><b>Cards</b><span>0 ready</span></div></div></section></div></div>`;
-    return;
-  }
-  const todayRows=all.filter(e=>e.date&&excKey(e.date)===todayKey);
-  const working=todayRows.filter(e=>!e.isOff);
-  const off=todayRows.filter(e=>e.isOff);
-  const people=[...new Set(all.map(e=>e.name).filter(Boolean))];
-  const leaders=[...new Set(all.map(e=>e.team).filter(Boolean))];
-  const cards=people.length;
-  const alerts=computeFlags().filter(f=>f.category==="operational"||f.category==="blueprint").length;
-  const inboxOpen=buildIssueInboxItems().length;
-  const attention=getPeopleAttentionCount();
-  const ths=S.month?computeTeamHealthScore(S.month):null;
-  const todayHours=working.reduce((sum,e)=>sum+calcHrs(e.saS||e.ukS,e.saE||e.ukE),0);
-  const next7=[];
-  for(let i=0;i<7;i++){
-    const d=new Date(today);d.setDate(today.getDate()+i);
-    const k=excKey(d);
-    const rows=all.filter(e=>e.date&&excKey(e.date)===k);
-    const wk=rows.filter(e=>!e.isOff).length;
-    next7.push({d,k,wk,total:rows.length});
-  }
-  const maxCover=Math.max(1,...next7.map(x=>x.total||x.wk));
-  const dayNames=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-  const coverageHtml=next7.map(x=>{
-    const pct=Math.min(100,Math.round(((x.wk||0)/maxCover)*100));
-    const tone=x.wk===0?"var(--danger)":x.total&&x.wk<x.total?"var(--warn)":"var(--ok)";
-    return `<div class="sd-cover-row"><b>${dayNames[x.d.getDay()]}</b><div class="sd-bar"><i style="width:${pct}%;background:${tone}"></i></div><span>${x.wk}/${x.total||people.length}</span></div>`;
-  }).join('');
-  const workingHtml=(working.length?working.slice(0,8).map(e=>`<div class="sd-list-row"><span class="name">${X(e.name)}</span><span class="meta">${X(sAD(e))}</span>${renderInlineNoteButton("person",e.name,e.name,"compact")}</div>`).join(''):`<div class="sd-list-row"><span class="name">No one rostered today</span><span class="meta">${X(fDF(today))}</span></div>`);
-  const issueHtml=inboxOpen?`<div class="sd-list-row" onclick="openIssueInbox()" style="cursor:pointer"><span class="name">Needs review</span><span class="meta">${inboxOpen} open · ${attention} people</span></div>`:`<div class="sd-list-row" onclick="openIssueInbox()" style="cursor:pointer"><span class="name">No urgent review items</span><span class="meta">clean</span></div>`;
-  const pinned=S.pinnedPeople||[];
-  const pinnedHtml=pinned.length?pinned.slice(0,8).map(n=>{const p=_personCompareStats(n,S.month);return`<div class="sd-list-row"><span class="name">${X(n)}</span><span class="meta">${p.health==null?"--":p.health} · ${p.hrs}h</span>${renderInlineNoteButton("person",n,n,"compact")}<button class="qol-row-btn" onclick="S.emp='${XJS(n)}';S.tab='calendar';S.calSubTab='cards';ren()">Open</button></div>`;}).join(""):`<div class="sd-list-row"><span class="name">No pinned people</span><span class="meta"><button onclick="openPinnedPeople()" style="border:0;background:none;color:var(--accent);cursor:pointer">add</button></span></div>`;
-  const healthLabel=ths?`${ths.grade} ${ths.avg}`:"--";
-  const healthSub=ths?"Team health score":"No month score";
-  el.innerHTML=`<div class="sync-dashboard"><div class="sd-main"><section class="sd-hero"><div class="sd-hero-copy"><div class="sd-eyebrow">7OS Sync · ${X(monthName)}</div><div class="sd-title">Sync Dashboard</div><div class="sd-sub">A live command view for schedule cover, team state, alerts, cards, and blueprint readiness before the day starts.</div><div class="sd-actions"><button class="sd-btn" onclick="railNavToday()">Open today</button><button class="sd-btn" onclick="railNavAnalytics('blueprint')">Blueprint</button><button class="sd-btn" onclick="railNavAnalytics('data')">Data</button></div></div><div class="sd-ledger"><div class="sd-ledger-row"><b>On floor</b><span>${working.length} / ${people.length}</span></div><div class="sd-ledger-row"><b>Off / leave</b><span>${off.length}</span></div><div class="sd-ledger-row"><b>Alerts</b><span>${alerts} open</span></div><div class="sd-ledger-row"><b>Scope</b><span>${people.length} people · ${leaders.length} leaders</span></div><div class="sd-ledger-row"><b>Sources</b><span>${S.shs?S.shs.length:0} sheets · ${S.raw?S.raw.length:all.length} rows</span></div></div></section><section class="sd-kpis"><div class="sd-kpi"><div class="n">${working.length}</div><div class="l">Working today</div><div class="s">${off.length} off</div></div><div class="sd-kpi"><div class="n">${Math.round(todayHours*10)/10}h</div><div class="l">TL hours today</div><div class="s">${cards} cards in scope</div></div><div class="sd-kpi"><div class="n">${alerts}</div><div class="l">Open alerts</div><div class="s">${attention} people signals</div></div><div class="sd-kpi"><div class="n">${X(healthLabel)}</div><div class="l">Health</div><div class="s">${X(healthSub)}</div></div></section><section class="an-card"><div class="an-card-hd"><h4>Working Today</h4><span>${X(fDF(today))}</span></div><div class="an-card-body"><div class="sd-list">${workingHtml}</div></div></section></div><aside class="sd-side"><section class="an-card"><div class="an-card-hd"><h4>Coverage · Next 7 Days</h4><span>${people.length} people</span></div><div class="an-card-body"><div class="sd-cover">${coverageHtml}</div></div></section><section class="an-card"><div class="an-card-hd"><h4>Decision Queue</h4><span>${alerts+attention} signals</span></div><div class="an-card-body"><div class="sd-list">${issueHtml}</div></div></section><section class="an-card"><div class="an-card-hd"><h4>Go To</h4><span>Sync surfaces</span></div><div class="an-card-body"><div class="sd-quick"><button onclick="railNavCalendar('cards')">Cards</button><button onclick="railNavPeople('dashboard')">People</button><button onclick="railNavAnalytics('dashboard')">Analytics</button><button onclick="railNavAnalytics('blueprint')">Blueprint</button><button onclick="railNavAnalytics('alerts')">Alerts</button><button onclick="railNavCalendar('planner')">Planner</button></div></div></section></aside></div>`;
-  const dashboardEyebrow=el.querySelector(".sd-eyebrow");
-  if(dashboardEyebrow)dashboardEyebrow.textContent="Sync · "+monthName;
-  const quick=el.querySelector(".sd-quick");
-  if(quick)quick.insertAdjacentHTML("afterbegin",`<button onclick="openTodayHandoff()">Today Handoff</button><button onclick="openIssueInbox()">Issue Inbox</button><button onclick="openImportReview()">Import Review</button><button onclick="openSavedViews()">Saved Views</button><button onclick="openPinnedPeople()">Pinned People</button><button onclick="openQuickCompare()">Quick Compare</button><button onclick="openNotesHub()">Inline Notes</button><button onclick="openExportPresets()">Export Presets</button><button onclick="openChangeHistory()">Change History</button>`);
-  const rosterChange=_latestRosterChange();
-  if(quick)quick.insertAdjacentHTML("afterbegin",'<button onclick="openRosterChangeIntelligence()">Roster Changes'+(rosterChange&&!rosterChange.clean?" · "+(rosterChange.total||0):"")+'</button>');
-  const side=el.querySelector(".sd-side");
-  const issueState=_normalizeIssueInboxState(S.issueInboxState);
-  const issueClosed=Object.values(issueState.records||{}).filter(r=>r.status==="resolved"||r.status==="dismissed").length;
-  const review=S.lastImportReview;
-  const importQuality=review&&review.qualityScore!=null?review.qualityScore:null;
-  const blueprintReady=isAnyBlueprintConfirmed(S.activeDept||"default");
-  const systemStrip=`<section class="sd-health-strip" data-testid="system-health"><button onclick="openIssueInbox()"><span class="dot ${inboxOpen?"warn":"ok"}"></span><b>Issue Inbox</b><small>${inboxOpen} open · ${issueClosed} closed</small></button><button onclick="openImportReview()"><span class="dot ${importQuality!=null&&importQuality>=80?"ok":importQuality==null?"idle":"warn"}"></span><b>Import Quality</b><small>${importQuality==null?"not reviewed":importQuality+"% · "+(review.confidence||"unknown")}</small></button><button onclick="railNavAnalytics('blueprint')"><span class="dot ${blueprintReady?"ok":"warn"}"></span><b>Blueprint</b><small>${blueprintReady?"confirmed":"review required"}</small></button><button onclick="openNotesHub()"><span class="dot ${Object.keys(S.inlineNotes||{}).length?"ok":"idle"}"></span><b>Shared Notes</b><small>${Object.keys(S.inlineNotes||{}).length} note${Object.keys(S.inlineNotes||{}).length===1?"":"s"}</small></button></section>`;
-  const hero=el.querySelector(".sd-hero");if(hero)hero.insertAdjacentHTML("afterend",systemStrip);
-  const recent=(S.changeHistory||[]).slice(0,5);
-  const recentHtml=recent.length?recent.map(h=>`<div class="sd-list-row"><span class="name">${X(h.label)}</span><span class="meta">${X(h.category||_historyCategory(h.label,h.type))}</span></div>`).join(""):`<div class="sd-list-row"><span class="name">No recorded changes</span><span class="meta">clean</span></div>`;
-  if(side)side.insertAdjacentHTML("afterbegin",`<section class="an-card"><div class="an-card-hd"><h4>Pinned People Health</h4><span>${pinned.length}</span></div><div class="an-card-body"><div class="sd-list">${pinnedHtml}</div></div></section><section class="an-card"><div class="an-card-hd"><h4>Recent Changes</h4><button class="qol-row-btn" onclick="openChangeHistory()">View all</button></div><div class="an-card-body"><div class="sd-list">${recentHtml}</div></div></section>`);
-}
 function dashboardWidgetTitle(id){
   const labels={today:"Working Today",timeline:"Day Timeline",clock:"Shift Clock",pulse:"Daily Pulse",handoff:"Shift Handoff",queue:"Personal Queue",calendarMini:"Mini Calendar",weather:"Floor Weather",focus:"Focus Timer",streak:"Decision Streak",issues:"Issue Inbox",alerts:"Alert Clusters",roster:"Roster Changes",coverage:"Coverage",import:"Import Quality",sources:"Source Health",people:"Pinned People",blueprint:"Blueprint",absence:"Absence Watch",exceptions:"Exceptions",coaching:"Coaching Due",overtime:"Overtime Watch",planner:"Planner Deadlines",notes:"Shared Notes",changes:"Recent Changes"};
   return labels[id]||id;
