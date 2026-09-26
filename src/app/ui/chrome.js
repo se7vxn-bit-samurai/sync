@@ -22,6 +22,9 @@ function renderToolbar(){
   const srchVal=S.srch||'';
   h+=`<div class="sb-search-wrap"><span class="sb-search-ico">🔍</span><input class="sb-search" id="srchInp" type="text" placeholder="Search people, shifts..." value="${X(srchVal)}" oninput="S.srch=this.value;renderSearchDropdown()" onkeydown="srchKey(event,0)" onfocus="if(S.srch)renderSearchDropdown()" autocomplete="off"><div id="srchDd"></div></input></div>`;
 
+  // ── Scope (people/scope.js): department · leader tree, then the person pill below ──
+  if(typeof scopeBarHTML==="function")h+=scopeBarHTML();
+
   // ── Leader dropdown (pill) ──
   h+=`<select class="sb-leader" onchange="setLeader(this.value)" title="Filter by person"><option value="all">All (${names.length})</option>${names.map(n=>{const ac=getAgentCount(n);return`<option value="${X(n)}"${n===S.emp?' selected':''}>${X(n)}${ac>0?' ('+ac+')':''}</option>`;}).join('')}</select>`;
 
@@ -281,7 +284,9 @@ function renderTabs(){
       {id:"dashboard",label:"People overview",active:S.tab==="people"&&S.peopleSubTab==="dashboard",action:"railNavPeople('dashboard')"},
       {id:"team",label:"Team",active:S.tab==="people"&&S.peopleSubTab==="team",action:"railNavPeople('team')"},
       {id:"agents",label:"Agents",active:S.tab==="people"&&S.peopleSubTab==="agents",action:"railNavPeople('agents')"},
+      {id:"leaders",label:"Leaders board",active:S.tab==="people"&&S.peopleSubTab==="leaders",action:"railNavPeople('leaders')"},
       {id:"cover",label:"Cover",active:S.tab==="people"&&S.peopleSubTab==="cover",action:"railNavPeople('cover')"},
+      {id:"absence",label:"Absence register",active:S.tab==="people"&&S.peopleSubTab==="absence",action:"railNavPeople('absence')"},
       {id:"org",label:"Org builder",active:S.tab==="people"&&S.peopleSubTab==="org",action:"railNavPeople('org')"},
       {id:"logbook",label:"Logbook",active:S.tab==="people"&&S.peopleSubTab==="logbook",action:"railNavPeople('logbook')"},
       {id:"events",label:"Events",active:S.tab==="people"&&S.peopleSubTab==="events",action:"railNavPeople('events')"}

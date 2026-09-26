@@ -206,7 +206,7 @@ function getDataIndexes(opts){
 }
 function filteredStateKey(){
   const cal=S.calDay&&S.tab==="calendar"?excKey(S.calDay):"";
-  return [S.entriesVer||0,S.team,S.emp,S.dayFilter,S.month,S.shiftFilter,S.tz?"sa":"uk",cal,S.focusMode||"month"].join("|");
+  return [S.entriesVer||0,S.team,S.emp,S.dayFilter,S.month,S.shiftFilter,S.tz?"sa":"uk",cal,S.focusMode||"month",typeof scopeKey==="function"?scopeKey():"",S._empMulti&&Array.isArray(S._empMultiSet)?S._empMultiSet.join(","):""].join("|");
 }
 function getMonthMeta(){
   const cache=ensureCache();

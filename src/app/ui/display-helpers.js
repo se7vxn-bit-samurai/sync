@@ -46,6 +46,9 @@ function activeLeaderFilter(){
     return{mode:'multi',set:new Set(S._empMultiSet)};
   }
   if(S.emp&&S.emp!=='all')return{mode:'single',name:S.emp};
+  // Scope bar (people/scope.js): the chosen leader's whole tree and/or department.
+  const scope=typeof scopeNames==="function"?scopeNames():null;
+  if(scope)return{mode:'multi',set:scope};
   return{mode:'all'};
 }
 function _empFilterEntries(ent){

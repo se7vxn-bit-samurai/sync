@@ -73,9 +73,13 @@ test.describe('screens agree with each other', () => {
     await openProject(page);
     for (const tz of [true, false]) {
       await nav(page, (on) => { S.tz = on; railNavDashboard(); }, tz);
-      const home = await page.locator('#ca .sd-list-row', { hasText: 'Amara Okafor' }).first().locator('.meta').innerText();
+      // Whoever works today: the sample roster has people off on different days, so a fixed name
+      // failed on the days that person was off.
+      const row = page.locator('#ca .sd-panel', { hasText: 'Working Today' }).locator('.sd-list-row').first();
+      const name = (await row.locator('.name').innerText()).trim();
+      const home = await row.locator('.meta').innerText();
       await nav(page, () => railNavAnalytics('dashboard'));
-      const pulse = page.locator('#ca .team-pulse .team-pulse-chip', { hasText: 'Amara' });
+      const pulse = page.locator('#ca .team-pulse .team-pulse-chip', { hasText: name.split(' ')[0] });
       await expect(pulse).toContainText(home.replace('-', '–'));
     }
   });

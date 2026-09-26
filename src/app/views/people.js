@@ -1,5 +1,5 @@
 function rPeopleAgentsView(){
-  let allAgents=Object.values(S.people).filter(p=>p.role==="agent");
+  let allAgents=Object.values(S.people).filter(p=>p.role==="agent"&&(typeof scopeIncludes!=="function"||scopeIncludes(p.name)));
   if(S.emp!=="all")allAgents=allAgents.filter(a=>a.teamLeader===S.emp);
   allAgents=allAgents.sort((a,b)=>a.name.localeCompare(b.name));
   const now=new Date();
@@ -540,7 +540,7 @@ function rPeopleLogbookView(){
 function rPeople(el){
   _ensurePeopleOpsState();
   if(S.peopleSubTab==="cards")S.peopleSubTab="team";
-  if(!["dashboard","team","agents","cover","org","logbook","events"].includes(S.peopleSubTab))S.peopleSubTab="dashboard";
+  if(!["dashboard","team","agents","leaders","cover","absence","org","logbook","events"].includes(S.peopleSubTab))S.peopleSubTab="dashboard";
   const scopeLeaders=_peopleScopeLeaders();
   if(scopeLeaders.length&&(!S.selectedTL||!scopeLeaders.includes(S.selectedTL)))S.selectedTL=scopeLeaders[0];
   savePeopleOps();
@@ -551,7 +551,9 @@ function rPeople(el){
     {id:"dashboard",l:"People overview"},
     {id:"team",l:"Team"},
     {id:"agents",l:"Agents"},
+    {id:"leaders",l:"Leaders"},
     {id:"cover",l:"Cover"},
+    {id:"absence",l:"Absence"},
     {id:"org",l:"Org"},
     {id:"logbook",l:"Logbook"},
     {id:"events",l:"Events"}
@@ -595,6 +597,10 @@ function rPeople(el){
     h+=rPeopleTeamView();
   } else if(S.peopleSubTab==="agents"){
     h+=rPeopleAgentsView();
+  } else if(S.peopleSubTab==="leaders"){
+    h+=rPeopleLeadersView();
+  } else if(S.peopleSubTab==="absence"){
+    h+=rPeopleAbsenceView();
   } else if(S.peopleSubTab==="cover"){
     h+=rPeopleCoverView();
   } else if(S.peopleSubTab==="org"){

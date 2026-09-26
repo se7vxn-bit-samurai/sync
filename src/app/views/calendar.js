@@ -37,6 +37,10 @@ function rCal(el){
   const startPad=(first.getDay()+6)%7;
   const idx=getDataIndexes();
   let monthEntries=S.team!=="all"?(idx.byMonthTeam[S.month+"|"+S.team]||[]):(idx.byMonth[S.month]||[]);
+  // Scope bar: the calendar shows only the chosen leader's tree / department (the person pill does
+  // not narrow it; the Day view is the whole scoped floor).
+  const _scope=typeof scopeNames==="function"?scopeNames():null;
+  if(_scope)monthEntries=monthEntries.filter(e=>_scope.has(e.name));
   const dateMap={};
   monthEntries.forEach(e=>{if(!e.date||e.date.getMonth()!==m||e.date.getFullYear()!==y)return;const d=e.date.getDate();if(!dateMap[d])dateMap[d]={work:0,off:0,entries:[]};if(e.isOff)dateMap[d].off++;else dateMap[d].work++;dateMap[d].entries.push(e);});
   if(!S.calDay||S.calDay.getMonth()!==m||S.calDay.getFullYear()!==y){
@@ -114,6 +118,9 @@ function rCal(el){
     let calWk="";
     if(info&&info.entries.length){const wks={};info.entries.forEach(e=>{if(e.week){wks[e.week]=(wks[e.week]||0)+1;}});const top=Object.entries(wks).sort((a,b)=>b[1]-a[1])[0];if(top)calWk=`<span class="cal-wk-badge">${top[0]}</span>`;}
     const phBadgeEl=ph&&!isSel?`<span class="cal-d ph-badge" title="${ph.name}">${phLabel(dt)}</span>`:"";
+    // UK bank holiday (core/uk-holidays.js): client demand changes, SA staff rights do not.
+    const ukbh=typeof ukBankHoliday==="function"?ukBankHoliday(dt):null;
+    const ukBadgeEl=ukbh?`<span class="cal-d uk-badge" title="${XA("UK: "+ukbh.name)}">UK</span>`:"";
     // #4: Agent status dots — show coloured dots for flagged agents on this day
     const _dayDt=new Date(y,m,d);const _dayExcAll=getExcForDay(_dayDt);
     let agentDotsHtml="";
@@ -125,7 +132,7 @@ function rCal(el){
       });
       if(dotParts.length)agentDotsHtml=`<div class="cal-agent-dots">${dotParts.slice(0,6).join('')}</div>`;
     }
-    left+=`<div class="${cls}" onclick="setCalendarDay(${y},${m},${d})"><span class="cd-n">${d}</span>${dot}${calWk}${phBadgeEl}${_dayExcAll.length?'<div class="exc-dot"></div>':''}${isDayClosed(_dayDt)?'<div class="close-dot"></div>':''}${agentDotsHtml}</div>`;
+    left+=`<div class="${cls}" onclick="setCalendarDay(${y},${m},${d})"><span class="cd-n">${d}</span>${dot}${calWk}${phBadgeEl}${ukBadgeEl}${_dayExcAll.length?'<div class="exc-dot"></div>':''}${isDayClosed(_dayDt)?'<div class="close-dot"></div>':''}${agentDotsHtml}</div>`;
   }
   left+=`</div>`;
   left+=`<div id="calendarCoverageBlock" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between">`;
@@ -439,7 +446,7 @@ function navToPerson(name){_navPush();S.emp=name;S.tab="people";S.peopleSubTab="
 function shareDay(){
   if(!S.calDay)return;
   const d=S.calDay;
-  const dayEntries=S.entries.filter(e=>e.date&&e.date.getFullYear()===d.getFullYear()&&e.date.getMonth()===d.getMonth()&&e.date.getDate()===d.getDate());
+  const dayEntries=S.entries.filter(e=>e.date&&e.date.getFullYear()===d.getFullYear()&&e.date.getMonth()===d.getMonth()&&e.date.getDate()===d.getDate()&&(typeof scopeIncludes!=="function"||scopeIncludes(e.name)));
   const working=dayEntries.filter(e=>!e.isOff).sort((a,b)=>((a.ukS||"99")>(b.ukS||"99")?1:-1));
   const off=dayEntries.filter(e=>e.isOff);
   const dayStr=DOW[d.getDay()]+", "+fDF(d);

@@ -643,6 +643,23 @@ has two new department tables, `reportingLines` and `orgChanges`, and exports `n
 
 ### L4: Scope bar
 
+**Status: built.** `src/app/people/scope.js`, tested in `tests/scope.spec.js`.
+- **Where it sits:** in the toolbar, before the person pill. Department (only when the data has
+  more than one), then leader as a tree (GM → managers → TLs, with how many people are under
+  each; people acting that day are listed under their own leader, marked "acting"), then a
+  "N in scope ✕" chip that clears it.
+- **What it includes:** the leader plus everyone below them on the scope date, plus the team of
+  anyone they are acting for that day. The scope date is today inside the month on screen,
+  otherwise that month's first day, so a dated move shows up in the month it starts.
+- **How views follow it:** it is applied in `activeLeaderFilter()`, so everything built on
+  `gD` / `gE` / `gN` follows (Cards, Table, leader lists, exports), plus the calendar (month grid,
+  Day and Week lists, Share day), People (Team, Agents) and Cover. The person pill narrows inside
+  the scope.
+- **Not scoped yet:** Ops analytics, Home intel and capacity history read entries directly and
+  still show the whole project. The chip's tooltip says so. The Org builder shows the whole org on
+  purpose.
+- **Storage:** one scope per project in `sc_scope`, synced with the other local stores.
+
 - One bar in the header: department · leader (includes everyone below them) · person · period.
 - Every view respects it; it persists per workspace.
 - It replaces the per-view team and person filters.
@@ -651,6 +668,25 @@ has two new department tables, `reportingLines` and `orgChanges`, and exports `n
 - It is the local version of the server's `visible_people` function (section 4), with the same logic.
 
 ### L5: Leaders board (a local version of Bridge)
+
+**Status: built.** People → Leaders (`src/app/views/leaders.js`), tested in
+`tests/leaders.spec.js`.
+- **Rows:** one per team on the chosen date: anyone leading at least one agent. Managers who lead
+  only team leaders do not get a row.
+- **Columns:** who leads the team that day (acting cover shown), headcount, working (with how
+  many are marked present), sick, leave, off, no shift, leave in the next 7 days, open flags.
+- **How each person's day is decided:** in order, sick (People status sick or AWOL, a sick or
+  no-show exception, or a SICK roster marker); then leave (People status, a leave marker, or an
+  annual-leave, family or training exception); then the rota (working or off); otherwise no
+  shift.
+- **Thin:** fewer than half the team, or fewer than the project's minimum coverage, is working.
+- **No cover:** the leader is sick or on leave and nobody is acting for them.
+- **Sort:** by needs attention (no cover, then thin, then sick, then no shift), by name, or by
+  team size. The board follows the scope bar.
+- **Actions:** the team name opens People → Team; **Day** opens the calendar Day view scoped to
+  that leader.
+- **Not tested yet:** the universal workspace (every TL's file loaded together). People there
+  carry their department and the board adds a Dept column, but no spec exercises it.
 
 - One row per leader who is **effective today** (acting cover included).
 - Columns: headcount · working · leave · off · sick (from `agentStatuses`) · a thin-cover flag
@@ -661,6 +697,31 @@ has two new department tables, `reportingLines` and `orgChanges`, and exports `n
 - This tests the Bridge design on real files before Phase 2.
 
 ### L6: Leave and absence register, plus UK bank holidays
+
+**Status: built.** People → Absence (`src/app/views/absence.js`), engine
+`src/app/people/absence.js`, UK calendar `src/app/core/uk-holidays.js`. Tested in
+`tests/absence.spec.js`.
+- **Where absence comes from:** for each person and date, one source wins, strongest first:
+  logged exceptions, then People statuses, then the person's own roster markers. A TL's leave on
+  a rota someone follows is not theirs.
+- **Occasions:** absence days separated only by days the person was not due to work join into one
+  occasion. Sick on Friday and Monday, with the weekend off, is one occasion of two days.
+- **Flags** (shown only when sensitive detail is on): more than 2 consecutive sick days, or the
+  3rd (and later) sick occasion within 8 weeks (BCEA s23); more than 3 family-responsibility days
+  in 12 months.
+- **Patterns** need at least two separate occasions: absences that start on a Monday, end on a
+  Friday or sit next to a day off or public holiday; unplanned days clustered on Mondays and
+  Fridays.
+- **Leave types:** the SA BCEA defaults can be renamed, given different roster codes, or extended
+  with custom types. Stored in `sc_leave_types`, which syncs.
+- **Sensitive detail** (flags, patterns, reasons) is off by default and set per device in
+  `sc_absence_privacy`, which does not sync. The register's CSV and the workbook's Exceptions sheet
+  leave health-related reasons (sick, family, no-show) out unless "Include in exports" is on.
+- **UK bank holidays:** England & Wales, with substitute days and the one-offs since 2020. Shown in
+  the calendar grid, the Schedule Window and the register's "next 60 days" list, beside SA public
+  holidays.
+- **Not done:** Ops → Analytics → Absence (the monthly breakdown) is unchanged and does not apply
+  the sensitivity setting yet.
 
 | Part | Spec |
 |---|---|
@@ -688,3 +749,5 @@ format is dropped.
 | 4 | L4 Scope bar | L3 (leader tree) | M |
 | 5 | L5 Leaders board | L4 | S |
 | 6 | L6 Leave/absence + UK holidays | — | M |
+
+All six local-track items are built (L1–L6). Next is Phase 1 of the org layer (section 12).
