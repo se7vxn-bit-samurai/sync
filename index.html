@@ -3849,7 +3849,7 @@ function _maybeRehydrateCardsMonth(em){
 // v56: Analytics data cache — avoids recomputing monthEnt/grid/stats on every tab switch
 let _anDataCache=null;
 function getAnData(){
-  const cacheKey=[S.month,S.team,S.emp,S.anScope||'month',S.tz?'sa':'uk',S.entriesVer||0].join('|');
+  const cacheKey=[S.month,S.team,S.emp,S.anScope||'month',S.tz?'sa':'uk',S.entriesVer||0,typeof scopeKey==="function"?scopeKey():"",S._empMulti&&Array.isArray(S._empMultiSet)?S._empMultiSet.join(","):""].join('|');
   if(_anDataCache&&_anDataCache._key===cacheKey)return _anDataCache;
   if(!S.month)return null;
   const[y,m]=S.month.split("-").map(Number);
@@ -3867,7 +3867,7 @@ function getAnData(){
     }else{
       monthEnt=monthEnt.filter(x=>x.name===S.emp);
     }
-  }
+  }else monthEnt=_empFilterEntries(monthEnt);// multi-select leaders, or the scope bar
   monthEnt=monthEnt.map(x=>(!S.tz||x.isOff||!x.ukS)?{...x,saS:null,saE:null}:{...x,saS:u2s(x.ukS,x.date),saE:u2s(x.ukE,x.date)});
   // anScope filter
   const _scopeViews=['dashboard','coverage','capacity','absence'];
@@ -6394,6 +6394,7 @@ function getPersistSignature(){
   });
 }
 let _persistRun=null;
+function _persistReadOnlyView(){return typeof isUniversalWorkspace==="function"&&isUniversalWorkspace();}
 function schedulePersist(force){
   const nextSig=getPersistSignature();
   if(!force&&nextSig===_persistSig)return;
@@ -6402,7 +6403,9 @@ function schedulePersist(force){
     _persistTimer=null;_persistRun=null;
     const latest=getPersistSignature();
     if(force||latest!==_persistSig){
-      const commit=()=>{saveSettings();savePeople();saveShiftLib();saveCoachQuality();saveCoverageReq();saveOTPlan();saveQoLState();};
+      // The universal workspace is a read-only combined view: its people, exceptions and plans are
+      // renamed "Name · Project" copies, so only preferences are saved while it is open.
+      const commit=()=>{saveSettings();if(_persistReadOnlyView())return;savePeople();saveShiftLib();saveCoachQuality();saveCoverageReq();saveOTPlan();saveQoLState();};
       if(force)_persistCritical(commit);
       else{commit();_schedulePersistFlush(false);}
       _persistSig=latest;
@@ -12782,7 +12785,13 @@ function buildUniversalWorkspaceSnapshot(){
   combined.team="all";combined.emp="all";combined.calDay=null;combined.dayFilter="";combined.shiftFilter="";combined.srch="";combined.srchIdx=-1;combined.rotationDef=null;combined.fn="Universal workspace";combined.wb=null;combined.sh="__all__";
   const monthSet=new Set(),sheetSet=new Set();
   departments.forEach(department=>{
-    const snap=S.workspace[department]||{},qualify=name=>universalDisplayName(name,department);
+    let snap=S.workspace[department]||{};const qualify=name=>universalDisplayName(name,department);
+    // A project opened from the picker lives in the canonical model: its snapshot is an empty
+    // placeholder, and S.people holds every opened project's people. Read its own rows and people.
+    if(typeof window.nsDepartmentRuntime==="function"){
+      const rt=window.nsDepartmentRuntime(department);
+      if(rt.entries.length||Object.keys(rt.people).length)snap=Object.assign({},snap,{entries:rt.entries,people:rt.people,months:[...new Set(rt.entries.map(e=>e.date.getFullYear()+"-"+P(e.date.getMonth())))]});
+    }
     (snap.entries||[]).forEach(entry=>combined.entries.push(Object.assign({},entry,{name:qualify(entry.name),sourcePersonName:entry.name,workspaceDepartment:department,team:(entry.team||"Main")+" · "+department})));
     (snap.raw||[]).forEach(row=>combined.raw.push(Object.assign({},row,{workspaceDepartment:department})));
     (snap.shs||[]).forEach(sheet=>{const key=typeof sheet==="string"?sheet:sheet&&sheet.name||JSON.stringify(sheet);if(!sheetSet.has(department+"|"+key)){sheetSet.add(department+"|"+key);combined.shs.push(typeof sheet==="string"?department+" · "+sheet:Object.assign({},sheet,{name:department+" · "+(sheet.name||sheet.sheetName||"Sheet"),workspaceDepartment:department}));}});
@@ -12820,7 +12829,10 @@ function restoreDeptSnap(name){
 
 function activateDept(name){
   if(!S.workspace[name])return;
-  if(name===S.activeDept){ren();return;}
+  const wasUniversal=isUniversalWorkspace();
+  if(name===S.activeDept&&!wasUniversal){ren();return;}
+  // Leaving the universal view: settle its queued saves while it still counts as read-only.
+  if(wasUniversal&&typeof _flushAllPendingPersist==="function")_flushAllPendingPersist();
   // Force any debounced cloud push out now, before switching away — local (IndexedDB) data is
   // already safe by this point via nsPersist, but the cloud copy can otherwise lag up to ~800ms
   // behind, and department switches are exactly the moment that lag becomes a real risk.
@@ -12832,6 +12844,18 @@ function activateDept(name){
     if(typeof _syncSaveViewState==="function")_syncSaveViewState(typeof nsActiveDepartmentKey==="function"?nsActiveDepartmentKey():"",{withCounts:true});
   }
   S._universalWorkspace=false;document.body.classList.remove("sync-universal-active");
+  // A project opened from the picker has no in-session snapshot (it lives in the canonical model),
+  // so restoring one left the previous project's rows on screen. Open it the way the picker does.
+  if(!Array.isArray(S.workspace[name].entries)&&typeof _syncOpenProject==="function"){
+    if(wasUniversal){
+      // The universal view held renamed copies of people, exceptions and plans in memory only.
+      S.activeDept=null;
+      if(typeof _syncReloadLocalStores==="function")_syncReloadLocalStores();
+    }
+    _syncOpenProject(name);
+    loadSwapsForDept();
+    return;
+  }
   S.activeDept=name;
   restoreDeptSnap(name);
   if(typeof nsDepartmentKey==="function"&&typeof _syncRecordProjectOpened==="function")_syncRecordProjectOpened(nsDepartmentKey(name));
@@ -15053,6 +15077,8 @@ function triggerRosterUpload(){
 
 // ── Persistence ──
 function savePeople(){
+  // The universal workspace keys people "Name · Project"; saving would rename everyone in storage.
+  if(typeof isUniversalWorkspace==="function"&&isUniversalWorkspace())return;
   try{
     if(Object.keys(S.people).length>0)_persistSet("sc_people",JSON.stringify(S.people));
     else _persistRemove("sc_people");
@@ -20464,7 +20490,7 @@ function computeMonthStats(monthKey){
   const[y,m]=monthKey.split("-").map(Number);
   let ent=S.entries.filter(e=>e.date&&e.date.getFullYear()===y&&e.date.getMonth()===m);
   if(S.team!=="all")ent=ent.filter(e=>e.team===S.team);
-  if(S.emp!=="all")ent=ent.filter(e=>e.name===S.emp);
+  ent=_empFilterEntries(ent);// the leader picker, multi-select or scope bar
   ent=ent.map(x=>(!S.tz||x.isOff||!x.ukS)?{...x,saS:null,saE:null}:{...x,saS:u2s(x.ukS,x.date),saE:u2s(x.ukE,x.date)});
 
   const people=[...new Set(ent.map(e=>e.name))];
@@ -21245,9 +21271,11 @@ function deriveRosterAbsences(monthEnt){
 
 function rAbsenceBreakdown(y,m,monthEnt){
   const monthKey=y+'-'+P(m+1);
+  // Logged exceptions follow the same leader filter / scope bar as the roster rows.
+  const lf=activeLeaderFilter(),inFilter=x=>lf.mode==='all'||(lf.mode==='single'?(x.person===lf.name||x.agentName===lf.name):(lf.set.has(x.person)||lf.set.has(x.agentName)));
   const logged=effExc().filter(x=>{
     if(!x.date)return false;
-    return x.date.startsWith(monthKey);
+    return x.date.startsWith(monthKey)&&inFilter(x);
   });
   // A manually logged exception is the better record of the same absence — it
   // carries the real duration and any note — so it wins over the derived one for
@@ -26814,11 +26842,12 @@ function rIntel(el){
   h+=`</div>`;
 
   // ── TEAM PULSE — who's working today, who's off ──
-  const todayEnt=S.entries.filter(e=>e.date&&e.date.getFullYear()===now.getFullYear()&&e.date.getMonth()===now.getMonth()&&e.date.getDate()===now.getDate());
+  const todayEnt=_empFilterEntries(S.entries.filter(e=>e.date&&e.date.getFullYear()===now.getFullYear()&&e.date.getMonth()===now.getMonth()&&e.date.getDate()===now.getDate()));
   if(S.team!=="all"){const _t=S.team;const _te=todayEnt.filter(e=>e.team===_t);}
   const todayWorking=todayEnt.filter(e=>!e.isOff);
   const todayOff=todayEnt.filter(e=>e.isOff);
-  const todayExcs=effExc().filter(x=>x.date===todayKey);
+  const _lf=activeLeaderFilter(),_inLf=x=>_lf.mode==='all'||(_lf.mode==='single'?(x.person===_lf.name||x.agentName===_lf.name):(_lf.set.has(x.person)||_lf.set.has(x.agentName)));
+  const todayExcs=effExc().filter(x=>x.date===todayKey&&_inLf(x));
   const todayNames=[...new Set(todayEnt.map(e=>e.name))];
 
   h+=`<div class="team-pulse" style="padding:12px 14px;background:var(--card);border:1px solid var(--bdr);border-radius:10px">`;
@@ -26993,6 +27022,7 @@ function rSum(el){
       return e.date.getFullYear()===d.getFullYear()&&e.date.getMonth()===d.getMonth()&&e.date.getDate()===d.getDate();
     });
     if(S.team!=="all")all=all.filter(x=>x.team===S.team);
+    all=_empFilterEntries(all);// the leader picker, multi-select or scope bar, as in month mode (gD)
     all=all.map(x=>(!S.tz||x.isOff||!x.ukS)?{...x,saS:null,saE:null}:{...x,saS:u2s(x.ukS,x.date),saE:u2s(x.ukE,x.date)});
     windowLabel=`${DOW[(S.calDay||now).getDay()]} ${fDF(S.calDay||now)}`;
   } else if(mode==="week"){
@@ -27001,6 +27031,7 @@ function rSum(el){
     const sun=new Date(mon);sun.setDate(sun.getDate()+6);
     all=S.entries.filter(e=>e.date&&e.date>=mon&&e.date<=sun);
     if(S.team!=="all")all=all.filter(x=>x.team===S.team);
+    all=_empFilterEntries(all);// the leader picker, multi-select or scope bar, as in month mode (gD)
     all=all.map(x=>(!S.tz||x.isOff||!x.ukS)?{...x,saS:null,saE:null}:{...x,saS:u2s(x.ukS,x.date),saE:u2s(x.ukE,x.date)});
     windowLabel=`Week of ${fD(mon)} – ${fD(sun)}`;
   } else {
@@ -28859,6 +28890,8 @@ function saveSettings(){
     prefs:S.prefs||{}
   }));}catch(e){}
   try{_saveScratchpad();}catch(e){}
+  // Universal workspace: everything below is per-project data held as combined, renamed copies.
+  if(typeof _persistReadOnlyView==="function"&&_persistReadOnlyView())return;
   try{_persistSet(CRITICAL_STATE_SCHEMA_KEY,String(CRITICAL_STATE_SCHEMA_VERSION));}catch(e){}
   try{_persistSet("sc_planner",JSON.stringify({
     _schemaVersion:CRITICAL_STATE_SCHEMA_VERSION,
@@ -35095,7 +35128,11 @@ function _orgLinesFor(name){const idx=orgLineIndex(),pid=_coverPid(name);return(
 function baseLeaderOn(name,date){
   const iso=_coverISO(date);let hit=null;
   _orgLinesFor(name).forEach(l=>{if((!l.from||l.from<=iso)&&(!l.to||l.to>=iso)&&(!hit||l.from>hit.from))hit=l;});
-  if(hit)return hit.leaderName||"";
+  if(hit){
+    // Reporting lines hold plain names; the universal workspace keys people by "Name · Project".
+    const l=hit.leaderName||"",dep=((S.people||{})[name]||{}).workspaceDepartment;
+    return l&&dep&&typeof isUniversalWorkspace==="function"&&isUniversalWorkspace()&&!(S.people||{})[l]?universalDisplayName(l,dep):l;
+  }
   const l=((S.people||{})[name]||{}).teamLeader||"";
   return l===name?"":l;
 }
@@ -35187,7 +35224,12 @@ function orgSetAsOf(iso){_orgUI.asOf=iso||_coverTodayISO();rPeople($("ca"));}
 function orgToggle(name){if(_orgUI.sel.has(name))_orgUI.sel.delete(name);else _orgUI.sel.add(name);rPeople($("ca"));}
 function orgSelectMany(names){(names||[]).forEach(n=>{if((S.people||{})[n])_orgUI.sel.add(n);});rPeople($("ca"));}
 function orgClearSel(){_orgUI.sel.clear();rPeople($("ca"));}
-function _orgBy(){return typeof _swinSenderName==="function"?_swinSenderName():"";}
+// Who made an org change: the profile name, else the signed-in email, else this device.
+function _orgBy(){
+  const name=typeof _swinSenderName==="function"?_swinSenderName():"";if(name)return name;
+  try{const p=typeof _syncProfileCache!=="undefined"?_syncProfileCache:null;if(p&&p.email)return p.email;}catch(e){}
+  return"This device";
+}
 function _orgResult(res,okText){
   if(!res||res.error){toast(res&&res.error||"Nothing changed","warn");return false;}
   toast(okText(res),"ok");_orgUI.sel.clear();orgRefresh();return true;
@@ -36378,6 +36420,7 @@ window.nsScopedRows=nsScopedRows;
 // People-view edits write through to the canonical person; opening a project fills S.people.
 window.nsApplyRuntimePersonEdit=nsApplyRuntimePersonEdit;
 window.nsFillRuntimePeopleFromCanonical=nsFillRuntimePeopleFromCanonical;
+window.nsDepartmentRuntime=nsDepartmentRuntime;
 
 function nsOpenDatabase(){
   if(!window.indexedDB)return Promise.reject(new Error("IndexedDB unavailable"));
@@ -37131,12 +37174,7 @@ function nsSyncPeopleToRuntime(opts){
     // their old leader until that day; on the day, the person record catches up here.
     const lineLeader=nsLineLeaderOn(person.person_id,todayISO,lineIndex);
     if(lineLeader!==null&&lineLeader!==(person.reports_to_person_id||"")){person.reports_to_person_id=lineLeader;person.manager_name=lineLeader?(byId.get(lineLeader)||{}).full_name||nsPersonName(lineLeader):"";}
-    const manager=lineLeader!==null?(lineLeader?(byId.get(lineLeader)||{}).full_name||nsPersonName(lineLeader):""):(person.manager_name||(byId.get(person.reports_to_person_id)||{}).full_name||current.teamLeader||"");
-    // A browser edit (NorthStar editor, or a People-view edit written through by
-    // nsApplyRuntimePersonEdit) holds the whole label set, so a label removed there stays removed.
-    // Imported records only ever add labels.
-    const labels=person.source_id==="NS-BROWSER"?nsNormalizeLabels(person.labels):[...new Set([...(current.labels||[]),...(person.labels||[])])];
-    S.people[name]=Object.assign({},current,{name,personId:person.person_id,role:nsRuntimeRole(person.role_type),roleType:person.role_type,title:person.job_title||person.role_type,jobTitle:person.job_title||current.jobTitle||"",team:person.home_team||current.team||"",department:person.home_department||current.department||"",teamLeader:manager,status:person.status||current.status||"Active",labels,roleLabels:labels,notes:person.notes||current.notes||"",readiness:person.readiness_notes||current.readiness||""});
+    S.people[name]=nsRuntimePerson(person,current,byId,lineIndex,todayISO);
   });
   // Acting cover is dated (model.acting, read through nsActingRows). It used to stamp a permanent
   // "Acting Leader" label and acting=true here, so anyone who covered once showed as acting forever.
@@ -37144,6 +37182,36 @@ function nsSyncPeopleToRuntime(opts){
   if(Object.keys(S.people).length===kept.size)return;
   const applying=NS.applyingRemote;NS.applyingRemote=true;
   try{savePeople();}catch(err){}finally{NS.applyingRemote=applying;}
+}
+// One canonical person in the runtime (S.people) shape, on today's reporting line. current is the
+// runtime record being replaced, if any.
+function nsRuntimePerson(person,current,byId,lineIndex,todayISO){
+  const name=person.full_name,lineLeader=nsLineLeaderOn(person.person_id,todayISO,lineIndex);
+  const manager=lineLeader!==null?(lineLeader?(byId.get(lineLeader)||{}).full_name||nsPersonName(lineLeader):""):(person.manager_name||(byId.get(person.reports_to_person_id)||{}).full_name||current.teamLeader||"");
+  // A browser edit (NorthStar editor, or a People-view edit written through by
+  // nsApplyRuntimePersonEdit) holds the whole label set, so a label removed there stays removed.
+  // Imported records only ever add labels.
+  const labels=person.source_id==="NS-BROWSER"?nsNormalizeLabels(person.labels):[...new Set([...(current.labels||[]),...(person.labels||[])])];
+  return Object.assign({},current,{name,personId:person.person_id,role:nsRuntimeRole(person.role_type),roleType:person.role_type,title:person.job_title||person.role_type,jobTitle:person.job_title||current.jobTitle||"",team:person.home_team||current.team||"",department:person.home_department||current.department||"",teamLeader:manager,status:person.status||current.status||"Active",labels,roleLabels:labels,notes:person.notes||current.notes||"",readiness:person.readiness_notes||current.readiness||""});
+}
+// A project's runtime rows and people, read from the canonical model without opening it and without
+// touching S. Projects opened from the picker keep no S.workspace snapshot (their data lives here),
+// so the universal workspace builds from this.
+function nsDepartmentRuntime(department){
+  const saved=[S.activeDept,S._universalWorkspace];
+  // nsScopedRows reads the active department; point it at this one for the read only.
+  S.activeDept=department;S._universalWorkspace=false;
+  try{
+    const entries=nsScopedRows("schedule").map(nsRuntimeEntry).filter(row=>row.date&&!isNaN(row.date));
+    const scoped=nsScopedRows("people"),byId=new Map(scoped.map(person=>[person.person_id,person])),lineIndex=nsLinesIndex(),todayISO=nsISODate(new Date()),people={};
+    scoped.forEach(person=>{
+      const name=person.full_name;if(!name)return;
+      const cur=(saved[1]?null:(S.people||{})[name]),current=cur&&cur.personId===person.person_id?cur:{};
+      people[name]=nsRuntimePerson(person,current,byId,lineIndex,todayISO);
+    });
+    return{entries,people};
+  }catch(err){console.error("[sync] reading a project from canonical failed",err);return{entries:[],people:{}};}
+  finally{S.activeDept=saved[0];S._universalWorkspace=saved[1];}
 }
 // The universal workspace keys S.people by "Name · Project", so unqualified names would duplicate.
 function nsFillRuntimePeopleFromCanonical(){

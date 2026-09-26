@@ -66,11 +66,12 @@ function rIntel(el){
   h+=`</div>`;
 
   // ── TEAM PULSE — who's working today, who's off ──
-  const todayEnt=S.entries.filter(e=>e.date&&e.date.getFullYear()===now.getFullYear()&&e.date.getMonth()===now.getMonth()&&e.date.getDate()===now.getDate());
+  const todayEnt=_empFilterEntries(S.entries.filter(e=>e.date&&e.date.getFullYear()===now.getFullYear()&&e.date.getMonth()===now.getMonth()&&e.date.getDate()===now.getDate()));
   if(S.team!=="all"){const _t=S.team;const _te=todayEnt.filter(e=>e.team===_t);}
   const todayWorking=todayEnt.filter(e=>!e.isOff);
   const todayOff=todayEnt.filter(e=>e.isOff);
-  const todayExcs=effExc().filter(x=>x.date===todayKey);
+  const _lf=activeLeaderFilter(),_inLf=x=>_lf.mode==='all'||(_lf.mode==='single'?(x.person===_lf.name||x.agentName===_lf.name):(_lf.set.has(x.person)||_lf.set.has(x.agentName)));
+  const todayExcs=effExc().filter(x=>x.date===todayKey&&_inLf(x));
   const todayNames=[...new Set(todayEnt.map(e=>e.name))];
 
   h+=`<div class="team-pulse" style="padding:12px 14px;background:var(--card);border:1px solid var(--bdr);border-radius:10px">`;
@@ -245,6 +246,7 @@ function rSum(el){
       return e.date.getFullYear()===d.getFullYear()&&e.date.getMonth()===d.getMonth()&&e.date.getDate()===d.getDate();
     });
     if(S.team!=="all")all=all.filter(x=>x.team===S.team);
+    all=_empFilterEntries(all);// the leader picker, multi-select or scope bar, as in month mode (gD)
     all=all.map(x=>(!S.tz||x.isOff||!x.ukS)?{...x,saS:null,saE:null}:{...x,saS:u2s(x.ukS,x.date),saE:u2s(x.ukE,x.date)});
     windowLabel=`${DOW[(S.calDay||now).getDay()]} ${fDF(S.calDay||now)}`;
   } else if(mode==="week"){
@@ -253,6 +255,7 @@ function rSum(el){
     const sun=new Date(mon);sun.setDate(sun.getDate()+6);
     all=S.entries.filter(e=>e.date&&e.date>=mon&&e.date<=sun);
     if(S.team!=="all")all=all.filter(x=>x.team===S.team);
+    all=_empFilterEntries(all);// the leader picker, multi-select or scope bar, as in month mode (gD)
     all=all.map(x=>(!S.tz||x.isOff||!x.ukS)?{...x,saS:null,saE:null}:{...x,saS:u2s(x.ukS,x.date),saE:u2s(x.ukE,x.date)});
     windowLabel=`Week of ${fD(mon)} – ${fD(sun)}`;
   } else {

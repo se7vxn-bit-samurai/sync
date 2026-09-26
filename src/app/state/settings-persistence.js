@@ -117,6 +117,8 @@ function saveSettings(){
     prefs:S.prefs||{}
   }));}catch(e){}
   try{_saveScratchpad();}catch(e){}
+  // Universal workspace: everything below is per-project data held as combined, renamed copies.
+  if(typeof _persistReadOnlyView==="function"&&_persistReadOnlyView())return;
   try{_persistSet(CRITICAL_STATE_SCHEMA_KEY,String(CRITICAL_STATE_SCHEMA_VERSION));}catch(e){}
   try{_persistSet("sc_planner",JSON.stringify({
     _schemaVersion:CRITICAL_STATE_SCHEMA_VERSION,

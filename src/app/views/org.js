@@ -20,7 +20,12 @@ function orgSetAsOf(iso){_orgUI.asOf=iso||_coverTodayISO();rPeople($("ca"));}
 function orgToggle(name){if(_orgUI.sel.has(name))_orgUI.sel.delete(name);else _orgUI.sel.add(name);rPeople($("ca"));}
 function orgSelectMany(names){(names||[]).forEach(n=>{if((S.people||{})[n])_orgUI.sel.add(n);});rPeople($("ca"));}
 function orgClearSel(){_orgUI.sel.clear();rPeople($("ca"));}
-function _orgBy(){return typeof _swinSenderName==="function"?_swinSenderName():"";}
+// Who made an org change: the profile name, else the signed-in email, else this device.
+function _orgBy(){
+  const name=typeof _swinSenderName==="function"?_swinSenderName():"";if(name)return name;
+  try{const p=typeof _syncProfileCache!=="undefined"?_syncProfileCache:null;if(p&&p.email)return p.email;}catch(e){}
+  return"This device";
+}
 function _orgResult(res,okText){
   if(!res||res.error){toast(res&&res.error||"Nothing changed","warn");return false;}
   toast(okText(res),"ok");_orgUI.sel.clear();orgRefresh();return true;

@@ -27,7 +27,11 @@ function _orgLinesFor(name){const idx=orgLineIndex(),pid=_coverPid(name);return(
 function baseLeaderOn(name,date){
   const iso=_coverISO(date);let hit=null;
   _orgLinesFor(name).forEach(l=>{if((!l.from||l.from<=iso)&&(!l.to||l.to>=iso)&&(!hit||l.from>hit.from))hit=l;});
-  if(hit)return hit.leaderName||"";
+  if(hit){
+    // Reporting lines hold plain names; the universal workspace keys people by "Name · Project".
+    const l=hit.leaderName||"",dep=((S.people||{})[name]||{}).workspaceDepartment;
+    return l&&dep&&typeof isUniversalWorkspace==="function"&&isUniversalWorkspace()&&!(S.people||{})[l]?universalDisplayName(l,dep):l;
+  }
   const l=((S.people||{})[name]||{}).teamLeader||"";
   return l===name?"":l;
 }

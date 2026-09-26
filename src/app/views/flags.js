@@ -601,9 +601,11 @@ function deriveRosterAbsences(monthEnt){
 
 function rAbsenceBreakdown(y,m,monthEnt){
   const monthKey=y+'-'+P(m+1);
+  // Logged exceptions follow the same leader filter / scope bar as the roster rows.
+  const lf=activeLeaderFilter(),inFilter=x=>lf.mode==='all'||(lf.mode==='single'?(x.person===lf.name||x.agentName===lf.name):(lf.set.has(x.person)||lf.set.has(x.agentName)));
   const logged=effExc().filter(x=>{
     if(!x.date)return false;
-    return x.date.startsWith(monthKey);
+    return x.date.startsWith(monthKey)&&inFilter(x);
   });
   // A manually logged exception is the better record of the same absence — it
   // carries the real duration and any note — so it wins over the derived one for

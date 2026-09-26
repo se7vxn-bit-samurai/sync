@@ -112,6 +112,7 @@ function getPersistSignature(){
   });
 }
 let _persistRun=null;
+function _persistReadOnlyView(){return typeof isUniversalWorkspace==="function"&&isUniversalWorkspace();}
 function schedulePersist(force){
   const nextSig=getPersistSignature();
   if(!force&&nextSig===_persistSig)return;
@@ -120,7 +121,9 @@ function schedulePersist(force){
     _persistTimer=null;_persistRun=null;
     const latest=getPersistSignature();
     if(force||latest!==_persistSig){
-      const commit=()=>{saveSettings();savePeople();saveShiftLib();saveCoachQuality();saveCoverageReq();saveOTPlan();saveQoLState();};
+      // The universal workspace is a read-only combined view: its people, exceptions and plans are
+      // renamed "Name · Project" copies, so only preferences are saved while it is open.
+      const commit=()=>{saveSettings();if(_persistReadOnlyView())return;savePeople();saveShiftLib();saveCoachQuality();saveCoverageReq();saveOTPlan();saveQoLState();};
       if(force)_persistCritical(commit);
       else{commit();_schedulePersistFlush(false);}
       _persistSig=latest;

@@ -97,6 +97,26 @@ test.describe('scope bar', () => {
     await expect(page.locator('#scopeChip')).toHaveCount(0);
   });
 
+  test('Analytics, the Home intel and the month comparison follow the scope too', async ({ page }) => {
+    await openScoped(page);
+    const seen = () => page.evaluate(() => {
+      const month = S.months.find((m) => (getDataIndexes().byMonth[m] || []).length) || S.month;
+      S.month = month; S.mIdx = S.months.indexOf(month);
+      const an = getAnData(), cap = computeMonthStats(month);
+      return { analytics: [...new Set(an.monthEnt.map((e) => e.name))].sort(), capacity: cap.people };
+    });
+    const all = await seen();
+    expect(all.analytics).toContain('Rhea Roster');
+    await pickLeader(page, 'Omar Reyes');
+    await expect.poll(async () => (await seen()).analytics).toEqual(['Lee Gone', 'Omar Reyes', 'Pat Ncube']);
+    expect((await seen()).capacity).toBeLessThan(all.capacity);
+    // Home intel's Team Pulse lists only people in scope.
+    await page.evaluate(() => railNavAnalytics('dashboard'));
+    await expect(page.locator('#ca')).not.toContainText('Rhea Roster');
+    await page.locator('#scopeChip').click();
+    await expect.poll(async () => (await seen()).analytics).toContain('Rhea Roster');
+  });
+
   test('acting cover widens the acting person\'s scope to the team they cover', async ({ page }) => {
     await openScoped(page);
     await page.evaluate(([a, b]) => coverAssign('Kim Senior', 'Ada Leader', a, b, 'Acting Team Lead'), [iso(0), iso(2)]);

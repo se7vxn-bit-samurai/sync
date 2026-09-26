@@ -583,6 +583,8 @@ function triggerRosterUpload(){
 
 // ── Persistence ──
 function savePeople(){
+  // The universal workspace keys people "Name · Project"; saving would rename everyone in storage.
+  if(typeof isUniversalWorkspace==="function"&&isUniversalWorkspace())return;
   try{
     if(Object.keys(S.people).length>0)_persistSet("sc_people",JSON.stringify(S.people));
     else _persistRemove("sc_people");
