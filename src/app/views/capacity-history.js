@@ -9,7 +9,7 @@ function computeMonthStats(monthKey){
   const[y,m]=monthKey.split("-").map(Number);
   let ent=S.entries.filter(e=>e.date&&e.date.getFullYear()===y&&e.date.getMonth()===m);
   if(S.team!=="all")ent=ent.filter(e=>e.team===S.team);
-  if(S.emp!=="all")ent=ent.filter(e=>e.name===S.emp);
+  ent=_empFilterEntries(ent);// the leader picker, multi-select or scope bar
   ent=ent.map(x=>(!S.tz||x.isOff||!x.ukS)?{...x,saS:null,saE:null}:{...x,saS:u2s(x.ukS,x.date),saE:u2s(x.ukE,x.date)});
 
   const people=[...new Set(ent.map(e=>e.name))];

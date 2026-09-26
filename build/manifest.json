@@ -39,6 +39,7 @@
     "app/people/registry.js",
     "app/ot/engine.js",
     "app/domain/shift-library.js",
+    "app/settings/prefs.js",
     "app/settings/drawer.js",
     "app/build-wizard.js",
     "app/coverage/forecast.js",

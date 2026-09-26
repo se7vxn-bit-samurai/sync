@@ -55,7 +55,9 @@ function buildFilename(kind,ext){
   if(kind==='all')token='AllMonths_SavePlus';
   else if(kind==='month')token=month+'_SavePlus';
   else token=safeFilenamePart(kind);
-  return `${dept}_${token}_${date}.${ext}`;
+  // Settings → Data & exports: an optional prefix, and the date stamp can be left off.
+  const rawPrefix=String(pref("export.prefix")||"").trim(),prefix=rawPrefix?safeFilenamePart(rawPrefix):"";
+  return `${prefix?prefix+"_":""}${dept}_${token}${pref("export.dateStamp")?"_"+date:""}.${ext}`;
 }
 function sanitiseSheetName(n){return n.replace(/[\[\]:*?\/\\]/g,'_').substring(0,31);}
 function triggerBlobDownload(blob,fileName){

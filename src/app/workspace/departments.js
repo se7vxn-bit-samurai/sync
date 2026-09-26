@@ -18,7 +18,13 @@ function buildUniversalWorkspaceSnapshot(){
   combined.team="all";combined.emp="all";combined.calDay=null;combined.dayFilter="";combined.shiftFilter="";combined.srch="";combined.srchIdx=-1;combined.rotationDef=null;combined.fn="Universal workspace";combined.wb=null;combined.sh="__all__";
   const monthSet=new Set(),sheetSet=new Set();
   departments.forEach(department=>{
-    const snap=S.workspace[department]||{},qualify=name=>universalDisplayName(name,department);
+    let snap=S.workspace[department]||{};const qualify=name=>universalDisplayName(name,department);
+    // A project opened from the picker lives in the canonical model: its snapshot is an empty
+    // placeholder, and S.people holds every opened project's people. Read its own rows and people.
+    if(typeof window.nsDepartmentRuntime==="function"){
+      const rt=window.nsDepartmentRuntime(department);
+      if(rt.entries.length||Object.keys(rt.people).length)snap=Object.assign({},snap,{entries:rt.entries,people:rt.people,months:[...new Set(rt.entries.map(e=>e.date.getFullYear()+"-"+P(e.date.getMonth())))]});
+    }
     (snap.entries||[]).forEach(entry=>combined.entries.push(Object.assign({},entry,{name:qualify(entry.name),sourcePersonName:entry.name,workspaceDepartment:department,team:(entry.team||"Main")+" · "+department})));
     (snap.raw||[]).forEach(row=>combined.raw.push(Object.assign({},row,{workspaceDepartment:department})));
     (snap.shs||[]).forEach(sheet=>{const key=typeof sheet==="string"?sheet:sheet&&sheet.name||JSON.stringify(sheet);if(!sheetSet.has(department+"|"+key)){sheetSet.add(department+"|"+key);combined.shs.push(typeof sheet==="string"?department+" · "+sheet:Object.assign({},sheet,{name:department+" · "+(sheet.name||sheet.sheetName||"Sheet"),workspaceDepartment:department}));}});
@@ -56,7 +62,10 @@ function restoreDeptSnap(name){
 
 function activateDept(name){
   if(!S.workspace[name])return;
-  if(name===S.activeDept){ren();return;}
+  const wasUniversal=isUniversalWorkspace();
+  if(name===S.activeDept&&!wasUniversal){ren();return;}
+  // Leaving the universal view: settle its queued saves while it still counts as read-only.
+  if(wasUniversal&&typeof _flushAllPendingPersist==="function")_flushAllPendingPersist();
   // Force any debounced cloud push out now, before switching away — local (IndexedDB) data is
   // already safe by this point via nsPersist, but the cloud copy can otherwise lag up to ~800ms
   // behind, and department switches are exactly the moment that lag becomes a real risk.
@@ -68,6 +77,18 @@ function activateDept(name){
     if(typeof _syncSaveViewState==="function")_syncSaveViewState(typeof nsActiveDepartmentKey==="function"?nsActiveDepartmentKey():"",{withCounts:true});
   }
   S._universalWorkspace=false;document.body.classList.remove("sync-universal-active");
+  // A project opened from the picker has no in-session snapshot (it lives in the canonical model),
+  // so restoring one left the previous project's rows on screen. Open it the way the picker does.
+  if(!Array.isArray(S.workspace[name].entries)&&typeof _syncOpenProject==="function"){
+    if(wasUniversal){
+      // The universal view held renamed copies of people, exceptions and plans in memory only.
+      S.activeDept=null;
+      if(typeof _syncReloadLocalStores==="function")_syncReloadLocalStores();
+    }
+    _syncOpenProject(name);
+    loadSwapsForDept();
+    return;
+  }
   S.activeDept=name;
   restoreDeptSnap(name);
   if(typeof nsDepartmentKey==="function"&&typeof _syncRecordProjectOpened==="function")_syncRecordProjectOpened(nsDepartmentKey(name));

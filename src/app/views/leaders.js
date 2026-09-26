@@ -6,7 +6,9 @@
    days and open flags. Follows the scope bar. A local version of
    the Bridge leader grid in docs/ORG-LAYER-PLAN.md.
    ═══════════════════════════════════════════════════════════════ */
-let _ldrUI={date:"",sort:"attention"};
+let _ldrUI={date:"",sort:""};
+function _ldrSort(){return _ldrUI.sort||pref("leaders.sort");}
+function _ldrThinText(){return`Fewer than ${prefNum("leaders.thinPct")}% of the team, or fewer than the minimum coverage (${Math.max(1,Number(S.covMin)||1)}), is working`;}
 
 // One person's state on a date: in (working, marked present), work, sick, leave, off, none.
 function leaderDayStatus(name,iso){
@@ -21,7 +23,7 @@ function leaderDayStatus(name,iso){
 function _ldrHasLeave(name,fromISO,toISO){return swinRows(name,fromISO,toISO).some(r=>r.kind==="leave"||r.excs.some(x=>x.type==="annual_leave"));}
 function leadersBoard(iso){
   const st=orgStructure(iso),min=Math.max(1,Number(S.covMin)||1);
-  const d=_swinDate(iso),from=excKey(_swinAddDays(d,1)),to=excKey(_swinAddDays(d,7));
+  const d=_swinDate(iso),from=excKey(_swinAddDays(d,1)),to=excKey(_swinAddDays(d,prefNum("leaders.lookahead"))),thin=prefNum("leaders.thinPct")/100;
   let flags=[];try{flags=typeof computeFlags==="function"?(computeFlags()||[]):[];}catch(e){flags=[];}
   const multiDept=typeof scopeDepartments==="function"&&scopeDepartments().length>1;
   return st.teams.filter(t=>t.members.length&&(typeof scopeIncludes!=="function"||scopeIncludes(t.leader))).map(t=>{
@@ -31,7 +33,7 @@ function leadersBoard(iso){
     const away=leaderStatus==="sick"||leaderStatus==="leave";
     const people=new Set([t.leader,...t.members]),p=(S.people||{})[t.leader]||{};
     const row={leader:t.leader,acting:t.cover?t.cover.personName:"",cover:t.cover,manager:t.manager,hc,counts,working,leaderStatus,
-      noCover:away&&!t.cover,thin:working<min||working<hc/2,
+      noCover:away&&!t.cover,thin:working<min||working<hc*thin,
       upcoming:[...people].filter(n=>_ldrHasLeave(n,from,to)),
       flags:flags.filter(f=>f&&f.person&&people.has(f.person)).length,
       dept:multiDept?(p.workspaceDepartment||p.department||""):""};
@@ -59,13 +61,13 @@ function rPeopleLeadersView(){
   const today=_coverTodayISO();if(!_ldrUI.date)_ldrUI.date=today;
   const iso=_ldrUI.date,rows=leadersBoard(iso);
   const sorters={attention:(a,b)=>b.attention-a.attention||a.leader.localeCompare(b.leader),name:(a,b)=>a.leader.localeCompare(b.leader),size:(a,b)=>b.hc-a.hc||a.leader.localeCompare(b.leader)};
-  rows.sort(sorters[_ldrUI.sort]||sorters.attention);
+  rows.sort(sorters[_ldrSort()]||sorters.attention);
   const sum=rows.reduce((a,r)=>{a.hc+=r.hc;a.working+=r.working;a.in+=r.counts.in;a.sick+=r.counts.sick;a.leave+=r.counts.leave;a.off+=r.counts.off;a.none+=r.counts.none;a.thin+=r.thin?1:0;a.noCover+=r.noCover?1:0;a.acting+=r.acting?1:0;return a;},{hc:0,working:0,in:0,sick:0,leave:0,off:0,none:0,thin:0,noCover:0,acting:0});
   const hasDept=rows.some(r=>r.dept);
   let h=`<div class="cov-wrap ldr-wrap">`;
   h+=`<div class="org-bar"><b>Leaders board</b><span class="swin-nav"><button type="button" class="swin-btn" onclick="ldrShiftDate(-1)" aria-label="Previous day">‹</button><input type="date" id="ldrDate" value="${XA(iso)}" onchange="ldrSetDate(this.value)"><button type="button" class="swin-btn" onclick="ldrShiftDate(1)" aria-label="Next day">›</button></span>`;
   if(iso!==today)h+=`<button type="button" class="swin-btn" onclick="ldrSetDate('')">Today</button>`;
-  h+=`<label>Sort <select id="ldrSort" onchange="ldrSetSort(this.value)">${[["attention","Needs attention"],["name","Name"],["size","Team size"]].map(([k,l])=>`<option value="${k}"${_ldrUI.sort===k?" selected":""}>${l}</option>`).join("")}</select></label></div>`;
+  h+=`<label>Sort <select id="ldrSort" onchange="ldrSetSort(this.value)">${[["attention","Needs attention"],["name","Name"],["size","Team size"]].map(([k,l])=>`<option value="${k}"${_ldrSort()===k?" selected":""}>${l}</option>`).join("")}</select></label></div>`;
 
   if(!rows.length){
     h+=`<div class="swin-note">No teams on ${X(_swinDayLabel(iso))}. The board needs people with a team leader: add agents in People → Agents, or import an organogram in People → Org.</div></div>`;
@@ -78,13 +80,13 @@ function rPeopleLeadersView(){
   });
   h+=`</div>`;
 
-  h+=`<div class="cov-tbl-wrap"><table class="cov-tbl ldr-tbl" id="ldrTable"><thead><tr><th>Team</th>${hasDept?"<th>Dept</th>":""}<th>Leader today</th><th>HC</th><th>Working</th><th>Sick</th><th>Leave</th><th>Off</th><th>No shift</th><th>Leave next 7d</th><th>Flags</th><th></th></tr></thead><tbody>`;
+  h+=`<div class="cov-tbl-wrap"><table class="cov-tbl ldr-tbl" id="ldrTable"><thead><tr><th>Team</th>${hasDept?"<th>Dept</th>":""}<th>Leader today</th><th>HC</th><th>Working</th><th>Sick</th><th>Leave</th><th>Off</th><th>No shift</th><th>Leave next ${prefNum("leaders.lookahead")}d</th><th>Flags</th><th></th></tr></thead><tbody>`;
   rows.forEach(r=>{
     const cls=r.noCover?"ldr-bad":r.thin?"ldr-warn":"";
     h+=`<tr data-leader="${XA(r.leader)}"${cls?` class="${cls}"`:""}><td><button type="button" class="ldr-name" onclick="ldrOpenTeam('${XJS(r.leader)}')" title="Open this team in People → Team">${X(r.leader)}</button>${r.manager?`<div class="org-mgr">↑ ${X(r.manager)}</div>`:""}</td>`;
     if(hasDept)h+=`<td>${X(r.dept||"—")}</td>`;
     h+=`<td data-col="leader">${r.acting?`<span class="swin-tag t-act" title="${XA(coverSpanText(r.cover))}">${X(r.acting)} acting</span> `:""}<span class="ldr-st ldr-${r.leaderStatus}">${X(LDR_STATUS_TEXT[r.leaderStatus])}</span>${r.noCover?` <span class="cov-state ldr-nocover">no cover</span>`:""}</td>`;
-    h+=`<td class="mono">${r.hc}</td><td class="mono" data-col="working">${r.working}${r.counts.in?` <small>(${r.counts.in} in)</small>`:""}${r.thin?` <span class="org-span warn" title="${XA(`Fewer than half the team, or fewer than the minimum coverage (${Math.max(1,Number(S.covMin)||1)}), is working`)}">thin</span>`:""}</td>`;
+    h+=`<td class="mono">${r.hc}</td><td class="mono" data-col="working">${r.working}${r.counts.in?` <small>(${r.counts.in} in)</small>`:""}${r.thin?` <span class="org-span warn" title="${XA(_ldrThinText())}">thin</span>`:""}</td>`;
     h+=`<td class="mono${r.counts.sick?" ldr-hot":""}" data-col="sick">${r.counts.sick}</td><td class="mono" data-col="leave">${r.counts.leave}</td><td class="mono" data-col="off">${r.counts.off}</td><td class="mono${r.counts.none?" ldr-hot":""}" data-col="none" title="Following a leader's rota with no shift that day, or not on the roster">${r.counts.none}</td>`;
     h+=`<td data-col="upcoming" title="${XA(r.upcoming.join(", "))}">${r.upcoming.length?`${r.upcoming.length} <small>${X(r.upcoming.slice(0,2).map(n=>n.split(" ")[0]).join(", "))}${r.upcoming.length>2?"…":""}</small>`:"—"}</td>`;
     h+=`<td class="mono" data-col="flags">${r.flags||"—"}</td>`;

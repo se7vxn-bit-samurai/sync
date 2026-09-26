@@ -20,7 +20,12 @@ function orgSetAsOf(iso){_orgUI.asOf=iso||_coverTodayISO();rPeople($("ca"));}
 function orgToggle(name){if(_orgUI.sel.has(name))_orgUI.sel.delete(name);else _orgUI.sel.add(name);rPeople($("ca"));}
 function orgSelectMany(names){(names||[]).forEach(n=>{if((S.people||{})[n])_orgUI.sel.add(n);});rPeople($("ca"));}
 function orgClearSel(){_orgUI.sel.clear();rPeople($("ca"));}
-function _orgBy(){return typeof _swinSenderName==="function"?_swinSenderName():"";}
+// Who made an org change: the profile name, else the signed-in email, else this device.
+function _orgBy(){
+  const name=typeof _swinSenderName==="function"?_swinSenderName():"";if(name)return name;
+  try{const p=typeof _syncProfileCache!=="undefined"?_syncProfileCache:null;if(p&&p.email)return p.email;}catch(e){}
+  return"This device";
+}
 function _orgResult(res,okText){
   if(!res||res.error){toast(res&&res.error||"Nothing changed","warn");return false;}
   toast(okText(res),"ok");_orgUI.sel.clear();orgRefresh();return true;
@@ -113,7 +118,7 @@ function rPeopleOrgView(){
   h+=_orgLaneRow("General manager",st.gms,st)+_orgLaneRow("Managers / CCL",st.mgrs,st);
   h+=`<div class="org-lane"><div class="org-lane-h">Teams <span>${st.teams.length}</span></div><div class="org-teams">`;
   st.teams.forEach(t=>{
-    const warn=t.members.length>ORG_SPAN_WARN,empty=!t.members.length;
+    const warn=pref("org.check.span")&&t.members.length>orgSpanWarn(),empty=!t.members.length;
     h+=`<div class="org-team${empty?" empty":""}" data-leader="${XA(t.leader)}"><div class="org-team-hd">${_orgChip(t.leader,st)}<span class="org-span${warn?" warn":""}" title="Agents reporting to ${XA(t.leader)} on this date">${t.members.length} agent${t.members.length===1?"":"s"}</span>`;
     if(t.manager)h+=`<span class="org-mgr">↑ ${X(t.manager)}</span>`;
     if(t.cover)h+=`<span class="swin-tag t-act" title="${XA(coverSpanText(t.cover))}">covered by ${X(t.cover.personName.split(" ")[0])}</span>`;

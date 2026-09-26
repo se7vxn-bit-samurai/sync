@@ -85,6 +85,8 @@ test.describe('Org builder', () => {
     await expect(chip(page, 'Ada Leader', 'Ben Okafor')).toBeVisible();
     await expect(page.locator('#orgChanges tbody tr')).toHaveCount(1);
     await expect(page.locator('#orgChanges tbody tr')).toContainText('Moved Ben Okafor to Omar Reyes');
+    // Who made it: the profile name, or the signed-in email until the profile has loaded.
+    await expect(page.locator('#orgChanges tbody tr td').nth(3)).toHaveText(/^(Test User|tester@example\.com)$/);
 
     // Ben has no rows of his own: he follows Ada's rota (09:00) until the move, then Omar's (08:00).
     await page.evaluate(([a, b]) => openScheduleWindow('Ben Okafor', { mode: 'custom', from: a, to: b, clock: 'uk' }), [iso(3), iso(6)]);

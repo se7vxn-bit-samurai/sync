@@ -539,6 +539,7 @@ window.nsScopedRows=nsScopedRows;
 // People-view edits write through to the canonical person; opening a project fills S.people.
 window.nsApplyRuntimePersonEdit=nsApplyRuntimePersonEdit;
 window.nsFillRuntimePeopleFromCanonical=nsFillRuntimePeopleFromCanonical;
+window.nsDepartmentRuntime=nsDepartmentRuntime;
 
 function nsOpenDatabase(){
   if(!window.indexedDB)return Promise.reject(new Error("IndexedDB unavailable"));
@@ -1292,12 +1293,7 @@ function nsSyncPeopleToRuntime(opts){
     // their old leader until that day; on the day, the person record catches up here.
     const lineLeader=nsLineLeaderOn(person.person_id,todayISO,lineIndex);
     if(lineLeader!==null&&lineLeader!==(person.reports_to_person_id||"")){person.reports_to_person_id=lineLeader;person.manager_name=lineLeader?(byId.get(lineLeader)||{}).full_name||nsPersonName(lineLeader):"";}
-    const manager=lineLeader!==null?(lineLeader?(byId.get(lineLeader)||{}).full_name||nsPersonName(lineLeader):""):(person.manager_name||(byId.get(person.reports_to_person_id)||{}).full_name||current.teamLeader||"");
-    // A browser edit (NorthStar editor, or a People-view edit written through by
-    // nsApplyRuntimePersonEdit) holds the whole label set, so a label removed there stays removed.
-    // Imported records only ever add labels.
-    const labels=person.source_id==="NS-BROWSER"?nsNormalizeLabels(person.labels):[...new Set([...(current.labels||[]),...(person.labels||[])])];
-    S.people[name]=Object.assign({},current,{name,personId:person.person_id,role:nsRuntimeRole(person.role_type),roleType:person.role_type,title:person.job_title||person.role_type,jobTitle:person.job_title||current.jobTitle||"",team:person.home_team||current.team||"",department:person.home_department||current.department||"",teamLeader:manager,status:person.status||current.status||"Active",labels,roleLabels:labels,notes:person.notes||current.notes||"",readiness:person.readiness_notes||current.readiness||""});
+    S.people[name]=nsRuntimePerson(person,current,byId,lineIndex,todayISO);
   });
   // Acting cover is dated (model.acting, read through nsActingRows). It used to stamp a permanent
   // "Acting Leader" label and acting=true here, so anyone who covered once showed as acting forever.
@@ -1305,6 +1301,36 @@ function nsSyncPeopleToRuntime(opts){
   if(Object.keys(S.people).length===kept.size)return;
   const applying=NS.applyingRemote;NS.applyingRemote=true;
   try{savePeople();}catch(err){}finally{NS.applyingRemote=applying;}
+}
+// One canonical person in the runtime (S.people) shape, on today's reporting line. current is the
+// runtime record being replaced, if any.
+function nsRuntimePerson(person,current,byId,lineIndex,todayISO){
+  const name=person.full_name,lineLeader=nsLineLeaderOn(person.person_id,todayISO,lineIndex);
+  const manager=lineLeader!==null?(lineLeader?(byId.get(lineLeader)||{}).full_name||nsPersonName(lineLeader):""):(person.manager_name||(byId.get(person.reports_to_person_id)||{}).full_name||current.teamLeader||"");
+  // A browser edit (NorthStar editor, or a People-view edit written through by
+  // nsApplyRuntimePersonEdit) holds the whole label set, so a label removed there stays removed.
+  // Imported records only ever add labels.
+  const labels=person.source_id==="NS-BROWSER"?nsNormalizeLabels(person.labels):[...new Set([...(current.labels||[]),...(person.labels||[])])];
+  return Object.assign({},current,{name,personId:person.person_id,role:nsRuntimeRole(person.role_type),roleType:person.role_type,title:person.job_title||person.role_type,jobTitle:person.job_title||current.jobTitle||"",team:person.home_team||current.team||"",department:person.home_department||current.department||"",teamLeader:manager,status:person.status||current.status||"Active",labels,roleLabels:labels,notes:person.notes||current.notes||"",readiness:person.readiness_notes||current.readiness||""});
+}
+// A project's runtime rows and people, read from the canonical model without opening it and without
+// touching S. Projects opened from the picker keep no S.workspace snapshot (their data lives here),
+// so the universal workspace builds from this.
+function nsDepartmentRuntime(department){
+  const saved=[S.activeDept,S._universalWorkspace];
+  // nsScopedRows reads the active department; point it at this one for the read only.
+  S.activeDept=department;S._universalWorkspace=false;
+  try{
+    const entries=nsScopedRows("schedule").map(nsRuntimeEntry).filter(row=>row.date&&!isNaN(row.date));
+    const scoped=nsScopedRows("people"),byId=new Map(scoped.map(person=>[person.person_id,person])),lineIndex=nsLinesIndex(),todayISO=nsISODate(new Date()),people={};
+    scoped.forEach(person=>{
+      const name=person.full_name;if(!name)return;
+      const cur=(saved[1]?null:(S.people||{})[name]),current=cur&&cur.personId===person.person_id?cur:{};
+      people[name]=nsRuntimePerson(person,current,byId,lineIndex,todayISO);
+    });
+    return{entries,people};
+  }catch(err){console.error("[sync] reading a project from canonical failed",err);return{entries:[],people:{}};}
+  finally{S.activeDept=saved[0];S._universalWorkspace=saved[1];}
 }
 // The universal workspace keys S.people by "Name · Project", so unqualified names would duplicate.
 function nsFillRuntimePeopleFromCanonical(){

@@ -14,7 +14,8 @@
 const SWIN_SENT_KEY="sc_swin_sent";
 const SWIN_DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 const SWIN_TYPE_LABEL={early:"Early",mid:"Mid",late:"Late",wknd:"Weekend"};
-const SWIN_SENT_KEEP_DAYS=180;
+// How long the sent log is kept: Settings → Sharing (swin.keepDays, default 180).
+function _swinSentKeepDays(){return prefNum("swin.keepDays");}
 // Window state lives here, not on S: it is view-only and must never ride along in snapshots.
 let _swinState=null,_swinReturnFocus=null;
 
@@ -182,7 +183,7 @@ function _swinSenderName(){
 function _swinRecordSent(name,rows,channel){
   const store=_swinSentStore(),k=_swinSentKey(name),prev=store[k]||{},merged=Object.assign({},prev.rows||{});
   rows.forEach(r=>{merged[r.iso]=_swinSig(r);});
-  const oldest=rows.reduce((m,r)=>!m||r.iso<m?r.iso:m,""),keep=excKey(_swinAddDays(new Date(),-SWIN_SENT_KEEP_DAYS));
+  const oldest=rows.reduce((m,r)=>!m||r.iso<m?r.iso:m,""),keep=excKey(_swinAddDays(new Date(),-_swinSentKeepDays()));
   const cutoff=oldest&&oldest<keep?oldest:keep;
   Object.keys(merged).forEach(iso=>{if(iso<cutoff)delete merged[iso];});
   store[k]={name,at:new Date().toISOString(),by:_swinSenderName(),channel,rows:merged};
@@ -212,9 +213,12 @@ function openScheduleWindow(name,opts){
   opts=opts||{};
   const prev=_swinState||{};
   const month=opts.y!==undefined&&opts.m!==undefined?{y:opts.y,m:opts.m}:(prev.open&&prev.y!==undefined?{y:prev.y,m:prev.m}:_swinDefaultMonth());
-  _swinState={open:true,name,mode:opts.mode||(prev.open?prev.mode:"month")||"month",y:month.y,m:month.m,
-    from:opts.from||prev.from||"",to:opts.to||prev.to||"",
-    clock:opts.clock||prev.clock||(S.tz?"sa":"uk"),cmp:opts.cmp!==undefined?opts.cmp:""};
+  // A fresh window follows Settings → Sharing; one already open keeps what the person picked.
+  const fresh=!prev.open&&!opts.mode&&opts.y===undefined,span=pref("swin.range"),clockPref=pref("swin.clock");
+  let mode=opts.mode||(prev.open?prev.mode:"month")||"month",from=opts.from||prev.from||"",to=opts.to||prev.to||"";
+  if(fresh&&(span==="next14"||span==="next28")){const t=new Date();mode="custom";from=excKey(t);to=excKey(_swinAddDays(t,span==="next14"?13:27));}
+  _swinState={open:true,name,mode,y:month.y,m:month.m,from,to,
+    clock:opts.clock||(prev.open?prev.clock:"")||(clockPref==="sa"||clockPref==="uk"?clockPref:(S.tz?"sa":"uk")),cmp:opts.cmp!==undefined?opts.cmp:""};
   if(!prev.open)_swinReturnFocus=document.activeElement;
   if(_swinState.cmp===name)_swinState.cmp="";
   let el=document.getElementById("swinOverlay");
@@ -259,7 +263,7 @@ function _swinStatusCell(r,name){
   const codeU=String(r.code||"").toUpperCase();
   if(r.kind==="off"&&codeU&&codeU!=="OFF"&&codeU!==r.status.toUpperCase())h+=` <span class="swin-tag t-off">${X(r.code)}</span>`;
   if(r.ph)h+=` <span class="swin-tag t-ph" title="${XA("SA public holiday: "+r.ph.name)}">PH</span>`;
-  if(r.ukbh)h+=` <span class="swin-tag t-uk" title="${XA("UK bank holiday: "+r.ukbh.name)}">UK</span>`;
+  if(r.ukbh&&pref("hol.showUK"))h+=` <span class="swin-tag t-uk" title="${XA("UK bank holiday: "+r.ukbh.name)}">UK</span>`;
   if(typeof actingOn==="function"){
     const a=actingOn(name,r.iso);
     if(a)h+=` <span class="swin-tag t-act" title="${XA(coverLabel(a)+", "+coverSpanText(a))}">Acting for ${X((a.forName||"vacancy").split(" ")[0])}</span>`;
@@ -386,16 +390,30 @@ function swinBuildText(name,fromISO,toISO,clock,rangeLabel){
   const rows=swinRows(name,fromISO,toISO),sum=_swinSummary(rows),leader=_swinLeaderOf(name),sender=_swinSenderName();
   const now=new Date();
   const lines=[`${name} · ${rangeLabel||_swinSpanLabel(fromISO,toISO)} · ${clock==="uk"?"UK":"SA"} time`];
+  // What goes in the message: Settings → Sharing → Message text.
+  const o={status:pref("swin.txtStatus"),other:pref("swin.txtOther"),ph:pref("swin.txtHolidays"),uk:pref("swin.txtUK")&&pref("hol.showUK"),cover:pref("swin.txtCover")&&typeof actingOn==="function",nextOff:pref("swin.txtNextOff"),sent:pref("swin.txtSent"),footer:pref("swin.footer")};
+  const otherClock=clock==="uk"?"sa":"uk";
   if(leader)lines.push("Team leader: "+leader);
   lines.push("");
   rows.forEach(r=>{
-    const shift=_swinShiftText(r,clock);
-    lines.push(`${_swinDayLabel(r.iso)}  ${shift}${r.kind==="work"?"  "+r.status:""}${r.ph?"  ("+r.ph.name+")":""}`);
+    let line=`${_swinDayLabel(r.iso)}  ${_swinShiftText(r,clock)}`;
+    if(o.other&&r.kind==="work")line+=` (${otherClock.toUpperCase()} ${_swinShiftText(r,otherClock)})`;
+    if(o.status&&r.kind==="work")line+="  "+r.status;
+    if(o.ph&&r.ph)line+="  ("+r.ph.name+")";
+    if(o.uk&&r.ukbh)line+="  (UK: "+r.ukbh.name+")";
+    if(o.cover){
+      const a=actingOn(name,r.iso),l=leaderOn(name,r.iso);
+      if(a)line+="  Acting for "+(a.forName||"a vacancy");
+      if(l.cover)line+="  Led by "+l.name;
+    }
+    lines.push(line);
   });
   lines.push("");
-  if(sum.nextOff)lines.push("Next day off: "+_swinDayLabel(sum.nextOff));
+  if(o.nextOff&&sum.nextOff)lines.push("Next day off: "+_swinDayLabel(sum.nextOff));
   if(sum.none)lines.push(`${sum.none} day${sum.none===1?"":"s"} not on the roster yet: check with your team leader.`);
-  lines.push(`Sent ${P(now.getDate())} ${MO[now.getMonth()]} ${now.getFullYear()}${sender?" by "+sender:""}`);
+  if(o.sent)lines.push(`Sent ${P(now.getDate())} ${MO[now.getMonth()]} ${now.getFullYear()}${sender?" by "+sender:""}`);
+  if(o.footer)lines.push(o.footer);
+  while(lines.length&&lines[lines.length-1]==="")lines.pop();
   return{text:lines.join("\n"),rows};
 }
 async function swinCopyText(){

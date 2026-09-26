@@ -24,9 +24,16 @@ function _scopeAll(){
   }
   return _scopeParsed.obj;
 }
-function scopeGet(){const s=_scopeAll()[S.activeDept||""]||{};return{leader:String(s.leader||""),dept:String(s.dept||"")};}
+// With "remember the scope" off (Settings → Workspace), a saved scope is ignored until one is set
+// in this visit.
+let _scopeSetThisVisit=false;
+function scopeGet(){
+  if(!_scopeSetThisVisit&&pref("scope.remember")===false)return{leader:"",dept:""};
+  const s=_scopeAll()[S.activeDept||""]||{};return{leader:String(s.leader||""),dept:String(s.dept||"")};
+}
 function scopeSet(patch){
-  const all=Object.assign({},_scopeAll()),k=S.activeDept||"",cur=Object.assign({leader:"",dept:""},all[k]||{},patch||{});
+  const all=Object.assign({},_scopeAll()),k=S.activeDept||"",cur=Object.assign({leader:"",dept:""},scopeGet(),patch||{});
+  _scopeSetThisVisit=true;
   if(!cur.leader&&!cur.dept)delete all[k];else all[k]={leader:cur.leader,dept:cur.dept};
   if(Object.keys(all).length)_persistSet(SCOPE_KEY,JSON.stringify(all));else _persistRemove(SCOPE_KEY);
   _scopeMemo.key="";
@@ -42,7 +49,7 @@ function _scopeKnown(name){return!!name&&(!!(S.people||{})[name]||(S.entries||[]
 function scopeTree(leader,iso,st){
   st=st||orgStructure(iso);
   const out=new Set([leader]),queue=[leader];
-  const acting=typeof actingOn==="function"?actingOn(leader,iso):null;
+  const acting=typeof actingOn==="function"&&pref("scope.includeActing")?actingOn(leader,iso):null;
   if(acting&&acting.forName&&!out.has(acting.forName)){out.add(acting.forName);queue.push(acting.forName);}
   while(queue.length){const n=queue.shift();(st.reports.get(n)||[]).forEach(c=>{if(!out.has(c)){out.add(c);queue.push(c);}});}
   return out;
@@ -75,7 +82,7 @@ function scopeKey(){const sc=scopeGet(),s=scopeNames();return s?sc.leader+"/"+sc
 // Leaders for the picker, as a tree: anyone with people reporting to them on the scope date, and
 // anyone acting that day (listed under their own leader).
 let _scopeOptMemo={key:"",out:[]};
-function _scopeDataKey(iso){const m=S.nsCanonical;return[S.activeDept||"",iso,S.entriesVer||0,Object.keys(S.people||{}).length,m?(m.updated_at||""):"",typeof coverRows==="function"?coverRows().length:0].join("|");}
+function _scopeDataKey(iso){const m=S.nsCanonical;return[S._prefsVer||0,S.activeDept||"",iso,S.entriesVer||0,Object.keys(S.people||{}).length,m?(m.updated_at||""):"",typeof coverRows==="function"?coverRows().length:0].join("|");}
 function scopeLeaderOptions(){
   const iso=scopeRefISO(),key=_scopeDataKey(iso);
   if(_scopeOptMemo.key===key)return _scopeOptMemo.out;

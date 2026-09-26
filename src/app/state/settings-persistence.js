@@ -113,9 +113,12 @@ function saveSettings(){
     flagSettings:S.flagSettings||{},
     cardShow:S.cardShow||{},
     focusMode:S.focusMode||"month",
-    otThresholds:S.otThresholds||{sick:3,absence:3,capacity:3,gap:-2}
+    otThresholds:S.otThresholds||{sick:3,absence:3,capacity:3,gap:-2},
+    prefs:S.prefs||{}
   }));}catch(e){}
   try{_saveScratchpad();}catch(e){}
+  // Universal workspace: everything below is per-project data held as combined, renamed copies.
+  if(typeof _persistReadOnlyView==="function"&&_persistReadOnlyView())return;
   try{_persistSet(CRITICAL_STATE_SCHEMA_KEY,String(CRITICAL_STATE_SCHEMA_VERSION));}catch(e){}
   try{_persistSet("sc_planner",JSON.stringify({
     _schemaVersion:CRITICAL_STATE_SCHEMA_VERSION,
@@ -204,12 +207,13 @@ function loadSettings(){
         if(saved.notes&&typeof saved.notes==="object")S.flagSettings.notes=saved.notes;
         if(Array.isArray(saved.whitelist))S.flagSettings.whitelist=saved.whitelist;
       }
+      prefsLoad(s.prefs);
       if(s.otThresholds&&typeof s.otThresholds==="object"){
         if(!_isPlainObject(S.otThresholds))S.otThresholds={sick:3,absence:3,capacity:3,gap:-2};
         ["sick","absence","capacity","gap"].forEach(k=>{if(typeof s.otThresholds[k]==="number")S.otThresholds[k]=s.otThresholds[k];});
       }
     }
-    else S._schemaVersion=SETTINGS_SCHEMA_VERSION;
+    else{S._schemaVersion=SETTINGS_SCHEMA_VERSION;prefsLoad({});}
     // Fallback compatibility: dedicated theme keys
     const t=_readThemeStorage();
     if(!themeApplied&&t.theme){
@@ -260,6 +264,8 @@ function nsBootApp(){
   _nsBooted=true;
   loadSettings();
   S.tab="dashboard";
+  // Settings → Appearance → Open on.
+  prefApplyStartView();
   _restoreViewportFromState();
   _loadScratchpad();
   // Ensure data attributes are set even if no saved settings exist
@@ -1182,6 +1188,9 @@ function _syncApplyViewState(deptKey){
   if(view._scrollPos&&typeof view._scrollPos==='object'){
     S._scrollPos=Object.assign({},S._scrollPos||{},view._scrollPos);
   }
+  // Settings → Appearance → "Open a project on": anything but "where I left off" picks the screen;
+  // the month, filters and sheet above still come back.
+  if(pref("ui.startView")!=="resume")prefApplyStartView();
   return view;
 }
 function _syncRestoreScrollForTab(){

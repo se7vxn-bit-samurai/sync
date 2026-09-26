@@ -18,6 +18,7 @@ function clearAllData(){
   _setExceptions([]);_setLeaveRequests([]);S.dayClosed={};
   S.plCellOverrides={};S.savedMonths={};S.plCellEdit=null;
   S.targetHours=0;S.ratePerHour=0;
+  S.prefs={};S._prefsVer=(S._prefsVer||0)+1;try{_prefApplyBodyClasses();}catch(e){}
   S.coachBlackouts={};S.coachPlan={};S.coachHistory=[];S.coachDuration=30;S.coachTargetDaily=1;S.coachTargetMonthly=0;
   S.coachManualSessions=[];S.coachBudgetHrs={};S.swaps=[];S._swapFormDay=null;
   S.leaderPlanner={tasks:[],filter:"open",selectedDay:null};S.changeIntelligence=_normalizeChangeIntelligence({});S.dashboardLayout=_defaultDashboardLayout();

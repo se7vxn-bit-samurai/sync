@@ -103,7 +103,7 @@ function getPersistSignature(){
   return JSON.stringify({
     th:S.th,thVariant:S.thVariant||0,tz:S.tz,hlToday:S.hlToday,covMin:S.covMin,hrsMax:S.hrsMax,cbMode:S.cbMode,density:S.density,tab:S.tab,
     peopleSubTab:S.peopleSubTab||"dashboard",peopleDashView:S.peopleDashView||"today_ops",peopleView:S._peopleView||"cards",peopleLogFilter:S._peopleLogFilter||"all",
-    targetHours:S.targetHours||0,ratePerHour:S.ratePerHour||0,
+    targetHours:S.targetHours||0,ratePerHour:S.ratePerHour||0,prefs:S.prefs||{},
     plOverrides:S.plOverrides,plLeave:S.plLeave,plHires:S.plHires,plRemoved:S.plRemoved,plMonths:S.plMonths,
     plBlueprints:S.plBlueprints,plPositions:S.plPositions,exceptions:S.exceptions,dayClosed:S.dayClosed,
     coachPlan:S.coachPlan,coachHistory:S.coachHistory,coachBlackouts:S.coachBlackouts,coachDuration:S.coachDuration,coachTargetDaily:S.coachTargetDaily,
@@ -112,6 +112,7 @@ function getPersistSignature(){
   });
 }
 let _persistRun=null;
+function _persistReadOnlyView(){return typeof isUniversalWorkspace==="function"&&isUniversalWorkspace();}
 function schedulePersist(force){
   const nextSig=getPersistSignature();
   if(!force&&nextSig===_persistSig)return;
@@ -120,7 +121,9 @@ function schedulePersist(force){
     _persistTimer=null;_persistRun=null;
     const latest=getPersistSignature();
     if(force||latest!==_persistSig){
-      const commit=()=>{saveSettings();savePeople();saveShiftLib();saveCoachQuality();saveCoverageReq();saveOTPlan();saveQoLState();};
+      // The universal workspace is a read-only combined view: its people, exceptions and plans are
+      // renamed "Name · Project" copies, so only preferences are saved while it is open.
+      const commit=()=>{saveSettings();if(_persistReadOnlyView())return;savePeople();saveShiftLib();saveCoachQuality();saveCoverageReq();saveOTPlan();saveQoLState();};
       if(force)_persistCritical(commit);
       else{commit();_schedulePersistFlush(false);}
       _persistSig=latest;

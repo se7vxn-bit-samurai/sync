@@ -64,7 +64,7 @@ function _maybeRehydrateCardsMonth(em){
 // v56: Analytics data cache — avoids recomputing monthEnt/grid/stats on every tab switch
 let _anDataCache=null;
 function getAnData(){
-  const cacheKey=[S.month,S.team,S.emp,S.anScope||'month',S.tz?'sa':'uk',S.entriesVer||0].join('|');
+  const cacheKey=[S.month,S.team,S.emp,S.anScope||'month',S.tz?'sa':'uk',S.entriesVer||0,typeof scopeKey==="function"?scopeKey():"",S._empMulti&&Array.isArray(S._empMultiSet)?S._empMultiSet.join(","):""].join('|');
   if(_anDataCache&&_anDataCache._key===cacheKey)return _anDataCache;
   if(!S.month)return null;
   const[y,m]=S.month.split("-").map(Number);
@@ -82,7 +82,7 @@ function getAnData(){
     }else{
       monthEnt=monthEnt.filter(x=>x.name===S.emp);
     }
-  }
+  }else monthEnt=_empFilterEntries(monthEnt);// multi-select leaders, or the scope bar
   monthEnt=monthEnt.map(x=>(!S.tz||x.isOff||!x.ukS)?{...x,saS:null,saE:null}:{...x,saS:u2s(x.ukS,x.date),saE:u2s(x.ukE,x.date)});
   // anScope filter
   const _scopeViews=['dashboard','coverage','capacity','absence'];

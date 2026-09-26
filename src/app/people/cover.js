@@ -11,7 +11,10 @@
 // Exception types that take a leader away from their team for the day.
 const COVER_ABSENT_EXC=["sick","annual_leave","family_responsibility","no_show","training"];
 const COVER_ABSENT_STATUS=["sick","leave","awol","training"];
-const COVER_LOOKBACK_DAYS=180;
+// Suggestion tuning lives in Settings → Cover & leaders (cover.* preferences).
+function coverLookbackDays(){return prefNum("cover.lookbackDays");}
+function coverLookbackText(){const d=coverLookbackDays();return d%30===0&&d>=60?d/30+" months":d+" days";}
+function _coverLabelIn(labels,list){const want=new Set(list.map(l=>l.toLowerCase()));return labels.some(l=>want.has(String(l).toLowerCase()));}
 
 function _coverTodayISO(){return excKey(new Date());}
 function _coverISO(date){return date instanceof Date?excKey(date):(typeof date==="string"&&date?date.slice(0,10):_coverTodayISO());}
@@ -134,14 +137,15 @@ function _coverRangesOverlap(r,fromISO,toISO){return(!r.starts||r.starts<=toISO)
 function coverSuggest(gap){
   const L=gap.leader,dates=gap.dates,from=dates[0],to=dates[dates.length-1],dateSet=new Set(dates);
   const ref=_coverRefShift(L,from),team=new Set(coverTeamOf(L)),leaders=new Set(coverLeaders());
-  const pool=new Set(team);
+  const pool=new Set(team),poolLabels=pref("cover.poolLabels"),devLabels=pref("cover.devLabels");
+  const w={avail:prefNum("cover.wAvail"),overlap:prefNum("cover.wOverlap"),fair:prefNum("cover.wFair"),team:prefNum("cover.wTeam"),dev:prefNum("cover.wDev"),leader:prefNum("cover.pLeader"),busy:prefNum("cover.pBusy")};
   Object.values(S.people||{}).forEach(p=>{
     if(!p||!p.name||p.name===L)return;
     const labels=peopleRoleLabels(p.name);
-    if(labels.some(l=>/^(YAT|Senior Agent|Supervisor|SME)$/i.test(l))||leaders.has(p.name))pool.add(p.name);
+    if(_coverLabelIn(labels,poolLabels)||leaders.has(p.name))pool.add(p.name);
   });
   pool.delete(L);
-  const since=excKey(_swinAddDays(new Date(),-COVER_LOOKBACK_DAYS)),out=[];
+  const since=excKey(_swinAddDays(new Date(),-coverLookbackDays())),out=[];
   pool.forEach(name=>{
     let avail=0,ov=0;
     swinRows(name,from,to).forEach(r=>{
@@ -153,20 +157,20 @@ function coverSuggest(gap){
     if(!avail)return;
     const busy=coverRows().find(c=>coverState(c)!=="cancelled"&&_coverIs(name,c.personId,c.personName)&&_coverRangesOverlap(c,from,to));
     const days=coverActingDays(name,since),labels=peopleRoleLabels(name).filter(l=>!/^acting\b/i.test(l));
-    const onTeam=team.has(name),leads=leaders.has(name),dev=labels.some(l=>/^(YAT|Senior Agent|Supervisor)$/i.test(l));
+    const onTeam=team.has(name),leads=leaders.has(name),dev=_coverLabelIn(labels,devLabels);
     const availR=avail/dates.length,ovR=ov/dates.length;
-    const score=Math.round(45*availR+20*ovR+15/(1+days/5)+(onTeam?10:0)+(dev?10:0)-(leads?10:0)-(busy?30:0));
+    const score=Math.round(w.avail*availR+w.overlap*ovR+w.fair/(1+days/5)+(onTeam?w.team:0)+(dev?w.dev:0)-(leads?w.leader:0)-(busy?w.busy:0));
     const why=[];
     why.push(avail===dates.length?`Works all ${dates.length} day${dates.length===1?"":"s"}`:`Works ${avail} of ${dates.length} days`);
     if(ref)why.push(ovR>=0.99?"same hours as "+L.split(" ")[0]:Math.round(ovR*100)+"% of "+L.split(" ")[0]+"'s hours");
-    why.push(days?`acted ${days} day${days===1?"":"s"} in 6 months`:"has not acted yet");
+    why.push(days?`acted ${days} day${days===1?"":"s"} in ${coverLookbackText()}`:"has not acted yet");
     if(onTeam)why.push("on this team");
     if(labels.length)why.push(labels.join(", "));
     if(leads)why.push("leads their own team");
     if(busy)why.push("already covering "+(busy.forName||"a vacancy")+" "+coverSpanText(busy));
     out.push({name,score,avail,days,onTeam,leads,busy:!!busy,why});
   });
-  return out.sort((a,b)=>b.score-a.score||a.days-b.days||a.name.localeCompare(b.name)).slice(0,6);
+  return out.sort((a,b)=>b.score-a.score||a.days-b.days||a.name.localeCompare(b.name)).slice(0,prefNum("cover.maxSuggestions"));
 }
 
 // ── Clashes in current and upcoming cover ──
