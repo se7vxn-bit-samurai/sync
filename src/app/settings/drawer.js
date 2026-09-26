@@ -1,258 +1,378 @@
 /* ═══════════════════════════════════════════════════════════════
-   UNIFIED SETTINGS DRAWER v48
-   One ⚙ button → one drawer → all preferences
+   SETTINGS DRAWER
+   One ⚙ button → one drawer. Sections are listed in
+   SETTINGS_SECTIONS (prefs.js); tunable rules come from the
+   preferences registry (SYNC_PREFS) and render as rows with help,
+   the default, and a reset. Settings that already lived on S
+   (theme, rules, alerts, coaching, cards) render here too, wired to
+   the same setters the rest of the app uses. Search looks across
+   every section.
    ═══════════════════════════════════════════════════════════════ */
 
 function toggleSettings(){S._settingsOpen?closeSettings():openSettings('workspace');}
-function openSettings(section){S._settingsOpen=true;S._settingsSection=section||S._settingsSection||'account';renderSettings();}
+function openSettings(section){
+  S._settingsOpen=true;
+  const known=id=>SETTINGS_SECTIONS.some(s=>s.id===id);
+  S._settingsSection=known(section)?section:(known(S._settingsSection)?S._settingsSection:'account');
+  if(section)S._settingsQuery='';
+  renderSettings();
+}
 function openAccountSettings(){openSettings('account');}
-function selectSettingsSection(section){S._settingsSection=section;renderSettings();}
+function selectSettingsSection(section){S._settingsSection=section;S._settingsQuery='';renderSettings();const p=document.getElementById('settingsPanel');if(p)p.scrollTop=0;}
 function closeSettings(){S._settingsOpen=false;const el=document.getElementById("settingsOverlay");if(el)el.remove();}
+function settingsSearch(q){
+  S._settingsQuery=String(q||'');
+  const main=document.getElementById('setMain');
+  if(main)main.innerHTML=_setMainHTML();
+  // Only the results change, so the search box keeps focus; the nav shows no section while searching.
+  document.querySelectorAll('#settingsPanel .set-tab').forEach(b=>{const on=!S._settingsQuery.trim()&&b.dataset.section===S._settingsSection;b.classList.toggle('on',on);if(on)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
+}
+
+// ── Row builders ──
+function _setPrefId(k){return'pref_'+k.replace(/[^a-z0-9]/gi,'_');}
+function _setRow(o){
+  // o: {id, label, help, control, changed, defText, reset, attrs}
+  let h=`<div class="set-row${o.changed?' changed':''}"${o.attrs||''}><div class="set-row-main">`;
+  h+=`<label class="set-l"${o.id?` for="${o.id}"`:''}>${o.label}${o.changed?'<span class="set-dot" title="Changed from the default"></span>':''}</label>`;
+  if(o.help)h+=`<div class="set-h">${o.help}</div>`;
+  if(o.changed&&o.defText!==undefined)h+=`<div class="set-def">Default: ${X(o.defText)}${o.reset?` · <button type="button" class="set-link" onclick="${o.reset}">Reset</button>`:''}</div>`;
+  return h+`</div><div class="set-ctl">${o.control}</div></div>`;
+}
+function _setSwitch(id,on,onchange,label){
+  return`<label class="set-switch"><input type="checkbox" role="switch" id="${id}" ${on?'checked':''} onchange="${onchange}"${label?` aria-label="${XA(label)}"`:''}><span></span></label>`;
+}
+function _setNumber(id,val,min,max,onchange,unit,step){
+  return`<span class="set-num"><input type="number" id="${id}" value="${XA(String(val))}"${min!==undefined?` min="${min}"`:''}${max!==undefined?` max="${max}"`:''}${step?` step="${step}"`:''} onchange="${onchange}">${unit?`<span class="set-u">${X(unit)}</span>`:''}</span>`;
+}
+function _setSelect(id,val,opts,onchange){
+  return`<select id="${id}" class="set-sel" onchange="${onchange}">${opts.map(([v,l])=>`<option value="${XA(String(v))}"${String(v)===String(val)?' selected':''}>${X(l)}</option>`).join('')}</select>`;
+}
+function _setPrefRow(p){
+  const id=_setPrefId(p.k),v=pref(p.k),changed=!prefIsDefault(p.k),on=`prefSet('${p.k}',`;
+  let control='';
+  if(p.t==='bool')control=_setSwitch(id,v,on+"this.checked)",p.l);
+  else if(p.t==='int')control=_setNumber(id,v,p.min,p.max,on+"this.value)",p.u);
+  else if(p.t==='select')control=_setSelect(id,v,p.o,on+"this.value)");
+  else if(p.t==='text')control=`<input type="text" class="set-text" id="${id}" value="${XA(v)}" maxlength="${p.max||200}"${p.ph?` placeholder="${XA(p.ph)}"`:''} onchange="${on}this.value)">`;
+  else if(p.t==='list')control=`<input type="text" class="set-text" id="${id}" value="${XA(v.join(', '))}" onchange="${on}this.value)">`;
+  const range=p.t==='int'&&p.min!==undefined?` <span class="set-range">(${p.min}–${p.max})</span>`:'';
+  return _setRow({id,label:X(p.l),help:X(p.h||'')+range,control,changed,defText:prefValueText(p,p.d),reset:`prefReset('${p.k}')`,attrs:` data-pref="${p.k}"`});
+}
+function _setGroup(title,body,extra){return`<section class="set-group"${extra||''}><h3 class="set-gt">${title}</h3>${body}</section>`;}
+function _setPrefGroups(section,only){
+  const groups=[];
+  SYNC_PREFS.filter(p=>p.s===section&&(!only||only.includes(p.g))).forEach(p=>{let g=groups.find(x=>x.g===p.g);if(!g){g={g:p.g,list:[]};groups.push(g);}g.list.push(p);});
+  return groups.map(g=>_setGroup(X(g.g),g.list.map(_setPrefRow).join(''))).join('');
+}
+function _setButtons(list){return`<div class="set-btns">${list.map(([label,fn,cls])=>`<button type="button" class="swin-btn${cls?' '+cls:''}" onclick="${fn}">${label}</button>`).join('')}</div>`;}
+function _setNote(t){return`<div class="set-note">${t}</div>`;}
+
+// ── Setters for settings that live on S ──
+function settingsSetRule(field,value){
+  if(!S.rules)S.rules={};
+  const n=Math.round(Number(value));
+  if(field==='hrsMax'){const v=Math.min(80,Math.max(20,Number.isFinite(n)?n:45));S.hrsMax=v;S.rules.maxHoursWeek=v;}
+  else if(field==='covMin'){const v=Math.min(50,Math.max(1,Number.isFinite(n)?n:1));S.covMin=v;S.rules.minCoveragePerDay=v;}
+  else if(field==='maxConsecutiveDays')S.rules.maxConsecutiveDays=Math.min(14,Math.max(3,Number.isFinite(n)?n:6));
+  else if(field==='weekendPolicy'&&['rotate','fixed','none'].includes(value))S.rules.weekendPolicy=value;
+  else if(field==='lunch')S.rules.breaks=Object.assign({},S.rules.breaks||{},{lunch:Math.min(120,Math.max(0,Number.isFinite(n)?n:30))});
+  else if(field==='coachDuration'&&[15,30,45,60].includes(n))S.coachDuration=n;
+  else if(field==='coachTargetDaily')S.coachTargetDaily=Math.min(10,Math.max(0,Number.isFinite(n)?n:1));
+  else return;
+  if(typeof invalidateDerivedCache==='function')invalidateDerivedCache();
+  schedulePersist(true);
+  rerenderCurrentSurface();
+  renderSettings();
+}
+function settingsSetCardShow(key,on){
+  if(key==='wk')S.showCardWk=!!on;
+  else{S.cardShow=Object.assign({},S.cardShow||{});S.cardShow[key]=!!on;}
+  schedulePersist(true);rerenderCurrentSurface();renderSettings();
+}
+function settingsToggleAlert(key){toggleFlagAlert(key);if(typeof invalidateDerivedCache==='function')invalidateDerivedCache();renderSettings();}
+function settingsAlertThreshold(key,value){
+  setFlagThreshold(key,String(value).trim()===''?null:value);
+  if(typeof invalidateDerivedCache==='function')invalidateDerivedCache();
+  rerenderCurrentSurface();renderSettings();
+}
+function settingsResetDismissed(){resetDismissed();toast('Dismissed alerts are back','ok');renderSettings();}
+function settingsSetPrivacy(field,on){absenceSetPrivacy({[field]:!!on});rerenderCurrentSurface();renderSettings();}
+function settingsGo(fn){closeSettings();try{fn();}catch(e){}}
+
+// ── Sections ──
+const SETTINGS_ALERT_META={
+  overHours:{u:'h/week',min:20,max:80,fallback:()=>S.hrsMax||45,h:'Someone is scheduled over this many hours in a week. Empty uses Max hours / week (Workspace).'},
+  lowCoverage:{u:'people',min:1,max:50,fallback:()=>S.covMin||1,h:'Fewer people working on a day than this. Empty uses Minimum coverage (Workspace).'},
+  consecutiveDays:{u:'days',min:3,max:14,fallback:()=>7,h:'Someone works more than this many days in a row.'},
+  longShift:{u:'hours',min:6,max:16,fallback:()=>10,h:'A single shift longer than this.'},
+  weekendBalance:{u:'% off avg',min:5,max:60,fallback:()=>15,h:"A person's share of weekend shifts is this far from the team average."},
+  coachingDue:{h:'Someone has no coaching session planned or done in the month on screen.'},
+  blueprintDrift:{h:'The loaded schedule differs from the rotation blueprint.'}
+};
+function _setAccount(){return _syncRenderSettingsAccountSection()+_syncRenderSettingsSnapshotSection();}
+
+function _setWorkspace(){
+  const r=S.rules||{},br=r.breaks||{};
+  const people=Object.keys(S.people||{}).length,rows=(S.entries||[]).length,months=(S.months||[]).length;
+  let h=_setGroup('Project',`<div class="set-kv"><b>${X(S.activeDept||S.fn||'No project open')}</b><span>${people} people · ${rows} roster rows · ${months} month${months===1?'':'s'}</span></div>`+
+    _setButtons([['Projects','settingsGo(_syncOpenProjectsPanel)'],['Add roster','settingsGo(triggerRosterUpload)'],['Validate rules','settingsGo(runRulesValidation)']]));
+  const teams=typeof gT==='function'?gT():[];
+  if((S.shs&&S.shs.length>1)||(teams&&teams.length>1)){
+    let f='';
+    if(S.shs&&S.shs.length>1)f+=_setRow({id:'setSheet',label:'Sheet',help:'Which sheet of the workbook is on screen.',control:_setSelect('setSheet',S.sh,[['__all__','All sheets'],...S.shs.map(s=>[s,s])],"swSh(this.value);renderSettings()")});
+    if(teams&&teams.length>1)f+=_setRow({id:'setTeam',label:'Team',help:'Show one roster team.',control:_setSelect('setTeam',S.team||'all',[['all','All teams'],...teams.map(t=>[t,t])],"setTeam(this.value);renderSettings()")});
+    f+=_setRow({id:'setAllMonths',label:'All months view',help:'Show every loaded month together instead of one at a time.',control:_setSwitch('setAllMonths',S.allMonths,"S.allMonths=this.checked;rerenderCurrentSurface();rerenderChromeOnly();renderSettings()")});
+    h+=_setGroup('Filters',f);
+  }
+  const sc=typeof scopeGet==='function'?scopeGet():{leader:'',dept:''},names=typeof scopeNames==='function'?scopeNames():null;
+  const scText=sc.leader||sc.dept?[sc.dept?'Department: '+X(sc.dept):'',sc.leader?'Leader tree: '+X(sc.leader):''].filter(Boolean).join(' · ')+(names?` (${names.size} people)`:''):'Everyone in the project';
+  h+=_setGroup('Scope',`<div class="set-kv"><b>${scText}</b><span>Set it from the scope chip in the toolbar. Every page follows it.</span></div>`+
+    (sc.leader||sc.dept?_setButtons([['Clear scope','clearScope();renderSettings()']]):'')+
+    SYNC_PREFS.filter(p=>p.s==='workspace'&&p.g==='Scope').map(_setPrefRow).join(''));
+  let rules='';
+  rules+=_setRow({id:'setHrsMax',label:'Max hours / week',help:'Validation, the over-hours alert and capacity use this. (20–80)',control:_setNumber('setHrsMax',S.hrsMax||r.maxHoursWeek||45,20,80,"settingsSetRule('hrsMax',this.value)",'hours'),changed:(S.hrsMax||45)!==45,defText:'45 hours',reset:"settingsSetRule('hrsMax',45)"});
+  rules+=_setRow({id:'setMaxDays',label:'Max consecutive days',help:'The longest run of working days before validation warns. (3–14)',control:_setNumber('setMaxDays',r.maxConsecutiveDays||6,3,14,"settingsSetRule('maxConsecutiveDays',this.value)",'days'),changed:(r.maxConsecutiveDays||6)!==6,defText:'6 days',reset:"settingsSetRule('maxConsecutiveDays',6)"});
+  rules+=_setRow({id:'setCovMin',label:'Minimum coverage',help:'The fewest people working before a day shows as short. The Leaders board also marks a team thin below it. (1–50)',control:_setNumber('setCovMin',S.covMin||1,1,50,"settingsSetRule('covMin',this.value)",'people'),changed:(S.covMin||1)!==1,defText:'1 person',reset:"settingsSetRule('covMin',1)"});
+  rules+=_setRow({id:'setWeekend',label:'Weekend policy',help:'How weekends are shared out when building a schedule.',control:_setSelect('setWeekend',r.weekendPolicy||'rotate',[['rotate','Rotate'],['fixed','Fixed'],['none','None']],"settingsSetRule('weekendPolicy',this.value)"),changed:(r.weekendPolicy||'rotate')!=='rotate',defText:'Rotate',reset:"settingsSetRule('weekendPolicy','rotate')"});
+  rules+=_setRow({id:'setLunch',label:'Lunch',help:'Lunch length used for paid-hours maths.',control:_setSelect('setLunch',br.lunch??30,[[0,'None'],[15,'15 min'],[30,'30 min'],[45,'45 min'],[60,'60 min']],"settingsSetRule('lunch',this.value)"),changed:(br.lunch??30)!==30,defText:'30 min',reset:"settingsSetRule('lunch',30)"});
+  h+=_setGroup('Schedule rules',rules+_setButtons([['Full rules panel (OT window, breaks)','settingsGo(showRulesPanel)']]));
+  let cost='';
+  cost+=_setRow({id:'setTarget',label:'Target hours',help:'Planned paid hours for the month, compared with scheduled hours in Analytics → Capacity. 0 turns the comparison off.',control:_setNumber('setTarget',S.targetHours||0,0,100000,"setTargetHours(this.value);renderSettings()",'hours')});
+  cost+=_setRow({id:'setRate',label:'Rate per hour',help:'Used to turn hours into cost in Analytics → Capacity. 0 hides cost.',control:_setNumber('setRate',S.ratePerHour||0,0,100000,"setRatePerHour(this.value);renderSettings()",'per hour','0.01')});
+  h+=_setGroup('Hours & cost',cost);
+  let coach='';
+  coach+=_setRow({id:'setCoachDur',label:'Session length',help:'Default length of a coaching session in the planner.',control:_setSelect('setCoachDur',S.coachDuration||30,[[15,'15 min'],[30,'30 min'],[45,'45 min'],[60,'60 min']],"settingsSetRule('coachDuration',this.value)"),changed:(S.coachDuration||30)!==30,defText:'30 min',reset:"settingsSetRule('coachDuration',30)"});
+  coach+=_setRow({id:'setCoachDaily',label:'Sessions a day',help:'Target coaching sessions per leader per working day. (0–10)',control:_setNumber('setCoachDaily',S.coachTargetDaily??1,0,10,"settingsSetRule('coachTargetDaily',this.value)",'a day'),changed:(S.coachTargetDaily??1)!==1,defText:'1 a day',reset:"settingsSetRule('coachTargetDaily',1)"});
+  h+=_setGroup('Coaching',coach);
+  h+=_setGroup('Quick notes',`<textarea id="syncSettingsScratchpad" class="set-area" placeholder="Quick notes, reminders, todos…" oninput="S.scratchpad=this.value;_saveScratchpad()">${X(S.scratchpad||'')}</textarea>`+_setNote('Saved on this device.'));
+  return h;
+}
+
+function _setAppearance(){
+  const activeThemeKey=S.th||'surge',vLabels=THEME_VARIANTS_LABELS[activeThemeKey]||{},vSlugs=THEME_VARIANTS[activeThemeKey]||[];
+  const curSlug=vSlugs[S.thVariant||0]||vSlugs[0]||'',curVariantLabel=(vLabels[curSlug]&&vLabels[curSlug].l)||curSlug||'Default';
+  let t=`<div class="set-themes">${Object.entries(TH).map(([k,th])=>`<button type="button" class="set-theme${S.th===k?' on':''}" aria-pressed="${S.th===k}" onclick="setTh('${k}');renderSettings()"><span style="background:${th.d}"></span>${X(th.n)}</button>`).join('')}</div>`;
+  const bycat={};
+  vSlugs.forEach((sl,i)=>{const m=vLabels[sl];if(!m)return;(bycat[m.c]=bycat[m.c]||[]).push({sl,i,label:m.l});});
+  t+=`<details class="set-details"${S._settingsVariantsOpen?' open':''} ontoggle="S._settingsVariantsOpen=this.open"><summary>Variants <b>${X(curVariantLabel)}</b></summary>`;
+  [['dark','Dark'],['mid','Mid'],['light','Light'],['neutral','Neutral']].forEach(([cat,label])=>{
+    if(!bycat[cat])return;
+    t+=`<div class="set-vcat">${label}</div><div class="set-chips">${bycat[cat].map(({sl,i,label})=>`<button type="button" class="set-chip${sl===curSlug?' on':''}" onclick="setVariantDirect(${i});renderSettings()">${X(label)}</button>`).join('')}</div>`;
+  });
+  t+=`</details>`;
+  t+=_setRow({label:'Density',help:'How much fits on screen.',control:`<span class="set-seg" role="group" aria-label="Density">${['compact','comfortable','spacious'].map(d=>`<button type="button" aria-pressed="${S.density===d}" onclick="setDensity('${d}');renderSettings()">${d[0].toUpperCase()+d.slice(1)}</button>`).join('')}</span>`});
+  let h=_setGroup('Theme',t);
+  let d='';
+  d+=_setRow({id:'setCb',label:'Colour-blind mode',help:'Adds patterns and stronger contrast to shift colours.',control:_setSwitch('setCb',S.cbMode,"setCbMode(this.checked);renderSettings()")});
+  d+=_setRow({id:'setHl',label:'Highlight today',help:"Marks today's date in the Calendar.",control:_setSwitch('setHl',S.hlToday!==false,"setTodayHighlight(this.checked);renderSettings()")});
+  h+=_setGroup('Display',d);
+  h+=_setPrefGroups('preferences');
+  const cs=S.cardShow||{};
+  const cards=[['hrs','Hours badge'],['shifts','Shift count'],['off','Days off'],['health','Health score'],['heatmap','Heatmap'],['typeGrid','Shift types'],['weekStrip','Week strip'],['stats','Stats'],['window','Schedule window'],['summarySA','SA times summary']];
+  let c=cards.map(([k,l])=>_setRow({id:'setCard_'+k,label:l,control:_setSwitch('setCard_'+k,cs[k]!==false,`settingsSetCardShow('${k}',this.checked)`)})).join('');
+  c+=_setRow({id:'setCard_wk',label:'Rotation week badge',help:'The W1–WN week a card sits in.',control:_setSwitch('setCard_wk',S.showCardWk!==false,"settingsSetCardShow('wk',this.checked)")});
+  h+=_setGroup('Schedule cards',_setNote('What each card shows in Calendar → Cards. The same switches sit under the cards.')+c);
+  return h;
+}
+
+// Next UK clock change and the SA offset now (UK clocks change at 01:00 UTC on the last Sunday of
+// March and October; SA does not change).
+function _setClockInfo(){
+  const now=new Date(),y=now.getFullYear();
+  const lastSun=(yy,m)=>{const d=new Date(yy,m+1,0);d.setDate(d.getDate()-d.getDay());return d;};
+  const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const next=[[lastSun(y,2),'forward',1],[lastSun(y,9),'back',2],[lastSun(y+1,2),'forward',1]].find(([d])=>d>today);
+  const off=u2s('12:00',now)==='13:00'?1:2;
+  return{off,next};
+}
+function _setTime(){
+  const ci=_setClockInfo();
+  let c=_setRow({id:'setTz',label:'Show SA time',help:'Rosters are in UK time. On: Sync shows SA times everywhere (UK+1 during British Summer Time, UK+2 otherwise). Off: UK times.',control:_setSwitch('setTz',S.tz,"setTimezoneEnabled(this.checked);renderSettings()")});
+  c+=`<div class="set-kv"><b>SA is UK+${ci.off} today</b><span>${ci.next?`UK clocks go ${ci.next[1]} on ${X(_swinDayLabel(excKey(ci.next[0])))}: SA becomes UK+${ci.next[2]}. Shifts on that Sunday use their own time.`:''}</span></div>`;
+  let h=_setGroup('Clock',c);
+  h+=_setPrefGroups('time');
+  const y=new Date().getFullYear(),showUK=pref('hol.showUK');
+  const list=holidaysBetween(y+'-01-01',y+'-12-31').filter(x=>x.sa||showUK);
+  h+=_setGroup(`Holidays in ${y}`,`<details class="set-details"><summary>${list.filter(x=>x.sa).length} SA public holidays${showUK?` · ${list.filter(x=>x.uk).length} UK bank holidays`:''}</summary><div class="cov-tbl-wrap"><table class="cov-tbl set-tbl"><thead><tr><th>Date</th><th>South Africa</th>${showUK?'<th>UK</th>':''}</tr></thead><tbody>${list.map(x=>`<tr><td>${X(_swinDayLabel(x.iso))}</td><td>${X(x.sa||'—')}</td>${showUK?`<td>${X(x.uk||'—')}</td>`:''}</tr>`).join('')}</tbody></table></div></details>`);
+  return h;
+}
+
+function _setPeople(){
+  let h=_setPrefGroups('people');
+  h+=_setGroup('Open',_setButtons([['Org builder',"settingsGo(()=>railNavPeople('org'))"],['Agents',"settingsGo(()=>railNavPeople('agents'))"],['Leaders board',"settingsGo(()=>railNavPeople('leaders'))"]]));
+  return h;
+}
+
+function _setCover(){
+  const w=k=>prefNum(k);
+  const formula=`Score = ${w('cover.wAvail')} × share of days worked + ${w('cover.wOverlap')} × shift overlap + ${w('cover.wFair')} ÷ (1 + acted days ÷ 5) + ${w('cover.wTeam')} same team + ${w('cover.wDev')} development label − ${w('cover.pLeader')} leads a team − ${w('cover.pBusy')} already covering`;
+  let h=_setPrefGroups('cover',['Cover gaps','Suggestions']);
+  h+=_setGroup('Ranking weights',_setNote(X(formula))+SYNC_PREFS.filter(p=>p.s==='cover'&&p.g==='Ranking weights').map(_setPrefRow).join(''),' id="setCoverWeights"');
+  h+=_setPrefGroups('cover',['Leaders board']);
+  h+=_setGroup('Open',_setButtons([['People → Cover',"settingsGo(()=>railNavPeople('cover'))"],['Leaders board',"settingsGo(()=>railNavPeople('leaders'))"]]));
+  return h;
+}
+
+function _setAbsence(){
+  let h=_setPrefGroups('absence');
+  const priv=absencePrivacy();
+  let p=_setNote('Sick-note flags, patterns and reasons are health information (POPIA special personal information). These two switches apply to this device only and are never synced.');
+  p+=_setRow({id:'setAbsShow',label:'Show sensitive detail',help:'Flags, patterns and reasons in People → Absence.',control:_setSwitch('setAbsShow',priv.show,"settingsSetPrivacy('show',this.checked)")});
+  p+=_setRow({id:'setAbsExport',label:'Include it in exports',help:'Absence CSV columns and exception notes for sick, family responsibility and no-show.',control:_setSwitch('setAbsExport',priv.exportNotes,"settingsSetPrivacy('exportNotes',this.checked)")});
+  h+=_setGroup('Privacy (this device)',p);
+  const types=absenceTypes();
+  h+=_setGroup('Leave types',`<div class="set-types">${types.map(t=>`<div><b>${X(t.label)}</b><span>${X(t.codes.join(', ')||'no roster codes')}${t.unplanned?' · unplanned':''}</span></div>`).join('')}</div>`+_setButtons([['Edit leave types',"settingsGo(()=>railNavPeople('absence'))"]]));
+  return h;
+}
+
+function _setSharingPreview(){
+  const names=typeof _swinAllNames==='function'?_swinAllNames():[];
+  const t=new Date(),from=excKey(t),to=excKey(_swinAddDays(t,6));
+  const name=names.slice(0,40).find(n=>swinRows(n,from,to).some(r=>r.kind==='work'))||names[0];
+  if(!name)return _setNote('Load a roster to see a preview.');
+  const cp=pref('swin.clock'),clock=cp==='sa'||cp==='uk'?cp:(S.tz?'sa':'uk');
+  const out=swinBuildText(name,from,to,clock);
+  return _setNote(`${X(name)}, the next 7 days:`)+`<pre class="set-pre" id="setSwinPreview">${X(out.text)}</pre>`;
+}
+function _setSharing(){
+  let h=_setPrefGroups('sharing',['Schedule Window']);
+  h+=_setPrefGroups('sharing',['Message text']);
+  h+=_setGroup('Preview',_setSharingPreview());
+  return h;
+}
+
+function _setAlerts(){
+  const fs=S.flagSettings||{},alerts=fs.alerts||{},dismissed=Object.keys(fs.dismissed||{}).length;
+  const on=Object.values(alerts).filter(a=>a&&a.on).length;
+  let h=_setNote(`${on} of ${Object.keys(alerts).length} alert rules on. Alerts show in Analytics → Issues and the Home dashboard. Data-quality flags are always on.`);
+  let rows='';
+  Object.keys(alerts).forEach(k=>{
+    const a=alerts[k],m=SETTINGS_ALERT_META[k]||{},id='setAlert_'+k;
+    let control=_setSwitch(id,a.on,`settingsToggleAlert('${k}')`,a.label);
+    if(m.u){
+      const val=a.threshold===null||a.threshold===undefined?'':a.threshold;
+      control=`<span class="set-num"><input type="number" id="${id}_t" value="${XA(String(val))}" min="${m.min}" max="${m.max}" placeholder="${XA(String(m.fallback()))}" aria-label="${XA(a.label+' threshold')}" onchange="settingsAlertThreshold('${k}',this.value)"${a.on?'':' disabled'}><span class="set-u">${X(m.u)}</span></span>`+control;
+    }
+    rows+=_setRow({id,label:X(a.label),help:X(m.h||''),control,attrs:` data-alert="${k}"`});
+  });
+  h+=_setGroup('Alert rules',rows);
+  h+=_setGroup('Dismissed',`<div class="set-kv"><b>${dismissed} dismissed alert${dismissed===1?'':'s'}</b><span>Dismissed alerts stay hidden until they are restored.</span></div>`+(dismissed?_setButtons([['Restore dismissed alerts','settingsResetDismissed()']]):'')+_setButtons([['Open Analytics → Issues',"settingsGo(()=>railNavAnalytics('issues'))"]]));
+  return h;
+}
+
+function _setData(){
+  const qActs=[['💾 Save+',"expSavePlus('all')"],['📋 Styled report','expCurrentMonth()'],['🖼 Save as image','expPNG()'],['✉ Share roster','genEmail()'],['📋 Weekly digest','genWeeklyDigest()'],['📋 TL day pack','expTLDayPack()'],['📋 Copy EOD','copyEOD()'],['🤖 AI-ready data','expAIcsv()']];
+  let h=_setGroup('Quick exports',_setButtons(qActs.map(([l,fn])=>[l,`closeSettings();${fn}`])));
+  const xSel=S.exportSelection||{};
+  const xSheets=[['overview','Overview & stats','Summary table, HC averages, key metrics'],['leaders','Leader schedules','One sheet per TL with full month'],['analytics','Analytics','Absence breakdown, flags, coverage'],['scheduleData','Raw schedule data','All entries in flat tabular format'],['exceptions','Exceptions log','Sick, AWOL, leave, swaps, ERL'],['coaching','Coaching sessions','Session log and history'],['notes','Notes','Team and leader notes'],['blueprint','Blueprint / rotation','W1–WN cycle definition'],['positions','Positions','Role and seat assignments'],['people','People / agents','Agent list and attributes'],['changeLog','Roster change log','Import deltas, coverage impact, and review state']];
+  const allOn=xSheets.every(([k])=>xSel[k]!==false),count=xSheets.filter(([k])=>xSel[k]!==false).length;
+  let b=`<div class="set-xhd"><label><input type="checkbox" ${allOn?'checked':''} onchange="(function(v){const s=S.exportSelection=Object.assign({},S.exportSelection||{});[${xSheets.map(([k])=>"'"+k+"'").join(',')}].forEach(k=>s[k]=v);schedulePersist(true);renderSettings();})(this.checked)"> All sheets</label><button type="button" class="set-link" onclick="openExportPresets()">Presets</button></div>`;
+  b+=`<div class="set-xgrid">${xSheets.map(([k,l,d])=>`<label title="${XA(d)}"><input type="checkbox" ${xSel[k]!==false?'checked':''} onchange="S.exportSelection=Object.assign({},S.exportSelection||{});S.exportSelection['${k}']=this.checked;schedulePersist(true);renderSettings()"> ${X(l)}</label>`).join('')}</div>`;
+  b+=`<button type="button" class="swin-btn pri set-wide" onclick="closeSettings();expCustomSelection()">Export ${count} of ${xSheets.length} sheets →</button>`;
+  h+=_setGroup('Custom workbook',b);
+  h+=_setGroup('File names',SYNC_PREFS.filter(p=>p.s==='data'&&p.g==='File names').map(_setPrefRow).join('')+`<div class="set-kv"><b id="setFileExample">${X(buildFilename('month','xlsx'))}</b><span>Example: a month export today.</span></div>`);
+  const priv=absencePrivacy();
+  h+=_setGroup('Sensitive detail',`<div class="set-kv"><b>${priv.exportNotes?'Included in exports':'Left out of exports'}</b><span>Absence flags and health-related reasons. Changed in Absence → Privacy.</span></div>`+_setButtons([['Absence privacy',"selectSettingsSection('absence')"]]));
+  h+=_setGroup('Protected vault',_setNote('An encrypted copy of this project that opens only with its password.')+_setButtons([['Export protected workspace','closeSettings();exportProtectedWorkspace()','pri'],['Open protected vault','closeSettings();importProtectedWorkspace()']]));
+  h+=_setGroup('Views',_setButtons([['Raw data',"settingsGo(()=>railNavAnalytics('data'))"],['Validate rules','settingsGo(runRulesValidation)'],['People',"settingsGo(()=>railNavPeople('agents'))"]]));
+  return h;
+}
+
+function _setStorageBytes(){
+  let n=0;
+  try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i)||'';if(/^(sc_|sync|ns_|mf)/i.test(k))n+=(k.length+(localStorage.getItem(k)||'').length)*2;}}catch(e){}
+  return n;
+}
+function _setDiagnostics(){
+  const pending=typeof _persistPendingSet!=='undefined'?_persistPendingSet.size+(typeof _persistPendingRemove!=='undefined'?_persistPendingRemove.size:0):0;
+  return[['Build',APP_BUILD],['Project',S.activeDept||S.fn||'none'],['People',Object.keys(S.people||{}).length],['Roster rows',(S.entries||[]).length],['Preferences changed',prefChangedCount()],['Stored on this device',Math.round(_setStorageBytes()/1024)+' KB'],['Writes waiting',pending],['Settings schema',S._schemaVersion||SETTINGS_SCHEMA_VERSION]];
+}
+async function settingsCopyDiagnostics(){
+  const text=_setDiagnostics().map(([k,v])=>k+': '+v).join('\n');
+  try{await navigator.clipboard.writeText(text);toast('Diagnostics copied','ok');}catch(e){try{prompt('Copy diagnostics:',text);}catch(err){}}
+}
+function _setAdvanced(){
+  const n=prefChangedCount();
+  let h=_setGroup('Settings backup',_setNote('One file with your preferences, appearance, schedule rules, alert rules, coaching targets and leave types. Import it on another device or project. Data (rosters, people, notes) is not included.')+
+    _setButtons([['Export settings','settingsExportBackup()'],['Import settings','settingsChooseBackup()']])+`<input type="file" id="settingsImportFile" accept=".json,application/json" hidden onchange="settingsImportBackup(this)">`);
+  h+=_setGroup('Reset',`<div class="set-kv"><b>${n} preference${n===1?'':'s'} changed</b><span>${n?SETTINGS_SECTIONS.filter(s=>prefChangedCount(s.id)).map(s=>X(s.l)+' '+prefChangedCount(s.id)).join(' · '):'Everything is on its default.'}</span></div>`+(n?_setButtons([['Reset all preferences','prefResetAll()']]):''));
+  h+=_setGroup('Diagnostics',`<dl class="set-dl">${_setDiagnostics().map(([k,v])=>`<dt>${X(k)}</dt><dd>${X(String(v))}</dd>`).join('')}</dl>`+_setButtons([['Copy diagnostics','settingsCopyDiagnostics()']]));
+  h+=_setGroup('Danger zone',_setNote('Close workspace removes this project from the device. Clear all data wipes everything Sync stores in this browser.')+_setButtons([['Close workspace','closeSettings();if(S.activeDept)removeDept(S.activeDept)'],['Clear all data',"if(confirm('Clear all stored data?')){closeSettings();clearAllData()}",'danger']]),' id="setDanger"');
+  return h;
+}
+
+const SETTINGS_RENDERERS={account:_setAccount,workspace:_setWorkspace,preferences:_setAppearance,time:_setTime,people:_setPeople,cover:_setCover,absence:_setAbsence,sharing:_setSharing,alerts:_setAlerts,data:_setData,advanced:_setAdvanced};
+// Things that are not registry preferences but should still turn up in a search.
+const SETTINGS_SEARCH_EXTRA=[
+  ['account','Sign in, sign out, cloud save, Google account, snapshots, backups, restore, history'],
+  ['workspace','Projects, add roster, sheet, team, all months, scope, clear scope, max hours, consecutive days, minimum coverage, weekend policy, lunch, OT window, breaks, target hours, rate, cost, coaching session length, sessions a day, quick notes, scratchpad'],
+  ['preferences','Theme, colour, color, dark, light, variants, density, compact, spacious, colour-blind, highlight today, cards, heatmap, health score, week badge'],
+  ['time','SA time, UK time, timezone, BST, clocks change, offset, public holidays, bank holidays'],
+  ['absence','Privacy, POPIA, sensitive, health, leave types, roster codes'],
+  ['alerts','Over hours, low coverage, consecutive days, long shift, weekend balance, coaching due, blueprint drift, dismissed'],
+  ['data','Save+, styled report, image, PNG, share roster, email, weekly digest, TL day pack, EOD, AI, workbook, sheets, presets, protected vault, password, raw data'],
+  ['advanced','Export settings, import settings, reset, diagnostics, storage, close workspace, clear all data']
+];
+function _setSearchHTML(q){
+  const words=q.toLowerCase().split(/\s+/).filter(Boolean);
+  const hit=text=>{const t=text.toLowerCase();return words.every(w=>t.includes(w));};
+  const prefs=SYNC_PREFS.filter(p=>hit([p.l,p.h||'',p.g,(SETTINGS_SECTIONS.find(s=>s.id===p.s)||{}).l||'',p.k].join(' ')));
+  const extra=SETTINGS_SEARCH_EXTRA.filter(([id,kw])=>hit(kw+' '+((SETTINGS_SECTIONS.find(s=>s.id===id)||{}).l||'')));
+  if(!prefs.length&&!extra.length)return _setNote(`Nothing matches “${X(q)}”.`);
+  let h='';
+  SETTINGS_SECTIONS.forEach(s=>{
+    const mine=prefs.filter(p=>p.s===s.id);
+    if(mine.length)h+=_setGroup(`${X(s.l)} <button type="button" class="set-link" onclick="selectSettingsSection('${s.id}')">Open</button>`,mine.map(_setPrefRow).join(''));
+  });
+  const jumps=extra.filter(([id])=>!prefs.some(p=>p.s===id));
+  if(jumps.length)h+=_setGroup('Also in',_setButtons(jumps.map(([id])=>[X((SETTINGS_SECTIONS.find(s=>s.id===id)||{}).l||id),`selectSettingsSection('${id}')`])));
+  return h;
+}
+function _setMainHTML(){
+  const q=String(S._settingsQuery||'').trim();
+  if(q)return`<div class="set-title"><h2>Search</h2><p>Results for “${X(q)}” across every section.</p></div>`+_setSearchHTML(q);
+  const id=S._settingsSection||'workspace',sec=SETTINGS_SECTIONS.find(s=>s.id===id)||SETTINGS_SECTIONS[0];
+  const n=prefChangedCount(sec.id);
+  let h=`<div class="set-title"><h2>${X(sec.l)}</h2><p>${X(sec.d)}</p></div>`;
+  h+=(SETTINGS_RENDERERS[sec.id]||_setAccount)();
+  if(n)h+=`<div class="set-foot">${n} setting${n===1?'':'s'} here differ${n===1?'s':''} from the default. <button type="button" class="set-link" onclick="prefResetSection('${sec.id}')">Reset this section</button></div>`;
+  return h;
+}
 
 function renderSettings(){
   S._settingsOpen=true;
-  const section=S._settingsSection||'workspace';
-  const tab=(id,label)=>`<button onclick="selectSettingsSection('${id}')" style="flex:0 0 auto;padding:7px 9px;border:1px solid ${section===id?'var(--accent)':'var(--bdr)'};border-radius:7px;background:${section===id?'var(--al)':'transparent'};color:${section===id?'var(--accent)':'var(--tm)'};font:11px inherit;cursor:pointer;white-space:nowrap">${label}</button>`;
-  const r=S.rules||{};const br=r.breaks||{};
+  const section=S._settingsSection||'workspace',q=String(S._settingsQuery||'');
   const existing=document.getElementById("settingsOverlay");
   const panelEl=existing?existing.querySelector('#settingsPanel'):null;
   const scrollTop=panelEl?panelEl.scrollTop:0;
-
-  // Build inner panel content
-  let inner='';
-  // Header
-  inner+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--bdr);position:sticky;top:0;background:var(--hbg);z-index:2">`;
-  inner+=`<h2 style="font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px">⚙ Settings</h2>`;
-  inner+=`<button onclick="closeSettings()" aria-label="Close settings" style="background:none;border:1px solid var(--bdr);color:var(--text);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">✕</button>`;
-  inner+=`</div>`;
-  inner+=`<nav aria-label="Settings groups" style="display:flex;gap:6px;overflow-x:auto;padding:10px 20px;border-bottom:1px solid var(--bdr);scrollbar-width:thin">${tab('account','Account')}${tab('workspace','Workspace')}${tab('preferences','Preferences')}${tab('data','Data & exports')}${tab('advanced','Advanced')}</nav>`;
-  inner+=`<div style="padding:16px 20px;display:flex;flex-direction:column;gap:20px;flex:1">`;
-
-  // If overlay already exists, just update panel content in place
-  const h_ref={val:inner};
-  // Use h variable for the rest of the building (alias)
-  let h='';
-  if(section==='account')h+=_syncRenderSettingsAccountSection()+_syncRenderSettingsSnapshotSection();
-  if(section==='workspace')h+=`<section><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Workspace</div><p style="font-size:12px;color:var(--tm);line-height:1.5;margin:0 0 12px">Keep your working context close to the schedule. Filters and notes are saved on this device.</p><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();_syncOpenProjectsPanel()">Projects</button><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();triggerRosterUpload()">Add roster</button><textarea id="syncSettingsScratchpad" placeholder="Quick notes, reminders, todos…" oninput="S.scratchpad=this.value;_saveScratchpad()" style="width:100%;box-sizing:border-box;min-height:110px;padding:8px 10px;border-radius:7px;border:1px solid var(--bdr);background:var(--card);color:var(--text);font-size:12px;font-family:inherit;resize:vertical">${X(S.scratchpad||'')}</textarea><div style="font-size:10px;color:var(--tm);margin-top:4px">Saved locally</div></section>`;
-  if(section==='preferences')h+=`<section><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Appearance</div><div style="display:flex;gap:6px;margin-bottom:12px">${Object.entries(TH).map(([k,t])=>`<button onclick="setTh('${k}');renderSettings()" style="flex:1;padding:8px 4px;border:1px solid ${S.th===k?'var(--accent)':'var(--bdr)'};border-radius:8px;background:${S.th===k?'var(--al)':'none'};color:var(--text);font:11px inherit;cursor:pointer"><span style="display:block;width:12px;height:12px;border-radius:50%;background:${t.d};margin:0 auto 4px"></span>${t.n}</button>`).join('')}</div><div style="display:flex;gap:4px;margin-bottom:10px">${['compact','comfortable','spacious'].map(d=>`<button onclick="setDensity('${d}');renderSettings()" style="flex:1;padding:7px;border:1px solid ${S.density===d?'var(--accent)':'var(--bdr)'};border-radius:6px;background:${S.density===d?'var(--al)':'none'};color:var(--text);font:11px inherit;cursor:pointer">${d[0].toUpperCase()+d.slice(1)}</button>`).join('')}</div><label style="display:block;font-size:12px;margin:8px 0"><input type="checkbox" ${S.cbMode?'checked':''} onchange="setCbMode(this.checked);renderSettings()"> Colour-blind mode</label><label style="display:block;font-size:12px;margin:8px 0"><input type="checkbox" ${S.tz?'checked':''} onchange="setTimezoneEnabled(this.checked);renderSettings()"> UK → SA timezone</label><label style="display:block;font-size:12px;margin:8px 0"><input type="checkbox" ${S.hlToday?'checked':''} onchange="setTodayHighlight(this.checked);renderSettings()"> Highlight today in calendar</label></section>`;
-  if(section==='data')h+=`<section><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Data &amp; exports</div><p style="font-size:12px;color:var(--tm);line-height:1.5;margin:0 0 12px">Create a portable export or open the dedicated data views without crowding your daily workspace.</p><button class="btn bp" style="margin:0 8px 8px 0" onclick="closeSettings();expSavePlus('all')">Save+ export</button><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();expCurrentMonth()">Styled report</button><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();S.anView='rawdata';setTab('analytics')">Raw data</button><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();runRulesValidation()">Validate</button></section>`;
-  if(section==='advanced')h+=`<section><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Advanced</div><p style="font-size:12px;color:var(--tm);line-height:1.5;margin:0 0 12px">Destructive actions are separated from everyday settings.</p><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();if(S.activeDept)removeDept(S.activeDept)">Close workspace</button><button class="btn" style="margin:0 8px 8px 0;color:#dc2626;border-color:rgba(220,38,38,.3)" onclick="if(confirm('Clear all stored data?')){closeSettings();clearAllData()}">Clear all data</button><div style="font-size:11px;color:var(--tm);margin-top:12px">${APP_BUILD}</div></section>`;
-
-  if(false){
-
-  // ── Account ── the one place save/sign-out/profile live now, replacing the separate controls
-  // that used to be duplicated in the masthead badge and the landing widget (see
-  // _syncRenderAccountUI/_syncRenderLandingWidget — both now just show a status indicator that
-  // opens this panel instead of their own copy of the same buttons).
-  if(section==='account')h+=_syncRenderSettingsAccountSection();
-
-  // ── Backups & history ──
-  if(section==='account')h+=_syncRenderSettingsSnapshotSection();
-
-  // ── Appearance ──
-  if(section==='preferences')h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Appearance</div>`;
-  h+=`<div style="display:flex;gap:6px;margin-bottom:10px">`;
-  Object.entries(TH).forEach(([k,t])=>{
-    const isActive=S.th===k;
-    const vLabel=isActive?_currentVariantLabel():'';
-    h+=`<button onclick="setTh('${k}');renderSettings()" style="flex:1;padding:8px 4px;border:1px solid ${isActive?'var(--accent)':'var(--bdr)'};border-radius:8px;background:${isActive?'var(--al)':'none'};color:${isActive?'var(--accent)':'var(--tm)'};font-family:inherit;font-size:11px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px"><span style="width:12px;height:12px;border-radius:50%;background:${t.d}"></span>${t.n}${isActive?'<span style="font-size:9px;opacity:.7;text-transform:capitalize">'+vLabel+'</span>':''}</button>`;
-  });
-  if(section==='preferences')h+=`</div>`;
-
-  // ── Variant picker (collapsible, grouped by category) ──
-  const activeThemeKey=S.th||'surge';
-  const vLabels=THEME_VARIANTS_LABELS[activeThemeKey]||{};
-  const vSlugs=THEME_VARIANTS[activeThemeKey]||[];
-  const curSlug=vSlugs[S.thVariant||0]||vSlugs[0]||'';
-  const curVariantLabel=vLabels[curSlug]?.l||curSlug||'Default';
-  const catOrder=['dark','mid','light','neutral'];
-  const catLabel={'dark':'Dark','mid':'Mid','light':'Light','neutral':'Neutral'};
-  const catCol={'dark':'var(--accent)','mid':'var(--am-col)','light':'var(--ok)','neutral':'var(--tm)'};
-  const bycat={};
-  vSlugs.forEach((sl,i)=>{const m=vLabels[sl];if(!m)return;const c=m.c;if(!bycat[c])bycat[c]=[];bycat[c].push({sl,i,label:m.l});});
-  h+=`<details style="margin-top:8px;border:1px solid var(--bdr);border-radius:8px;padding:8px 10px"${S._settingsVariantsOpen?' open':''} ontoggle="S._settingsVariantsOpen=this.open">`;
-  h+=`<summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;font-size:10px;font-weight:600;color:var(--tm);opacity:.8;text-transform:uppercase;letter-spacing:.6px">Variants <span style="font-size:9px;color:var(--accent);opacity:1;text-transform:none;letter-spacing:.2px">${curVariantLabel}</span></summary>`;
-  h+=`<div style="margin-top:8px">`;
-  catOrder.forEach(cat=>{
-    if(!bycat[cat]||!bycat[cat].length)return;
-    h+=`<div style="margin-bottom:6px"><div style="font-size:9px;color:${catCol[cat]};opacity:.7;margin-bottom:3px;letter-spacing:.4px">${catLabel[cat]}</div><div style="display:flex;flex-wrap:wrap;gap:3px">`;
-    bycat[cat].forEach(({sl,i,label})=>{
-      const isV=sl===curSlug;
-      const vd=THEME_VARIANTS_LABELS[activeThemeKey][sl];
-      h+=`<button onclick="setVariantDirect(${i});renderSettings()" title="${label}" style="padding:3px 8px;border-radius:10px;border:1px solid ${isV?'var(--accent)':'var(--bdr)'};background:${isV?'var(--al)':'none'};color:${isV?'var(--accent)':'var(--tm)'};font-family:inherit;font-size:9px;cursor:pointer;white-space:nowrap">${label}</button>`;
-    });
-    h+=`</div></div>`;
-  });
-  h+=`</div></details>`;
-  // Density
-  h+=`<div style="display:flex;gap:4px;margin-bottom:10px">`;
-  ["compact","comfortable","spacious"].forEach(d=>{
-    h+=`<button onclick="setDensity('${d}');renderSettings()" style="flex:1;padding:6px;border:1px solid ${S.density===d?'var(--accent)':'var(--bdr)'};border-radius:6px;background:${S.density===d?'var(--al)':'none'};color:${S.density===d?'var(--accent)':'var(--tm)'};font-family:inherit;font-size:11px;cursor:pointer">${d.charAt(0).toUpperCase()+d.slice(1)}</button>`;
-  });
-  h+=`</div>`;
-  // Toggles
-  h+=`<label style="font-size:12px;display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0"><input type="checkbox" ${S.cbMode?"checked":""} onchange="setCbMode(this.checked);renderSettings()"> Colour-blind mode</label>`;
-  h+=`<label style="font-size:12px;display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0"><input type="checkbox" ${S.tz?"checked":""} onchange="setTimezoneEnabled(this.checked);renderSettings()"> UK → SA timezone</label>`;
-  h+=`<label style="font-size:12px;display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0"><input type="checkbox" ${S.hlToday?"checked":""} onchange="setTodayHighlight(this.checked);renderSettings()"> Highlight today in calendar</label>`;
-  h+=`</div>`;
-
-  // ── Sheet & Team filters — moved here from the toolbar's Filters popover (same S.sh/S.team/
-  // S.allMonths state, same swSh()/setTeam() calls) so the mobile toolbar isn't crowded with an
-  // icon that only mattered when multiple sheets/teams were actually loaded.
-  if(section==='workspace'){
-    const _teams=gT();
-    if((S.shs&&S.shs.length>1)||(_teams&&_teams.length>1)){
-      h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Sheet &amp; Team Filter</div>`;
-      if(S.shs&&S.shs.length>1)h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0"><span style="font-size:12px">Sheet</span><select onchange="swSh(this.value);renderSettings()" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-size:12px;max-width:180px"><option value="__all__"${S.sh==='__all__'?' selected':''}>All sheets</option>${S.shs.map(s=>`<option value="${X(s)}"${s===S.sh?' selected':''}>${X(s)}</option>`).join('')}</select></div>`;
-      if(_teams&&_teams.length>1)h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0"><span style="font-size:12px">Team</span><select onchange="setTeam(this.value);renderSettings()" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-size:12px;max-width:180px"><option value="all">All teams</option>${_teams.map(t=>`<option value="${X(t)}"${t===S.team?' selected':''}>${X(t)}</option>`).join('')}</select></div>`;
-      h+=`<label style="font-size:12px;display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0"><input type="checkbox" ${S.allMonths?"checked":""} onchange="S.allMonths=this.checked;rerenderCurrentSurface();rerenderChromeOnly();renderSettings()"> All months view</label>`;
-      h+=`</div>`;
-    }
-  }
-
-  // ── Quick notes — moved here from the toolbar's popover (same S.scratchpad state and
-  // _saveScratchpad(), just reachable from Settings instead of a dedicated mobile toolbar icon).
-  if(section==='workspace')h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Quick Notes</div>`;
-  h+=`<textarea id="syncSettingsScratchpad" placeholder="Quick notes, reminders, todos...&#10;&#10;Persisted across sessions." oninput="S.scratchpad=this.value;_saveScratchpad()" style="width:100%;box-sizing:border-box;min-height:80px;padding:8px 10px;border-radius:7px;border:1px solid var(--bdr);background:var(--card);color:var(--text);font-size:12px;font-family:inherit;resize:vertical">${X(S.scratchpad||'')}</textarea>`;
-  if(section==='workspace')h+=`<div style="font-size:10px;color:var(--tm);margin-top:4px">Auto-saved locally</div></div>`;
-
-  // ── Schedule Rules ──
-  if(section==='workspace')h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Schedule Rules</div>`;
-  const ruleRows=[
-    {label:"Max hours / week",key:"maxHoursWeek",val:r.maxHoursWeek||45,type:"number",min:20,max:80,sync:"S.hrsMax=+this.value;invalidateDerivedCache();if(S.tab==='analytics')rerenderAnalyticsSurface('view');"},
-    {label:"Max consecutive days",key:"maxConsecutiveDays",val:r.maxConsecutiveDays||6,type:"number",min:3,max:14,sync:"invalidateDerivedCache();if(S.tab==='analytics')rerenderAnalyticsSurface('view');"},
-    {label:"Min TLs per day",key:"minCoveragePerDay",val:r.minCoveragePerDay||3,type:"number",min:1,max:20,sync:"S.covMin=+this.value;invalidateDerivedCache();if(S.tab==='analytics')rerenderAnalyticsSurface('view');else if(S.tab==='calendar')rerenderCalendarSurface('coverage');"},
-  ];
-  ruleRows.forEach(rr=>{
-    h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0">`;
-    h+=`<span style="font-size:12px">${rr.label}</span>`;
-    h+=`<input type="number" min="${rr.min}" max="${rr.max}" value="${rr.val}" onchange="S.rules.${rr.key}=+this.value;${rr.sync||''}" style="width:56px;padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;text-align:center">`;
-    h+=`</div>`;
-  });
-  h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0">`;
-  h+=`<span style="font-size:12px">Weekend policy</span>`;
-  h+=`<select onchange="S.rules.weekendPolicy=this.value" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-size:12px">`;
-  [{v:"rotate",l:"Rotate"},{v:"fixed",l:"Fixed"},{v:"none",l:"None"}].forEach(o=>{h+=`<option value="${o.v}"${(r.weekendPolicy||"rotate")===o.v?" selected":""}>${o.l}</option>`;});
-  h+=`</select></div>`;
-  h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0">`;
-  h+=`<span style="font-size:12px">Lunch</span>`;
-  h+=`<select onchange="S.rules.breaks.lunch=+this.value" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-size:12px">`;
-  [0,15,30,45,60].forEach(m=>{h+=`<option value="${m}"${(br.lunch||30)===m?" selected":""}>${m}min</option>`;});
-  h+=`</select></div>`;
-  if(section==='workspace')h+=`</div>`;
-  
-  // ── Coaching ──
-  if(section==='workspace')h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Coaching</div>`;
-  h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0"><span style="font-size:12px">Session duration</span>`;
-  h+=`<select onchange="S.coachDuration=+this.value" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-size:12px">`;
-  [15,30,45,60].forEach(m=>{h+=`<option value="${m}"${(S.coachDuration||30)===m?" selected":""}>${m}min</option>`;});
-  h+=`</select></div>`;
-  h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0"><span style="font-size:12px">Daily target</span>`;
-  h+=`<input type="number" min="0" max="10" value="${S.coachTargetDaily||1}" onchange="S.coachTargetDaily=+this.value" style="width:56px;padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;text-align:center">`;
-  if(section==='workspace')h+=`</div></div>`;
-  
-  // ── Exports ──
-  if(section==='data'){
-  const xSel=S.exportSelection||{};
-  const xSheets=[
-    {k:'overview',   l:'Overview & stats',    d:'Summary table, HC averages, key metrics'},
-    {k:'leaders',    l:'Leader schedules',     d:'One sheet per TL with full month'},
-    {k:'analytics',  l:'Analytics',            d:'Absence breakdown, flags, coverage'},
-    {k:'scheduleData',l:'Raw schedule data',   d:'All entries in flat tabular format'},
-    {k:'exceptions', l:'Exceptions log',       d:'Sick, AWOL, leave, swaps, ERL'},
-    {k:'coaching',   l:'Coaching sessions',    d:'Session log and history'},
-    {k:'notes',      l:'Notes',                d:'Team and leader notes'},
-    {k:'blueprint',  l:'Blueprint / Rotation', d:'W1–WN cycle definition'},
-    {k:'positions',  l:'Positions',            d:'Role and seat assignments'},
-    {k:'people',     l:'People / Agents',      d:'Agent list and attributes'},
-    {k:'changeLog',  l:'Roster Change Log',    d:'Import deltas, coverage impact, and review state'},
-  ];
-  const allSelected=xSheets.every(s=>xSel[s.k]!==false);
-  h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Exports</div>`;
-  // Quick actions row
-  h+=`<div style="font-size:10px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Quick actions</div>`;
-  h+=`<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px">`;
-  const qActs=[
-    {l:'💾 Save+',          fn:"expSavePlus('all')"},
-    {l:'📋 Styled Report',   fn:"expCurrentMonth()"},
-    {l:'🖼 Save as image',   fn:"expPNG()"},
-    {l:'✉ Share roster',    fn:"genEmail()"},
-    {l:'📋 Weekly digest',  fn:"genWeeklyDigest()"},
-    {l:'📋 TL Day Pack',    fn:"expTLDayPack()"},
-    {l:'📋 Copy EOD',       fn:"copyEOD()"},
-    {l:'🤖 AI-Ready Data',  fn:"expAIcsv()"},
-  ];
-  qActs.forEach(a=>{
-    h+=`<button onclick="closeSettings();${a.fn}" style="padding:5px 10px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--text);font-family:inherit;font-size:11px;cursor:pointer;white-space:nowrap">${a.l}</button>`;
-  });
-  h+=`<button onclick="closeSettings();exportProtectedWorkspace()" style="padding:5px 10px;border:1px solid var(--accent);border-radius:6px;background:var(--al);color:var(--accent);font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">Protected workspace</button>`;
-  h+=`<button onclick="closeSettings();importProtectedWorkspace()" style="padding:5px 10px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--text);font-family:inherit;font-size:11px;cursor:pointer;white-space:nowrap">Open protected vault</button>`;
-  h+=`</div>`;
-  // Custom export builder
-  h+=`<div style="background:var(--al);border-radius:10px;padding:12px 14px;margin-bottom:4px">`;
-  h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">`;
-  h+=`<span style="font-size:11px;font-weight:600;color:var(--text)">Custom export</span>`;
-  h+=`<button onclick="openExportPresets()" style="font-size:10px;padding:3px 8px;border:1px solid var(--bdr);border-radius:5px;background:var(--bg);color:var(--accent);font-family:inherit;cursor:pointer">Presets</button>`;
-  h+=`<label style="font-size:11px;display:flex;align-items:center;gap:5px;cursor:pointer;color:var(--tm)"><input type="checkbox" ${allSelected?'checked':''} onchange="(function(v){const s=S.exportSelection=S.exportSelection||{};[${xSheets.map(s=>"'"+s.k+"'").join(',')}].forEach(k=>s[k]=v);schedulePersist(true);renderSettings();})(this.checked)"> All</label>`;
-  h+=`</div>`;
-  h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-bottom:12px">`;
-  xSheets.forEach(s=>{
-    const checked=xSel[s.k]!==false;
-    h+=`<label style="font-size:11px;display:flex;align-items:flex-start;gap:6px;cursor:pointer;padding:3px 0" title="${s.d}">`;
-    h+=`<input type="checkbox" ${checked?'checked':''} onchange="S.exportSelection=S.exportSelection||{};S.exportSelection['${s.k}']=this.checked;schedulePersist(true);renderSettings()" style="margin-top:1px;flex-shrink:0">`;
-    h+=`<span style="color:var(--text);line-height:1.3">${s.l}</span>`;
-    h+=`</label>`;
-  });
-  h+=`</div>`;
-  const selectedCount=xSheets.filter(s=>xSel[s.k]!==false).length;
-  h+=`<button onclick="closeSettings();expCustomSelection()" style="width:100%;padding:8px 12px;border:none;border-radius:7px;background:var(--accent);color:#fff;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;letter-spacing:.2px">Export ${selectedCount} of ${xSheets.length} sheets →</button>`;
-  h+=`</div>`;
-  }
-  h+=`</div>`;
-  }
-
-  // ── Quick links ──
-  if(section==='data')h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Quick Links</div>`;
-  h+=`<div style="display:flex;flex-wrap:wrap;gap:6px">`;
-  h+=`<button onclick="closeSettings();showPeoplePanel()" style="padding:6px 12px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--text);font-family:inherit;font-size:11px;cursor:pointer">👥 People</button>`;
-  h+=`<button onclick="closeSettings();triggerRosterUpload()" style="padding:6px 12px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--text);font-family:inherit;font-size:11px;cursor:pointer">📋 Add roster</button>`;
-  h+=`<button onclick="closeSettings();S.anView='rawdata';setTab('analytics')" style="padding:6px 12px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--text);font-family:inherit;font-size:11px;cursor:pointer">🧪 Raw data</button>`;
-  h+=`<button onclick="closeSettings();runRulesValidation()" style="padding:6px 12px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--text);font-family:inherit;font-size:11px;cursor:pointer">✓ Validate</button>`;
-  if(section==='data')h+=`</div></div>`;
-  
-  // ── Data ──
-  if(section==='advanced'){
-    h+=`<div style="border-top:1px solid var(--bdr);padding-top:12px;display:flex;gap:8px;flex-wrap:wrap">`;
-    h+=`<button onclick="closeSettings();if(S.activeDept)removeDept(S.activeDept)" style="padding:6px 12px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">Close workspace</button>`;
-    h+=`<button onclick="if(confirm('Clear all stored data?')){closeSettings();clearAllData()}" style="padding:6px 12px;border:1px solid rgba(220,38,38,.3);border-radius:6px;background:none;color:#dc2626;font-family:inherit;font-size:11px;cursor:pointer;opacity:.7">Clear all data</button>`;
-    h+=`<div style="font-size:11px;color:var(--tm);margin-top:8px">${APP_BUILD}</div></div>`;
-  }
-  
-  h+=`</div>`;
-  
-  const fullInner=h_ref.val+h;
+  let h=`<div class="set-hd"><h2>⚙ Settings</h2><input type="search" id="settingsSearch" class="set-search" placeholder="Search settings" aria-label="Search settings" value="${XA(q)}" oninput="settingsSearch(this.value)"><button type="button" class="set-x" onclick="closeSettings()" aria-label="Close settings">✕</button></div>`;
+  h+=`<div class="set-body"><nav class="set-nav" aria-label="Settings sections">${SETTINGS_SECTIONS.map(s=>{
+    const n=prefChangedCount(s.id),on=!q&&section===s.id;
+    return`<button type="button" class="set-tab${on?' on':''}" data-section="${s.id}"${on?' aria-current="page"':''} onclick="selectSettingsSection('${s.id}')">${X(s.l)}${n?`<span class="set-badge" title="${n} changed from the default">${n}</span>`:''}</button>`;
+  }).join('')}</nav><main class="set-main" id="setMain">${_setMainHTML()}</main></div>`;
   if(existing&&panelEl){
-    // Update in place — no animation, preserve scroll
-    panelEl.innerHTML=fullInner;
+    // Update in place: no animation, keep the scroll position.
+    panelEl.innerHTML=h;
     panelEl.scrollTop=scrollTop;
   }else{
-    // First open — create overlay with animation
     if(existing)existing.remove();
-    let wrap=`<div id="settingsOverlay" style="position:fixed;inset:0;z-index:800;display:flex;align-items:flex-start;justify-content:flex-end;pointer-events:all">`;
-    wrap+=`<div style="position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:0" onclick="closeSettings()"></div>`;
-    wrap+=`<div id="settingsPanel" style="position:relative;z-index:1;width:min(380px,100vw);height:100vh;background:var(--hbg);border-left:1px solid var(--bdr);overflow-y:auto;display:flex;flex-direction:column;backdrop-filter:blur(20px);animation:slideInRight .2s ease-out">`;
-    wrap+=fullInner;
-    wrap+=`</div></div>`;
-    const el=document.createElement("div");el.innerHTML=wrap;
+    const el=document.createElement("div");
+    el.innerHTML=`<div id="settingsOverlay" class="set-overlay"><div class="set-scrim" onclick="closeSettings()"></div><div id="settingsPanel" class="set-panel" role="dialog" aria-modal="true" aria-label="Settings">${h}</div></div>`;
     document.body.appendChild(el.firstChild);
   }
+  // On a phone the sections are one scrolling strip: keep the open one in view.
+  const on=document.querySelector('#settingsPanel .set-tab.on'),nav=on&&on.parentElement;
+  if(on&&nav&&nav.scrollWidth>nav.clientWidth)nav.scrollLeft=Math.max(0,on.offsetLeft-nav.clientWidth/2+on.offsetWidth/2);
 }
 
 /* ── Esc handler — close any transient overlay ── */
 document.addEventListener("keydown",function _escHandler(e){
   if(e.key==="Escape"){
     // Close in priority order
-    if(S._settingsOpen){closeSettings();return;}
+    if(S._settingsOpen){
+      if(S._settingsQuery&&document.activeElement&&document.activeElement.id==="settingsSearch"){settingsSearch("");document.activeElement.value="";return;}
+      closeSettings();return;
+    }
     if(document.getElementById("otRulesOverlay")){document.getElementById("otRulesOverlay").remove();return;}
     if(document.getElementById("parsePreviewOverlay")){document.getElementById("parsePreviewOverlay").remove();_pendingLoad=null;return;}
     if(document.getElementById("peoplePanelOverlay")){closePeoplePanel();return;}

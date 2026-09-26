@@ -45,7 +45,7 @@ function toast(msg,type,dur,opts){
     }
     const close=document.createElement("button");close.className="toast-close";close.type="button";close.title="Dismiss";close.setAttribute("aria-label","Dismiss notification");close.textContent="×";close.onclick=()=>el.remove();el.appendChild(close);
     wrap.appendChild(el);
-    const lifetime=dur===0?0:(Number(dur)||3600);
+    const lifetime=dur===0?0:Math.round((Number(dur)||3600)*(typeof prefToastScale==="function"?prefToastScale():1));
     if(lifetime>0)setTimeout(()=>el.remove(),lifetime);
   }
 }

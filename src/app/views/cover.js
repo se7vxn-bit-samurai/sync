@@ -4,10 +4,12 @@
    cover, clashes, and the YAT / cover pool register.
    Engine: src/app/people/cover.js
    ═══════════════════════════════════════════════════════════════ */
-let _coverUI={days:14,open:"",form:{person:"",forName:"",starts:"",ends:"",role:"Acting Team Lead"}};
+let _coverUI={days:0,open:"",form:{person:"",forName:"",starts:"",ends:"",role:"Acting Team Lead"}};
 const COVER_ROLES=["Acting Team Lead","Acting Supervisor","Acting Manager"];
 
 function coverSetDays(n){_coverUI.days=n;rPeople($("ca"));}
+// The page's own choice wins; until one is made, Settings → Cover & leaders sets it.
+function _coverDaysNow(){return _coverUI.days||Number(pref("cover.horizon"))||14;}
 function coverToggleSuggest(key){_coverUI.open=_coverUI.open===key?"":key;rPeople($("ca"));}
 function coverFormSet(field,value){_coverUI.form[field]=value;}
 function coverFormSave(){
@@ -43,7 +45,7 @@ function _coverGapHTML(g){
 }
 
 function rPeopleCoverView(){
-  const today=_coverTodayISO(),to=excKey(_swinAddDays(new Date(),_coverUI.days-1));
+  const today=_coverTodayISO(),to=excKey(_swinAddDays(new Date(),_coverDaysNow()-1));
   const inScope=n=>typeof scopeIncludes!=="function"||scopeIncludes(n);
   const gaps=coverGaps(today,to).filter(g=>inScope(g.leader)),clashes=coverClashes();
   const recent=excKey(_swinAddDays(new Date(),-30));
@@ -53,10 +55,10 @@ function rPeopleCoverView(){
   if(!f.forName&&leaders.length)f.forName=leaders[0];
 
   let h=`<div class="cov-wrap">`;
-  h+=`<div class="cov-bar"><b>Cover</b><span>Look ahead</span><span class="swin-seg" role="group" aria-label="Look ahead">${[7,14,28].map(n=>`<button type="button" aria-pressed="${_coverUI.days===n}" onclick="coverSetDays(${n})">${n} days</button>`).join("")}</span><span class="swin-note" style="margin:0">Acting cover is dated. Labels and team leaders change only between its start and end.</span></div>`;
+  h+=`<div class="cov-bar"><b>Cover</b><span>Look ahead</span><span class="swin-seg" role="group" aria-label="Look ahead">${[7,14,28].map(n=>`<button type="button" aria-pressed="${_coverDaysNow()===n}" onclick="coverSetDays(${n})">${n} days</button>`).join("")}</span><span class="swin-note" style="margin:0">Acting cover is dated. Labels and team leaders change only between its start and end.</span></div>`;
 
   h+=`<section class="cov-sec" id="covGaps"><h3>Needs cover (${gaps.length})</h3>`;
-  h+=gaps.length?gaps.map(_coverGapHTML).join(""):`<div class="swin-note">No leader is away without cover in the next ${_coverUI.days} days.</div>`;
+  h+=gaps.length?gaps.map(_coverGapHTML).join(""):`<div class="swin-note">No leader is away without cover in the next ${_coverDaysNow()} days.</div>`;
   h+=`</section>`;
 
   h+=`<section class="cov-sec" id="covBooked"><h3>Booked cover (${booked.length})</h3>`;
@@ -86,12 +88,12 @@ function rPeopleCoverView(){
   h+=`</section>`;
 
   // Pool: development labels, or anyone who has acted.
-  const since=excKey(_swinAddDays(new Date(),-COVER_LOOKBACK_DAYS));
+  const since=excKey(_swinAddDays(new Date(),-coverLookbackDays()));
   const actors=new Set(coverRows().filter(r=>coverState(r)!=="cancelled").map(r=>r.personName));
-  const pool=Object.values(S.people||{}).filter(p=>p&&p.name&&inScope(p.name)&&(actors.has(p.name)||peopleRoleLabels(p.name).some(l=>/^(YAT|Senior Agent|Supervisor|SME)$/i.test(l)))).map(p=>p.name).sort((a,b)=>a.localeCompare(b));
+  const pool=Object.values(S.people||{}).filter(p=>p&&p.name&&inScope(p.name)&&(actors.has(p.name)||_coverLabelIn(peopleRoleLabels(p.name),pref("cover.poolLabels")))).map(p=>p.name).sort((a,b)=>a.localeCompare(b));
   h+=`<section class="cov-sec" id="covPool"><h3>YAT and cover pool (${pool.length})</h3>`;
   if(pool.length){
-    h+=`<div class="cov-tbl-wrap"><table class="cov-tbl"><thead><tr><th>Name</th><th>Leader</th><th>Labels</th><th>Acted (6 mo)</th><th>Teams covered</th><th>Last acted</th><th>Now / next</th><th>Readiness</th></tr></thead><tbody>`;
+    h+=`<div class="cov-tbl-wrap"><table class="cov-tbl"><thead><tr><th>Name</th><th>Leader</th><th>Labels</th><th>Acted (${X(coverLookbackText())})</th><th>Teams covered</th><th>Last acted</th><th>Now / next</th><th>Readiness</th></tr></thead><tbody>`;
     pool.forEach(n=>{
       const p=S.people[n]||{},mine=coverRows().filter(r=>coverState(r)!=="cancelled"&&_coverIs(n,r.personId,r.personName));
       const teams=[...new Set(mine.filter(r=>!r.starts||r.starts<=today).map(r=>r.forName||"Vacancy"))];

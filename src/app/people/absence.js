@@ -4,7 +4,8 @@
    logged exceptions (strongest), People statuses, then their own
    roster markers. A TL's leave on a rota an agent follows is not
    the agent's, so only own roster rows count.
-   Flags are prompts for a person to check, never decisions:
+   Flags are prompts for a person to check, never decisions. The
+   limits are Settings → Absence preferences; the defaults are:
    - BCEA s23: more than 2 consecutive sick days, or a 3rd sick
      occasion within 8 weeks, means a medical certificate can be
      required.
@@ -84,7 +85,7 @@ function absenceEvents(fromISO,toISO){
 // Days between two absence dates that the person was not due to work (off, holiday, no row) join
 // them into one occasion: sick Friday and Monday over a weekend off is one occasion of two days.
 function _absBridged(name,aISO,bISO){
-  const gap=_coverDays(aISO,bISO)-2;if(gap<=0)return true;if(gap>4)return false;
+  const gap=_coverDays(aISO,bISO)-2;if(gap<=0)return true;if(gap>prefNum("abs.bridgeGap"))return false;
   const from=excKey(_swinAddDays(_swinDate(aISO),1)),to=excKey(_swinAddDays(_swinDate(bISO),-1));
   return swinRows(name,from,to).every(r=>r.kind!=="work");
 }
@@ -98,6 +99,7 @@ function absenceOccasions(name,dates){
   return out;
 }
 function _absDay(iso){return _swinDayLabel(iso);}
+function _absOrdinal(n){const t=n%100;return n+(t>=11&&t<=13?"th":["th","st","nd","rd"][n%10]||"th");}
 function _absNextToBreak(name,occ){
   const before=excKey(_swinAddDays(_swinDate(occ.from),-1)),after=excKey(_swinAddDays(_swinDate(occ.to),1));
   const offish=iso=>{const r=swinRows(name,iso,iso)[0];return!!(r&&(r.kind==="off"||r.kind==="ph"||r.ph));};
@@ -111,22 +113,22 @@ function absenceProfile(name,events,fromISO,toISO){
   const unplannedIds=new Set(types.filter(t=>t.unplanned).map(t=>t.id));
   const sickOcc=absenceOccasions(name,mine.filter(e=>e.type==="sick").map(e=>e.iso));
   const unplanned=mine.filter(e=>unplannedIds.has(e.type)),unplannedOcc=absenceOccasions(name,unplanned.map(e=>e.iso));
-  const flags=[];
-  sickOcc.forEach(o=>{if(o.days.length>2)flags.push({kind:"sickLong",text:`${o.days.length} consecutive sick days from ${_absDay(o.from)}: a medical certificate can be required (BCEA s23).`});});
+  const flags=[],runDays=prefNum("abs.sickRunDays"),occN=prefNum("abs.sickOccasions"),weeks=prefNum("abs.sickWindowWeeks");
+  sickOcc.forEach(o=>{if(o.days.length>runDays)flags.push({kind:"sickLong",text:`${o.days.length} consecutive sick days from ${_absDay(o.from)}: a medical certificate can be required (BCEA s23).`});});
   sickOcc.forEach((o,i)=>{
-    const windowStart=excKey(_swinAddDays(_swinDate(o.from),-55));
+    const windowStart=excKey(_swinAddDays(_swinDate(o.from),-(weeks*7-1)));
     const within=sickOcc.slice(0,i+1).filter(p=>p.from>=windowStart);
-    if(within.length>=3){const n=within.length,nth=n+(n===3?"rd":"th");flags.push({kind:"sickThird",text:`${nth} sick occasion within 8 weeks (${within.map(p=>_absDay(p.from)).join(", ")}): a medical certificate can be required (BCEA s23).`});}
+    if(within.length>=occN)flags.push({kind:"sickThird",text:`${_absOrdinal(within.length)} sick occasion within ${weeks} weeks (${within.map(p=>_absDay(p.from)).join(", ")}): a medical certificate can be required (BCEA s23).`});
   });
-  const yearAgo=excKey(_swinAddDays(_swinDate(toISO),-364)),family=mine.filter(e=>e.type==="family"&&e.iso>=yearAgo).length;
-  if(family>3)flags.push({kind:"family",text:`${family} family responsibility days in 12 months: BCEA gives 3 days a year.`});
-  const patterns=[];
-  if(unplannedOcc.length>=2){
+  const famMax=prefNum("abs.familyDays"),yearAgo=excKey(_swinAddDays(_swinDate(toISO),-364)),family=mine.filter(e=>e.type==="family"&&e.iso>=yearAgo).length;
+  if(family>famMax)flags.push({kind:"family",text:`${family} family responsibility days in 12 months: ${famMax===3?"BCEA gives 3 days a year":"the limit in Settings is "+famMax}.`});
+  const patterns=[],minOcc=prefNum("abs.patternMinOcc"),share=prefNum("abs.patternPct")/100;
+  // A pattern needs repetition: at least minOcc separate occasions, not one long one.
+  if(pref("abs.patterns")&&unplannedOcc.length>=minOcc){
     const nextTo=unplannedOcc.filter(o=>_absNextToBreak(name,o)).length;
-    if(nextTo>=2&&nextTo/unplannedOcc.length>=0.6)patterns.push({kind:"bridge",text:`${nextTo} of ${unplannedOcc.length} unplanned absences start on a Monday, end on a Friday, or sit next to a day off or public holiday.`});
+    if(nextTo>=minOcc&&nextTo/unplannedOcc.length>=share)patterns.push({kind:"bridge",text:`${nextTo} of ${unplannedOcc.length} unplanned absences start on a Monday, end on a Friday, or sit next to a day off or public holiday.`});
+    const monFri=unplanned.filter(e=>{const d=_swinDate(e.iso).getDay();return d===1||d===5;}).length;
+    if(unplanned.length>=3&&monFri/unplanned.length>=share)patterns.push({kind:"monfri",text:`${monFri} of ${unplanned.length} unplanned days fall on a Monday or Friday.`});
   }
-  const monFri=unplanned.filter(e=>{const d=_swinDate(e.iso).getDay();return d===1||d===5;}).length;
-  // A pattern needs repetition: at least two separate occasions, not one long one.
-  if(unplannedOcc.length>=2&&unplanned.length>=3&&monFri/unplanned.length>=0.6)patterns.push({kind:"monfri",text:`${monFri} of ${unplanned.length} unplanned days fall on a Monday or Friday.`});
   return{name,byType,days:mine.length,unplannedDays:unplanned.length,unplannedOccasions:unplannedOcc.length,sickOccasions:sickOcc.length,flags,patterns,events:mine};
 }

@@ -7,11 +7,12 @@
    leaves sensitive columns out unless they are included.
    Engine: src/app/people/absence.js
    ═══════════════════════════════════════════════════════════════ */
-let _absUI={period:"12m",open:""};
+let _absUI={period:"",open:""};
+function _absPeriod(){return _absUI.period||pref("abs.defaultPeriod");}
 const ABS_PERIODS=[["3m","3 months",91],["12m","12 months",364],["all","All loaded",0]];
 
 function _absRange(){
-  const today=_coverTodayISO(),p=ABS_PERIODS.find(x=>x[0]===_absUI.period)||ABS_PERIODS[1];
+  const today=_coverTodayISO(),p=ABS_PERIODS.find(x=>x[0]===_absPeriod())||ABS_PERIODS[1];
   if(p[2])return{from:excKey(_swinAddDays(new Date(),-p[2])),to:today,label:"last "+p[1]};
   const b=_swinDataBounds(),ev=Object.keys(S.agentStatuses||{}).map(k=>k.slice(k.lastIndexOf("|")+1)).concat((S.exceptions||[]).map(x=>x.date)).filter(Boolean).sort();
   const from=[b.min,ev[0]].filter(Boolean).sort()[0]||today;
@@ -56,7 +57,7 @@ function rPeopleAbsenceView(){
   const used=types.filter(t=>t.id==="sick"||rows.some(r=>r.byType[t.id]));
   const flagged=rows.filter(r=>r.flags.length||r.patterns.length).length;
   let h=`<div class="cov-wrap abs-wrap">`;
-  h+=`<div class="org-bar"><b>Absence register</b><span class="swin-seg" role="group" aria-label="Period">${ABS_PERIODS.map(([k,l])=>`<button type="button" aria-pressed="${_absUI.period===k}" onclick="absSetPeriod('${k}')">${l}</button>`).join("")}</span>`;
+  h+=`<div class="org-bar"><b>Absence register</b><span class="swin-seg" role="group" aria-label="Period">${ABS_PERIODS.map(([k,l])=>`<button type="button" aria-pressed="${_absPeriod()===k}" onclick="absSetPeriod('${k}')">${l}</button>`).join("")}</span>`;
   h+=`<span class="swin-note" style="margin:0" id="absRange">${X(_swinSpanLabel(range.from,range.to))}</span><span style="margin-left:auto"></span>`;
   h+=`<button type="button" class="swin-btn" id="absExport" onclick="absExportCSV()">Export CSV</button></div>`;
 
@@ -85,12 +86,13 @@ function rPeopleAbsenceView(){
     h+=`</tbody></table></div>`;
     if(priv.show){
       const all=rows.flatMap(r=>[...r.flags,...r.patterns].map(f=>({name:r.name,f})));
-      h+=`<section class="cov-sec" id="absFlags"><h3>Flags to check (${all.length})</h3>${all.length?all.map(x=>`<div class="abs-flag" data-kind="${x.f.kind}" data-name="${XA(x.name)}"><b>${X(x.name)}</b>: ${X(x.f.text)}</div>`).join(""):`<div class="swin-note">Nothing to check in the ${X(range.label)}.</div>`}<div class="swin-note">Flags are prompts to check, not decisions. BCEA s23: an employer may ask for a medical certificate after more than two consecutive sick days, or after more than two sick occasions in eight weeks.</div></section>`;
+      h+=`<section class="cov-sec" id="absFlags"><h3>Flags to check (${all.length})</h3>${all.length?all.map(x=>`<div class="abs-flag" data-kind="${x.f.kind}" data-name="${XA(x.name)}"><b>${X(x.name)}</b>: ${X(x.f.text)}</div>`).join(""):`<div class="swin-note">Nothing to check in the ${X(range.label)}.</div>`}<div class="swin-note">Flags are prompts to check, not decisions. BCEA s23: an employer may ask for a medical certificate after more than two consecutive sick days, or after more than two sick occasions in eight weeks. <button type="button" class="swin-btn" onclick="openSettings('absence')">Change the limits</button></div></section>`;
     }
   }
 
-  const ahead=holidaysBetween(_coverTodayISO(),excKey(_swinAddDays(new Date(),60)));
-  h+=`<section class="cov-sec" id="absHolidays"><h3>Holidays in the next 60 days</h3>${ahead.length?`<div class="cov-tbl-wrap"><table class="cov-tbl"><thead><tr><th>Date</th><th>South Africa (staff)</th><th>UK (client)</th></tr></thead><tbody>${ahead.map(x=>`<tr data-iso="${x.iso}"><td>${X(_swinDayLabel(x.iso))}</td><td>${X(x.sa||"—")}</td><td>${X(x.uk||"—")}</td></tr>`).join("")}</tbody></table></div>`:`<div class="swin-note">No SA public holidays or UK bank holidays in the next 60 days.</div>`}</section>`;
+  const aheadDays=prefNum("hol.aheadDays"),showUK=pref("hol.showUK");
+  const ahead=holidaysBetween(_coverTodayISO(),excKey(_swinAddDays(new Date(),aheadDays))).filter(x=>x.sa||showUK);
+  h+=`<section class="cov-sec" id="absHolidays"><h3>Holidays in the next ${aheadDays} days</h3>${ahead.length?`<div class="cov-tbl-wrap"><table class="cov-tbl"><thead><tr><th>Date</th><th>South Africa (staff)</th>${showUK?"<th>UK (client)</th>":""}</tr></thead><tbody>${ahead.map(x=>`<tr data-iso="${x.iso}"><td>${X(_swinDayLabel(x.iso))}</td><td>${X(x.sa||"—")}</td>${showUK?`<td>${X(x.uk||"—")}</td>`:""}</tr>`).join("")}</tbody></table></div>`:`<div class="swin-note">No SA public holidays${showUK?" or UK bank holidays":""} in the next ${aheadDays} days.</div>`}</section>`;
 
   h+=`<details class="cov-sec" id="absTypes"><summary><h3 style="display:inline">Leave types</h3></summary><div class="swin-note">SA (BCEA) defaults. Rename them, or change which roster codes count as each type (comma separated). Logged exceptions and People statuses map to them automatically.</div>`;
   h+=`<div class="cov-tbl-wrap"><table class="cov-tbl"><thead><tr><th>Type</th><th>Roster codes</th><th>Unplanned</th></tr></thead><tbody>`;

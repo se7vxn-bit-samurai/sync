@@ -5,7 +5,8 @@
    batch with nsOrgUndo. baseLeaderOn(name, date) is who someone
    reports to on a date; leaderOn (people/cover.js) adds acting cover.
    ═══════════════════════════════════════════════════════════════ */
-const ORG_SPAN_WARN=15;
+// Span-of-control warning: Settings → People & org (org.spanWarn, default 15).
+function orgSpanWarn(){return prefNum("org.spanWarn");}
 const ORG_LEAVER_RE=/^(leaver|left|inactive|terminated|resigned|exited)$/i;
 let _orgLineCache={key:"",byPid:new Map(),byName:new Map()};
 function orgLineIndex(){
@@ -80,7 +81,9 @@ function orgDuplicatePairs(names){
 // Problems in the org on a date, grouped. Each item names the people it is about.
 function orgQuality(date){
   const st=orgStructure(date),people=S.people||{},today=_coverTodayISO(),out=[];
-  const add=(kind,title,names,hint)=>{if(names.length)out.push({kind,title,names,hint});};
+  // Each check can be switched off in Settings → People & org.
+  const add=(kind,title,names,hint)=>{if(names.length&&pref("org.check."+kind)!==false)out.push({kind,title,names,hint});};
+  const span=orgSpanWarn();
   const own=new Map();
   (S.entries||[]).forEach(e=>{const d=_swinEntryDate(e);if(!d||!e.name)return;const iso=excKey(d);if(!own.has(e.name))own.set(e.name,{last:iso});else if(iso>own.get(e.name).last)own.get(e.name).last=iso;});
   add("noLeader","Agents with no leader",st.unassigned,"Select them and use Move to.");
@@ -90,6 +93,6 @@ function orgQuality(date){
   add("dupes","Possible duplicate names",orgDuplicatePairs(st.names).map(([a,b])=>`${a} / ${b}`),"Rename or merge in Ops → People & Org.");
   add("tlNoTeam","Team leaders with no team",st.tls.filter(n=>!(st.reports.get(n)||[]).length),"Move agents to them, or change their role.");
   add("leaverShifts","Leavers with future shifts",st.names.filter(n=>ORG_LEAVER_RE.test(String(people[n].status||""))&&own.has(n)&&own.get(n).last>today),"Remove their shifts after their last day.");
-  add("span",`More than ${ORG_SPAN_WARN} agents on one leader`,st.teams.filter(t=>t.members.length>ORG_SPAN_WARN).map(t=>`${t.leader} (${t.members.length})`),"Consider splitting the team.");
+  add("span",`More than ${span} agents on one leader`,st.teams.filter(t=>t.members.length>span).map(t=>`${t.leader} (${t.members.length})`),"Consider splitting the team, or raise the limit in Settings → People & org.");
   return out;
 }

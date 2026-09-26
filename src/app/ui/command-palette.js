@@ -72,6 +72,7 @@ function _collectCommandPaletteActions(){
   actions.push({id:"backups",label:"Snapshots & backups",hint:"Restore a previous version",keywords:"snapshot backup restore version history rollback undo",group:"Operations",run:()=>{openSettings();}});
   actions.push({id:"export-backup",label:"Export backup file",hint:"Portable copy of everything",keywords:"export backup download json portable snapshot",group:"Exports",run:()=>{if(typeof _syncExportBackup==="function")_syncExportBackup();}});
   actions.push({id:"settings",label:"Settings",hint:"Account, appearance, backups",keywords:"settings preferences account profile sync appearance",group:"System",run:()=>{openSettings();}});
+  SETTINGS_SECTIONS.forEach(sec=>actions.push({id:"settings-"+sec.id,label:"Settings: "+sec.l,hint:sec.d,keywords:"settings preferences "+sec.l+" "+sec.d,group:"System",run:()=>{openSettings(sec.id);}}));
   actions.push({id:"sync-dashboard",label:"Open Sync Dashboard",hint:"Overall command view",keywords:"dashboard home overview sync hub",run:()=>{railNavDashboard();}});
   actions.push({id:"today-handoff",label:"Today handoff panel",hint:"Working/off/issues + copy",keywords:"today handoff shift summary working off copy",run:()=>{openTodayHandoff();}});
   actions.push({id:"issue-inbox",label:"Issue inbox",hint:"Flags, follow-ups, coverage risks",keywords:"issues inbox alerts flags decision queue risks",run:()=>{openIssueInbox();}});

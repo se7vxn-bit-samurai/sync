@@ -119,7 +119,7 @@ function rCal(el){
     if(info&&info.entries.length){const wks={};info.entries.forEach(e=>{if(e.week){wks[e.week]=(wks[e.week]||0)+1;}});const top=Object.entries(wks).sort((a,b)=>b[1]-a[1])[0];if(top)calWk=`<span class="cal-wk-badge">${top[0]}</span>`;}
     const phBadgeEl=ph&&!isSel?`<span class="cal-d ph-badge" title="${ph.name}">${phLabel(dt)}</span>`:"";
     // UK bank holiday (core/uk-holidays.js): client demand changes, SA staff rights do not.
-    const ukbh=typeof ukBankHoliday==="function"?ukBankHoliday(dt):null;
+    const ukbh=typeof ukBankHoliday==="function"&&pref("hol.showUK")?ukBankHoliday(dt):null;
     const ukBadgeEl=ukbh?`<span class="cal-d uk-badge" title="${XA("UK: "+ukbh.name)}">UK</span>`:"";
     // #4: Agent status dots — show coloured dots for flagged agents on this day
     const _dayDt=new Date(y,m,d);const _dayExcAll=getExcForDay(_dayDt);

@@ -751,3 +751,27 @@ format is dropped.
 | 6 | L6 Leave/absence + UK holidays | — | M |
 
 All six local-track items are built (L1–L6). Next is Phase 1 of the org layer (section 12).
+
+### Settings: every rule the local track uses is tunable
+
+The thresholds L2–L6 hard-coded now come from one registry, `src/app/settings/prefs.js`
+(`SYNC_PREFS`). `pref(key)` returns the saved value or the default. Only values that differ from
+the default are stored, in `sc_settings.prefs`, so they sync with the project, and a default that
+changes later still reaches everyone who never touched it. The Settings drawer
+(`src/app/settings/drawer.js`) renders straight from the registry: each row shows its help text,
+range and default, and has a reset. Each section also has a reset, and search covers every
+section.
+
+| Section | What it controls |
+|---|---|
+| Account | Sign-in, cloud save, snapshots (unchanged) |
+| Workspace | Project, sheet/team filters, scope (acting leaders include the team they cover; remember the scope between visits), schedule rules (max hours, consecutive days, minimum coverage, weekend policy, lunch), hours & cost, coaching, quick notes |
+| Appearance | Theme, variants, density, colour-blind mode, highlight today, the screen a project opens on, reduce motion, notification length, schedule card fields |
+| Time & holidays | SA/UK clock with today's offset and the next UK clock change, UK bank holidays on/off, holiday look-ahead, the year's holiday list |
+| People & org | Large-team warning, each Org builder data-quality check on/off |
+| Cover & leaders | Cover look-ahead, suggestions per gap, fairness look-back, candidate and development labels, all seven ranking weights (the formula is shown live), Leaders board thin %, leave window, default sort |
+| Absence | BCEA s23 limits (consecutive days, occasions, window), family days, bridging, patterns (on/off, minimum occasions, share), default period, POPIA privacy (device only), leave types |
+| Sharing | Schedule Window clock and opening range, sent-log retention, every part of the message text, a sign-off line, and a live preview |
+| Alerts | The seven alert rules, each with its threshold, plus restoring dismissed alerts |
+| Data & exports | Quick exports, the custom workbook builder, a file-name prefix and date stamp (with a live example), protected vault |
+| Advanced | Export and import settings (JSON: preferences, appearance, rules, alerts, coaching, leave types), reset all, diagnostics, danger zone |

@@ -2874,6 +2874,96 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
 .lc-more-summary::after{content:"+";font-size:14px}
 .lc-more[open] .lc-more-summary::after{content:"−"}
 .lc-more-body{display:flex;flex-direction:column;gap:8px;padding:0 10px 10px}
+/* ── Settings drawer (src/app/settings/drawer.js) ── */
+.set-overlay{position:fixed;inset:0;z-index:800;display:flex;justify-content:flex-end}
+.set-scrim{position:fixed;inset:0;background:rgba(0,0,0,.4)}
+.set-panel{position:relative;z-index:1;width:min(720px,100vw);height:100vh;height:100dvh;background:var(--hbg);border-left:1px solid var(--bdr);overflow-y:auto;display:flex;flex-direction:column;backdrop-filter:blur(20px);animation:slideInRight .2s ease-out}
+.set-hd{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--bdr);position:sticky;top:0;background:var(--hbg);z-index:3}
+.set-hd h2{font-size:16px;font-weight:700;margin:0;white-space:nowrap}
+.set-search{flex:1;min-width:0;padding:7px 10px;border:1px solid var(--bdr);border-radius:7px;background:var(--card);color:var(--text);font:inherit;font-size:12px}
+.set-x{background:none;border:1px solid var(--bdr);color:var(--text);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:14px;flex-shrink:0}
+.set-body{display:flex;flex:1;min-height:0}
+.set-nav{display:flex;flex-direction:column;gap:2px;padding:12px 8px;border-right:1px solid var(--bdr);width:168px;flex-shrink:0;position:sticky;top:61px;align-self:flex-start;max-height:calc(100vh - 61px);overflow-y:auto}
+.set-tab{display:flex;align-items:center;justify-content:space-between;gap:6px;text-align:left;padding:8px 10px;border:1px solid transparent;border-radius:7px;background:none;color:var(--tm);font:inherit;font-size:12px;cursor:pointer}
+.set-tab:hover{color:var(--text);background:var(--al)}
+.set-tab.on{border-color:var(--accent);background:var(--al);color:var(--accent);font-weight:600}
+.set-badge{min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--accent);color:#fff;font-size:9px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.set-main{flex:1;min-width:0;padding:16px 18px 28px;display:flex;flex-direction:column;gap:16px}
+.set-title h2{font-size:15px;font-weight:700;margin:0 0 2px}
+.set-title p{font-size:12px;color:var(--tm);margin:0}
+.set-group{border:1px solid var(--bdr);border-radius:10px;padding:10px 12px;background:var(--card)}
+.set-gt{font-size:10.5px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.7px;margin:0 0 4px;display:flex;align-items:center;gap:8px}
+.set-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--bdr)}
+.set-gt+.set-row,.set-note+.set-row,.set-gt+.set-note+.set-row{border-top:none}
+.set-row-main{min-width:0;flex:1}
+.set-l{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--text)}
+.set-h{font-size:11px;color:var(--tm);line-height:1.45;margin-top:2px}
+.set-range{opacity:.7;white-space:nowrap}
+.set-def{font-size:10.5px;color:var(--accent);margin-top:3px}
+.set-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block}
+.set-ctl{flex-shrink:0;display:flex;align-items:center;gap:8px;max-width:55%}
+.set-num{display:inline-flex;align-items:center;gap:5px}
+.set-num input{width:70px;padding:5px 7px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;text-align:center}
+.set-num input:disabled{opacity:.45}
+.set-u{font-size:10.5px;color:var(--tm);white-space:nowrap}
+.set-sel,.set-text{padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);color:var(--text);font:inherit;font-size:12px;max-width:100%}
+.set-text{width:220px}
+.set-switch{position:relative;display:inline-block;width:34px;height:20px;flex-shrink:0;cursor:pointer}
+.set-switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.set-switch span{position:absolute;inset:0;border-radius:10px;background:var(--bdr);transition:background .15s;pointer-events:none}
+.set-switch span::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:transform .15s}
+.set-switch input:checked+span{background:var(--accent)}
+.set-switch input:checked+span::after{transform:translateX(14px)}
+.set-switch input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.set-note{font-size:11px;color:var(--tm);line-height:1.5;margin:2px 0 6px}
+.set-kv{display:flex;flex-direction:column;gap:2px;padding:6px 0}
+.set-kv b{font-size:12.5px}
+.set-kv span{font-size:11px;color:var(--tm);line-height:1.45}
+.set-btns{display:flex;flex-wrap:wrap;gap:6px;padding:6px 0 2px}
+.set-btns .swin-btn.danger{color:#dc2626;border-color:rgba(220,38,38,.35)}
+.set-btns .swin-btn.pri,.set-wide.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.set-wide{width:100%;margin-top:8px}
+.set-link{background:none;border:none;padding:0;color:var(--accent);font:inherit;font-size:inherit;cursor:pointer;text-decoration:underline;text-transform:none;letter-spacing:0}
+.set-area{width:100%;box-sizing:border-box;min-height:100px;padding:8px 10px;border-radius:7px;border:1px solid var(--bdr);background:var(--bg);color:var(--text);font:inherit;font-size:12px;resize:vertical}
+.set-themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px;margin:4px 0 8px}
+.set-theme{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border:1px solid var(--bdr);border-radius:8px;background:none;color:var(--text);font:inherit;font-size:11px;cursor:pointer}
+.set-theme span{width:14px;height:14px;border-radius:50%}
+.set-theme.on{border-color:var(--accent);background:var(--al);color:var(--accent)}
+.set-details{border:1px solid var(--bdr);border-radius:8px;padding:7px 10px;margin:4px 0}
+.set-details summary{cursor:pointer;font-size:11px;color:var(--tm);display:flex;justify-content:space-between;gap:8px}
+.set-details summary b{color:var(--accent);font-weight:600}
+.set-vcat{font-size:9.5px;color:var(--tm);margin:8px 0 3px;text-transform:uppercase;letter-spacing:.5px}
+.set-chips{display:flex;flex-wrap:wrap;gap:4px}
+.set-chip{padding:3px 9px;border-radius:10px;border:1px solid var(--bdr);background:none;color:var(--tm);font:inherit;font-size:10px;cursor:pointer}
+.set-chip.on{border-color:var(--accent);background:var(--al);color:var(--accent)}
+.set-seg{display:inline-flex;border:1px solid var(--bdr);border-radius:7px;overflow:hidden}
+.set-seg button{border:none;background:none;color:var(--tm);font:inherit;font-size:11px;padding:5px 9px;cursor:pointer}
+.set-seg button+button{border-left:1px solid var(--bdr)}
+.set-seg button[aria-pressed="true"]{background:var(--al);color:var(--accent);font-weight:600}
+.set-types{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;padding:4px 0}
+.set-types div{display:flex;flex-direction:column;gap:1px;font-size:11.5px}
+.set-types span{font-size:10.5px;color:var(--tm)}
+.set-xhd{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;padding:4px 0 6px}
+.set-xgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:4px 12px;font-size:11.5px}
+.set-xgrid label{display:flex;gap:6px;align-items:flex-start;cursor:pointer}
+.set-pre{margin:0;padding:10px 12px;border-radius:8px;border:1px solid var(--bdr);background:var(--bg);font:11px/1.55 'JetBrains Mono',monospace;white-space:pre-wrap;word-break:break-word;max-height:320px;overflow:auto}
+.set-dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:4px 0;font-size:11.5px}
+.set-dl dt{color:var(--tm)}
+.set-dl dd{margin:0;font-family:'JetBrains Mono',monospace;word-break:break-all}
+.set-tbl{font-size:11px}
+.set-foot{font-size:11px;color:var(--tm);text-align:center;padding:4px 0}
+@media(max-width:760px){
+  .set-body{flex-direction:column}
+  .set-nav{flex-direction:row;flex-wrap:nowrap;width:auto;top:61px;z-index:2;align-self:stretch;max-height:none;overflow-x:auto;overflow-y:hidden;border-right:none;border-bottom:1px solid var(--bdr);background:var(--hbg);padding:8px 14px;gap:5px;scrollbar-width:none}
+  .set-nav::-webkit-scrollbar{display:none}
+  .set-tab{flex-shrink:0;white-space:nowrap;padding:6px 10px;border-color:var(--bdr);font-size:11.5px}
+  .set-main{padding:14px 14px 28px}
+  .set-row{flex-wrap:wrap}
+  .set-ctl{max-width:100%}
+  .set-text{width:100%}
+}
+/* Settings → Appearance → Reduce motion */
+.sync-reduce-motion *,.sync-reduce-motion *::before,.sync-reduce-motion *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 </style>
 
 <style id="sync-dashboard-workspace-styles">
@@ -3272,6 +3362,7 @@ let S={wb:null,fn:"",shs:[],sh:"",raw:[],entries:[],team:"all",emp:"all",tz:true
   buildConfig:null,buildStep:0,buildMode:false,_filtersOpen:false,_settingsOpen:false,
   coachBudgetHrs:{},coachManualSessions:[],swaps:[],_swapFormDay:null,_bpDragWeek:null,_bpDropTarget:null,_bpDropDir:null,_sumShowIntel:true,_sumHealthOpen:false,_bpDraft:null,_bpEditMode:false,savedMonths:{},savedViews:[],lastImportReview:null,sourceManifest:[],currentSource:null,pinnedPeople:[],inlineNotes:{},exportPresets:[],changeHistory:[],changeIntelligence:{schema:"mirrorflow.roster-change-intelligence",version:1,history:[],activity:[]},issueInboxState:{records:{},filters:{status:"open",severity:"all",type:"all",person:"all"},history:[]},qolState:null,dashboardLayout:null,dashboardShortcuts:null,plCellOverrides:{},leaveRequests:[],otThresholds:{sick:3,absence:3,capacity:3,gap:-2},exceptions:[],dayClosed:{},anView:"dashboard",dayIntelName:"",dayIntelDate:"",dayIntelSource:"",sumMode:"month",anScope:"month",_alertRailFocus:"all",_helpOpen:false,
   plCoachOpen:true,coachDuration:30,coachBlackouts:{},coachPlan:{},coachHistory:[],plSubTab:"schedule",coachTargetDaily:1,coachTargetMonthly:0,targetHours:0,ratePerHour:0,cache:{},entriesVer:0,exceptionsVer:0,_schemaVersion:1,
+  prefs:{},_prefsVer:0,// Settings preferences (src/app/settings/prefs.js): only values that differ from the default
   exportSelection:{overview:true,leaders:true,analytics:true,scheduleData:true,notes:true,blueprint:true,positions:true,exceptions:true,coaching:true,people:true,changeLog:true},
   // Phase A — People ops surface
   peopleSubTab:"dashboard",// "dashboard" | "team" | "agents" | "logbook" | "events"
@@ -5743,6 +5834,7 @@ function _collectCommandPaletteActions(){
   actions.push({id:"backups",label:"Snapshots & backups",hint:"Restore a previous version",keywords:"snapshot backup restore version history rollback undo",group:"Operations",run:()=>{openSettings();}});
   actions.push({id:"export-backup",label:"Export backup file",hint:"Portable copy of everything",keywords:"export backup download json portable snapshot",group:"Exports",run:()=>{if(typeof _syncExportBackup==="function")_syncExportBackup();}});
   actions.push({id:"settings",label:"Settings",hint:"Account, appearance, backups",keywords:"settings preferences account profile sync appearance",group:"System",run:()=>{openSettings();}});
+  SETTINGS_SECTIONS.forEach(sec=>actions.push({id:"settings-"+sec.id,label:"Settings: "+sec.l,hint:sec.d,keywords:"settings preferences "+sec.l+" "+sec.d,group:"System",run:()=>{openSettings(sec.id);}}));
   actions.push({id:"sync-dashboard",label:"Open Sync Dashboard",hint:"Overall command view",keywords:"dashboard home overview sync hub",run:()=>{railNavDashboard();}});
   actions.push({id:"today-handoff",label:"Today handoff panel",hint:"Working/off/issues + copy",keywords:"today handoff shift summary working off copy",run:()=>{openTodayHandoff();}});
   actions.push({id:"issue-inbox",label:"Issue inbox",hint:"Flags, follow-ups, coverage risks",keywords:"issues inbox alerts flags decision queue risks",run:()=>{openIssueInbox();}});
@@ -6293,7 +6385,7 @@ function getPersistSignature(){
   return JSON.stringify({
     th:S.th,thVariant:S.thVariant||0,tz:S.tz,hlToday:S.hlToday,covMin:S.covMin,hrsMax:S.hrsMax,cbMode:S.cbMode,density:S.density,tab:S.tab,
     peopleSubTab:S.peopleSubTab||"dashboard",peopleDashView:S.peopleDashView||"today_ops",peopleView:S._peopleView||"cards",peopleLogFilter:S._peopleLogFilter||"all",
-    targetHours:S.targetHours||0,ratePerHour:S.ratePerHour||0,
+    targetHours:S.targetHours||0,ratePerHour:S.ratePerHour||0,prefs:S.prefs||{},
     plOverrides:S.plOverrides,plLeave:S.plLeave,plHires:S.plHires,plRemoved:S.plRemoved,plMonths:S.plMonths,
     plBlueprints:S.plBlueprints,plPositions:S.plPositions,exceptions:S.exceptions,dayClosed:S.dayClosed,
     coachPlan:S.coachPlan,coachHistory:S.coachHistory,coachBlackouts:S.coachBlackouts,coachDuration:S.coachDuration,coachTargetDaily:S.coachTargetDaily,
@@ -13899,7 +13991,7 @@ function rCal(el){
     if(info&&info.entries.length){const wks={};info.entries.forEach(e=>{if(e.week){wks[e.week]=(wks[e.week]||0)+1;}});const top=Object.entries(wks).sort((a,b)=>b[1]-a[1])[0];if(top)calWk=`<span class="cal-wk-badge">${top[0]}</span>`;}
     const phBadgeEl=ph&&!isSel?`<span class="cal-d ph-badge" title="${ph.name}">${phLabel(dt)}</span>`:"";
     // UK bank holiday (core/uk-holidays.js): client demand changes, SA staff rights do not.
-    const ukbh=typeof ukBankHoliday==="function"?ukBankHoliday(dt):null;
+    const ukbh=typeof ukBankHoliday==="function"&&pref("hol.showUK")?ukBankHoliday(dt):null;
     const ukBadgeEl=ukbh?`<span class="cal-d uk-badge" title="${XA("UK: "+ukbh.name)}">UK</span>`:"";
     // #4: Agent status dots — show coloured dots for flagged agents on this day
     const _dayDt=new Date(y,m,d);const _dayExcAll=getExcForDay(_dayDt);
@@ -16837,260 +16929,653 @@ function runRulesValidation(){
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   UNIFIED SETTINGS DRAWER v48
-   One ⚙ button → one drawer → all preferences
+   PREFERENCES REGISTRY
+   One schema for the tunable rules the engines read: cover
+   suggestions, org checks, the Leaders board, absence prompts,
+   Schedule Window sharing, holidays, exports and the start view.
+   Settings renders from it and searches it; pref(key) returns the
+   saved value or the default. Saved in sc_settings.prefs (only
+   values that differ from the default), so it syncs with the project.
+   ═══════════════════════════════════════════════════════════════ */
+const SETTINGS_SECTIONS=[
+  {id:"account",l:"Account",d:"Sign-in, cloud save, backups and history"},
+  {id:"workspace",l:"Workspace",d:"Project, filters, scope, schedule rules, coaching, notes"},
+  {id:"preferences",l:"Appearance",d:"Theme, density, motion, notifications, start view"},
+  {id:"time",l:"Time & holidays",d:"SA and UK clocks, public and bank holidays"},
+  {id:"people",l:"People & org",d:"Org builder checks and span of control"},
+  {id:"cover",l:"Cover & leaders",d:"Acting-cover suggestions and the Leaders board"},
+  {id:"absence",l:"Absence",d:"BCEA prompts, patterns, occasions, privacy"},
+  {id:"sharing",l:"Sharing",d:"Schedule Window defaults and message text"},
+  {id:"alerts",l:"Alerts",d:"Schedule alert rules and thresholds"},
+  {id:"data",l:"Data & exports",d:"Exports, file names, protected vault"},
+  {id:"advanced",l:"Advanced",d:"Settings backup, reset, diagnostics, clear data"}
+];
+const PREF_BOOL=[["true","On"],["false","Off"]];
+const SYNC_PREFS=[
+  // ── Appearance ──
+  {k:"ui.startView",s:"preferences",g:"Start",l:"Open a project on",t:"select",d:"resume",o:[["resume","Where I left off in it"],["dashboard","Home dashboard"],["calendar","Calendar, on today"],["planner","Planner"],["cards","Schedule cards"],["people","People dashboard"],["leaders","Leaders board"]],h:"The screen a project opens on. 'Where I left off' returns to the last screen, filters and month you had open in that project, on any device."},
+  {k:"ui.reduceMotion",s:"preferences",g:"Motion & notifications",l:"Reduce motion",t:"bool",d:false,h:"Turns off animations and transitions. Your device's reduced-motion setting is respected either way.",apply:()=>_prefApplyBodyClasses()},
+  {k:"ui.toastLength",s:"preferences",g:"Motion & notifications",l:"Notification length",t:"select",d:"normal",o:[["short","Short (about 2.5s)"],["normal","Normal (about 3.5s)"],["long","Long (about 6s)"]],h:"How long pop-up notifications stay on screen. Ones that need an action stay until closed."},
+  // ── Workspace ──
+  {k:"scope.includeActing",s:"workspace",g:"Scope",l:"Acting leaders include the team they cover",t:"bool",d:true,h:"When the scope is set to someone acting as team leader, their scope also takes in the team they are covering while the cover runs.",apply:()=>_prefScopeChanged()},
+  {k:"scope.remember",s:"workspace",g:"Scope",l:"Remember the scope between visits",t:"bool",d:true,h:"Off: Sync opens with everyone in view, and a scope you set lasts until you reload."},
+  // ── Time & holidays ──
+  {k:"hol.showUK",s:"time",g:"Holidays",l:"Show UK bank holidays",t:"bool",d:true,h:"England & Wales bank holidays in the Calendar (UK badge), Schedule Window (UK tag) and People → Absence. SA public holidays always show: they drive the roster."},
+  {k:"hol.aheadDays",s:"time",g:"Holidays",l:"Holiday look-ahead",t:"int",d:60,min:14,max:365,u:"days",h:"How far ahead People → Absence lists SA public holidays and UK bank holidays."},
+  // ── People & org ──
+  {k:"org.spanWarn",s:"people",g:"Span of control",l:"Large-team warning",t:"int",d:15,min:3,max:60,u:"agents",h:"The Org builder flags a leader with more agents than this."},
+  {k:"org.check.noLeader",s:"people",g:"Data-quality checks",l:"Agents with no leader",t:"bool",d:true,h:"People with no team leader on the date shown."},
+  {k:"org.check.missingLeader",s:"people",g:"Data-quality checks",l:"Leader not in People",t:"bool",d:true,h:"Someone reports to a name that is not in People."},
+  {k:"org.check.notInOrg",s:"people",g:"Data-quality checks",l:"On the roster but not in People",t:"bool",d:true,h:"Roster names with no People record."},
+  {k:"org.check.neverScheduled",s:"people",g:"Data-quality checks",l:"In People but never scheduled",t:"bool",d:true,h:"Agents and TLs with no roster rows of their own or their leader's."},
+  {k:"org.check.dupes",s:"people",g:"Data-quality checks",l:"Possible duplicate names",t:"bool",d:true,h:"Names that differ only by spacing, case or a small typo."},
+  {k:"org.check.tlNoTeam",s:"people",g:"Data-quality checks",l:"Team leaders with no team",t:"bool",d:true,h:"TLs nobody reports to."},
+  {k:"org.check.leaverShifts",s:"people",g:"Data-quality checks",l:"Leavers with future shifts",t:"bool",d:true,h:"People marked as leavers who still have shifts after today."},
+  {k:"org.check.span",s:"people",g:"Data-quality checks",l:"Large teams",t:"bool",d:true,h:"Uses the large-team warning above."},
+  // ── Cover & leaders ──
+  {k:"cover.horizon",s:"cover",g:"Cover gaps",l:"Default look-ahead",t:"select",d:"14",o:[["7","7 days"],["14","14 days"],["28","28 days"]],h:"How far ahead People → Cover looks for a leader away with no cover. You can still switch it on the page."},
+  {k:"cover.maxSuggestions",s:"cover",g:"Suggestions",l:"Suggestions per gap",t:"int",d:6,min:1,max:20,u:"people",h:"How many ranked candidates Suggest cover lists."},
+  {k:"cover.lookbackDays",s:"cover",g:"Suggestions",l:"Fairness look-back",t:"int",d:180,min:30,max:730,u:"days",h:"Acting days in this window lower a person's rank, so cover is shared around."},
+  {k:"cover.poolLabels",s:"cover",g:"Suggestions",l:"Labels that make someone a candidate",t:"list",d:["YAT","Senior Agent","Supervisor","SME"],h:"People outside the team are suggested only if they lead a team or carry one of these labels. Comma separated."},
+  {k:"cover.devLabels",s:"cover",g:"Suggestions",l:"Development labels (bonus)",t:"list",d:["YAT","Senior Agent","Supervisor"],h:"People with one of these labels get the development bonus below. Comma separated."},
+  {k:"cover.wAvail",s:"cover",g:"Ranking weights",l:"Works the dates",t:"int",d:45,min:0,max:100,u:"pts",h:"Points for working every day of the gap (scaled by the share of days)."},
+  {k:"cover.wOverlap",s:"cover",g:"Ranking weights",l:"Same hours as the leader",t:"int",d:20,min:0,max:100,u:"pts",h:"Points for shift overlap with the absent leader's usual shift."},
+  {k:"cover.wFair",s:"cover",g:"Ranking weights",l:"Has acted least",t:"int",d:15,min:0,max:100,u:"pts",h:"Full points for nobody who has acted in the look-back; fewer the more they have acted."},
+  {k:"cover.wTeam",s:"cover",g:"Ranking weights",l:"On the same team",t:"int",d:10,min:0,max:100,u:"pts",h:"Bonus for someone already in the team."},
+  {k:"cover.wDev",s:"cover",g:"Ranking weights",l:"Development label",t:"int",d:10,min:0,max:100,u:"pts",h:"Bonus for the development labels above."},
+  {k:"cover.pLeader",s:"cover",g:"Ranking weights",l:"Leads their own team",t:"int",d:10,min:0,max:100,u:"pts off",h:"Penalty: covering pulls them from their own team."},
+  {k:"cover.pBusy",s:"cover",g:"Ranking weights",l:"Already covering then",t:"int",d:30,min:0,max:100,u:"pts off",h:"Penalty for someone already booked to cover on overlapping dates."},
+  {k:"leaders.thinPct",s:"cover",g:"Leaders board",l:"Thin team below",t:"int",d:50,min:0,max:100,u:"% working",h:"A team is thin when fewer than this share of it is working, or fewer than the minimum coverage in Workspace → Schedule rules."},
+  {k:"leaders.lookahead",s:"cover",g:"Leaders board",l:"Upcoming leave window",t:"int",d:7,min:1,max:60,u:"days",h:"The Leave column counts people with leave in this many days after the board date."},
+  {k:"leaders.sort",s:"cover",g:"Leaders board",l:"Default sort",t:"select",d:"attention",o:[["attention","Needs attention"],["name","Name"],["size","Team size"]],h:"How the board is sorted when you open it."},
+  // ── Absence ──
+  {k:"abs.sickRunDays",s:"absence",g:"BCEA s23 prompts",l:"Consecutive sick days allowed",t:"int",d:2,min:1,max:10,u:"days",h:"A sick occasion longer than this is flagged for a medical certificate. BCEA s23: more than two consecutive days."},
+  {k:"abs.sickOccasions",s:"absence",g:"BCEA s23 prompts",l:"Sick occasions that trigger a prompt",t:"int",d:3,min:2,max:10,u:"occasions",h:"This many separate sick occasions inside the window below are flagged. BCEA s23: more than two in eight weeks."},
+  {k:"abs.sickWindowWeeks",s:"absence",g:"BCEA s23 prompts",l:"Occasion window",t:"int",d:8,min:2,max:26,u:"weeks",h:"The rolling window the occasions are counted in."},
+  {k:"abs.familyDays",s:"absence",g:"BCEA s23 prompts",l:"Family responsibility days a year",t:"int",d:3,min:0,max:30,u:"days",h:"More than this in 12 months is flagged. BCEA s27 gives three days a year."},
+  {k:"abs.bridgeGap",s:"absence",g:"Occasions",l:"Bridge non-working days",t:"int",d:4,min:0,max:7,u:"days",h:"Absences separated only by days off (up to this many) count as one occasion, so Friday and Monday sick is one occasion. 0 counts every day separately."},
+  {k:"abs.patterns",s:"absence",g:"Patterns",l:"Look for patterns",t:"bool",d:true,h:"Unplanned absence next to weekends, days off or holidays, and Monday/Friday clusters."},
+  {k:"abs.patternMinOcc",s:"absence",g:"Patterns",l:"Occasions before a pattern shows",t:"int",d:2,min:2,max:10,u:"occasions",h:"A pattern needs repetition: at least this many separate unplanned occasions."},
+  {k:"abs.patternPct",s:"absence",g:"Patterns",l:"Pattern share",t:"int",d:60,min:30,max:100,u:"%",h:"The share of unplanned absence that must fit the pattern."},
+  {k:"abs.defaultPeriod",s:"absence",g:"Register",l:"Default period",t:"select",d:"12m",o:[["3m","3 months"],["12m","12 months"],["all","All loaded"]],h:"The period People → Absence opens with."},
+  // ── Sharing (Schedule Window) ──
+  {k:"swin.clock",s:"sharing",g:"Schedule Window",l:"Clock",t:"select",d:"follow",o:[["follow","Follow the SA/UK setting"],["sa","Always SA time"],["uk","Always UK time"]],h:"Which times a Schedule Window opens with. You can switch inside the window."},
+  {k:"swin.range",s:"sharing",g:"Schedule Window",l:"Opens on",t:"select",d:"month",o:[["month","The month on screen"],["next14","The next 2 weeks"],["next28","The next 4 weeks"]],h:"The date range a Schedule Window opens with."},
+  {k:"swin.keepDays",s:"sharing",g:"Schedule Window",l:"Keep the sent log for",t:"int",d:180,min:30,max:730,u:"days",h:"What each person was sent is kept this long, for 'changed since sent'."},
+  {k:"swin.txtStatus",s:"sharing",g:"Message text",l:"Shift type after the times",t:"bool",d:true,h:"e.g. '08:00–17:00  Early'."},
+  {k:"swin.txtOther",s:"sharing",g:"Message text",l:"Also show the other clock",t:"bool",d:false,h:"Adds UK times to an SA message (or SA to a UK one) in brackets."},
+  {k:"swin.txtHolidays",s:"sharing",g:"Message text",l:"SA public holiday names",t:"bool",d:true,h:"e.g. '(Heritage Day)'."},
+  {k:"swin.txtUK",s:"sharing",g:"Message text",l:"UK bank holiday names",t:"bool",d:false,h:"e.g. '(UK: Summer bank holiday)'."},
+  {k:"swin.txtCover",s:"sharing",g:"Message text",l:"Acting cover",t:"bool",d:false,h:"'Acting for …' and 'Led by …' on the days cover runs."},
+  {k:"swin.txtNextOff",s:"sharing",g:"Message text",l:"Next day off",t:"bool",d:true,h:"A 'Next day off' line under the days."},
+  {k:"swin.txtSent",s:"sharing",g:"Message text",l:"Sent date and sender",t:"bool",d:true,h:"'Sent 26 Sep 2026 by …' at the end."},
+  {k:"swin.footer",s:"sharing",g:"Message text",l:"Sign-off line",t:"text",d:"",max:160,ph:"e.g. Questions? Message your TL on WhatsApp.",h:"Added as the last line of every schedule message."},
+  // ── Data & exports ──
+  {k:"export.prefix",s:"data",g:"File names",l:"File name prefix",t:"text",d:"",max:24,ph:"e.g. JHB",h:"Added to the front of every export file name, e.g. a site or client code."},
+  {k:"export.dateStamp",s:"data",g:"File names",l:"Date stamp",t:"bool",d:true,h:"Ends export file names with today's date (YYYYMMDD)."}
+];
+const _PREF_BY_KEY=new Map(SYNC_PREFS.map(p=>[p.k,p]));
+
+function _prefClampInt(p,v){
+  let n=Math.round(Number(v));
+  if(!Number.isFinite(n))return p.d;
+  if(p.min!==undefined&&n<p.min)n=p.min;
+  if(p.max!==undefined&&n>p.max)n=p.max;
+  return n;
+}
+function _prefList(v){
+  const arr=Array.isArray(v)?v:String(v??"").split(",");
+  return[...new Set(arr.map(x=>String(x).trim()).filter(Boolean))].slice(0,30);
+}
+// A value in the shape its schema entry expects; undefined when it cannot be read as one.
+function _prefNormalize(p,v){
+  if(v===undefined||v===null)return undefined;
+  if(p.t==="bool")return v===true||v==="true"?true:v===false||v==="false"?false:undefined;
+  if(p.t==="int")return Number.isFinite(Number(v))&&String(v).trim()!==""?_prefClampInt(p,v):undefined;
+  if(p.t==="select"){const s=String(v);return p.o.some(o=>o[0]===s)?s:undefined;}
+  if(p.t==="text")return String(v).replace(/[\r\n]+/g," ").slice(0,p.max||200);
+  if(p.t==="list")return _prefList(v);
+  return undefined;
+}
+function _prefSame(p,a,b){return p.t==="list"?JSON.stringify(a)===JSON.stringify(b):a===b;}
+function pref(key){
+  const p=_PREF_BY_KEY.get(key);if(!p)return undefined;
+  const store=S.prefs&&typeof S.prefs==="object"?S.prefs:{};
+  if(!Object.prototype.hasOwnProperty.call(store,key))return p.t==="list"?p.d.slice():p.d;
+  const v=_prefNormalize(p,store[key]);
+  return v===undefined?(p.t==="list"?p.d.slice():p.d):v;
+}
+function prefNum(key){return Number(pref(key));}
+function prefIsDefault(key){const p=_PREF_BY_KEY.get(key);return!p||_prefSame(p,pref(key),p.d);}
+function prefChangedCount(section){return SYNC_PREFS.filter(p=>(!section||p.s===section)&&!prefIsDefault(p.k)).length;}
+// Only values that differ from the default are stored, so a default change later reaches everyone
+// who never touched the setting.
+function prefSet(key,value,opts){
+  const p=_PREF_BY_KEY.get(key);if(!p)return;
+  const v=_prefNormalize(p,value);if(v===undefined)return;
+  if(!S.prefs||typeof S.prefs!=="object")S.prefs={};
+  if(_prefSame(p,v,p.d))delete S.prefs[key];else S.prefs[key]=v;
+  _prefAfterChange([p],opts);
+}
+function prefReset(key){
+  const p=_PREF_BY_KEY.get(key);if(!p||!S.prefs)return;
+  delete S.prefs[key];
+  _prefAfterChange([p]);
+}
+function prefResetSection(section){
+  const list=SYNC_PREFS.filter(p=>p.s===section&&!prefIsDefault(p.k));
+  if(!list.length)return;
+  list.forEach(p=>{delete S.prefs[p.k];});
+  _prefAfterChange(list);
+  toast(`${list.length} setting${list.length===1?"":"s"} reset to default`,"ok");
+}
+function prefResetAll(){
+  const n=prefChangedCount();
+  if(!n){toast("Every preference is already on its default","info");return;}
+  if(!confirm(`Reset ${n} preference${n===1?"":"s"} to the default? Appearance, schedule rules and alert rules are not affected.`))return;
+  const list=SYNC_PREFS.filter(p=>!prefIsDefault(p.k));
+  S.prefs={};
+  _prefAfterChange(list);
+  toast(`${n} preference${n===1?"":"s"} reset`,"ok");
+}
+// Loaded from sc_settings: unknown keys and unreadable values are dropped.
+function prefsLoad(raw){
+  const out={};
+  if(raw&&typeof raw==="object"&&!Array.isArray(raw))Object.keys(raw).forEach(k=>{
+    const p=_PREF_BY_KEY.get(k);if(!p)return;
+    const v=_prefNormalize(p,raw[k]);
+    if(v!==undefined&&!_prefSame(p,v,p.d))out[k]=v;
+  });
+  S.prefs=out;
+  S._prefsVer=(S._prefsVer||0)+1;
+  _prefApplyBodyClasses();
+}
+function _prefAfterChange(list,opts){
+  S._prefsVer=(S._prefsVer||0)+1;
+  list.forEach(p=>{if(typeof p.apply==="function"){try{p.apply();}catch(e){}}});
+  if(typeof invalidateDerivedCache==="function")invalidateDerivedCache();
+  if(typeof schedulePersist==="function")schedulePersist(true);
+  if(!(opts&&opts.quiet)){
+    if(typeof rerenderCurrentSurface==="function")rerenderCurrentSurface();
+    if(S._settingsOpen&&typeof renderSettings==="function")renderSettings();
+  }
+}
+function _prefApplyBodyClasses(){
+  if(typeof document==="undefined"||!document.body)return;
+  document.body.classList.toggle("sync-reduce-motion",!!pref("ui.reduceMotion"));
+}
+function _prefScopeChanged(){
+  if(typeof _scopeMemo!=="undefined")_scopeMemo.key="";
+  if(typeof _scopeOptMemo!=="undefined")_scopeOptMemo.key="";
+  if(typeof rerenderChromeOnly==="function")rerenderChromeOnly();
+}
+function prefToastScale(){const v=pref("ui.toastLength");return v==="short"?0.7:v==="long"?1.7:1;}
+// The screen Sync opens on: after sign-in, and when a project is opened ("resume" leaves the
+// project's saved view alone and otherwise starts on the Home dashboard).
+function prefApplyStartView(){
+  const v=pref("ui.startView");
+  if(v==="calendar"){S.tab="calendar";S.calSubTab="day";S.plSubTab="schedule";const d=new Date();d.setHours(0,0,0,0);S.calDay=d;}
+  else if(v==="planner"){S.tab="calendar";S.calSubTab="schedule";S.plSubTab="schedule";}
+  else if(v==="cards"){S.tab="calendar";S.calSubTab="cards";S.plSubTab="cards";}
+  else if(v==="people"){S.tab="people";S.peopleSubTab="dashboard";}
+  else if(v==="leaders"){S.tab="people";S.peopleSubTab="leaders";}
+  else S.tab="dashboard";
+}
+function prefValueText(p,v){
+  if(v===undefined)v=pref(p.k);
+  if(p.t==="bool")return v?"On":"Off";
+  if(p.t==="select"){const o=p.o.find(x=>x[0]===String(v));return o?o[1]:String(v);}
+  if(p.t==="list")return v.length?v.join(", "):"None";
+  if(p.t==="text")return v?`"${v}"`:"Empty";
+  return v+(p.u?" "+p.u:"");
+}
+
+// ── Settings backup: everything a person tunes, as one JSON file ──
+const SETTINGS_BACKUP_SCHEMA="sync.settings";
+function settingsBackupPayload(){
+  const fs=S.flagSettings||{},alerts={};
+  Object.keys(fs.alerts||{}).forEach(k=>{alerts[k]={on:!!fs.alerts[k].on,threshold:fs.alerts[k].threshold??null};});
+  return{schema:SETTINGS_BACKUP_SCHEMA,version:1,exported_at:new Date().toISOString(),
+    prefs:Object.assign({},S.prefs||{}),
+    appearance:{th:S.th,thVariant:S.thVariant||0,density:S.density,cbMode:!!S.cbMode,hlToday:S.hlToday!==false,tz:!!S.tz},
+    rules:{covMin:S.covMin,hrsMax:S.hrsMax,maxConsecutiveDays:(S.rules||{}).maxConsecutiveDays,weekendPolicy:(S.rules||{}).weekendPolicy,lunch:((S.rules||{}).breaks||{}).lunch,targetHours:S.targetHours||0,ratePerHour:S.ratePerHour||0},
+    coaching:{duration:S.coachDuration,targetDaily:S.coachTargetDaily},
+    alerts,
+    leaveTypes:typeof absenceTypes==="function"?absenceTypes().map(t=>({id:t.id,label:t.label,codes:t.codes,unplanned:!!t.unplanned,custom:!!t.custom})):[]};
+}
+function settingsExportBackup(){
+  const blob=new Blob([JSON.stringify(settingsBackupPayload(),null,2)],{type:"application/json"});
+  const name=typeof buildFilename==="function"?buildFilename("settings","json"):"Sync_settings.json";
+  triggerBlobDownload(blob,name);
+  toast("Settings exported","ok");
+}
+function settingsChooseBackup(){const el=document.getElementById("settingsImportFile");if(el)el.click();}
+async function settingsImportBackup(input){
+  const file=input&&input.files&&input.files[0];if(!file)return;
+  try{
+    const data=JSON.parse(await file.text());
+    const n=settingsApplyBackup(data);
+    toast(`Settings imported: ${n} value${n===1?"":"s"} applied`,"ok");
+  }catch(err){toast("Settings import stopped: "+err.message,"err",5200);}
+  finally{if(input)input.value="";}
+}
+// Applies a backup; returns how many values were applied. Anything unreadable is skipped.
+function settingsApplyBackup(data){
+  if(!data||data.schema!==SETTINGS_BACKUP_SCHEMA)throw new Error("Not a Sync settings file");
+  let n=0;
+  if(data.prefs&&typeof data.prefs==="object"){
+    const next={};
+    Object.keys(data.prefs).forEach(k=>{const p=_PREF_BY_KEY.get(k);if(!p)return;const v=_prefNormalize(p,data.prefs[k]);if(v===undefined)return;n++;if(!_prefSame(p,v,p.d))next[k]=v;});
+    S.prefs=next;
+  }
+  const a=data.appearance||{};
+  if(a.th&&typeof TH!=="undefined"&&TH[a.th]){S.thVariant=Number.parseInt(a.thVariant,10)||0;setTh(a.th,{skipCycle:true});n++;}
+  if(["compact","comfortable","spacious"].includes(a.density)){setDensity(a.density);n++;}
+  if(typeof a.cbMode==="boolean"){setCbMode(a.cbMode);n++;}
+  if(typeof a.hlToday==="boolean"){S.hlToday=a.hlToday;n++;}
+  if(typeof a.tz==="boolean"&&a.tz!==!!S.tz){setTimezoneEnabled(a.tz);n++;}
+  const r=data.rules||{};
+  if(!S.rules)S.rules={};
+  if(Number.isFinite(r.covMin)&&r.covMin>=1){S.covMin=r.covMin;S.rules.minCoveragePerDay=r.covMin;n++;}
+  if(Number.isFinite(r.hrsMax)&&r.hrsMax>=1){S.hrsMax=r.hrsMax;S.rules.maxHoursWeek=r.hrsMax;n++;}
+  if(Number.isFinite(r.maxConsecutiveDays)){S.rules.maxConsecutiveDays=r.maxConsecutiveDays;n++;}
+  if(["rotate","fixed","none"].includes(r.weekendPolicy)){S.rules.weekendPolicy=r.weekendPolicy;n++;}
+  if(Number.isFinite(r.lunch)){S.rules.breaks=Object.assign({},S.rules.breaks||{},{lunch:r.lunch});n++;}
+  if(Number.isFinite(r.targetHours)){S.targetHours=r.targetHours;n++;}
+  if(Number.isFinite(r.ratePerHour)){S.ratePerHour=r.ratePerHour;n++;}
+  const c=data.coaching||{};
+  if(Number.isFinite(c.duration)){S.coachDuration=c.duration;n++;}
+  if(Number.isFinite(c.targetDaily)){S.coachTargetDaily=c.targetDaily;n++;}
+  const fa=(S.flagSettings||{}).alerts||{};
+  Object.keys(data.alerts||{}).forEach(k=>{const x=data.alerts[k];if(!fa[k]||!x)return;if(typeof x.on==="boolean")fa[k].on=x.on;if(x.threshold===null||Number.isFinite(x.threshold))fa[k].threshold=x.threshold;n++;});
+  if(Array.isArray(data.leaveTypes)&&typeof absenceSaveType==="function")data.leaveTypes.forEach(t=>{
+    if(!t||!t.id||typeof t.id!=="string")return;
+    const builtIn=ABSENCE_DEFAULT_TYPES.some(d=>d.id===t.id);
+    if(!builtIn&&!t.custom)return;
+    const patch={label:String(t.label||t.id).slice(0,60),codes:Array.isArray(t.codes)?absenceCodes(t.codes.join(",")):[]};
+    if(!builtIn)Object.assign(patch,{custom:true,unplanned:!!t.unplanned});
+    absenceSaveType(t.id,patch);n++;
+  });
+  _prefAfterChange(SYNC_PREFS);
+  if(typeof ren==="function")ren();
+  return n;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SETTINGS DRAWER
+   One ⚙ button → one drawer. Sections are listed in
+   SETTINGS_SECTIONS (prefs.js); tunable rules come from the
+   preferences registry (SYNC_PREFS) and render as rows with help,
+   the default, and a reset. Settings that already lived on S
+   (theme, rules, alerts, coaching, cards) render here too, wired to
+   the same setters the rest of the app uses. Search looks across
+   every section.
    ═══════════════════════════════════════════════════════════════ */
 
 function toggleSettings(){S._settingsOpen?closeSettings():openSettings('workspace');}
-function openSettings(section){S._settingsOpen=true;S._settingsSection=section||S._settingsSection||'account';renderSettings();}
+function openSettings(section){
+  S._settingsOpen=true;
+  const known=id=>SETTINGS_SECTIONS.some(s=>s.id===id);
+  S._settingsSection=known(section)?section:(known(S._settingsSection)?S._settingsSection:'account');
+  if(section)S._settingsQuery='';
+  renderSettings();
+}
 function openAccountSettings(){openSettings('account');}
-function selectSettingsSection(section){S._settingsSection=section;renderSettings();}
+function selectSettingsSection(section){S._settingsSection=section;S._settingsQuery='';renderSettings();const p=document.getElementById('settingsPanel');if(p)p.scrollTop=0;}
 function closeSettings(){S._settingsOpen=false;const el=document.getElementById("settingsOverlay");if(el)el.remove();}
+function settingsSearch(q){
+  S._settingsQuery=String(q||'');
+  const main=document.getElementById('setMain');
+  if(main)main.innerHTML=_setMainHTML();
+  // Only the results change, so the search box keeps focus; the nav shows no section while searching.
+  document.querySelectorAll('#settingsPanel .set-tab').forEach(b=>{const on=!S._settingsQuery.trim()&&b.dataset.section===S._settingsSection;b.classList.toggle('on',on);if(on)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
+}
+
+// ── Row builders ──
+function _setPrefId(k){return'pref_'+k.replace(/[^a-z0-9]/gi,'_');}
+function _setRow(o){
+  // o: {id, label, help, control, changed, defText, reset, attrs}
+  let h=`<div class="set-row${o.changed?' changed':''}"${o.attrs||''}><div class="set-row-main">`;
+  h+=`<label class="set-l"${o.id?` for="${o.id}"`:''}>${o.label}${o.changed?'<span class="set-dot" title="Changed from the default"></span>':''}</label>`;
+  if(o.help)h+=`<div class="set-h">${o.help}</div>`;
+  if(o.changed&&o.defText!==undefined)h+=`<div class="set-def">Default: ${X(o.defText)}${o.reset?` · <button type="button" class="set-link" onclick="${o.reset}">Reset</button>`:''}</div>`;
+  return h+`</div><div class="set-ctl">${o.control}</div></div>`;
+}
+function _setSwitch(id,on,onchange,label){
+  return`<label class="set-switch"><input type="checkbox" role="switch" id="${id}" ${on?'checked':''} onchange="${onchange}"${label?` aria-label="${XA(label)}"`:''}><span></span></label>`;
+}
+function _setNumber(id,val,min,max,onchange,unit,step){
+  return`<span class="set-num"><input type="number" id="${id}" value="${XA(String(val))}"${min!==undefined?` min="${min}"`:''}${max!==undefined?` max="${max}"`:''}${step?` step="${step}"`:''} onchange="${onchange}">${unit?`<span class="set-u">${X(unit)}</span>`:''}</span>`;
+}
+function _setSelect(id,val,opts,onchange){
+  return`<select id="${id}" class="set-sel" onchange="${onchange}">${opts.map(([v,l])=>`<option value="${XA(String(v))}"${String(v)===String(val)?' selected':''}>${X(l)}</option>`).join('')}</select>`;
+}
+function _setPrefRow(p){
+  const id=_setPrefId(p.k),v=pref(p.k),changed=!prefIsDefault(p.k),on=`prefSet('${p.k}',`;
+  let control='';
+  if(p.t==='bool')control=_setSwitch(id,v,on+"this.checked)",p.l);
+  else if(p.t==='int')control=_setNumber(id,v,p.min,p.max,on+"this.value)",p.u);
+  else if(p.t==='select')control=_setSelect(id,v,p.o,on+"this.value)");
+  else if(p.t==='text')control=`<input type="text" class="set-text" id="${id}" value="${XA(v)}" maxlength="${p.max||200}"${p.ph?` placeholder="${XA(p.ph)}"`:''} onchange="${on}this.value)">`;
+  else if(p.t==='list')control=`<input type="text" class="set-text" id="${id}" value="${XA(v.join(', '))}" onchange="${on}this.value)">`;
+  const range=p.t==='int'&&p.min!==undefined?` <span class="set-range">(${p.min}–${p.max})</span>`:'';
+  return _setRow({id,label:X(p.l),help:X(p.h||'')+range,control,changed,defText:prefValueText(p,p.d),reset:`prefReset('${p.k}')`,attrs:` data-pref="${p.k}"`});
+}
+function _setGroup(title,body,extra){return`<section class="set-group"${extra||''}><h3 class="set-gt">${title}</h3>${body}</section>`;}
+function _setPrefGroups(section,only){
+  const groups=[];
+  SYNC_PREFS.filter(p=>p.s===section&&(!only||only.includes(p.g))).forEach(p=>{let g=groups.find(x=>x.g===p.g);if(!g){g={g:p.g,list:[]};groups.push(g);}g.list.push(p);});
+  return groups.map(g=>_setGroup(X(g.g),g.list.map(_setPrefRow).join(''))).join('');
+}
+function _setButtons(list){return`<div class="set-btns">${list.map(([label,fn,cls])=>`<button type="button" class="swin-btn${cls?' '+cls:''}" onclick="${fn}">${label}</button>`).join('')}</div>`;}
+function _setNote(t){return`<div class="set-note">${t}</div>`;}
+
+// ── Setters for settings that live on S ──
+function settingsSetRule(field,value){
+  if(!S.rules)S.rules={};
+  const n=Math.round(Number(value));
+  if(field==='hrsMax'){const v=Math.min(80,Math.max(20,Number.isFinite(n)?n:45));S.hrsMax=v;S.rules.maxHoursWeek=v;}
+  else if(field==='covMin'){const v=Math.min(50,Math.max(1,Number.isFinite(n)?n:1));S.covMin=v;S.rules.minCoveragePerDay=v;}
+  else if(field==='maxConsecutiveDays')S.rules.maxConsecutiveDays=Math.min(14,Math.max(3,Number.isFinite(n)?n:6));
+  else if(field==='weekendPolicy'&&['rotate','fixed','none'].includes(value))S.rules.weekendPolicy=value;
+  else if(field==='lunch')S.rules.breaks=Object.assign({},S.rules.breaks||{},{lunch:Math.min(120,Math.max(0,Number.isFinite(n)?n:30))});
+  else if(field==='coachDuration'&&[15,30,45,60].includes(n))S.coachDuration=n;
+  else if(field==='coachTargetDaily')S.coachTargetDaily=Math.min(10,Math.max(0,Number.isFinite(n)?n:1));
+  else return;
+  if(typeof invalidateDerivedCache==='function')invalidateDerivedCache();
+  schedulePersist(true);
+  rerenderCurrentSurface();
+  renderSettings();
+}
+function settingsSetCardShow(key,on){
+  if(key==='wk')S.showCardWk=!!on;
+  else{S.cardShow=Object.assign({},S.cardShow||{});S.cardShow[key]=!!on;}
+  schedulePersist(true);rerenderCurrentSurface();renderSettings();
+}
+function settingsToggleAlert(key){toggleFlagAlert(key);if(typeof invalidateDerivedCache==='function')invalidateDerivedCache();renderSettings();}
+function settingsAlertThreshold(key,value){
+  setFlagThreshold(key,String(value).trim()===''?null:value);
+  if(typeof invalidateDerivedCache==='function')invalidateDerivedCache();
+  rerenderCurrentSurface();renderSettings();
+}
+function settingsResetDismissed(){resetDismissed();toast('Dismissed alerts are back','ok');renderSettings();}
+function settingsSetPrivacy(field,on){absenceSetPrivacy({[field]:!!on});rerenderCurrentSurface();renderSettings();}
+function settingsGo(fn){closeSettings();try{fn();}catch(e){}}
+
+// ── Sections ──
+const SETTINGS_ALERT_META={
+  overHours:{u:'h/week',min:20,max:80,fallback:()=>S.hrsMax||45,h:'Someone is scheduled over this many hours in a week. Empty uses Max hours / week (Workspace).'},
+  lowCoverage:{u:'people',min:1,max:50,fallback:()=>S.covMin||1,h:'Fewer people working on a day than this. Empty uses Minimum coverage (Workspace).'},
+  consecutiveDays:{u:'days',min:3,max:14,fallback:()=>7,h:'Someone works more than this many days in a row.'},
+  longShift:{u:'hours',min:6,max:16,fallback:()=>10,h:'A single shift longer than this.'},
+  weekendBalance:{u:'% off avg',min:5,max:60,fallback:()=>15,h:"A person's share of weekend shifts is this far from the team average."},
+  coachingDue:{h:'Someone has no coaching session planned or done in the month on screen.'},
+  blueprintDrift:{h:'The loaded schedule differs from the rotation blueprint.'}
+};
+function _setAccount(){return _syncRenderSettingsAccountSection()+_syncRenderSettingsSnapshotSection();}
+
+function _setWorkspace(){
+  const r=S.rules||{},br=r.breaks||{};
+  const people=Object.keys(S.people||{}).length,rows=(S.entries||[]).length,months=(S.months||[]).length;
+  let h=_setGroup('Project',`<div class="set-kv"><b>${X(S.activeDept||S.fn||'No project open')}</b><span>${people} people · ${rows} roster rows · ${months} month${months===1?'':'s'}</span></div>`+
+    _setButtons([['Projects','settingsGo(_syncOpenProjectsPanel)'],['Add roster','settingsGo(triggerRosterUpload)'],['Validate rules','settingsGo(runRulesValidation)']]));
+  const teams=typeof gT==='function'?gT():[];
+  if((S.shs&&S.shs.length>1)||(teams&&teams.length>1)){
+    let f='';
+    if(S.shs&&S.shs.length>1)f+=_setRow({id:'setSheet',label:'Sheet',help:'Which sheet of the workbook is on screen.',control:_setSelect('setSheet',S.sh,[['__all__','All sheets'],...S.shs.map(s=>[s,s])],"swSh(this.value);renderSettings()")});
+    if(teams&&teams.length>1)f+=_setRow({id:'setTeam',label:'Team',help:'Show one roster team.',control:_setSelect('setTeam',S.team||'all',[['all','All teams'],...teams.map(t=>[t,t])],"setTeam(this.value);renderSettings()")});
+    f+=_setRow({id:'setAllMonths',label:'All months view',help:'Show every loaded month together instead of one at a time.',control:_setSwitch('setAllMonths',S.allMonths,"S.allMonths=this.checked;rerenderCurrentSurface();rerenderChromeOnly();renderSettings()")});
+    h+=_setGroup('Filters',f);
+  }
+  const sc=typeof scopeGet==='function'?scopeGet():{leader:'',dept:''},names=typeof scopeNames==='function'?scopeNames():null;
+  const scText=sc.leader||sc.dept?[sc.dept?'Department: '+X(sc.dept):'',sc.leader?'Leader tree: '+X(sc.leader):''].filter(Boolean).join(' · ')+(names?` (${names.size} people)`:''):'Everyone in the project';
+  h+=_setGroup('Scope',`<div class="set-kv"><b>${scText}</b><span>Set it from the scope chip in the toolbar. Every page follows it.</span></div>`+
+    (sc.leader||sc.dept?_setButtons([['Clear scope','clearScope();renderSettings()']]):'')+
+    SYNC_PREFS.filter(p=>p.s==='workspace'&&p.g==='Scope').map(_setPrefRow).join(''));
+  let rules='';
+  rules+=_setRow({id:'setHrsMax',label:'Max hours / week',help:'Validation, the over-hours alert and capacity use this. (20–80)',control:_setNumber('setHrsMax',S.hrsMax||r.maxHoursWeek||45,20,80,"settingsSetRule('hrsMax',this.value)",'hours'),changed:(S.hrsMax||45)!==45,defText:'45 hours',reset:"settingsSetRule('hrsMax',45)"});
+  rules+=_setRow({id:'setMaxDays',label:'Max consecutive days',help:'The longest run of working days before validation warns. (3–14)',control:_setNumber('setMaxDays',r.maxConsecutiveDays||6,3,14,"settingsSetRule('maxConsecutiveDays',this.value)",'days'),changed:(r.maxConsecutiveDays||6)!==6,defText:'6 days',reset:"settingsSetRule('maxConsecutiveDays',6)"});
+  rules+=_setRow({id:'setCovMin',label:'Minimum coverage',help:'The fewest people working before a day shows as short. The Leaders board also marks a team thin below it. (1–50)',control:_setNumber('setCovMin',S.covMin||1,1,50,"settingsSetRule('covMin',this.value)",'people'),changed:(S.covMin||1)!==1,defText:'1 person',reset:"settingsSetRule('covMin',1)"});
+  rules+=_setRow({id:'setWeekend',label:'Weekend policy',help:'How weekends are shared out when building a schedule.',control:_setSelect('setWeekend',r.weekendPolicy||'rotate',[['rotate','Rotate'],['fixed','Fixed'],['none','None']],"settingsSetRule('weekendPolicy',this.value)"),changed:(r.weekendPolicy||'rotate')!=='rotate',defText:'Rotate',reset:"settingsSetRule('weekendPolicy','rotate')"});
+  rules+=_setRow({id:'setLunch',label:'Lunch',help:'Lunch length used for paid-hours maths.',control:_setSelect('setLunch',br.lunch??30,[[0,'None'],[15,'15 min'],[30,'30 min'],[45,'45 min'],[60,'60 min']],"settingsSetRule('lunch',this.value)"),changed:(br.lunch??30)!==30,defText:'30 min',reset:"settingsSetRule('lunch',30)"});
+  h+=_setGroup('Schedule rules',rules+_setButtons([['Full rules panel (OT window, breaks)','settingsGo(showRulesPanel)']]));
+  let cost='';
+  cost+=_setRow({id:'setTarget',label:'Target hours',help:'Planned paid hours for the month, compared with scheduled hours in Analytics → Capacity. 0 turns the comparison off.',control:_setNumber('setTarget',S.targetHours||0,0,100000,"setTargetHours(this.value);renderSettings()",'hours')});
+  cost+=_setRow({id:'setRate',label:'Rate per hour',help:'Used to turn hours into cost in Analytics → Capacity. 0 hides cost.',control:_setNumber('setRate',S.ratePerHour||0,0,100000,"setRatePerHour(this.value);renderSettings()",'per hour','0.01')});
+  h+=_setGroup('Hours & cost',cost);
+  let coach='';
+  coach+=_setRow({id:'setCoachDur',label:'Session length',help:'Default length of a coaching session in the planner.',control:_setSelect('setCoachDur',S.coachDuration||30,[[15,'15 min'],[30,'30 min'],[45,'45 min'],[60,'60 min']],"settingsSetRule('coachDuration',this.value)"),changed:(S.coachDuration||30)!==30,defText:'30 min',reset:"settingsSetRule('coachDuration',30)"});
+  coach+=_setRow({id:'setCoachDaily',label:'Sessions a day',help:'Target coaching sessions per leader per working day. (0–10)',control:_setNumber('setCoachDaily',S.coachTargetDaily??1,0,10,"settingsSetRule('coachTargetDaily',this.value)",'a day'),changed:(S.coachTargetDaily??1)!==1,defText:'1 a day',reset:"settingsSetRule('coachTargetDaily',1)"});
+  h+=_setGroup('Coaching',coach);
+  h+=_setGroup('Quick notes',`<textarea id="syncSettingsScratchpad" class="set-area" placeholder="Quick notes, reminders, todos…" oninput="S.scratchpad=this.value;_saveScratchpad()">${X(S.scratchpad||'')}</textarea>`+_setNote('Saved on this device.'));
+  return h;
+}
+
+function _setAppearance(){
+  const activeThemeKey=S.th||'surge',vLabels=THEME_VARIANTS_LABELS[activeThemeKey]||{},vSlugs=THEME_VARIANTS[activeThemeKey]||[];
+  const curSlug=vSlugs[S.thVariant||0]||vSlugs[0]||'',curVariantLabel=(vLabels[curSlug]&&vLabels[curSlug].l)||curSlug||'Default';
+  let t=`<div class="set-themes">${Object.entries(TH).map(([k,th])=>`<button type="button" class="set-theme${S.th===k?' on':''}" aria-pressed="${S.th===k}" onclick="setTh('${k}');renderSettings()"><span style="background:${th.d}"></span>${X(th.n)}</button>`).join('')}</div>`;
+  const bycat={};
+  vSlugs.forEach((sl,i)=>{const m=vLabels[sl];if(!m)return;(bycat[m.c]=bycat[m.c]||[]).push({sl,i,label:m.l});});
+  t+=`<details class="set-details"${S._settingsVariantsOpen?' open':''} ontoggle="S._settingsVariantsOpen=this.open"><summary>Variants <b>${X(curVariantLabel)}</b></summary>`;
+  [['dark','Dark'],['mid','Mid'],['light','Light'],['neutral','Neutral']].forEach(([cat,label])=>{
+    if(!bycat[cat])return;
+    t+=`<div class="set-vcat">${label}</div><div class="set-chips">${bycat[cat].map(({sl,i,label})=>`<button type="button" class="set-chip${sl===curSlug?' on':''}" onclick="setVariantDirect(${i});renderSettings()">${X(label)}</button>`).join('')}</div>`;
+  });
+  t+=`</details>`;
+  t+=_setRow({label:'Density',help:'How much fits on screen.',control:`<span class="set-seg" role="group" aria-label="Density">${['compact','comfortable','spacious'].map(d=>`<button type="button" aria-pressed="${S.density===d}" onclick="setDensity('${d}');renderSettings()">${d[0].toUpperCase()+d.slice(1)}</button>`).join('')}</span>`});
+  let h=_setGroup('Theme',t);
+  let d='';
+  d+=_setRow({id:'setCb',label:'Colour-blind mode',help:'Adds patterns and stronger contrast to shift colours.',control:_setSwitch('setCb',S.cbMode,"setCbMode(this.checked);renderSettings()")});
+  d+=_setRow({id:'setHl',label:'Highlight today',help:"Marks today's date in the Calendar.",control:_setSwitch('setHl',S.hlToday!==false,"setTodayHighlight(this.checked);renderSettings()")});
+  h+=_setGroup('Display',d);
+  h+=_setPrefGroups('preferences');
+  const cs=S.cardShow||{};
+  const cards=[['hrs','Hours badge'],['shifts','Shift count'],['off','Days off'],['health','Health score'],['heatmap','Heatmap'],['typeGrid','Shift types'],['weekStrip','Week strip'],['stats','Stats'],['window','Schedule window'],['summarySA','SA times summary']];
+  let c=cards.map(([k,l])=>_setRow({id:'setCard_'+k,label:l,control:_setSwitch('setCard_'+k,cs[k]!==false,`settingsSetCardShow('${k}',this.checked)`)})).join('');
+  c+=_setRow({id:'setCard_wk',label:'Rotation week badge',help:'The W1–WN week a card sits in.',control:_setSwitch('setCard_wk',S.showCardWk!==false,"settingsSetCardShow('wk',this.checked)")});
+  h+=_setGroup('Schedule cards',_setNote('What each card shows in Calendar → Cards. The same switches sit under the cards.')+c);
+  return h;
+}
+
+// Next UK clock change and the SA offset now (UK clocks change at 01:00 UTC on the last Sunday of
+// March and October; SA does not change).
+function _setClockInfo(){
+  const now=new Date(),y=now.getFullYear();
+  const lastSun=(yy,m)=>{const d=new Date(yy,m+1,0);d.setDate(d.getDate()-d.getDay());return d;};
+  const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const next=[[lastSun(y,2),'forward',1],[lastSun(y,9),'back',2],[lastSun(y+1,2),'forward',1]].find(([d])=>d>today);
+  const off=u2s('12:00',now)==='13:00'?1:2;
+  return{off,next};
+}
+function _setTime(){
+  const ci=_setClockInfo();
+  let c=_setRow({id:'setTz',label:'Show SA time',help:'Rosters are in UK time. On: Sync shows SA times everywhere (UK+1 during British Summer Time, UK+2 otherwise). Off: UK times.',control:_setSwitch('setTz',S.tz,"setTimezoneEnabled(this.checked);renderSettings()")});
+  c+=`<div class="set-kv"><b>SA is UK+${ci.off} today</b><span>${ci.next?`UK clocks go ${ci.next[1]} on ${X(_swinDayLabel(excKey(ci.next[0])))}: SA becomes UK+${ci.next[2]}. Shifts on that Sunday use their own time.`:''}</span></div>`;
+  let h=_setGroup('Clock',c);
+  h+=_setPrefGroups('time');
+  const y=new Date().getFullYear(),showUK=pref('hol.showUK');
+  const list=holidaysBetween(y+'-01-01',y+'-12-31').filter(x=>x.sa||showUK);
+  h+=_setGroup(`Holidays in ${y}`,`<details class="set-details"><summary>${list.filter(x=>x.sa).length} SA public holidays${showUK?` · ${list.filter(x=>x.uk).length} UK bank holidays`:''}</summary><div class="cov-tbl-wrap"><table class="cov-tbl set-tbl"><thead><tr><th>Date</th><th>South Africa</th>${showUK?'<th>UK</th>':''}</tr></thead><tbody>${list.map(x=>`<tr><td>${X(_swinDayLabel(x.iso))}</td><td>${X(x.sa||'—')}</td>${showUK?`<td>${X(x.uk||'—')}</td>`:''}</tr>`).join('')}</tbody></table></div></details>`);
+  return h;
+}
+
+function _setPeople(){
+  let h=_setPrefGroups('people');
+  h+=_setGroup('Open',_setButtons([['Org builder',"settingsGo(()=>railNavPeople('org'))"],['Agents',"settingsGo(()=>railNavPeople('agents'))"],['Leaders board',"settingsGo(()=>railNavPeople('leaders'))"]]));
+  return h;
+}
+
+function _setCover(){
+  const w=k=>prefNum(k);
+  const formula=`Score = ${w('cover.wAvail')} × share of days worked + ${w('cover.wOverlap')} × shift overlap + ${w('cover.wFair')} ÷ (1 + acted days ÷ 5) + ${w('cover.wTeam')} same team + ${w('cover.wDev')} development label − ${w('cover.pLeader')} leads a team − ${w('cover.pBusy')} already covering`;
+  let h=_setPrefGroups('cover',['Cover gaps','Suggestions']);
+  h+=_setGroup('Ranking weights',_setNote(X(formula))+SYNC_PREFS.filter(p=>p.s==='cover'&&p.g==='Ranking weights').map(_setPrefRow).join(''),' id="setCoverWeights"');
+  h+=_setPrefGroups('cover',['Leaders board']);
+  h+=_setGroup('Open',_setButtons([['People → Cover',"settingsGo(()=>railNavPeople('cover'))"],['Leaders board',"settingsGo(()=>railNavPeople('leaders'))"]]));
+  return h;
+}
+
+function _setAbsence(){
+  let h=_setPrefGroups('absence');
+  const priv=absencePrivacy();
+  let p=_setNote('Sick-note flags, patterns and reasons are health information (POPIA special personal information). These two switches apply to this device only and are never synced.');
+  p+=_setRow({id:'setAbsShow',label:'Show sensitive detail',help:'Flags, patterns and reasons in People → Absence.',control:_setSwitch('setAbsShow',priv.show,"settingsSetPrivacy('show',this.checked)")});
+  p+=_setRow({id:'setAbsExport',label:'Include it in exports',help:'Absence CSV columns and exception notes for sick, family responsibility and no-show.',control:_setSwitch('setAbsExport',priv.exportNotes,"settingsSetPrivacy('exportNotes',this.checked)")});
+  h+=_setGroup('Privacy (this device)',p);
+  const types=absenceTypes();
+  h+=_setGroup('Leave types',`<div class="set-types">${types.map(t=>`<div><b>${X(t.label)}</b><span>${X(t.codes.join(', ')||'no roster codes')}${t.unplanned?' · unplanned':''}</span></div>`).join('')}</div>`+_setButtons([['Edit leave types',"settingsGo(()=>railNavPeople('absence'))"]]));
+  return h;
+}
+
+function _setSharingPreview(){
+  const names=typeof _swinAllNames==='function'?_swinAllNames():[];
+  const t=new Date(),from=excKey(t),to=excKey(_swinAddDays(t,6));
+  const name=names.slice(0,40).find(n=>swinRows(n,from,to).some(r=>r.kind==='work'))||names[0];
+  if(!name)return _setNote('Load a roster to see a preview.');
+  const cp=pref('swin.clock'),clock=cp==='sa'||cp==='uk'?cp:(S.tz?'sa':'uk');
+  const out=swinBuildText(name,from,to,clock);
+  return _setNote(`${X(name)}, the next 7 days:`)+`<pre class="set-pre" id="setSwinPreview">${X(out.text)}</pre>`;
+}
+function _setSharing(){
+  let h=_setPrefGroups('sharing',['Schedule Window']);
+  h+=_setPrefGroups('sharing',['Message text']);
+  h+=_setGroup('Preview',_setSharingPreview());
+  return h;
+}
+
+function _setAlerts(){
+  const fs=S.flagSettings||{},alerts=fs.alerts||{},dismissed=Object.keys(fs.dismissed||{}).length;
+  const on=Object.values(alerts).filter(a=>a&&a.on).length;
+  let h=_setNote(`${on} of ${Object.keys(alerts).length} alert rules on. Alerts show in Analytics → Issues and the Home dashboard. Data-quality flags are always on.`);
+  let rows='';
+  Object.keys(alerts).forEach(k=>{
+    const a=alerts[k],m=SETTINGS_ALERT_META[k]||{},id='setAlert_'+k;
+    let control=_setSwitch(id,a.on,`settingsToggleAlert('${k}')`,a.label);
+    if(m.u){
+      const val=a.threshold===null||a.threshold===undefined?'':a.threshold;
+      control=`<span class="set-num"><input type="number" id="${id}_t" value="${XA(String(val))}" min="${m.min}" max="${m.max}" placeholder="${XA(String(m.fallback()))}" aria-label="${XA(a.label+' threshold')}" onchange="settingsAlertThreshold('${k}',this.value)"${a.on?'':' disabled'}><span class="set-u">${X(m.u)}</span></span>`+control;
+    }
+    rows+=_setRow({id,label:X(a.label),help:X(m.h||''),control,attrs:` data-alert="${k}"`});
+  });
+  h+=_setGroup('Alert rules',rows);
+  h+=_setGroup('Dismissed',`<div class="set-kv"><b>${dismissed} dismissed alert${dismissed===1?'':'s'}</b><span>Dismissed alerts stay hidden until they are restored.</span></div>`+(dismissed?_setButtons([['Restore dismissed alerts','settingsResetDismissed()']]):'')+_setButtons([['Open Analytics → Issues',"settingsGo(()=>railNavAnalytics('issues'))"]]));
+  return h;
+}
+
+function _setData(){
+  const qActs=[['💾 Save+',"expSavePlus('all')"],['📋 Styled report','expCurrentMonth()'],['🖼 Save as image','expPNG()'],['✉ Share roster','genEmail()'],['📋 Weekly digest','genWeeklyDigest()'],['📋 TL day pack','expTLDayPack()'],['📋 Copy EOD','copyEOD()'],['🤖 AI-ready data','expAIcsv()']];
+  let h=_setGroup('Quick exports',_setButtons(qActs.map(([l,fn])=>[l,`closeSettings();${fn}`])));
+  const xSel=S.exportSelection||{};
+  const xSheets=[['overview','Overview & stats','Summary table, HC averages, key metrics'],['leaders','Leader schedules','One sheet per TL with full month'],['analytics','Analytics','Absence breakdown, flags, coverage'],['scheduleData','Raw schedule data','All entries in flat tabular format'],['exceptions','Exceptions log','Sick, AWOL, leave, swaps, ERL'],['coaching','Coaching sessions','Session log and history'],['notes','Notes','Team and leader notes'],['blueprint','Blueprint / rotation','W1–WN cycle definition'],['positions','Positions','Role and seat assignments'],['people','People / agents','Agent list and attributes'],['changeLog','Roster change log','Import deltas, coverage impact, and review state']];
+  const allOn=xSheets.every(([k])=>xSel[k]!==false),count=xSheets.filter(([k])=>xSel[k]!==false).length;
+  let b=`<div class="set-xhd"><label><input type="checkbox" ${allOn?'checked':''} onchange="(function(v){const s=S.exportSelection=Object.assign({},S.exportSelection||{});[${xSheets.map(([k])=>"'"+k+"'").join(',')}].forEach(k=>s[k]=v);schedulePersist(true);renderSettings();})(this.checked)"> All sheets</label><button type="button" class="set-link" onclick="openExportPresets()">Presets</button></div>`;
+  b+=`<div class="set-xgrid">${xSheets.map(([k,l,d])=>`<label title="${XA(d)}"><input type="checkbox" ${xSel[k]!==false?'checked':''} onchange="S.exportSelection=Object.assign({},S.exportSelection||{});S.exportSelection['${k}']=this.checked;schedulePersist(true);renderSettings()"> ${X(l)}</label>`).join('')}</div>`;
+  b+=`<button type="button" class="swin-btn pri set-wide" onclick="closeSettings();expCustomSelection()">Export ${count} of ${xSheets.length} sheets →</button>`;
+  h+=_setGroup('Custom workbook',b);
+  h+=_setGroup('File names',SYNC_PREFS.filter(p=>p.s==='data'&&p.g==='File names').map(_setPrefRow).join('')+`<div class="set-kv"><b id="setFileExample">${X(buildFilename('month','xlsx'))}</b><span>Example: a month export today.</span></div>`);
+  const priv=absencePrivacy();
+  h+=_setGroup('Sensitive detail',`<div class="set-kv"><b>${priv.exportNotes?'Included in exports':'Left out of exports'}</b><span>Absence flags and health-related reasons. Changed in Absence → Privacy.</span></div>`+_setButtons([['Absence privacy',"selectSettingsSection('absence')"]]));
+  h+=_setGroup('Protected vault',_setNote('An encrypted copy of this project that opens only with its password.')+_setButtons([['Export protected workspace','closeSettings();exportProtectedWorkspace()','pri'],['Open protected vault','closeSettings();importProtectedWorkspace()']]));
+  h+=_setGroup('Views',_setButtons([['Raw data',"settingsGo(()=>railNavAnalytics('data'))"],['Validate rules','settingsGo(runRulesValidation)'],['People',"settingsGo(()=>railNavPeople('agents'))"]]));
+  return h;
+}
+
+function _setStorageBytes(){
+  let n=0;
+  try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i)||'';if(/^(sc_|sync|ns_|mf)/i.test(k))n+=(k.length+(localStorage.getItem(k)||'').length)*2;}}catch(e){}
+  return n;
+}
+function _setDiagnostics(){
+  const pending=typeof _persistPendingSet!=='undefined'?_persistPendingSet.size+(typeof _persistPendingRemove!=='undefined'?_persistPendingRemove.size:0):0;
+  return[['Build',APP_BUILD],['Project',S.activeDept||S.fn||'none'],['People',Object.keys(S.people||{}).length],['Roster rows',(S.entries||[]).length],['Preferences changed',prefChangedCount()],['Stored on this device',Math.round(_setStorageBytes()/1024)+' KB'],['Writes waiting',pending],['Settings schema',S._schemaVersion||SETTINGS_SCHEMA_VERSION]];
+}
+async function settingsCopyDiagnostics(){
+  const text=_setDiagnostics().map(([k,v])=>k+': '+v).join('\n');
+  try{await navigator.clipboard.writeText(text);toast('Diagnostics copied','ok');}catch(e){try{prompt('Copy diagnostics:',text);}catch(err){}}
+}
+function _setAdvanced(){
+  const n=prefChangedCount();
+  let h=_setGroup('Settings backup',_setNote('One file with your preferences, appearance, schedule rules, alert rules, coaching targets and leave types. Import it on another device or project. Data (rosters, people, notes) is not included.')+
+    _setButtons([['Export settings','settingsExportBackup()'],['Import settings','settingsChooseBackup()']])+`<input type="file" id="settingsImportFile" accept=".json,application/json" hidden onchange="settingsImportBackup(this)">`);
+  h+=_setGroup('Reset',`<div class="set-kv"><b>${n} preference${n===1?'':'s'} changed</b><span>${n?SETTINGS_SECTIONS.filter(s=>prefChangedCount(s.id)).map(s=>X(s.l)+' '+prefChangedCount(s.id)).join(' · '):'Everything is on its default.'}</span></div>`+(n?_setButtons([['Reset all preferences','prefResetAll()']]):''));
+  h+=_setGroup('Diagnostics',`<dl class="set-dl">${_setDiagnostics().map(([k,v])=>`<dt>${X(k)}</dt><dd>${X(String(v))}</dd>`).join('')}</dl>`+_setButtons([['Copy diagnostics','settingsCopyDiagnostics()']]));
+  h+=_setGroup('Danger zone',_setNote('Close workspace removes this project from the device. Clear all data wipes everything Sync stores in this browser.')+_setButtons([['Close workspace','closeSettings();if(S.activeDept)removeDept(S.activeDept)'],['Clear all data',"if(confirm('Clear all stored data?')){closeSettings();clearAllData()}",'danger']]),' id="setDanger"');
+  return h;
+}
+
+const SETTINGS_RENDERERS={account:_setAccount,workspace:_setWorkspace,preferences:_setAppearance,time:_setTime,people:_setPeople,cover:_setCover,absence:_setAbsence,sharing:_setSharing,alerts:_setAlerts,data:_setData,advanced:_setAdvanced};
+// Things that are not registry preferences but should still turn up in a search.
+const SETTINGS_SEARCH_EXTRA=[
+  ['account','Sign in, sign out, cloud save, Google account, snapshots, backups, restore, history'],
+  ['workspace','Projects, add roster, sheet, team, all months, scope, clear scope, max hours, consecutive days, minimum coverage, weekend policy, lunch, OT window, breaks, target hours, rate, cost, coaching session length, sessions a day, quick notes, scratchpad'],
+  ['preferences','Theme, colour, color, dark, light, variants, density, compact, spacious, colour-blind, highlight today, cards, heatmap, health score, week badge'],
+  ['time','SA time, UK time, timezone, BST, clocks change, offset, public holidays, bank holidays'],
+  ['absence','Privacy, POPIA, sensitive, health, leave types, roster codes'],
+  ['alerts','Over hours, low coverage, consecutive days, long shift, weekend balance, coaching due, blueprint drift, dismissed'],
+  ['data','Save+, styled report, image, PNG, share roster, email, weekly digest, TL day pack, EOD, AI, workbook, sheets, presets, protected vault, password, raw data'],
+  ['advanced','Export settings, import settings, reset, diagnostics, storage, close workspace, clear all data']
+];
+function _setSearchHTML(q){
+  const words=q.toLowerCase().split(/\s+/).filter(Boolean);
+  const hit=text=>{const t=text.toLowerCase();return words.every(w=>t.includes(w));};
+  const prefs=SYNC_PREFS.filter(p=>hit([p.l,p.h||'',p.g,(SETTINGS_SECTIONS.find(s=>s.id===p.s)||{}).l||'',p.k].join(' ')));
+  const extra=SETTINGS_SEARCH_EXTRA.filter(([id,kw])=>hit(kw+' '+((SETTINGS_SECTIONS.find(s=>s.id===id)||{}).l||'')));
+  if(!prefs.length&&!extra.length)return _setNote(`Nothing matches “${X(q)}”.`);
+  let h='';
+  SETTINGS_SECTIONS.forEach(s=>{
+    const mine=prefs.filter(p=>p.s===s.id);
+    if(mine.length)h+=_setGroup(`${X(s.l)} <button type="button" class="set-link" onclick="selectSettingsSection('${s.id}')">Open</button>`,mine.map(_setPrefRow).join(''));
+  });
+  const jumps=extra.filter(([id])=>!prefs.some(p=>p.s===id));
+  if(jumps.length)h+=_setGroup('Also in',_setButtons(jumps.map(([id])=>[X((SETTINGS_SECTIONS.find(s=>s.id===id)||{}).l||id),`selectSettingsSection('${id}')`])));
+  return h;
+}
+function _setMainHTML(){
+  const q=String(S._settingsQuery||'').trim();
+  if(q)return`<div class="set-title"><h2>Search</h2><p>Results for “${X(q)}” across every section.</p></div>`+_setSearchHTML(q);
+  const id=S._settingsSection||'workspace',sec=SETTINGS_SECTIONS.find(s=>s.id===id)||SETTINGS_SECTIONS[0];
+  const n=prefChangedCount(sec.id);
+  let h=`<div class="set-title"><h2>${X(sec.l)}</h2><p>${X(sec.d)}</p></div>`;
+  h+=(SETTINGS_RENDERERS[sec.id]||_setAccount)();
+  if(n)h+=`<div class="set-foot">${n} setting${n===1?'':'s'} here differ${n===1?'s':''} from the default. <button type="button" class="set-link" onclick="prefResetSection('${sec.id}')">Reset this section</button></div>`;
+  return h;
+}
 
 function renderSettings(){
   S._settingsOpen=true;
-  const section=S._settingsSection||'workspace';
-  const tab=(id,label)=>`<button onclick="selectSettingsSection('${id}')" style="flex:0 0 auto;padding:7px 9px;border:1px solid ${section===id?'var(--accent)':'var(--bdr)'};border-radius:7px;background:${section===id?'var(--al)':'transparent'};color:${section===id?'var(--accent)':'var(--tm)'};font:11px inherit;cursor:pointer;white-space:nowrap">${label}</button>`;
-  const r=S.rules||{};const br=r.breaks||{};
+  const section=S._settingsSection||'workspace',q=String(S._settingsQuery||'');
   const existing=document.getElementById("settingsOverlay");
   const panelEl=existing?existing.querySelector('#settingsPanel'):null;
   const scrollTop=panelEl?panelEl.scrollTop:0;
-
-  // Build inner panel content
-  let inner='';
-  // Header
-  inner+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--bdr);position:sticky;top:0;background:var(--hbg);z-index:2">`;
-  inner+=`<h2 style="font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px">⚙ Settings</h2>`;
-  inner+=`<button onclick="closeSettings()" aria-label="Close settings" style="background:none;border:1px solid var(--bdr);color:var(--text);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">✕</button>`;
-  inner+=`</div>`;
-  inner+=`<nav aria-label="Settings groups" style="display:flex;gap:6px;overflow-x:auto;padding:10px 20px;border-bottom:1px solid var(--bdr);scrollbar-width:thin">${tab('account','Account')}${tab('workspace','Workspace')}${tab('preferences','Preferences')}${tab('data','Data & exports')}${tab('advanced','Advanced')}</nav>`;
-  inner+=`<div style="padding:16px 20px;display:flex;flex-direction:column;gap:20px;flex:1">`;
-
-  // If overlay already exists, just update panel content in place
-  const h_ref={val:inner};
-  // Use h variable for the rest of the building (alias)
-  let h='';
-  if(section==='account')h+=_syncRenderSettingsAccountSection()+_syncRenderSettingsSnapshotSection();
-  if(section==='workspace')h+=`<section><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Workspace</div><p style="font-size:12px;color:var(--tm);line-height:1.5;margin:0 0 12px">Keep your working context close to the schedule. Filters and notes are saved on this device.</p><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();_syncOpenProjectsPanel()">Projects</button><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();triggerRosterUpload()">Add roster</button><textarea id="syncSettingsScratchpad" placeholder="Quick notes, reminders, todos…" oninput="S.scratchpad=this.value;_saveScratchpad()" style="width:100%;box-sizing:border-box;min-height:110px;padding:8px 10px;border-radius:7px;border:1px solid var(--bdr);background:var(--card);color:var(--text);font-size:12px;font-family:inherit;resize:vertical">${X(S.scratchpad||'')}</textarea><div style="font-size:10px;color:var(--tm);margin-top:4px">Saved locally</div></section>`;
-  if(section==='preferences')h+=`<section><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Appearance</div><div style="display:flex;gap:6px;margin-bottom:12px">${Object.entries(TH).map(([k,t])=>`<button onclick="setTh('${k}');renderSettings()" style="flex:1;padding:8px 4px;border:1px solid ${S.th===k?'var(--accent)':'var(--bdr)'};border-radius:8px;background:${S.th===k?'var(--al)':'none'};color:var(--text);font:11px inherit;cursor:pointer"><span style="display:block;width:12px;height:12px;border-radius:50%;background:${t.d};margin:0 auto 4px"></span>${t.n}</button>`).join('')}</div><div style="display:flex;gap:4px;margin-bottom:10px">${['compact','comfortable','spacious'].map(d=>`<button onclick="setDensity('${d}');renderSettings()" style="flex:1;padding:7px;border:1px solid ${S.density===d?'var(--accent)':'var(--bdr)'};border-radius:6px;background:${S.density===d?'var(--al)':'none'};color:var(--text);font:11px inherit;cursor:pointer">${d[0].toUpperCase()+d.slice(1)}</button>`).join('')}</div><label style="display:block;font-size:12px;margin:8px 0"><input type="checkbox" ${S.cbMode?'checked':''} onchange="setCbMode(this.checked);renderSettings()"> Colour-blind mode</label><label style="display:block;font-size:12px;margin:8px 0"><input type="checkbox" ${S.tz?'checked':''} onchange="setTimezoneEnabled(this.checked);renderSettings()"> UK → SA timezone</label><label style="display:block;font-size:12px;margin:8px 0"><input type="checkbox" ${S.hlToday?'checked':''} onchange="setTodayHighlight(this.checked);renderSettings()"> Highlight today in calendar</label></section>`;
-  if(section==='data')h+=`<section><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Data &amp; exports</div><p style="font-size:12px;color:var(--tm);line-height:1.5;margin:0 0 12px">Create a portable export or open the dedicated data views without crowding your daily workspace.</p><button class="btn bp" style="margin:0 8px 8px 0" onclick="closeSettings();expSavePlus('all')">Save+ export</button><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();expCurrentMonth()">Styled report</button><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();S.anView='rawdata';setTab('analytics')">Raw data</button><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();runRulesValidation()">Validate</button></section>`;
-  if(section==='advanced')h+=`<section><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Advanced</div><p style="font-size:12px;color:var(--tm);line-height:1.5;margin:0 0 12px">Destructive actions are separated from everyday settings.</p><button class="btn" style="margin:0 8px 8px 0" onclick="closeSettings();if(S.activeDept)removeDept(S.activeDept)">Close workspace</button><button class="btn" style="margin:0 8px 8px 0;color:#dc2626;border-color:rgba(220,38,38,.3)" onclick="if(confirm('Clear all stored data?')){closeSettings();clearAllData()}">Clear all data</button><div style="font-size:11px;color:var(--tm);margin-top:12px">${APP_BUILD}</div></section>`;
-
-  if(false){
-
-  // ── Account ── the one place save/sign-out/profile live now, replacing the separate controls
-  // that used to be duplicated in the masthead badge and the landing widget (see
-  // _syncRenderAccountUI/_syncRenderLandingWidget — both now just show a status indicator that
-  // opens this panel instead of their own copy of the same buttons).
-  if(section==='account')h+=_syncRenderSettingsAccountSection();
-
-  // ── Backups & history ──
-  if(section==='account')h+=_syncRenderSettingsSnapshotSection();
-
-  // ── Appearance ──
-  if(section==='preferences')h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Appearance</div>`;
-  h+=`<div style="display:flex;gap:6px;margin-bottom:10px">`;
-  Object.entries(TH).forEach(([k,t])=>{
-    const isActive=S.th===k;
-    const vLabel=isActive?_currentVariantLabel():'';
-    h+=`<button onclick="setTh('${k}');renderSettings()" style="flex:1;padding:8px 4px;border:1px solid ${isActive?'var(--accent)':'var(--bdr)'};border-radius:8px;background:${isActive?'var(--al)':'none'};color:${isActive?'var(--accent)':'var(--tm)'};font-family:inherit;font-size:11px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px"><span style="width:12px;height:12px;border-radius:50%;background:${t.d}"></span>${t.n}${isActive?'<span style="font-size:9px;opacity:.7;text-transform:capitalize">'+vLabel+'</span>':''}</button>`;
-  });
-  if(section==='preferences')h+=`</div>`;
-
-  // ── Variant picker (collapsible, grouped by category) ──
-  const activeThemeKey=S.th||'surge';
-  const vLabels=THEME_VARIANTS_LABELS[activeThemeKey]||{};
-  const vSlugs=THEME_VARIANTS[activeThemeKey]||[];
-  const curSlug=vSlugs[S.thVariant||0]||vSlugs[0]||'';
-  const curVariantLabel=vLabels[curSlug]?.l||curSlug||'Default';
-  const catOrder=['dark','mid','light','neutral'];
-  const catLabel={'dark':'Dark','mid':'Mid','light':'Light','neutral':'Neutral'};
-  const catCol={'dark':'var(--accent)','mid':'var(--am-col)','light':'var(--ok)','neutral':'var(--tm)'};
-  const bycat={};
-  vSlugs.forEach((sl,i)=>{const m=vLabels[sl];if(!m)return;const c=m.c;if(!bycat[c])bycat[c]=[];bycat[c].push({sl,i,label:m.l});});
-  h+=`<details style="margin-top:8px;border:1px solid var(--bdr);border-radius:8px;padding:8px 10px"${S._settingsVariantsOpen?' open':''} ontoggle="S._settingsVariantsOpen=this.open">`;
-  h+=`<summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;font-size:10px;font-weight:600;color:var(--tm);opacity:.8;text-transform:uppercase;letter-spacing:.6px">Variants <span style="font-size:9px;color:var(--accent);opacity:1;text-transform:none;letter-spacing:.2px">${curVariantLabel}</span></summary>`;
-  h+=`<div style="margin-top:8px">`;
-  catOrder.forEach(cat=>{
-    if(!bycat[cat]||!bycat[cat].length)return;
-    h+=`<div style="margin-bottom:6px"><div style="font-size:9px;color:${catCol[cat]};opacity:.7;margin-bottom:3px;letter-spacing:.4px">${catLabel[cat]}</div><div style="display:flex;flex-wrap:wrap;gap:3px">`;
-    bycat[cat].forEach(({sl,i,label})=>{
-      const isV=sl===curSlug;
-      const vd=THEME_VARIANTS_LABELS[activeThemeKey][sl];
-      h+=`<button onclick="setVariantDirect(${i});renderSettings()" title="${label}" style="padding:3px 8px;border-radius:10px;border:1px solid ${isV?'var(--accent)':'var(--bdr)'};background:${isV?'var(--al)':'none'};color:${isV?'var(--accent)':'var(--tm)'};font-family:inherit;font-size:9px;cursor:pointer;white-space:nowrap">${label}</button>`;
-    });
-    h+=`</div></div>`;
-  });
-  h+=`</div></details>`;
-  // Density
-  h+=`<div style="display:flex;gap:4px;margin-bottom:10px">`;
-  ["compact","comfortable","spacious"].forEach(d=>{
-    h+=`<button onclick="setDensity('${d}');renderSettings()" style="flex:1;padding:6px;border:1px solid ${S.density===d?'var(--accent)':'var(--bdr)'};border-radius:6px;background:${S.density===d?'var(--al)':'none'};color:${S.density===d?'var(--accent)':'var(--tm)'};font-family:inherit;font-size:11px;cursor:pointer">${d.charAt(0).toUpperCase()+d.slice(1)}</button>`;
-  });
-  h+=`</div>`;
-  // Toggles
-  h+=`<label style="font-size:12px;display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0"><input type="checkbox" ${S.cbMode?"checked":""} onchange="setCbMode(this.checked);renderSettings()"> Colour-blind mode</label>`;
-  h+=`<label style="font-size:12px;display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0"><input type="checkbox" ${S.tz?"checked":""} onchange="setTimezoneEnabled(this.checked);renderSettings()"> UK → SA timezone</label>`;
-  h+=`<label style="font-size:12px;display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0"><input type="checkbox" ${S.hlToday?"checked":""} onchange="setTodayHighlight(this.checked);renderSettings()"> Highlight today in calendar</label>`;
-  h+=`</div>`;
-
-  // ── Sheet & Team filters — moved here from the toolbar's Filters popover (same S.sh/S.team/
-  // S.allMonths state, same swSh()/setTeam() calls) so the mobile toolbar isn't crowded with an
-  // icon that only mattered when multiple sheets/teams were actually loaded.
-  if(section==='workspace'){
-    const _teams=gT();
-    if((S.shs&&S.shs.length>1)||(_teams&&_teams.length>1)){
-      h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Sheet &amp; Team Filter</div>`;
-      if(S.shs&&S.shs.length>1)h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0"><span style="font-size:12px">Sheet</span><select onchange="swSh(this.value);renderSettings()" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-size:12px;max-width:180px"><option value="__all__"${S.sh==='__all__'?' selected':''}>All sheets</option>${S.shs.map(s=>`<option value="${X(s)}"${s===S.sh?' selected':''}>${X(s)}</option>`).join('')}</select></div>`;
-      if(_teams&&_teams.length>1)h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0"><span style="font-size:12px">Team</span><select onchange="setTeam(this.value);renderSettings()" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-size:12px;max-width:180px"><option value="all">All teams</option>${_teams.map(t=>`<option value="${X(t)}"${t===S.team?' selected':''}>${X(t)}</option>`).join('')}</select></div>`;
-      h+=`<label style="font-size:12px;display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0"><input type="checkbox" ${S.allMonths?"checked":""} onchange="S.allMonths=this.checked;rerenderCurrentSurface();rerenderChromeOnly();renderSettings()"> All months view</label>`;
-      h+=`</div>`;
-    }
-  }
-
-  // ── Quick notes — moved here from the toolbar's popover (same S.scratchpad state and
-  // _saveScratchpad(), just reachable from Settings instead of a dedicated mobile toolbar icon).
-  if(section==='workspace')h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Quick Notes</div>`;
-  h+=`<textarea id="syncSettingsScratchpad" placeholder="Quick notes, reminders, todos...&#10;&#10;Persisted across sessions." oninput="S.scratchpad=this.value;_saveScratchpad()" style="width:100%;box-sizing:border-box;min-height:80px;padding:8px 10px;border-radius:7px;border:1px solid var(--bdr);background:var(--card);color:var(--text);font-size:12px;font-family:inherit;resize:vertical">${X(S.scratchpad||'')}</textarea>`;
-  if(section==='workspace')h+=`<div style="font-size:10px;color:var(--tm);margin-top:4px">Auto-saved locally</div></div>`;
-
-  // ── Schedule Rules ──
-  if(section==='workspace')h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Schedule Rules</div>`;
-  const ruleRows=[
-    {label:"Max hours / week",key:"maxHoursWeek",val:r.maxHoursWeek||45,type:"number",min:20,max:80,sync:"S.hrsMax=+this.value;invalidateDerivedCache();if(S.tab==='analytics')rerenderAnalyticsSurface('view');"},
-    {label:"Max consecutive days",key:"maxConsecutiveDays",val:r.maxConsecutiveDays||6,type:"number",min:3,max:14,sync:"invalidateDerivedCache();if(S.tab==='analytics')rerenderAnalyticsSurface('view');"},
-    {label:"Min TLs per day",key:"minCoveragePerDay",val:r.minCoveragePerDay||3,type:"number",min:1,max:20,sync:"S.covMin=+this.value;invalidateDerivedCache();if(S.tab==='analytics')rerenderAnalyticsSurface('view');else if(S.tab==='calendar')rerenderCalendarSurface('coverage');"},
-  ];
-  ruleRows.forEach(rr=>{
-    h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0">`;
-    h+=`<span style="font-size:12px">${rr.label}</span>`;
-    h+=`<input type="number" min="${rr.min}" max="${rr.max}" value="${rr.val}" onchange="S.rules.${rr.key}=+this.value;${rr.sync||''}" style="width:56px;padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;text-align:center">`;
-    h+=`</div>`;
-  });
-  h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0">`;
-  h+=`<span style="font-size:12px">Weekend policy</span>`;
-  h+=`<select onchange="S.rules.weekendPolicy=this.value" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-size:12px">`;
-  [{v:"rotate",l:"Rotate"},{v:"fixed",l:"Fixed"},{v:"none",l:"None"}].forEach(o=>{h+=`<option value="${o.v}"${(r.weekendPolicy||"rotate")===o.v?" selected":""}>${o.l}</option>`;});
-  h+=`</select></div>`;
-  h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0">`;
-  h+=`<span style="font-size:12px">Lunch</span>`;
-  h+=`<select onchange="S.rules.breaks.lunch=+this.value" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-size:12px">`;
-  [0,15,30,45,60].forEach(m=>{h+=`<option value="${m}"${(br.lunch||30)===m?" selected":""}>${m}min</option>`;});
-  h+=`</select></div>`;
-  if(section==='workspace')h+=`</div>`;
-  
-  // ── Coaching ──
-  if(section==='workspace')h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Coaching</div>`;
-  h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0"><span style="font-size:12px">Session duration</span>`;
-  h+=`<select onchange="S.coachDuration=+this.value" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-size:12px">`;
-  [15,30,45,60].forEach(m=>{h+=`<option value="${m}"${(S.coachDuration||30)===m?" selected":""}>${m}min</option>`;});
-  h+=`</select></div>`;
-  h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0"><span style="font-size:12px">Daily target</span>`;
-  h+=`<input type="number" min="0" max="10" value="${S.coachTargetDaily||1}" onchange="S.coachTargetDaily=+this.value" style="width:56px;padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--card);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;text-align:center">`;
-  if(section==='workspace')h+=`</div></div>`;
-  
-  // ── Exports ──
-  if(section==='data'){
-  const xSel=S.exportSelection||{};
-  const xSheets=[
-    {k:'overview',   l:'Overview & stats',    d:'Summary table, HC averages, key metrics'},
-    {k:'leaders',    l:'Leader schedules',     d:'One sheet per TL with full month'},
-    {k:'analytics',  l:'Analytics',            d:'Absence breakdown, flags, coverage'},
-    {k:'scheduleData',l:'Raw schedule data',   d:'All entries in flat tabular format'},
-    {k:'exceptions', l:'Exceptions log',       d:'Sick, AWOL, leave, swaps, ERL'},
-    {k:'coaching',   l:'Coaching sessions',    d:'Session log and history'},
-    {k:'notes',      l:'Notes',                d:'Team and leader notes'},
-    {k:'blueprint',  l:'Blueprint / Rotation', d:'W1–WN cycle definition'},
-    {k:'positions',  l:'Positions',            d:'Role and seat assignments'},
-    {k:'people',     l:'People / Agents',      d:'Agent list and attributes'},
-    {k:'changeLog',  l:'Roster Change Log',    d:'Import deltas, coverage impact, and review state'},
-  ];
-  const allSelected=xSheets.every(s=>xSel[s.k]!==false);
-  h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Exports</div>`;
-  // Quick actions row
-  h+=`<div style="font-size:10px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Quick actions</div>`;
-  h+=`<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px">`;
-  const qActs=[
-    {l:'💾 Save+',          fn:"expSavePlus('all')"},
-    {l:'📋 Styled Report',   fn:"expCurrentMonth()"},
-    {l:'🖼 Save as image',   fn:"expPNG()"},
-    {l:'✉ Share roster',    fn:"genEmail()"},
-    {l:'📋 Weekly digest',  fn:"genWeeklyDigest()"},
-    {l:'📋 TL Day Pack',    fn:"expTLDayPack()"},
-    {l:'📋 Copy EOD',       fn:"copyEOD()"},
-    {l:'🤖 AI-Ready Data',  fn:"expAIcsv()"},
-  ];
-  qActs.forEach(a=>{
-    h+=`<button onclick="closeSettings();${a.fn}" style="padding:5px 10px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--text);font-family:inherit;font-size:11px;cursor:pointer;white-space:nowrap">${a.l}</button>`;
-  });
-  h+=`<button onclick="closeSettings();exportProtectedWorkspace()" style="padding:5px 10px;border:1px solid var(--accent);border-radius:6px;background:var(--al);color:var(--accent);font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">Protected workspace</button>`;
-  h+=`<button onclick="closeSettings();importProtectedWorkspace()" style="padding:5px 10px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--text);font-family:inherit;font-size:11px;cursor:pointer;white-space:nowrap">Open protected vault</button>`;
-  h+=`</div>`;
-  // Custom export builder
-  h+=`<div style="background:var(--al);border-radius:10px;padding:12px 14px;margin-bottom:4px">`;
-  h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">`;
-  h+=`<span style="font-size:11px;font-weight:600;color:var(--text)">Custom export</span>`;
-  h+=`<button onclick="openExportPresets()" style="font-size:10px;padding:3px 8px;border:1px solid var(--bdr);border-radius:5px;background:var(--bg);color:var(--accent);font-family:inherit;cursor:pointer">Presets</button>`;
-  h+=`<label style="font-size:11px;display:flex;align-items:center;gap:5px;cursor:pointer;color:var(--tm)"><input type="checkbox" ${allSelected?'checked':''} onchange="(function(v){const s=S.exportSelection=S.exportSelection||{};[${xSheets.map(s=>"'"+s.k+"'").join(',')}].forEach(k=>s[k]=v);schedulePersist(true);renderSettings();})(this.checked)"> All</label>`;
-  h+=`</div>`;
-  h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-bottom:12px">`;
-  xSheets.forEach(s=>{
-    const checked=xSel[s.k]!==false;
-    h+=`<label style="font-size:11px;display:flex;align-items:flex-start;gap:6px;cursor:pointer;padding:3px 0" title="${s.d}">`;
-    h+=`<input type="checkbox" ${checked?'checked':''} onchange="S.exportSelection=S.exportSelection||{};S.exportSelection['${s.k}']=this.checked;schedulePersist(true);renderSettings()" style="margin-top:1px;flex-shrink:0">`;
-    h+=`<span style="color:var(--text);line-height:1.3">${s.l}</span>`;
-    h+=`</label>`;
-  });
-  h+=`</div>`;
-  const selectedCount=xSheets.filter(s=>xSel[s.k]!==false).length;
-  h+=`<button onclick="closeSettings();expCustomSelection()" style="width:100%;padding:8px 12px;border:none;border-radius:7px;background:var(--accent);color:#fff;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;letter-spacing:.2px">Export ${selectedCount} of ${xSheets.length} sheets →</button>`;
-  h+=`</div>`;
-  }
-  h+=`</div>`;
-  }
-
-  // ── Quick links ──
-  if(section==='data')h+=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Quick Links</div>`;
-  h+=`<div style="display:flex;flex-wrap:wrap;gap:6px">`;
-  h+=`<button onclick="closeSettings();showPeoplePanel()" style="padding:6px 12px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--text);font-family:inherit;font-size:11px;cursor:pointer">👥 People</button>`;
-  h+=`<button onclick="closeSettings();triggerRosterUpload()" style="padding:6px 12px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--text);font-family:inherit;font-size:11px;cursor:pointer">📋 Add roster</button>`;
-  h+=`<button onclick="closeSettings();S.anView='rawdata';setTab('analytics')" style="padding:6px 12px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--text);font-family:inherit;font-size:11px;cursor:pointer">🧪 Raw data</button>`;
-  h+=`<button onclick="closeSettings();runRulesValidation()" style="padding:6px 12px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--text);font-family:inherit;font-size:11px;cursor:pointer">✓ Validate</button>`;
-  if(section==='data')h+=`</div></div>`;
-  
-  // ── Data ──
-  if(section==='advanced'){
-    h+=`<div style="border-top:1px solid var(--bdr);padding-top:12px;display:flex;gap:8px;flex-wrap:wrap">`;
-    h+=`<button onclick="closeSettings();if(S.activeDept)removeDept(S.activeDept)" style="padding:6px 12px;border:1px solid var(--bdr);border-radius:6px;background:none;color:var(--tm);font-family:inherit;font-size:11px;cursor:pointer">Close workspace</button>`;
-    h+=`<button onclick="if(confirm('Clear all stored data?')){closeSettings();clearAllData()}" style="padding:6px 12px;border:1px solid rgba(220,38,38,.3);border-radius:6px;background:none;color:#dc2626;font-family:inherit;font-size:11px;cursor:pointer;opacity:.7">Clear all data</button>`;
-    h+=`<div style="font-size:11px;color:var(--tm);margin-top:8px">${APP_BUILD}</div></div>`;
-  }
-  
-  h+=`</div>`;
-  
-  const fullInner=h_ref.val+h;
+  let h=`<div class="set-hd"><h2>⚙ Settings</h2><input type="search" id="settingsSearch" class="set-search" placeholder="Search settings" aria-label="Search settings" value="${XA(q)}" oninput="settingsSearch(this.value)"><button type="button" class="set-x" onclick="closeSettings()" aria-label="Close settings">✕</button></div>`;
+  h+=`<div class="set-body"><nav class="set-nav" aria-label="Settings sections">${SETTINGS_SECTIONS.map(s=>{
+    const n=prefChangedCount(s.id),on=!q&&section===s.id;
+    return`<button type="button" class="set-tab${on?' on':''}" data-section="${s.id}"${on?' aria-current="page"':''} onclick="selectSettingsSection('${s.id}')">${X(s.l)}${n?`<span class="set-badge" title="${n} changed from the default">${n}</span>`:''}</button>`;
+  }).join('')}</nav><main class="set-main" id="setMain">${_setMainHTML()}</main></div>`;
   if(existing&&panelEl){
-    // Update in place — no animation, preserve scroll
-    panelEl.innerHTML=fullInner;
+    // Update in place: no animation, keep the scroll position.
+    panelEl.innerHTML=h;
     panelEl.scrollTop=scrollTop;
   }else{
-    // First open — create overlay with animation
     if(existing)existing.remove();
-    let wrap=`<div id="settingsOverlay" style="position:fixed;inset:0;z-index:800;display:flex;align-items:flex-start;justify-content:flex-end;pointer-events:all">`;
-    wrap+=`<div style="position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:0" onclick="closeSettings()"></div>`;
-    wrap+=`<div id="settingsPanel" style="position:relative;z-index:1;width:min(380px,100vw);height:100vh;background:var(--hbg);border-left:1px solid var(--bdr);overflow-y:auto;display:flex;flex-direction:column;backdrop-filter:blur(20px);animation:slideInRight .2s ease-out">`;
-    wrap+=fullInner;
-    wrap+=`</div></div>`;
-    const el=document.createElement("div");el.innerHTML=wrap;
+    const el=document.createElement("div");
+    el.innerHTML=`<div id="settingsOverlay" class="set-overlay"><div class="set-scrim" onclick="closeSettings()"></div><div id="settingsPanel" class="set-panel" role="dialog" aria-modal="true" aria-label="Settings">${h}</div></div>`;
     document.body.appendChild(el.firstChild);
   }
+  // On a phone the sections are one scrolling strip: keep the open one in view.
+  const on=document.querySelector('#settingsPanel .set-tab.on'),nav=on&&on.parentElement;
+  if(on&&nav&&nav.scrollWidth>nav.clientWidth)nav.scrollLeft=Math.max(0,on.offsetLeft-nav.clientWidth/2+on.offsetWidth/2);
 }
 
 /* ── Esc handler — close any transient overlay ── */
 document.addEventListener("keydown",function _escHandler(e){
   if(e.key==="Escape"){
     // Close in priority order
-    if(S._settingsOpen){closeSettings();return;}
+    if(S._settingsOpen){
+      if(S._settingsQuery&&document.activeElement&&document.activeElement.id==="settingsSearch"){settingsSearch("");document.activeElement.value="";return;}
+      closeSettings();return;
+    }
     if(document.getElementById("otRulesOverlay")){document.getElementById("otRulesOverlay").remove();return;}
     if(document.getElementById("parsePreviewOverlay")){document.getElementById("parsePreviewOverlay").remove();_pendingLoad=null;return;}
     if(document.getElementById("peoplePanelOverlay")){closePeoplePanel();return;}
@@ -27516,7 +28001,9 @@ function buildFilename(kind,ext){
   if(kind==='all')token='AllMonths_SavePlus';
   else if(kind==='month')token=month+'_SavePlus';
   else token=safeFilenamePart(kind);
-  return `${dept}_${token}_${date}.${ext}`;
+  // Settings → Data & exports: an optional prefix, and the date stamp can be left off.
+  const rawPrefix=String(pref("export.prefix")||"").trim(),prefix=rawPrefix?safeFilenamePart(rawPrefix):"";
+  return `${prefix?prefix+"_":""}${dept}_${token}${pref("export.dateStamp")?"_"+date:""}.${ext}`;
 }
 function sanitiseSheetName(n){return n.replace(/[\[\]:*?\/\\]/g,'_').substring(0,31);}
 function triggerBlobDownload(blob,fileName){
@@ -28368,7 +28855,8 @@ function saveSettings(){
     flagSettings:S.flagSettings||{},
     cardShow:S.cardShow||{},
     focusMode:S.focusMode||"month",
-    otThresholds:S.otThresholds||{sick:3,absence:3,capacity:3,gap:-2}
+    otThresholds:S.otThresholds||{sick:3,absence:3,capacity:3,gap:-2},
+    prefs:S.prefs||{}
   }));}catch(e){}
   try{_saveScratchpad();}catch(e){}
   try{_persistSet(CRITICAL_STATE_SCHEMA_KEY,String(CRITICAL_STATE_SCHEMA_VERSION));}catch(e){}
@@ -28459,12 +28947,13 @@ function loadSettings(){
         if(saved.notes&&typeof saved.notes==="object")S.flagSettings.notes=saved.notes;
         if(Array.isArray(saved.whitelist))S.flagSettings.whitelist=saved.whitelist;
       }
+      prefsLoad(s.prefs);
       if(s.otThresholds&&typeof s.otThresholds==="object"){
         if(!_isPlainObject(S.otThresholds))S.otThresholds={sick:3,absence:3,capacity:3,gap:-2};
         ["sick","absence","capacity","gap"].forEach(k=>{if(typeof s.otThresholds[k]==="number")S.otThresholds[k]=s.otThresholds[k];});
       }
     }
-    else S._schemaVersion=SETTINGS_SCHEMA_VERSION;
+    else{S._schemaVersion=SETTINGS_SCHEMA_VERSION;prefsLoad({});}
     // Fallback compatibility: dedicated theme keys
     const t=_readThemeStorage();
     if(!themeApplied&&t.theme){
@@ -28515,6 +29004,8 @@ function nsBootApp(){
   _nsBooted=true;
   loadSettings();
   S.tab="dashboard";
+  // Settings → Appearance → Open on.
+  prefApplyStartView();
   _restoreViewportFromState();
   _loadScratchpad();
   // Ensure data attributes are set even if no saved settings exist
@@ -29437,6 +29928,9 @@ function _syncApplyViewState(deptKey){
   if(view._scrollPos&&typeof view._scrollPos==='object'){
     S._scrollPos=Object.assign({},S._scrollPos||{},view._scrollPos);
   }
+  // Settings → Appearance → "Open a project on": anything but "where I left off" picks the screen;
+  // the month, filters and sheet above still come back.
+  if(pref("ui.startView")!=="resume")prefApplyStartView();
   return view;
 }
 function _syncRestoreScrollForTab(){
@@ -30029,7 +30523,7 @@ function toast(msg,type,dur,opts){
     }
     const close=document.createElement("button");close.className="toast-close";close.type="button";close.title="Dismiss";close.setAttribute("aria-label","Dismiss notification");close.textContent="×";close.onclick=()=>el.remove();el.appendChild(close);
     wrap.appendChild(el);
-    const lifetime=dur===0?0:(Number(dur)||3600);
+    const lifetime=dur===0?0:Math.round((Number(dur)||3600)*(typeof prefToastScale==="function"?prefToastScale():1));
     if(lifetime>0)setTimeout(()=>el.remove(),lifetime);
   }
 }
@@ -30394,6 +30888,7 @@ function clearAllData(){
   _setExceptions([]);_setLeaveRequests([]);S.dayClosed={};
   S.plCellOverrides={};S.savedMonths={};S.plCellEdit=null;
   S.targetHours=0;S.ratePerHour=0;
+  S.prefs={};S._prefsVer=(S._prefsVer||0)+1;try{_prefApplyBodyClasses();}catch(e){}
   S.coachBlackouts={};S.coachPlan={};S.coachHistory=[];S.coachDuration=30;S.coachTargetDaily=1;S.coachTargetMonthly=0;
   S.coachManualSessions=[];S.coachBudgetHrs={};S.swaps=[];S._swapFormDay=null;
   S.leaderPlanner={tasks:[],filter:"open",selectedDay:null};S.changeIntelligence=_normalizeChangeIntelligence({});S.dashboardLayout=_defaultDashboardLayout();
@@ -33702,7 +34197,8 @@ async function expTLDayPack(){
 const SWIN_SENT_KEY="sc_swin_sent";
 const SWIN_DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 const SWIN_TYPE_LABEL={early:"Early",mid:"Mid",late:"Late",wknd:"Weekend"};
-const SWIN_SENT_KEEP_DAYS=180;
+// How long the sent log is kept: Settings → Sharing (swin.keepDays, default 180).
+function _swinSentKeepDays(){return prefNum("swin.keepDays");}
 // Window state lives here, not on S: it is view-only and must never ride along in snapshots.
 let _swinState=null,_swinReturnFocus=null;
 
@@ -33870,7 +34366,7 @@ function _swinSenderName(){
 function _swinRecordSent(name,rows,channel){
   const store=_swinSentStore(),k=_swinSentKey(name),prev=store[k]||{},merged=Object.assign({},prev.rows||{});
   rows.forEach(r=>{merged[r.iso]=_swinSig(r);});
-  const oldest=rows.reduce((m,r)=>!m||r.iso<m?r.iso:m,""),keep=excKey(_swinAddDays(new Date(),-SWIN_SENT_KEEP_DAYS));
+  const oldest=rows.reduce((m,r)=>!m||r.iso<m?r.iso:m,""),keep=excKey(_swinAddDays(new Date(),-_swinSentKeepDays()));
   const cutoff=oldest&&oldest<keep?oldest:keep;
   Object.keys(merged).forEach(iso=>{if(iso<cutoff)delete merged[iso];});
   store[k]={name,at:new Date().toISOString(),by:_swinSenderName(),channel,rows:merged};
@@ -33900,9 +34396,12 @@ function openScheduleWindow(name,opts){
   opts=opts||{};
   const prev=_swinState||{};
   const month=opts.y!==undefined&&opts.m!==undefined?{y:opts.y,m:opts.m}:(prev.open&&prev.y!==undefined?{y:prev.y,m:prev.m}:_swinDefaultMonth());
-  _swinState={open:true,name,mode:opts.mode||(prev.open?prev.mode:"month")||"month",y:month.y,m:month.m,
-    from:opts.from||prev.from||"",to:opts.to||prev.to||"",
-    clock:opts.clock||prev.clock||(S.tz?"sa":"uk"),cmp:opts.cmp!==undefined?opts.cmp:""};
+  // A fresh window follows Settings → Sharing; one already open keeps what the person picked.
+  const fresh=!prev.open&&!opts.mode&&opts.y===undefined,span=pref("swin.range"),clockPref=pref("swin.clock");
+  let mode=opts.mode||(prev.open?prev.mode:"month")||"month",from=opts.from||prev.from||"",to=opts.to||prev.to||"";
+  if(fresh&&(span==="next14"||span==="next28")){const t=new Date();mode="custom";from=excKey(t);to=excKey(_swinAddDays(t,span==="next14"?13:27));}
+  _swinState={open:true,name,mode,y:month.y,m:month.m,from,to,
+    clock:opts.clock||(prev.open?prev.clock:"")||(clockPref==="sa"||clockPref==="uk"?clockPref:(S.tz?"sa":"uk")),cmp:opts.cmp!==undefined?opts.cmp:""};
   if(!prev.open)_swinReturnFocus=document.activeElement;
   if(_swinState.cmp===name)_swinState.cmp="";
   let el=document.getElementById("swinOverlay");
@@ -33947,7 +34446,7 @@ function _swinStatusCell(r,name){
   const codeU=String(r.code||"").toUpperCase();
   if(r.kind==="off"&&codeU&&codeU!=="OFF"&&codeU!==r.status.toUpperCase())h+=` <span class="swin-tag t-off">${X(r.code)}</span>`;
   if(r.ph)h+=` <span class="swin-tag t-ph" title="${XA("SA public holiday: "+r.ph.name)}">PH</span>`;
-  if(r.ukbh)h+=` <span class="swin-tag t-uk" title="${XA("UK bank holiday: "+r.ukbh.name)}">UK</span>`;
+  if(r.ukbh&&pref("hol.showUK"))h+=` <span class="swin-tag t-uk" title="${XA("UK bank holiday: "+r.ukbh.name)}">UK</span>`;
   if(typeof actingOn==="function"){
     const a=actingOn(name,r.iso);
     if(a)h+=` <span class="swin-tag t-act" title="${XA(coverLabel(a)+", "+coverSpanText(a))}">Acting for ${X((a.forName||"vacancy").split(" ")[0])}</span>`;
@@ -34074,16 +34573,30 @@ function swinBuildText(name,fromISO,toISO,clock,rangeLabel){
   const rows=swinRows(name,fromISO,toISO),sum=_swinSummary(rows),leader=_swinLeaderOf(name),sender=_swinSenderName();
   const now=new Date();
   const lines=[`${name} · ${rangeLabel||_swinSpanLabel(fromISO,toISO)} · ${clock==="uk"?"UK":"SA"} time`];
+  // What goes in the message: Settings → Sharing → Message text.
+  const o={status:pref("swin.txtStatus"),other:pref("swin.txtOther"),ph:pref("swin.txtHolidays"),uk:pref("swin.txtUK")&&pref("hol.showUK"),cover:pref("swin.txtCover")&&typeof actingOn==="function",nextOff:pref("swin.txtNextOff"),sent:pref("swin.txtSent"),footer:pref("swin.footer")};
+  const otherClock=clock==="uk"?"sa":"uk";
   if(leader)lines.push("Team leader: "+leader);
   lines.push("");
   rows.forEach(r=>{
-    const shift=_swinShiftText(r,clock);
-    lines.push(`${_swinDayLabel(r.iso)}  ${shift}${r.kind==="work"?"  "+r.status:""}${r.ph?"  ("+r.ph.name+")":""}`);
+    let line=`${_swinDayLabel(r.iso)}  ${_swinShiftText(r,clock)}`;
+    if(o.other&&r.kind==="work")line+=` (${otherClock.toUpperCase()} ${_swinShiftText(r,otherClock)})`;
+    if(o.status&&r.kind==="work")line+="  "+r.status;
+    if(o.ph&&r.ph)line+="  ("+r.ph.name+")";
+    if(o.uk&&r.ukbh)line+="  (UK: "+r.ukbh.name+")";
+    if(o.cover){
+      const a=actingOn(name,r.iso),l=leaderOn(name,r.iso);
+      if(a)line+="  Acting for "+(a.forName||"a vacancy");
+      if(l.cover)line+="  Led by "+l.name;
+    }
+    lines.push(line);
   });
   lines.push("");
-  if(sum.nextOff)lines.push("Next day off: "+_swinDayLabel(sum.nextOff));
+  if(o.nextOff&&sum.nextOff)lines.push("Next day off: "+_swinDayLabel(sum.nextOff));
   if(sum.none)lines.push(`${sum.none} day${sum.none===1?"":"s"} not on the roster yet: check with your team leader.`);
-  lines.push(`Sent ${P(now.getDate())} ${MO[now.getMonth()]} ${now.getFullYear()}${sender?" by "+sender:""}`);
+  if(o.sent)lines.push(`Sent ${P(now.getDate())} ${MO[now.getMonth()]} ${now.getFullYear()}${sender?" by "+sender:""}`);
+  if(o.footer)lines.push(o.footer);
+  while(lines.length&&lines[lines.length-1]==="")lines.pop();
   return{text:lines.join("\n"),rows};
 }
 async function swinCopyText(){
@@ -34206,7 +34719,10 @@ async function swinExportTeamZip(){
 // Exception types that take a leader away from their team for the day.
 const COVER_ABSENT_EXC=["sick","annual_leave","family_responsibility","no_show","training"];
 const COVER_ABSENT_STATUS=["sick","leave","awol","training"];
-const COVER_LOOKBACK_DAYS=180;
+// Suggestion tuning lives in Settings → Cover & leaders (cover.* preferences).
+function coverLookbackDays(){return prefNum("cover.lookbackDays");}
+function coverLookbackText(){const d=coverLookbackDays();return d%30===0&&d>=60?d/30+" months":d+" days";}
+function _coverLabelIn(labels,list){const want=new Set(list.map(l=>l.toLowerCase()));return labels.some(l=>want.has(String(l).toLowerCase()));}
 
 function _coverTodayISO(){return excKey(new Date());}
 function _coverISO(date){return date instanceof Date?excKey(date):(typeof date==="string"&&date?date.slice(0,10):_coverTodayISO());}
@@ -34329,14 +34845,15 @@ function _coverRangesOverlap(r,fromISO,toISO){return(!r.starts||r.starts<=toISO)
 function coverSuggest(gap){
   const L=gap.leader,dates=gap.dates,from=dates[0],to=dates[dates.length-1],dateSet=new Set(dates);
   const ref=_coverRefShift(L,from),team=new Set(coverTeamOf(L)),leaders=new Set(coverLeaders());
-  const pool=new Set(team);
+  const pool=new Set(team),poolLabels=pref("cover.poolLabels"),devLabels=pref("cover.devLabels");
+  const w={avail:prefNum("cover.wAvail"),overlap:prefNum("cover.wOverlap"),fair:prefNum("cover.wFair"),team:prefNum("cover.wTeam"),dev:prefNum("cover.wDev"),leader:prefNum("cover.pLeader"),busy:prefNum("cover.pBusy")};
   Object.values(S.people||{}).forEach(p=>{
     if(!p||!p.name||p.name===L)return;
     const labels=peopleRoleLabels(p.name);
-    if(labels.some(l=>/^(YAT|Senior Agent|Supervisor|SME)$/i.test(l))||leaders.has(p.name))pool.add(p.name);
+    if(_coverLabelIn(labels,poolLabels)||leaders.has(p.name))pool.add(p.name);
   });
   pool.delete(L);
-  const since=excKey(_swinAddDays(new Date(),-COVER_LOOKBACK_DAYS)),out=[];
+  const since=excKey(_swinAddDays(new Date(),-coverLookbackDays())),out=[];
   pool.forEach(name=>{
     let avail=0,ov=0;
     swinRows(name,from,to).forEach(r=>{
@@ -34348,20 +34865,20 @@ function coverSuggest(gap){
     if(!avail)return;
     const busy=coverRows().find(c=>coverState(c)!=="cancelled"&&_coverIs(name,c.personId,c.personName)&&_coverRangesOverlap(c,from,to));
     const days=coverActingDays(name,since),labels=peopleRoleLabels(name).filter(l=>!/^acting\b/i.test(l));
-    const onTeam=team.has(name),leads=leaders.has(name),dev=labels.some(l=>/^(YAT|Senior Agent|Supervisor)$/i.test(l));
+    const onTeam=team.has(name),leads=leaders.has(name),dev=_coverLabelIn(labels,devLabels);
     const availR=avail/dates.length,ovR=ov/dates.length;
-    const score=Math.round(45*availR+20*ovR+15/(1+days/5)+(onTeam?10:0)+(dev?10:0)-(leads?10:0)-(busy?30:0));
+    const score=Math.round(w.avail*availR+w.overlap*ovR+w.fair/(1+days/5)+(onTeam?w.team:0)+(dev?w.dev:0)-(leads?w.leader:0)-(busy?w.busy:0));
     const why=[];
     why.push(avail===dates.length?`Works all ${dates.length} day${dates.length===1?"":"s"}`:`Works ${avail} of ${dates.length} days`);
     if(ref)why.push(ovR>=0.99?"same hours as "+L.split(" ")[0]:Math.round(ovR*100)+"% of "+L.split(" ")[0]+"'s hours");
-    why.push(days?`acted ${days} day${days===1?"":"s"} in 6 months`:"has not acted yet");
+    why.push(days?`acted ${days} day${days===1?"":"s"} in ${coverLookbackText()}`:"has not acted yet");
     if(onTeam)why.push("on this team");
     if(labels.length)why.push(labels.join(", "));
     if(leads)why.push("leads their own team");
     if(busy)why.push("already covering "+(busy.forName||"a vacancy")+" "+coverSpanText(busy));
     out.push({name,score,avail,days,onTeam,leads,busy:!!busy,why});
   });
-  return out.sort((a,b)=>b.score-a.score||a.days-b.days||a.name.localeCompare(b.name)).slice(0,6);
+  return out.sort((a,b)=>b.score-a.score||a.days-b.days||a.name.localeCompare(b.name)).slice(0,prefNum("cover.maxSuggestions"));
 }
 
 // ── Clashes in current and upcoming cover ──
@@ -34443,10 +34960,12 @@ function coverSetReadiness(name,text){
    cover, clashes, and the YAT / cover pool register.
    Engine: src/app/people/cover.js
    ═══════════════════════════════════════════════════════════════ */
-let _coverUI={days:14,open:"",form:{person:"",forName:"",starts:"",ends:"",role:"Acting Team Lead"}};
+let _coverUI={days:0,open:"",form:{person:"",forName:"",starts:"",ends:"",role:"Acting Team Lead"}};
 const COVER_ROLES=["Acting Team Lead","Acting Supervisor","Acting Manager"];
 
 function coverSetDays(n){_coverUI.days=n;rPeople($("ca"));}
+// The page's own choice wins; until one is made, Settings → Cover & leaders sets it.
+function _coverDaysNow(){return _coverUI.days||Number(pref("cover.horizon"))||14;}
 function coverToggleSuggest(key){_coverUI.open=_coverUI.open===key?"":key;rPeople($("ca"));}
 function coverFormSet(field,value){_coverUI.form[field]=value;}
 function coverFormSave(){
@@ -34482,7 +35001,7 @@ function _coverGapHTML(g){
 }
 
 function rPeopleCoverView(){
-  const today=_coverTodayISO(),to=excKey(_swinAddDays(new Date(),_coverUI.days-1));
+  const today=_coverTodayISO(),to=excKey(_swinAddDays(new Date(),_coverDaysNow()-1));
   const inScope=n=>typeof scopeIncludes!=="function"||scopeIncludes(n);
   const gaps=coverGaps(today,to).filter(g=>inScope(g.leader)),clashes=coverClashes();
   const recent=excKey(_swinAddDays(new Date(),-30));
@@ -34492,10 +35011,10 @@ function rPeopleCoverView(){
   if(!f.forName&&leaders.length)f.forName=leaders[0];
 
   let h=`<div class="cov-wrap">`;
-  h+=`<div class="cov-bar"><b>Cover</b><span>Look ahead</span><span class="swin-seg" role="group" aria-label="Look ahead">${[7,14,28].map(n=>`<button type="button" aria-pressed="${_coverUI.days===n}" onclick="coverSetDays(${n})">${n} days</button>`).join("")}</span><span class="swin-note" style="margin:0">Acting cover is dated. Labels and team leaders change only between its start and end.</span></div>`;
+  h+=`<div class="cov-bar"><b>Cover</b><span>Look ahead</span><span class="swin-seg" role="group" aria-label="Look ahead">${[7,14,28].map(n=>`<button type="button" aria-pressed="${_coverDaysNow()===n}" onclick="coverSetDays(${n})">${n} days</button>`).join("")}</span><span class="swin-note" style="margin:0">Acting cover is dated. Labels and team leaders change only between its start and end.</span></div>`;
 
   h+=`<section class="cov-sec" id="covGaps"><h3>Needs cover (${gaps.length})</h3>`;
-  h+=gaps.length?gaps.map(_coverGapHTML).join(""):`<div class="swin-note">No leader is away without cover in the next ${_coverUI.days} days.</div>`;
+  h+=gaps.length?gaps.map(_coverGapHTML).join(""):`<div class="swin-note">No leader is away without cover in the next ${_coverDaysNow()} days.</div>`;
   h+=`</section>`;
 
   h+=`<section class="cov-sec" id="covBooked"><h3>Booked cover (${booked.length})</h3>`;
@@ -34525,12 +35044,12 @@ function rPeopleCoverView(){
   h+=`</section>`;
 
   // Pool: development labels, or anyone who has acted.
-  const since=excKey(_swinAddDays(new Date(),-COVER_LOOKBACK_DAYS));
+  const since=excKey(_swinAddDays(new Date(),-coverLookbackDays()));
   const actors=new Set(coverRows().filter(r=>coverState(r)!=="cancelled").map(r=>r.personName));
-  const pool=Object.values(S.people||{}).filter(p=>p&&p.name&&inScope(p.name)&&(actors.has(p.name)||peopleRoleLabels(p.name).some(l=>/^(YAT|Senior Agent|Supervisor|SME)$/i.test(l)))).map(p=>p.name).sort((a,b)=>a.localeCompare(b));
+  const pool=Object.values(S.people||{}).filter(p=>p&&p.name&&inScope(p.name)&&(actors.has(p.name)||_coverLabelIn(peopleRoleLabels(p.name),pref("cover.poolLabels")))).map(p=>p.name).sort((a,b)=>a.localeCompare(b));
   h+=`<section class="cov-sec" id="covPool"><h3>YAT and cover pool (${pool.length})</h3>`;
   if(pool.length){
-    h+=`<div class="cov-tbl-wrap"><table class="cov-tbl"><thead><tr><th>Name</th><th>Leader</th><th>Labels</th><th>Acted (6 mo)</th><th>Teams covered</th><th>Last acted</th><th>Now / next</th><th>Readiness</th></tr></thead><tbody>`;
+    h+=`<div class="cov-tbl-wrap"><table class="cov-tbl"><thead><tr><th>Name</th><th>Leader</th><th>Labels</th><th>Acted (${X(coverLookbackText())})</th><th>Teams covered</th><th>Last acted</th><th>Now / next</th><th>Readiness</th></tr></thead><tbody>`;
     pool.forEach(n=>{
       const p=S.people[n]||{},mine=coverRows().filter(r=>coverState(r)!=="cancelled"&&_coverIs(n,r.personId,r.personName));
       const teams=[...new Set(mine.filter(r=>!r.starts||r.starts<=today).map(r=>r.forName||"Vacancy"))];
@@ -34554,7 +35073,8 @@ function rPeopleCoverView(){
    batch with nsOrgUndo. baseLeaderOn(name, date) is who someone
    reports to on a date; leaderOn (people/cover.js) adds acting cover.
    ═══════════════════════════════════════════════════════════════ */
-const ORG_SPAN_WARN=15;
+// Span-of-control warning: Settings → People & org (org.spanWarn, default 15).
+function orgSpanWarn(){return prefNum("org.spanWarn");}
 const ORG_LEAVER_RE=/^(leaver|left|inactive|terminated|resigned|exited)$/i;
 let _orgLineCache={key:"",byPid:new Map(),byName:new Map()};
 function orgLineIndex(){
@@ -34629,7 +35149,9 @@ function orgDuplicatePairs(names){
 // Problems in the org on a date, grouped. Each item names the people it is about.
 function orgQuality(date){
   const st=orgStructure(date),people=S.people||{},today=_coverTodayISO(),out=[];
-  const add=(kind,title,names,hint)=>{if(names.length)out.push({kind,title,names,hint});};
+  // Each check can be switched off in Settings → People & org.
+  const add=(kind,title,names,hint)=>{if(names.length&&pref("org.check."+kind)!==false)out.push({kind,title,names,hint});};
+  const span=orgSpanWarn();
   const own=new Map();
   (S.entries||[]).forEach(e=>{const d=_swinEntryDate(e);if(!d||!e.name)return;const iso=excKey(d);if(!own.has(e.name))own.set(e.name,{last:iso});else if(iso>own.get(e.name).last)own.get(e.name).last=iso;});
   add("noLeader","Agents with no leader",st.unassigned,"Select them and use Move to.");
@@ -34639,7 +35161,7 @@ function orgQuality(date){
   add("dupes","Possible duplicate names",orgDuplicatePairs(st.names).map(([a,b])=>`${a} / ${b}`),"Rename or merge in Ops → People & Org.");
   add("tlNoTeam","Team leaders with no team",st.tls.filter(n=>!(st.reports.get(n)||[]).length),"Move agents to them, or change their role.");
   add("leaverShifts","Leavers with future shifts",st.names.filter(n=>ORG_LEAVER_RE.test(String(people[n].status||""))&&own.has(n)&&own.get(n).last>today),"Remove their shifts after their last day.");
-  add("span",`More than ${ORG_SPAN_WARN} agents on one leader`,st.teams.filter(t=>t.members.length>ORG_SPAN_WARN).map(t=>`${t.leader} (${t.members.length})`),"Consider splitting the team.");
+  add("span",`More than ${span} agents on one leader`,st.teams.filter(t=>t.members.length>span).map(t=>`${t.leader} (${t.members.length})`),"Consider splitting the team, or raise the limit in Settings → People & org.");
   return out;
 }
 
@@ -34758,7 +35280,7 @@ function rPeopleOrgView(){
   h+=_orgLaneRow("General manager",st.gms,st)+_orgLaneRow("Managers / CCL",st.mgrs,st);
   h+=`<div class="org-lane"><div class="org-lane-h">Teams <span>${st.teams.length}</span></div><div class="org-teams">`;
   st.teams.forEach(t=>{
-    const warn=t.members.length>ORG_SPAN_WARN,empty=!t.members.length;
+    const warn=pref("org.check.span")&&t.members.length>orgSpanWarn(),empty=!t.members.length;
     h+=`<div class="org-team${empty?" empty":""}" data-leader="${XA(t.leader)}"><div class="org-team-hd">${_orgChip(t.leader,st)}<span class="org-span${warn?" warn":""}" title="Agents reporting to ${XA(t.leader)} on this date">${t.members.length} agent${t.members.length===1?"":"s"}</span>`;
     if(t.manager)h+=`<span class="org-mgr">↑ ${X(t.manager)}</span>`;
     if(t.cover)h+=`<span class="swin-tag t-act" title="${XA(coverSpanText(t.cover))}">covered by ${X(t.cover.personName.split(" ")[0])}</span>`;
@@ -34823,9 +35345,16 @@ function _scopeAll(){
   }
   return _scopeParsed.obj;
 }
-function scopeGet(){const s=_scopeAll()[S.activeDept||""]||{};return{leader:String(s.leader||""),dept:String(s.dept||"")};}
+// With "remember the scope" off (Settings → Workspace), a saved scope is ignored until one is set
+// in this visit.
+let _scopeSetThisVisit=false;
+function scopeGet(){
+  if(!_scopeSetThisVisit&&pref("scope.remember")===false)return{leader:"",dept:""};
+  const s=_scopeAll()[S.activeDept||""]||{};return{leader:String(s.leader||""),dept:String(s.dept||"")};
+}
 function scopeSet(patch){
-  const all=Object.assign({},_scopeAll()),k=S.activeDept||"",cur=Object.assign({leader:"",dept:""},all[k]||{},patch||{});
+  const all=Object.assign({},_scopeAll()),k=S.activeDept||"",cur=Object.assign({leader:"",dept:""},scopeGet(),patch||{});
+  _scopeSetThisVisit=true;
   if(!cur.leader&&!cur.dept)delete all[k];else all[k]={leader:cur.leader,dept:cur.dept};
   if(Object.keys(all).length)_persistSet(SCOPE_KEY,JSON.stringify(all));else _persistRemove(SCOPE_KEY);
   _scopeMemo.key="";
@@ -34841,7 +35370,7 @@ function _scopeKnown(name){return!!name&&(!!(S.people||{})[name]||(S.entries||[]
 function scopeTree(leader,iso,st){
   st=st||orgStructure(iso);
   const out=new Set([leader]),queue=[leader];
-  const acting=typeof actingOn==="function"?actingOn(leader,iso):null;
+  const acting=typeof actingOn==="function"&&pref("scope.includeActing")?actingOn(leader,iso):null;
   if(acting&&acting.forName&&!out.has(acting.forName)){out.add(acting.forName);queue.push(acting.forName);}
   while(queue.length){const n=queue.shift();(st.reports.get(n)||[]).forEach(c=>{if(!out.has(c)){out.add(c);queue.push(c);}});}
   return out;
@@ -34874,7 +35403,7 @@ function scopeKey(){const sc=scopeGet(),s=scopeNames();return s?sc.leader+"/"+sc
 // Leaders for the picker, as a tree: anyone with people reporting to them on the scope date, and
 // anyone acting that day (listed under their own leader).
 let _scopeOptMemo={key:"",out:[]};
-function _scopeDataKey(iso){const m=S.nsCanonical;return[S.activeDept||"",iso,S.entriesVer||0,Object.keys(S.people||{}).length,m?(m.updated_at||""):"",typeof coverRows==="function"?coverRows().length:0].join("|");}
+function _scopeDataKey(iso){const m=S.nsCanonical;return[S._prefsVer||0,S.activeDept||"",iso,S.entriesVer||0,Object.keys(S.people||{}).length,m?(m.updated_at||""):"",typeof coverRows==="function"?coverRows().length:0].join("|");}
 function scopeLeaderOptions(){
   const iso=scopeRefISO(),key=_scopeDataKey(iso);
   if(_scopeOptMemo.key===key)return _scopeOptMemo.out;
@@ -34929,7 +35458,9 @@ function scopeBarHTML(){
    days and open flags. Follows the scope bar. A local version of
    the Bridge leader grid in docs/ORG-LAYER-PLAN.md.
    ═══════════════════════════════════════════════════════════════ */
-let _ldrUI={date:"",sort:"attention"};
+let _ldrUI={date:"",sort:""};
+function _ldrSort(){return _ldrUI.sort||pref("leaders.sort");}
+function _ldrThinText(){return`Fewer than ${prefNum("leaders.thinPct")}% of the team, or fewer than the minimum coverage (${Math.max(1,Number(S.covMin)||1)}), is working`;}
 
 // One person's state on a date: in (working, marked present), work, sick, leave, off, none.
 function leaderDayStatus(name,iso){
@@ -34944,7 +35475,7 @@ function leaderDayStatus(name,iso){
 function _ldrHasLeave(name,fromISO,toISO){return swinRows(name,fromISO,toISO).some(r=>r.kind==="leave"||r.excs.some(x=>x.type==="annual_leave"));}
 function leadersBoard(iso){
   const st=orgStructure(iso),min=Math.max(1,Number(S.covMin)||1);
-  const d=_swinDate(iso),from=excKey(_swinAddDays(d,1)),to=excKey(_swinAddDays(d,7));
+  const d=_swinDate(iso),from=excKey(_swinAddDays(d,1)),to=excKey(_swinAddDays(d,prefNum("leaders.lookahead"))),thin=prefNum("leaders.thinPct")/100;
   let flags=[];try{flags=typeof computeFlags==="function"?(computeFlags()||[]):[];}catch(e){flags=[];}
   const multiDept=typeof scopeDepartments==="function"&&scopeDepartments().length>1;
   return st.teams.filter(t=>t.members.length&&(typeof scopeIncludes!=="function"||scopeIncludes(t.leader))).map(t=>{
@@ -34954,7 +35485,7 @@ function leadersBoard(iso){
     const away=leaderStatus==="sick"||leaderStatus==="leave";
     const people=new Set([t.leader,...t.members]),p=(S.people||{})[t.leader]||{};
     const row={leader:t.leader,acting:t.cover?t.cover.personName:"",cover:t.cover,manager:t.manager,hc,counts,working,leaderStatus,
-      noCover:away&&!t.cover,thin:working<min||working<hc/2,
+      noCover:away&&!t.cover,thin:working<min||working<hc*thin,
       upcoming:[...people].filter(n=>_ldrHasLeave(n,from,to)),
       flags:flags.filter(f=>f&&f.person&&people.has(f.person)).length,
       dept:multiDept?(p.workspaceDepartment||p.department||""):""};
@@ -34982,13 +35513,13 @@ function rPeopleLeadersView(){
   const today=_coverTodayISO();if(!_ldrUI.date)_ldrUI.date=today;
   const iso=_ldrUI.date,rows=leadersBoard(iso);
   const sorters={attention:(a,b)=>b.attention-a.attention||a.leader.localeCompare(b.leader),name:(a,b)=>a.leader.localeCompare(b.leader),size:(a,b)=>b.hc-a.hc||a.leader.localeCompare(b.leader)};
-  rows.sort(sorters[_ldrUI.sort]||sorters.attention);
+  rows.sort(sorters[_ldrSort()]||sorters.attention);
   const sum=rows.reduce((a,r)=>{a.hc+=r.hc;a.working+=r.working;a.in+=r.counts.in;a.sick+=r.counts.sick;a.leave+=r.counts.leave;a.off+=r.counts.off;a.none+=r.counts.none;a.thin+=r.thin?1:0;a.noCover+=r.noCover?1:0;a.acting+=r.acting?1:0;return a;},{hc:0,working:0,in:0,sick:0,leave:0,off:0,none:0,thin:0,noCover:0,acting:0});
   const hasDept=rows.some(r=>r.dept);
   let h=`<div class="cov-wrap ldr-wrap">`;
   h+=`<div class="org-bar"><b>Leaders board</b><span class="swin-nav"><button type="button" class="swin-btn" onclick="ldrShiftDate(-1)" aria-label="Previous day">‹</button><input type="date" id="ldrDate" value="${XA(iso)}" onchange="ldrSetDate(this.value)"><button type="button" class="swin-btn" onclick="ldrShiftDate(1)" aria-label="Next day">›</button></span>`;
   if(iso!==today)h+=`<button type="button" class="swin-btn" onclick="ldrSetDate('')">Today</button>`;
-  h+=`<label>Sort <select id="ldrSort" onchange="ldrSetSort(this.value)">${[["attention","Needs attention"],["name","Name"],["size","Team size"]].map(([k,l])=>`<option value="${k}"${_ldrUI.sort===k?" selected":""}>${l}</option>`).join("")}</select></label></div>`;
+  h+=`<label>Sort <select id="ldrSort" onchange="ldrSetSort(this.value)">${[["attention","Needs attention"],["name","Name"],["size","Team size"]].map(([k,l])=>`<option value="${k}"${_ldrSort()===k?" selected":""}>${l}</option>`).join("")}</select></label></div>`;
 
   if(!rows.length){
     h+=`<div class="swin-note">No teams on ${X(_swinDayLabel(iso))}. The board needs people with a team leader: add agents in People → Agents, or import an organogram in People → Org.</div></div>`;
@@ -35001,13 +35532,13 @@ function rPeopleLeadersView(){
   });
   h+=`</div>`;
 
-  h+=`<div class="cov-tbl-wrap"><table class="cov-tbl ldr-tbl" id="ldrTable"><thead><tr><th>Team</th>${hasDept?"<th>Dept</th>":""}<th>Leader today</th><th>HC</th><th>Working</th><th>Sick</th><th>Leave</th><th>Off</th><th>No shift</th><th>Leave next 7d</th><th>Flags</th><th></th></tr></thead><tbody>`;
+  h+=`<div class="cov-tbl-wrap"><table class="cov-tbl ldr-tbl" id="ldrTable"><thead><tr><th>Team</th>${hasDept?"<th>Dept</th>":""}<th>Leader today</th><th>HC</th><th>Working</th><th>Sick</th><th>Leave</th><th>Off</th><th>No shift</th><th>Leave next ${prefNum("leaders.lookahead")}d</th><th>Flags</th><th></th></tr></thead><tbody>`;
   rows.forEach(r=>{
     const cls=r.noCover?"ldr-bad":r.thin?"ldr-warn":"";
     h+=`<tr data-leader="${XA(r.leader)}"${cls?` class="${cls}"`:""}><td><button type="button" class="ldr-name" onclick="ldrOpenTeam('${XJS(r.leader)}')" title="Open this team in People → Team">${X(r.leader)}</button>${r.manager?`<div class="org-mgr">↑ ${X(r.manager)}</div>`:""}</td>`;
     if(hasDept)h+=`<td>${X(r.dept||"—")}</td>`;
     h+=`<td data-col="leader">${r.acting?`<span class="swin-tag t-act" title="${XA(coverSpanText(r.cover))}">${X(r.acting)} acting</span> `:""}<span class="ldr-st ldr-${r.leaderStatus}">${X(LDR_STATUS_TEXT[r.leaderStatus])}</span>${r.noCover?` <span class="cov-state ldr-nocover">no cover</span>`:""}</td>`;
-    h+=`<td class="mono">${r.hc}</td><td class="mono" data-col="working">${r.working}${r.counts.in?` <small>(${r.counts.in} in)</small>`:""}${r.thin?` <span class="org-span warn" title="${XA(`Fewer than half the team, or fewer than the minimum coverage (${Math.max(1,Number(S.covMin)||1)}), is working`)}">thin</span>`:""}</td>`;
+    h+=`<td class="mono">${r.hc}</td><td class="mono" data-col="working">${r.working}${r.counts.in?` <small>(${r.counts.in} in)</small>`:""}${r.thin?` <span class="org-span warn" title="${XA(_ldrThinText())}">thin</span>`:""}</td>`;
     h+=`<td class="mono${r.counts.sick?" ldr-hot":""}" data-col="sick">${r.counts.sick}</td><td class="mono" data-col="leave">${r.counts.leave}</td><td class="mono" data-col="off">${r.counts.off}</td><td class="mono${r.counts.none?" ldr-hot":""}" data-col="none" title="Following a leader's rota with no shift that day, or not on the roster">${r.counts.none}</td>`;
     h+=`<td data-col="upcoming" title="${XA(r.upcoming.join(", "))}">${r.upcoming.length?`${r.upcoming.length} <small>${X(r.upcoming.slice(0,2).map(n=>n.split(" ")[0]).join(", "))}${r.upcoming.length>2?"…":""}</small>`:"—"}</td>`;
     h+=`<td class="mono" data-col="flags">${r.flags||"—"}</td>`;
@@ -35073,7 +35604,8 @@ function holidaysBetween(fromISO,toISO){
    logged exceptions (strongest), People statuses, then their own
    roster markers. A TL's leave on a rota an agent follows is not
    the agent's, so only own roster rows count.
-   Flags are prompts for a person to check, never decisions:
+   Flags are prompts for a person to check, never decisions. The
+   limits are Settings → Absence preferences; the defaults are:
    - BCEA s23: more than 2 consecutive sick days, or a 3rd sick
      occasion within 8 weeks, means a medical certificate can be
      required.
@@ -35153,7 +35685,7 @@ function absenceEvents(fromISO,toISO){
 // Days between two absence dates that the person was not due to work (off, holiday, no row) join
 // them into one occasion: sick Friday and Monday over a weekend off is one occasion of two days.
 function _absBridged(name,aISO,bISO){
-  const gap=_coverDays(aISO,bISO)-2;if(gap<=0)return true;if(gap>4)return false;
+  const gap=_coverDays(aISO,bISO)-2;if(gap<=0)return true;if(gap>prefNum("abs.bridgeGap"))return false;
   const from=excKey(_swinAddDays(_swinDate(aISO),1)),to=excKey(_swinAddDays(_swinDate(bISO),-1));
   return swinRows(name,from,to).every(r=>r.kind!=="work");
 }
@@ -35167,6 +35699,7 @@ function absenceOccasions(name,dates){
   return out;
 }
 function _absDay(iso){return _swinDayLabel(iso);}
+function _absOrdinal(n){const t=n%100;return n+(t>=11&&t<=13?"th":["th","st","nd","rd"][n%10]||"th");}
 function _absNextToBreak(name,occ){
   const before=excKey(_swinAddDays(_swinDate(occ.from),-1)),after=excKey(_swinAddDays(_swinDate(occ.to),1));
   const offish=iso=>{const r=swinRows(name,iso,iso)[0];return!!(r&&(r.kind==="off"||r.kind==="ph"||r.ph));};
@@ -35180,23 +35713,23 @@ function absenceProfile(name,events,fromISO,toISO){
   const unplannedIds=new Set(types.filter(t=>t.unplanned).map(t=>t.id));
   const sickOcc=absenceOccasions(name,mine.filter(e=>e.type==="sick").map(e=>e.iso));
   const unplanned=mine.filter(e=>unplannedIds.has(e.type)),unplannedOcc=absenceOccasions(name,unplanned.map(e=>e.iso));
-  const flags=[];
-  sickOcc.forEach(o=>{if(o.days.length>2)flags.push({kind:"sickLong",text:`${o.days.length} consecutive sick days from ${_absDay(o.from)}: a medical certificate can be required (BCEA s23).`});});
+  const flags=[],runDays=prefNum("abs.sickRunDays"),occN=prefNum("abs.sickOccasions"),weeks=prefNum("abs.sickWindowWeeks");
+  sickOcc.forEach(o=>{if(o.days.length>runDays)flags.push({kind:"sickLong",text:`${o.days.length} consecutive sick days from ${_absDay(o.from)}: a medical certificate can be required (BCEA s23).`});});
   sickOcc.forEach((o,i)=>{
-    const windowStart=excKey(_swinAddDays(_swinDate(o.from),-55));
+    const windowStart=excKey(_swinAddDays(_swinDate(o.from),-(weeks*7-1)));
     const within=sickOcc.slice(0,i+1).filter(p=>p.from>=windowStart);
-    if(within.length>=3){const n=within.length,nth=n+(n===3?"rd":"th");flags.push({kind:"sickThird",text:`${nth} sick occasion within 8 weeks (${within.map(p=>_absDay(p.from)).join(", ")}): a medical certificate can be required (BCEA s23).`});}
+    if(within.length>=occN)flags.push({kind:"sickThird",text:`${_absOrdinal(within.length)} sick occasion within ${weeks} weeks (${within.map(p=>_absDay(p.from)).join(", ")}): a medical certificate can be required (BCEA s23).`});
   });
-  const yearAgo=excKey(_swinAddDays(_swinDate(toISO),-364)),family=mine.filter(e=>e.type==="family"&&e.iso>=yearAgo).length;
-  if(family>3)flags.push({kind:"family",text:`${family} family responsibility days in 12 months: BCEA gives 3 days a year.`});
-  const patterns=[];
-  if(unplannedOcc.length>=2){
+  const famMax=prefNum("abs.familyDays"),yearAgo=excKey(_swinAddDays(_swinDate(toISO),-364)),family=mine.filter(e=>e.type==="family"&&e.iso>=yearAgo).length;
+  if(family>famMax)flags.push({kind:"family",text:`${family} family responsibility days in 12 months: ${famMax===3?"BCEA gives 3 days a year":"the limit in Settings is "+famMax}.`});
+  const patterns=[],minOcc=prefNum("abs.patternMinOcc"),share=prefNum("abs.patternPct")/100;
+  // A pattern needs repetition: at least minOcc separate occasions, not one long one.
+  if(pref("abs.patterns")&&unplannedOcc.length>=minOcc){
     const nextTo=unplannedOcc.filter(o=>_absNextToBreak(name,o)).length;
-    if(nextTo>=2&&nextTo/unplannedOcc.length>=0.6)patterns.push({kind:"bridge",text:`${nextTo} of ${unplannedOcc.length} unplanned absences start on a Monday, end on a Friday, or sit next to a day off or public holiday.`});
+    if(nextTo>=minOcc&&nextTo/unplannedOcc.length>=share)patterns.push({kind:"bridge",text:`${nextTo} of ${unplannedOcc.length} unplanned absences start on a Monday, end on a Friday, or sit next to a day off or public holiday.`});
+    const monFri=unplanned.filter(e=>{const d=_swinDate(e.iso).getDay();return d===1||d===5;}).length;
+    if(unplanned.length>=3&&monFri/unplanned.length>=share)patterns.push({kind:"monfri",text:`${monFri} of ${unplanned.length} unplanned days fall on a Monday or Friday.`});
   }
-  const monFri=unplanned.filter(e=>{const d=_swinDate(e.iso).getDay();return d===1||d===5;}).length;
-  // A pattern needs repetition: at least two separate occasions, not one long one.
-  if(unplannedOcc.length>=2&&unplanned.length>=3&&monFri/unplanned.length>=0.6)patterns.push({kind:"monfri",text:`${monFri} of ${unplanned.length} unplanned days fall on a Monday or Friday.`});
   return{name,byType,days:mine.length,unplannedDays:unplanned.length,unplannedOccasions:unplannedOcc.length,sickOccasions:sickOcc.length,flags,patterns,events:mine};
 }
 
@@ -35209,11 +35742,12 @@ function absenceProfile(name,events,fromISO,toISO){
    leaves sensitive columns out unless they are included.
    Engine: src/app/people/absence.js
    ═══════════════════════════════════════════════════════════════ */
-let _absUI={period:"12m",open:""};
+let _absUI={period:"",open:""};
+function _absPeriod(){return _absUI.period||pref("abs.defaultPeriod");}
 const ABS_PERIODS=[["3m","3 months",91],["12m","12 months",364],["all","All loaded",0]];
 
 function _absRange(){
-  const today=_coverTodayISO(),p=ABS_PERIODS.find(x=>x[0]===_absUI.period)||ABS_PERIODS[1];
+  const today=_coverTodayISO(),p=ABS_PERIODS.find(x=>x[0]===_absPeriod())||ABS_PERIODS[1];
   if(p[2])return{from:excKey(_swinAddDays(new Date(),-p[2])),to:today,label:"last "+p[1]};
   const b=_swinDataBounds(),ev=Object.keys(S.agentStatuses||{}).map(k=>k.slice(k.lastIndexOf("|")+1)).concat((S.exceptions||[]).map(x=>x.date)).filter(Boolean).sort();
   const from=[b.min,ev[0]].filter(Boolean).sort()[0]||today;
@@ -35258,7 +35792,7 @@ function rPeopleAbsenceView(){
   const used=types.filter(t=>t.id==="sick"||rows.some(r=>r.byType[t.id]));
   const flagged=rows.filter(r=>r.flags.length||r.patterns.length).length;
   let h=`<div class="cov-wrap abs-wrap">`;
-  h+=`<div class="org-bar"><b>Absence register</b><span class="swin-seg" role="group" aria-label="Period">${ABS_PERIODS.map(([k,l])=>`<button type="button" aria-pressed="${_absUI.period===k}" onclick="absSetPeriod('${k}')">${l}</button>`).join("")}</span>`;
+  h+=`<div class="org-bar"><b>Absence register</b><span class="swin-seg" role="group" aria-label="Period">${ABS_PERIODS.map(([k,l])=>`<button type="button" aria-pressed="${_absPeriod()===k}" onclick="absSetPeriod('${k}')">${l}</button>`).join("")}</span>`;
   h+=`<span class="swin-note" style="margin:0" id="absRange">${X(_swinSpanLabel(range.from,range.to))}</span><span style="margin-left:auto"></span>`;
   h+=`<button type="button" class="swin-btn" id="absExport" onclick="absExportCSV()">Export CSV</button></div>`;
 
@@ -35287,12 +35821,13 @@ function rPeopleAbsenceView(){
     h+=`</tbody></table></div>`;
     if(priv.show){
       const all=rows.flatMap(r=>[...r.flags,...r.patterns].map(f=>({name:r.name,f})));
-      h+=`<section class="cov-sec" id="absFlags"><h3>Flags to check (${all.length})</h3>${all.length?all.map(x=>`<div class="abs-flag" data-kind="${x.f.kind}" data-name="${XA(x.name)}"><b>${X(x.name)}</b>: ${X(x.f.text)}</div>`).join(""):`<div class="swin-note">Nothing to check in the ${X(range.label)}.</div>`}<div class="swin-note">Flags are prompts to check, not decisions. BCEA s23: an employer may ask for a medical certificate after more than two consecutive sick days, or after more than two sick occasions in eight weeks.</div></section>`;
+      h+=`<section class="cov-sec" id="absFlags"><h3>Flags to check (${all.length})</h3>${all.length?all.map(x=>`<div class="abs-flag" data-kind="${x.f.kind}" data-name="${XA(x.name)}"><b>${X(x.name)}</b>: ${X(x.f.text)}</div>`).join(""):`<div class="swin-note">Nothing to check in the ${X(range.label)}.</div>`}<div class="swin-note">Flags are prompts to check, not decisions. BCEA s23: an employer may ask for a medical certificate after more than two consecutive sick days, or after more than two sick occasions in eight weeks. <button type="button" class="swin-btn" onclick="openSettings('absence')">Change the limits</button></div></section>`;
     }
   }
 
-  const ahead=holidaysBetween(_coverTodayISO(),excKey(_swinAddDays(new Date(),60)));
-  h+=`<section class="cov-sec" id="absHolidays"><h3>Holidays in the next 60 days</h3>${ahead.length?`<div class="cov-tbl-wrap"><table class="cov-tbl"><thead><tr><th>Date</th><th>South Africa (staff)</th><th>UK (client)</th></tr></thead><tbody>${ahead.map(x=>`<tr data-iso="${x.iso}"><td>${X(_swinDayLabel(x.iso))}</td><td>${X(x.sa||"—")}</td><td>${X(x.uk||"—")}</td></tr>`).join("")}</tbody></table></div>`:`<div class="swin-note">No SA public holidays or UK bank holidays in the next 60 days.</div>`}</section>`;
+  const aheadDays=prefNum("hol.aheadDays"),showUK=pref("hol.showUK");
+  const ahead=holidaysBetween(_coverTodayISO(),excKey(_swinAddDays(new Date(),aheadDays))).filter(x=>x.sa||showUK);
+  h+=`<section class="cov-sec" id="absHolidays"><h3>Holidays in the next ${aheadDays} days</h3>${ahead.length?`<div class="cov-tbl-wrap"><table class="cov-tbl"><thead><tr><th>Date</th><th>South Africa (staff)</th>${showUK?"<th>UK (client)</th>":""}</tr></thead><tbody>${ahead.map(x=>`<tr data-iso="${x.iso}"><td>${X(_swinDayLabel(x.iso))}</td><td>${X(x.sa||"—")}</td>${showUK?`<td>${X(x.uk||"—")}</td>`:""}</tr>`).join("")}</tbody></table></div>`:`<div class="swin-note">No SA public holidays${showUK?" or UK bank holidays":""} in the next ${aheadDays} days.</div>`}</section>`;
 
   h+=`<details class="cov-sec" id="absTypes"><summary><h3 style="display:inline">Leave types</h3></summary><div class="swin-note">SA (BCEA) defaults. Rename them, or change which roster codes count as each type (comma separated). Logged exceptions and People statuses map to them automatically.</div>`;
   h+=`<div class="cov-tbl-wrap"><table class="cov-tbl"><thead><tr><th>Type</th><th>Roster codes</th><th>Unplanned</th></tr></thead><tbody>`;
