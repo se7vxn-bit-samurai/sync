@@ -175,7 +175,7 @@ window.nsClearLocalWorkspaceCache=nsClearLocalWorkspaceCache;
    <script src> AFTER that script runs, so both are already globals
    by the time any of this executes.
    ═══════════════════════════════════════════════════════════════ */
-const SYNC_LOCAL_KEYS=["sc_settings","sc_planner","sc_blueprints","sc_positions","sc_exceptions","sc_leaverequests","sc_dayclosed","sc_coaching","sc_qol_state","sc_att","sc_hc","sc_notes","sc_people","sc_rosterfile","sc_otplan","sc_leaderplanner","sc_shiftlib","sc_coveragereq","sc_forecast","sc_coachquality","sc_agentstatuses","sc_agentnotes","sc_name_remaps","sc_people_view","sc_people_home","sc_people_logbook","sc_view_state","sc_swin_sent","sc_scope","sc_leave_types"];
+const SYNC_LOCAL_KEYS=["sc_settings","sc_planner","sc_blueprints","sc_positions","sc_exceptions","sc_leaverequests","sc_dayclosed","sc_coaching","sc_qol_state","sc_att","sc_hc","sc_notes","sc_people","sc_rosterfile","sc_otplan","sc_leaderplanner","sc_shiftlib","sc_coveragereq","sc_forecast","sc_coachquality","sc_agentstatuses","sc_agentnotes","sc_name_remaps","sc_people_view","sc_people_home","sc_people_logbook","sc_view_state","sc_swin_sent","sc_scope","sc_leave_types","sc_org_link"];
 
 function _syncCollectLocalKeys(){
   const out={};
@@ -1308,9 +1308,9 @@ function nsRuntimePerson(person,current,byId,lineIndex,todayISO){
   const name=person.full_name,lineLeader=nsLineLeaderOn(person.person_id,todayISO,lineIndex);
   const manager=lineLeader!==null?(lineLeader?(byId.get(lineLeader)||{}).full_name||nsPersonName(lineLeader):""):(person.manager_name||(byId.get(person.reports_to_person_id)||{}).full_name||current.teamLeader||"");
   // A browser edit (NorthStar editor, or a People-view edit written through by
-  // nsApplyRuntimePersonEdit) holds the whole label set, so a label removed there stays removed.
-  // Imported records only ever add labels.
-  const labels=person.source_id==="NS-BROWSER"?nsNormalizeLabels(person.labels):[...new Set([...(current.labels||[]),...(person.labels||[])])];
+  // nsApplyRuntimePersonEdit) or the shared org holds the whole label set, so a label removed there
+  // stays removed. Imported records only ever add labels.
+  const labels=person.source_id==="NS-BROWSER"||person.source_id==="NS-ORG"?nsNormalizeLabels(person.labels):[...new Set([...(current.labels||[]),...(person.labels||[])])];
   return Object.assign({},current,{name,personId:person.person_id,role:nsRuntimeRole(person.role_type),roleType:person.role_type,title:person.job_title||person.role_type,jobTitle:person.job_title||current.jobTitle||"",team:person.home_team||current.team||"",department:person.home_department||current.department||"",teamLeader:manager,status:person.status||current.status||"Active",labels,roleLabels:labels,notes:person.notes||current.notes||"",readiness:person.readiness_notes||current.readiness||""});
 }
 // A project's runtime rows and people, read from the canonical model without opening it and without
@@ -1348,6 +1348,9 @@ function nsFillRuntimePeopleFromCanonical(){
 // so the NorthStar editor's own call into peopleSetRoleLabels does not stage it twice. Returns the
 // canonical records it changed.
 function nsApplyRuntimePersonEdit(name,patch){
+  // A project linked to an org sends leader, team, status and label edits there (they come back
+  // with the next pull); only what the org doesn't hold (readiness notes) is applied here.
+  if(typeof orgFilterPersonEdit==="function"&&patch&&typeof patch==="object"){patch=orgFilterPersonEdit(name,patch);if(!patch||!Object.keys(patch).length)return[];}
   const key=nsNameKey(name);if(!key||!patch||typeof patch!=="object")return[];
   const scoped=nsScopedRows("people"),matches=scoped.filter(person=>nsNameKey(person.full_name)===key);if(!matches.length)return[];
   const model=nsCanonical(),sourceMap=nsSourceDepartmentMap(model),now=nsNow(),has=field=>Object.prototype.hasOwnProperty.call(patch,field),changed=[],lineMoves=[];
@@ -2448,6 +2451,75 @@ window.nsOrgMove=nsOrgMove;
 window.nsOrgSetRole=nsOrgSetRole;
 window.nsOrgImport=nsOrgImport;
 window.nsOrgUndo=nsOrgUndo;
+
+// ── Org layer, Phase 1 (docs/ORG-LAYER-PLAN.md). A project linked to a shared organisation keeps
+// the org's people, dated reporting lines and acting cover here as a cache. The server (schema
+// core) is the truth: org edits go there first (src/app/org/client.js) and come back through
+// nsApplyOrgSnapshot. Local ids stay stable: a person the org was seeded from keeps its own
+// person_id (the server holds it as source_ref); one added on the server is "org:<uuid>".
+const NS_ORG_SOURCE="NS-ORG";
+function nsOrgStatus(value){const v=String(value||"").trim();if(/^(leaver|left|terminated|resigned|exited)$/i.test(v))return"Leaver";if(/^inactive$/i.test(v))return"Inactive";return"Active";}
+// The payload org_create_from_project takes, from the open project. Lines that start "from the
+// beginning" start on the project's first roster date, so history before any move keeps its leader.
+function nsOrgSeedPayload(orgName,meName){
+  const people=nsScopedRows("people").filter(person=>person&&person.full_name&&!/^deleted$/i.test(String(person.status||"")));
+  const dates=nsArray(S.entries).map(entry=>entry&&entry.date instanceof Date&&!isNaN(entry.date)?nsISODate(entry.date):"").filter(Boolean).sort();
+  const base=dates[0]||nsISODate(new Date()),index=nsLinesIndex(),lines=[];
+  people.forEach(person=>{
+    const dated=(index.get(person.person_id)||[]).filter(line=>line.reports_to_person_id);
+    if(dated.length)dated.forEach(line=>lines.push({person_ref:person.person_id,leader_ref:line.reports_to_person_id,from:line.effective_from||base,to:line.effective_to||""}));
+    else{const leader=person.reports_to_person_id||nsPersonIdByName(person.manager_name);if(leader&&leader!==person.person_id)lines.push({person_ref:person.person_id,leader_ref:leader,from:base,to:""});}
+  });
+  const acting=nsScopedRows("acting").map(row=>({person_ref:row.person_id,for_ref:row.acting_for_person_id||"",starts:nsISODate(row.starts)||"",ends:nsISODate(row.ends)||"",role:row.acting_role||"",label:row.acting_scope||"",status:/^(inactive|cancelled|canceled|deleted|void)$/i.test(String(row.status||""))?"cancelled":"active"}));
+  return{org_name:nsClean(orgName),dept_name:S.activeDept||"",me_ref:nsPersonIdByName(meName)||"",
+    people:people.map(person=>({ref:person.person_id,full_name:person.full_name,email:nsClean(person.email).toLowerCase(),role_title:nsClean(person.job_title||person.role_type),team_name:nsClean(person.home_team),status:nsOrgStatus(person.status),labels:nsNormalizeLabels(person.labels)})),
+    lines,acting};
+}
+// The server id and version of the org record behind a person in the open project, or null.
+function nsOrgRef(name){
+  const key=nsNameKey(name),person=key?nsScopedRows("people").find(item=>nsNameKey(item.full_name)===key&&item.org_person_id):null;
+  return person?{id:person.org_person_id,version:person.org_version||null,localId:person.person_id}:null;
+}
+// Writes an org_snapshot into the open project's cache. People are matched by id, then by name;
+// people the org doesn't know stay as they are. Returns counts.
+function nsApplyOrgSnapshot(snap){
+  if(!snap||!Array.isArray(snap.people))return{people:0,lines:0,acting:0,created:0};
+  const model=nsCanonical(),now=nsNow(),scoped=nsScopedRows("people");
+  const byId=new Map(scoped.map(person=>[person.person_id,person])),byName=new Map(scoped.map(person=>[nsNameKey(person.full_name),person]));
+  const idMap=new Map();let created=0;
+  snap.people.forEach(sp=>{
+    const wanted=sp.source_ref||("org:"+sp.id);
+    let person=byId.get(wanted)||byName.get(nsNameKey(sp.full_name));
+    const fields={full_name:sp.full_name,role_type:sp.role_title||(person&&person.role_type)||"Agent",job_title:sp.role_title||"",home_team:sp.team_name||"",status:sp.status||"Active",
+      labels:nsNormalizeLabels(sp.labels||[]),email:sp.email||"",org_person_id:sp.id,org_version:sp.version,source_id:NS_ORG_SOURCE,authority_rank:0,last_modified_utc:now};
+    if(person)Object.assign(person,fields);
+    else{person=nsStampDepartment([Object.assign({person_id:wanted,home_department:S.activeDept||"",reports_to_person_id:"",manager_name:"",notes:""},fields)])[0];model.people.push(person);created++;}
+    idMap.set(sp.id,person.person_id);
+  });
+  const orgLocal=new Set(idMap.values());
+  const scopedLines=new Set(nsScopedRows("reportingLines"));
+  model.reportingLines=model.reportingLines.filter(line=>!(scopedLines.has(line)&&orgLocal.has(line.person_id)));
+  const lines=(snap.lines||[]).filter(line=>idMap.has(line.person_id)).map(line=>({line_id:"org:"+line.id,person_id:idMap.get(line.person_id),reports_to_person_id:idMap.get(line.reports_to_id)||"",
+    effective_from:line.effective_from||"",effective_to:line.effective_to||"",status:"Active",source_id:NS_ORG_SOURCE,org_line_id:line.id,org_version:line.version}));
+  model.reportingLines.push(...nsStampDepartment(lines));
+  const scopedActing=new Set(nsScopedRows("acting"));
+  model.acting=(model.acting||[]).filter(row=>!(scopedActing.has(row)&&(orgLocal.has(row.person_id)||String(row.acting_assignment_id||"").startsWith("org:"))));
+  const acting=(snap.acting||[]).filter(a=>idMap.has(a.person_id)).map(a=>({acting_assignment_id:"org:"+a.id,person_id:idMap.get(a.person_id),person_name:(snap.people.find(p=>p.id===a.person_id)||{}).full_name||"",
+    acting_role:a.acting_role||"Acting Team Lead",acting_for_person_id:a.for_person_id?(idMap.get(a.for_person_id)||""):"",acting_scope:a.label||"",starts:a.starts||"",ends:a.ends||"",
+    status:a.status==="cancelled"?"Inactive":"Active",notes:"",source_id:NS_ORG_SOURCE,authority_rank:0,org_acting_id:a.id,org_version:a.version,updated_at:now}));
+  model.acting.push(...nsStampDepartment(acting));
+  nsSyncPeopleToRuntime();nsPersist();
+  return{people:snap.people.length,lines:lines.length,acting:acting.length,created};
+}
+// The server id behind a cached acting-cover row ("org:<uuid>"), with its version.
+function nsOrgActingRef(id){
+  const row=(nsCanonical().acting||[]).find(item=>item.acting_assignment_id===id);
+  return row&&row.org_acting_id?{id:row.org_acting_id,version:row.org_version||null}:null;
+}
+window.nsOrgSeedPayload=nsOrgSeedPayload;
+window.nsOrgRef=nsOrgRef;
+window.nsApplyOrgSnapshot=nsApplyOrgSnapshot;
+window.nsOrgActingRef=nsOrgActingRef;
 
 function nsOTDecisionKey(record){return(record.person_id||nsNameKey(record.person_name))+"|"+record.date+"|"+(record.slot||"FULL");}
 function nsOTMonths(){const dates=[...nsScopedRows("otWishes"),...nsScopedRows("otDecisions")].map(row=>row.date).filter(Boolean);return[...new Set(dates.map(date=>date.slice(0,7)))].sort();}

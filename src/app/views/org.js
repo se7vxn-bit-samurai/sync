@@ -30,19 +30,38 @@ function _orgResult(res,okText){
   if(!res||res.error){toast(res&&res.error||"Nothing changed","warn");return false;}
   toast(okText(res),"ok");_orgUI.sel.clear();orgRefresh();return true;
 }
+// Server ids the org returned, as names from the last pull.
+function _orgNamesOf(ids){const people=((orgState.snapshot||{}).people||[]);return(ids||[]).map(id=>(people.find(p=>p.id===id)||{}).full_name||"someone");}
 function orgMoveTo(target){
   if(typeof nsOrgMove!=="function"){toast("Open a project first","warn");return;}
   const names=[..._orgUI.sel];if(!names.length){toast("Select people first","warn");return;}
   const leader=target==="__none__"?"":target;
+  // Linked to an organisation: the move is made there, then pulled back.
+  if(orgLinkFor()){
+    orgMoveNames(names,leader,_orgUI.asOf).then(r=>{
+      if(!r)return;
+      const skipped=_orgNamesOf(r.skipped);
+      if(!r.moved){toast(skipped.length?`${skipped.join(", ")} would end up under themselves: nothing moved`:"Nothing to change: they already report to "+(leader||"nobody")+" then","warn");return;}
+      _orgUI.sel.clear();orgRefresh();
+      toast(`Moved ${r.moved} ${r.moved===1?"person":"people"} to ${leader||"no leader"} from ${_swinDayLabel(_orgUI.asOf)} in the organisation${skipped.length?` (skipped ${skipped.join(", ")}: would loop)`:""}`,"ok");
+    });
+    return;
+  }
   _orgResult(nsOrgMove(names,leader,_orgUI.asOf,_orgBy()),r=>`Moved ${r.count} ${r.count===1?"person":"people"} to ${leader||"no leader"} from ${_swinDayLabel(_orgUI.asOf)}${r.skipped&&r.skipped.length?` (skipped ${r.skipped.join(", ")}: would loop)`:""}`);
 }
 function orgMoveSelected(){const t=document.getElementById("orgTarget");orgMoveTo(t?t.value:_orgUI.target);}
 function orgSetRoleSelected(){
   if(typeof nsOrgSetRole!=="function"){toast("Open a project first","warn");return;}
   const r=document.getElementById("orgRole"),role=r?r.value:_orgUI.role;_orgUI.role=role;
+  if(orgLinkFor()){
+    const names=[..._orgUI.sel];
+    orgSetRoleNames(names,role).then(res=>{if(!res)return;_orgUI.sel.clear();orgRefresh();toast(`${res.count} ${res.count===1?"person is":"people are"} now ${role} in the organisation`,"ok");});
+    return;
+  }
   _orgResult(nsOrgSetRole([..._orgUI.sel],role,_orgUI.asOf,_orgBy()),res=>`${res.count} ${res.count===1?"person is":"people are"} now ${role}`);
 }
 function orgUndo(id){
+  if(orgLinkFor()){orgRevertBatch(id).then(r=>{if(r){toast("Change undone in the organisation","ok");orgRefresh();}});return;}
   if(typeof nsOrgUndo!=="function")return;
   if(nsOrgUndo(id)){toast("Change undone","ok");orgRefresh();}else toast("Already undone","warn");
 }
@@ -67,6 +86,7 @@ function orgParseOrganogram(wb){
 }
 async function orgImportFile(file){
   if(!file)return;
+  if(orgLinkFor()){toast("This project is linked to an organisation. Import the organogram into a project that isn't linked, or add people in Settings → Organisation.","warn",6000);return;}
   if(typeof XLSX==="undefined"){toast("Spreadsheet reader unavailable","err");return;}
   let rows=[];
   try{const wb=XLSX.read(await file.arrayBuffer(),{type:"array"});rows=orgParseOrganogram(wb);}catch(e){console.error(e);}
@@ -109,11 +129,13 @@ function rPeopleOrgView(){
   let h=`<div class="cov-wrap org-wrap">`;
   h+=`<div class="org-bar"><b>Org builder</b><label>Date <input type="date" id="orgAsOf" value="${XA(_orgUI.asOf)}" onchange="orgSetAsOf(this.value)"></label>`;
   h+=`<span class="swin-note" style="margin:0">Shows the org on this date${_orgUI.asOf!==today?` (today is ${X(_swinDayLabel(today))})`:""}. Moves and role changes take effect from it.</span></div>`;
+  const linked=orgLinkFor();
+  if(linked)h+=`<div class="org-bar org-linked" id="orgLinked"><span>${orgStatusLine()}</span><span class="swin-note" style="margin:0">Changes here are saved in the organisation.</span><button type="button" class="swin-btn" onclick="orgReload()">Reload</button><button type="button" class="swin-btn" onclick="openSettings('org')">Organisation settings</button></div>`;
   h+=`<div class="org-bar org-actions"><span id="orgSelCount"><b>${selCount}</b> selected</span>`;
   h+=`<label>Move to <select id="orgTarget" onchange="_orgUI.target=this.value"><option value="__none__">— no leader —</option>${targets.map(n=>`<option value="${XA(n)}"${n===_orgUI.target?" selected":""}>${X(n)}</option>`).join("")}</select></label><button type="button" class="swin-btn pri" id="orgMoveBtn" onclick="orgMoveSelected()"${dis}>Move</button>`;
   h+=`<label>Role <select id="orgRole" onchange="_orgUI.role=this.value">${ORG_ROLES.map(r=>`<option${r===_orgUI.role?" selected":""}>${X(r)}</option>`).join("")}</select></label><button type="button" class="swin-btn" id="orgRoleBtn" onclick="orgSetRoleSelected()"${dis}>Set role</button>`;
   if(selCount)h+=`<button type="button" class="swin-btn" onclick="orgClearSel()">Clear</button>`;
-  h+=`<span style="margin-left:auto"></span><button type="button" class="swin-btn" id="orgImportBtn" onclick="document.getElementById('orgImportFile').click()">Import organogram</button><input type="file" id="orgImportFile" accept=".xlsx,.xls,.csv" hidden onchange="orgImportFile(this.files[0]);this.value=''"></div>`;
+  h+=`<span style="margin-left:auto"></span><button type="button" class="swin-btn" id="orgImportBtn" onclick="document.getElementById('orgImportFile').click()"${linked?` disabled title="Linked to an organisation: add people in Settings → Organisation"`:""}>Import organogram</button><input type="file" id="orgImportFile" accept=".xlsx,.xls,.csv" hidden onchange="orgImportFile(this.files[0]);this.value=''"></div>`;
 
   h+=_orgLaneRow("General manager",st.gms,st)+_orgLaneRow("Managers / CCL",st.mgrs,st);
   h+=`<div class="org-lane"><div class="org-lane-h">Teams <span>${st.teams.length}</span></div><div class="org-teams">`;
@@ -136,6 +158,7 @@ function rPeopleOrgView(){
   });
   h+=`</section>`;
 
+  if(linked){h+=_orgServerChangeLog(linked);return h+`</div>`;}
   h+=`<section class="cov-sec" id="orgChanges"><h3>Change log (${changes.length})</h3>`;
   if(!changes.length)h+=`<div class="swin-note">No org changes yet. Moves, role changes and imports are listed here, and each one can be undone.</div>`;
   else{
@@ -155,4 +178,24 @@ function rPeopleOrgView(){
   }
   h+=`</section></div>`;
   return h;
+}
+
+// A linked project's change log is the organisation's: every batch anyone in it made, newest first.
+// The org decides whether an undo is allowed (a later change on the same people blocks it).
+function _orgServerChangeLog(link){
+  if(orgState.audit===null&&!orgState.auditLoading)setTimeout(orgLoadAudit,0);
+  const batches=orgState.audit||[];
+  let h=`<section class="cov-sec" id="orgChanges"><h3>Change log (${batches.length}) <span class="swin-note" style="margin:0;font-weight:400">in ${X(link.org_name)}</span></h3>`;
+  if(orgState.audit===null)return h+`<div class="swin-note">Loading the organisation's changes…</div></section>`;
+  if(!batches.length)return h+`<div class="swin-note">No changes yet.</div></section>`;
+  h+=`<div class="cov-tbl-wrap"><table class="cov-tbl"><thead><tr><th>When</th><th>Change</th><th>By</th><th></th></tr></thead><tbody>`;
+  batches.forEach(b=>{
+    const at=new Date(b.at),when=`${P(at.getDate())} ${MO[at.getMonth()]} ${P(at.getHours())}:${P(at.getMinutes())}`;
+    const people=[...new Set((b.items||[]).map(i=>i.person).filter(Boolean))];
+    const undoable=!b.reverted&&!(b.items||[]).some(i=>i.table==="org_members")&&!/^Organisation created/.test(b.summary||"");
+    h+=`<tr data-id="${XA(b.batch_id)}" class="${b.reverted?"org-undone":""}"><td class="mono">${X(when)}</td><td><b>${X(b.summary||"Change")}</b>${people.length?`<div class="swin-note" style="margin-top:2px">${X(people.slice(0,8).join(", "))}${people.length>8?` and ${people.length-8} more`:""}</div>`:""}</td><td>${X(b.actor||"—")}</td><td style="white-space:nowrap">`;
+    h+=b.reverted?`<span class="cov-state ended">undone</span>`:undoable?`<button type="button" class="swin-btn" onclick="orgUndo('${XJS(b.batch_id)}')">Undo</button>`:"";
+    h+=`</td></tr>`;
+  });
+  return h+`</tbody></table></div></section>`;
 }

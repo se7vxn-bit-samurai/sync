@@ -9,6 +9,7 @@
    ═══════════════════════════════════════════════════════════════ */
 const SETTINGS_SECTIONS=[
   {id:"account",l:"Account",d:"Sign-in, cloud save, backups and history"},
+  {id:"org",l:"Organisation",d:"Your shared organisation: linking this project, joining, inviting your team"},
   {id:"workspace",l:"Workspace",d:"Project, filters, scope, schedule rules, coaching, notes"},
   {id:"preferences",l:"Appearance",d:"Theme, density, motion, notifications, start view"},
   {id:"time",l:"Time & holidays",d:"SA and UK clocks, public and bank holidays"},

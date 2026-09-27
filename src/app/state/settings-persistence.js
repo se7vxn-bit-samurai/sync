@@ -1239,7 +1239,7 @@ function _syncCloseWorkspaceToLanding(){
    ═══════════════════════════════════════════════════════════════ */
 let _syncKnownProjects=[];
 let _syncPanelBusy='';
-const SYNC_CHANGE_LABELS={canonical:'Project people & schedule',sc_people:'Agent details',sc_rosterfile:'Agent roster',sc_agentnotes:'Agent notes',sc_agentstatuses:'Agent statuses',sc_people_logbook:'Logbook',sc_people_home:'Home notes',sc_exceptions:'Exceptions & absences',sc_leaverequests:'Leave requests',sc_dayclosed:'Day close-outs',sc_notes:'Shift notes',sc_att:'Attendance',sc_hc:'Headcount',sc_planner:'Planner edits',sc_blueprints:'Blueprints',sc_positions:'Positions',sc_coaching:'Coaching plan',sc_coachquality:'Coaching sessions',sc_otplan:'OT plan',sc_leaderplanner:'Leader planner',sc_shiftlib:'Shift library',sc_coveragereq:'Coverage targets',sc_forecast:'Forecast',sc_name_remaps:'Name changes',sc_swin_sent:'Schedules sent',sc_scope:'Scope',sc_leave_types:'Leave types',sc_qol_state:'Saved views',sc_settings:'Settings'};
+const SYNC_CHANGE_LABELS={canonical:'Project people & schedule',sc_people:'Agent details',sc_rosterfile:'Agent roster',sc_agentnotes:'Agent notes',sc_agentstatuses:'Agent statuses',sc_people_logbook:'Logbook',sc_people_home:'Home notes',sc_exceptions:'Exceptions & absences',sc_leaverequests:'Leave requests',sc_dayclosed:'Day close-outs',sc_notes:'Shift notes',sc_att:'Attendance',sc_hc:'Headcount',sc_planner:'Planner edits',sc_blueprints:'Blueprints',sc_positions:'Positions',sc_coaching:'Coaching plan',sc_coachquality:'Coaching sessions',sc_otplan:'OT plan',sc_leaderplanner:'Leader planner',sc_shiftlib:'Shift library',sc_coveragereq:'Coverage targets',sc_forecast:'Forecast',sc_name_remaps:'Name changes',sc_swin_sent:'Schedules sent',sc_scope:'Scope',sc_leave_types:'Leave types',sc_org_link:'Organisation link',sc_qol_state:'Saved views',sc_settings:'Settings'};
 function _syncChangeSummary(){
   const keys=typeof window._syncChangedKeys==='function'?window._syncChangedKeys():[];
   const labels=[...new Set(keys.map(key=>SYNC_CHANGE_LABELS[key]||'Workspace'))];
@@ -1397,6 +1397,8 @@ function _syncOpenProject(name){
   if(typeof ren==='function')ren();
   _syncRestoreScrollForTab();
   _syncShowChangedSince(name,previousView);
+  // A project linked to an organisation reloads the org's people and lines.
+  orgOnProjectOpen();
 }
 // Renames a project from the picker, without having to open it first. Same cloud discipline as the
 // delete flow below: the modal holds a "Renaming…" state until the push is confirmed, and surfaces
@@ -1676,6 +1678,8 @@ function _syncOnSignedIn(session){
   _syncRenderAccountUI();
   _syncRenderLandingWidget();
   _syncAutoPull();
+  // The shared organisation (src/app/org/client.js): link this account to people by email.
+  orgAfterSignIn();
 }
 async function _syncAuthGate(){
   // The app is fully usable offline/local-only, so boot unconditionally — auth only adds
@@ -1687,6 +1691,7 @@ async function _syncAuthGate(){
     if((event==='SIGNED_IN'||event==='INITIAL_SESSION')&&session)_syncOnSignedIn(session);
     if(event==='SIGNED_OUT'){
       _syncProfileCache=null;_syncProfileResolved=true;_syncHandledSessionToken=null;
+      orgSignedOut();
       _syncCloseWorkspaceToLanding();
       _syncRenderAccountUI();_syncRenderLandingWidget();
     }
