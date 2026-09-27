@@ -301,10 +301,11 @@ function _setAdvanced(){
   return h;
 }
 
-const SETTINGS_RENDERERS={account:_setAccount,workspace:_setWorkspace,preferences:_setAppearance,time:_setTime,people:_setPeople,cover:_setCover,absence:_setAbsence,sharing:_setSharing,alerts:_setAlerts,data:_setData,advanced:_setAdvanced};
+const SETTINGS_RENDERERS={account:_setAccount,org:()=>orgSettingsHTML(),workspace:_setWorkspace,preferences:_setAppearance,time:_setTime,people:_setPeople,cover:_setCover,absence:_setAbsence,sharing:_setSharing,alerts:_setAlerts,data:_setData,advanced:_setAdvanced};
 // Things that are not registry preferences but should still turn up in a search.
 const SETTINGS_SEARCH_EXTRA=[
   ['account','Sign in, sign out, cloud save, Google account, snapshots, backups, restore, history'],
+  ['org','Organisation, org, company, team, members, invite, invite code, join, link project, admin, roles, sign-in'],
   ['workspace','Projects, add roster, sheet, team, all months, scope, clear scope, max hours, consecutive days, minimum coverage, weekend policy, lunch, OT window, breaks, target hours, rate, cost, coaching session length, sessions a day, quick notes, scratchpad'],
   ['preferences','Theme, colour, color, dark, light, variants, density, compact, spacious, colour-blind, highlight today, cards, heatmap, health score, week badge'],
   ['time','SA time, UK time, timezone, BST, clocks change, offset, public holidays, bank holidays'],

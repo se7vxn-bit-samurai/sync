@@ -92,6 +92,7 @@
     "app/core/uk-holidays.js",
     "app/people/absence.js",
     "app/views/absence.js",
+    "app/org/client.js",
     "app/_close.html",
     "northstar/northstar.js.html",
     "assets/v31-templates.js.html",

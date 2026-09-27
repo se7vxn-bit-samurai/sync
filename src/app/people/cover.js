@@ -221,6 +221,11 @@ function coverAssign(personName,forName,starts,ends,role){
   if(!personName||!forName||personName===forName){toast("Pick who covers and who they cover","warn");return"";}
   if(!starts){toast("Pick a start date","warn");return"";}
   if(ends&&ends<starts){toast("The end date is before the start","warn");return"";}
+  // Linked to an organisation: the org holds acting cover; it comes back with the pull.
+  if(orgLinkFor()){
+    orgSaveActing({personName,forName,starts,ends:ends||"",role:role||"Acting Team Lead"}).then(r=>{if(r){_coverRefresh();toast(`${personName} covers ${forName} ${coverSpanText({starts,ends})}`,"ok");}});
+    return"org";
+  }
   const id=nsSaveActingCover({personId:_coverPid(personName),personName,forId:_coverPid(forName),forName,starts,ends:ends||"",role:role||"Acting Team Lead",scope:((S.people||{})[forName]||{}).team||""});
   if(!id){toast(`${personName} is not in this project's people, so cover cannot be saved`,"warn");return"";}
   _coverRefresh();
@@ -228,13 +233,17 @@ function coverAssign(personName,forName,starts,ends,role){
   return id;
 }
 function coverEnd(id,iso){
-  if(typeof nsSaveActingCover!=="function"||!id)return;
+  if(!id)return;
+  if(orgLinkFor()&&String(id).startsWith("org:")){orgSaveActing({id,ends:iso||_coverTodayISO()}).then(r=>{if(r){_coverRefresh();toast("Cover ends "+_coverShort(iso||_coverTodayISO()),"ok");}});return;}
+  if(typeof nsSaveActingCover!=="function")return;
   nsSaveActingCover({id,ends:iso||_coverTodayISO()});
   _coverRefresh();
   toast("Cover ends "+_coverShort(iso||_coverTodayISO()),"ok");
 }
 function coverCancel(id){
-  if(typeof nsSaveActingCover!=="function"||!id)return;
+  if(!id)return;
+  if(orgLinkFor()&&String(id).startsWith("org:")){orgSaveActing({id,status:"cancelled"}).then(r=>{if(r){_coverRefresh();toast("Cover cancelled","ok");}});return;}
+  if(typeof nsSaveActingCover!=="function")return;
   nsSaveActingCover({id,status:"Inactive"});
   _coverRefresh();
   toast("Cover cancelled","ok");

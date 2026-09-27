@@ -10,6 +10,7 @@
  *   auth: getSession, getUser, onAuthStateChange, signInWithOAuth, signOut
  *   from(table): select().eq().eq().maybeSingle(), update().eq()…[.select().maybeSingle()],
  *                insert().select().single(), upsert().select().single()
+ *   rpc(fn, args): the org layer's functions (see rpc below)
  *
  * The workspace row behaves like the real table: every write gets a new server `version` (the
  * database trigger), an update only applies when all its .eq() filters match (so a stale version
@@ -171,6 +172,17 @@ function installFakeSupabase(config) {
     },
     from(table) {
       return makeQuery(table);
+    },
+    // Org layer RPCs. A test that exposes window.__orgRpc (tests/org-client.spec.js) routes them
+    // to the real migrations in PGlite, as the signed-in user; otherwise the server answers as one
+    // without the org layer does (PostgREST's "function not found").
+    async rpc(fn, args) {
+      if (typeof window.__orgRpc !== 'function') {
+        return { data: null, error: { code: 'PGRST202', message: `Could not find the function public.${fn} in the schema cache` } };
+      }
+      const uid = state.session ? state.session.user.id : null;
+      const out = await window.__orgRpc(fn, args || {}, uid);
+      return out && out.error ? { data: null, error: out.error } : { data: out ? out.data : null, error: null };
     },
   };
 

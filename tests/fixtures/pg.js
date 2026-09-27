@@ -51,8 +51,7 @@ async function freshDb({ migrations = ['core_org'] } = {}) {
 }
 
 /** Adds a signed-up user. Google sign-in emails are verified; pass confirmed: false for one that is not. */
-async function addUser(db, email, { confirmed = true } = {}) {
-  const id = crypto.randomUUID();
+async function addUser(db, email, { confirmed = true, id = crypto.randomUUID() } = {}) {
   await db.query('insert into auth.users (id, email, email_confirmed_at) values ($1, $2, $3)', [id, email, confirmed ? new Date().toISOString() : null]);
   return id;
 }
@@ -71,6 +70,21 @@ async function rpc(db, uid, fn, args = {}) {
   const sql = `select public.${fn}(${keys.map((k, i) => `${k} => $${i + 1}`).join(', ')}) as out`;
   const res = await as(db, uid, sql, keys.map((k) => args[k]));
   return res.rows[0].out;
+}
+
+/**
+ * What the in-page Supabase double sends for sb.rpc(fn, args) (tests/fixtures/fake-supabase.js),
+ * answered by the real function. Arrays become Postgres array literals and objects JSON, as
+ * PostgREST would convert them. Returns { data } or { error: { message } }.
+ */
+async function rpcFromClient(db, uid, fn, args = {}) {
+  const toParam = (v) => (Array.isArray(v) ? `{${v.map((x) => `"${String(x).replace(/"/g, '\\"')}"`).join(',')}}` : v && typeof v === 'object' ? JSON.stringify(v) : v);
+  const clean = Object.fromEntries(Object.entries(args).map(([k, v]) => [k, v === undefined ? null : toParam(v)]));
+  try {
+    return { data: await rpc(db, uid, fn, clean) };
+  } catch (err) {
+    return { error: { message: String(err && err.message) } };
+  }
 }
 
 /** The message of the error a call raises, or null if it succeeded. */
@@ -94,4 +108,4 @@ async function reapply(db, fragment) {
   for (const file of migrationFiles([fragment])) await db.exec(fs.readFileSync(path.join(MIGRATIONS, file), 'utf8'));
 }
 
-module.exports = { freshDb, addUser, as, rpc, errorOf, isoDay, migrationFiles, reapply };
+module.exports = { freshDb, addUser, as, rpc, rpcFromClient, errorOf, isoDay, migrationFiles, reapply };

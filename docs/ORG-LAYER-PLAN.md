@@ -1,6 +1,6 @@
 # Sync Org Layer: plan
 
-Status: local track (L1–L6) built and merged. Phase 1 (org foundation) in progress. Update this line as phases land.
+Status: local track (L1–L6) built and merged. Phase 1 (org foundation) built and tested; not yet applied to the live project. Update this line as phases land.
 
 Sync today is one person's workspace, synced as one blob per account. This plan adds an org
 layer on top: agents, team leaders (TLs), managers and ops working in the same organisation,
@@ -808,3 +808,47 @@ section.
 | Alerts | The seven alert rules, each with its threshold, plus restoring dismissed alerts |
 | Data & exports | Quick exports, the custom workbook builder, a file-name prefix and date stamp (with a live example), protected vault |
 | Advanced | Export and import settings (JSON: preferences, appearance, rules, alerts, coaching, leave types), reset all, diagnostics, danger zone |
+
+---
+
+## 16. Phase 1 status: org foundation
+
+Built, tested, and applied to `sync-dev`. The live project is unchanged until pilot go-live.
+
+| Part | Where |
+|---|---|
+| Schema `core`: orgs, departments, people, dated reporting lines, acting cover, members, invites, audit | `supabase/migrations/20260927090000_core_org.sql` |
+| Scope: `visible_people` (data), `leader_chain` (an agent sees their leaders), `readable_people` (TLs and managers see their department's chart) | same |
+| API: `org_me`, `org_claim`, `org_redeem_code`, `org_create_from_project`, `org_snapshot`, `org_move`, `org_save_person`, `org_save_department`, `org_save_acting`, `org_invite`, `org_set_member`, `org_audit`, `org_revert` | same |
+| Retire the old team scaffold; harden the sign-up trigger; foreign-key indexes; baseline of the hand-made schema | `…091000_retire_team_sharing.sql`, `…092000_harden_and_index.sql`, `20260321000000_baseline.sql` |
+| App: link a project to an org, pull it into the project as a cache, route org edits to the server | `src/app/org/client.js`, NorthStar `nsOrgSeedPayload` / `nsApplyOrgSnapshot` / `nsOrgRef` |
+| Settings → Organisation: create from this project, link, join with a code, people and sign-in (invite by email or code), member roles for admins | `orgSettingsHTML` in `src/app/org/client.js` |
+| Org builder on a linked project: moves and roles saved in the org, the org's change log with undo, organogram import off | `src/app/views/org.js` |
+| Acting cover and People edits (leader, team, status, labels) on a linked project go to the org; readiness notes stay local | `src/app/people/cover.js`, NorthStar `nsApplyRuntimePersonEdit` |
+| Tests | `tests/org-db.spec.js` (PGlite, real security rules), `tests/org-client.spec.js` (the app in the browser against the real migrations) |
+
+Phase 1 exit test, met on both PGlite and `sync-dev`: two users in different teams see only their
+scope, and an org edit writes an audit row and can be undone.
+
+### Going live (the pilot)
+
+1. Apply the migrations to the live project in order. `baseline` is a no-op there. Then
+   `core_org`, `retire_team_sharing`, `harden_and_index`.
+2. Re-run the Supabase advisors. Expected: only the by-design notices listed under Environments.
+3. The pilot manager opens their project in Sync. In Settings → Organisation they create the
+   organisation from it, choosing themselves under "You are".
+4. In People and sign-in, they add each TL's email and invite them as Team leader. Agents are
+   added with their email, or given a code. Each person joins when they first sign in with Google.
+5. Each TL links their own project to the organisation (Settings → Organisation → Link).
+
+### Known limits (next phases, or small follow-ups)
+
+- Organogram import is off for linked projects. Import into an unlinked project, or add people with
+  "Add them to the organisation".
+- Ops and HR see the whole org, not only their department. That's fine for a one-department pilot.
+  Department-scoped ops comes with the second department.
+- Invite codes are 48-bit, single-use, and expire after 14 days. There is no rate limit on guesses
+  yet: add one before rolling out beyond the pilot.
+- Department-level preferences have a table column (`departments.settings`) and an RPC, but no UI
+  yet (decision 12).
+- Agents don't use projects: their screen is Sync Me, in Phase 2.
