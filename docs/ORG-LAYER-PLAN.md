@@ -44,6 +44,16 @@ for defence in depth and for realtime later.
 | Live | `ifeepocnixqqvayqnnxc` | Real users. Changed only at pilot go-live, by applying the migrations below in order. |
 | Dev | `ycfpalvfnsextknhculd` (`sync-dev`, free plan) | Every migration in `supabase/migrations`, applied in order. Dev-only test accounts: `dev-admin@sync-dev.test` (admin of "Dev Org"), `dev-agent@sync-dev.test` (agent). |
 
+The dev build of the app (`node build/build.js --env dev`, served by the Vercel project) talks to
+`sync-dev` and signs in with email + password, so no OAuth setup is needed there. `sync-dev` should
+run with "Confirm email" off (Authentication → Sign In / Providers → Email), so a new dev account is
+signed in, and counts as verified, straight away.
+
+**Sign-in rule for any server holding real data:** `org_claim` links an account to a person by
+*verified* email. Only enable sign-in methods that prove the address: Google, Microsoft Entra ID
+(`azure`) and SAML SSO do; email + password only with "Confirm email" on. Enterprise sign-in later
+means adding the method to `SYNC_ENV.auth` and enabling the provider; the org layer is unchanged.
+
 `supabase/migrations` now builds a database from nothing. `20260321000000_baseline.sql` records the
 hand-made starting schema (profiles, workspaces, sign-up trigger) and is a no-op on live. The org layer
 is `20260927090000_core_org.sql`, then `…091000_retire_team_sharing.sql` and

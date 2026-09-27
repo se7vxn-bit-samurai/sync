@@ -6,7 +6,8 @@ Sync ships as one self-contained `index.html`. That file is a **build output** o
 by `build/build.js`. Edit `src/`, never `index.html`.
 
 ```
-src/head/          <head>, CSP, PWA manifest
+src/head/          <head>, PWA manifest
+src/env/           per-environment parts: live/ and dev/ (server, CSP, sign-in methods)
 src/vendor/        SheetJS, html2canvas, ExcelJS, JSZip — inlined verbatim
 src/styles/        the stylesheets
 src/body/          the markup
