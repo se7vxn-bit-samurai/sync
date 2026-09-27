@@ -11,6 +11,7 @@
     "test:web": "node tests/run-web-suite.js"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@playwright/test": "^1.49.0"
   }
 }

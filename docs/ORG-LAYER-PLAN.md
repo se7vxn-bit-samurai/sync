@@ -1,6 +1,6 @@
 # Sync Org Layer: plan
 
-Status: planning. Nothing in this file is built yet. Update it as phases land.
+Status: local track (L1–L6) built and merged. Phase 1 (org foundation) in progress. Update this line as phases land.
 
 Sync today is one person's workspace, synced as one blob per account. This plan adds an org
 layer on top: agents, team leaders (TLs), managers and ops working in the same organisation,
@@ -19,6 +19,23 @@ each seeing their own slice of it, with changes flowing between them.
 
 Context: a UK BPO. Staff are South African and work in South Africa. The client's day runs on UK
 time; staff live on South African time (SAST). Both clocks matter, on every screen.
+
+### Decisions locked at Phase 1 kickoff (27 Sep 2026)
+
+| # | Decision | Consequence |
+|---|---|---|
+| 5 | Retire the old, empty `public.teams` / `public.team_members` sharing tables | Dropped by migration. `workspaces.team_id` stays as an unused, nullable column because the app still writes `team_id: null`. |
+| 6 | The org is seeded from an existing Sync project | "Create organisation from this project" copies its people, dated reporting lines and acting cover into the org as one audited batch. |
+| 7 | Agents sign in by email match first, with invite codes as the fallback | An agent without a known email gets a single-use code from their TL or Ops. |
+| 8 | POPIA: only status reaches the server (sick, late, leave), never reason text, until the employer's information officer clears it | Reasons stay on the device (People → Absence). Revisit before Phase 3. |
+| 9 | Migrations are built and tested away from the live project | Local tests run the real migrations in PGlite (Postgres in WebAssembly) with a Supabase auth shim, in CI too. A separate dev project is used for integration. The live project is changed only at pilot go-live. |
+| 10 | The pilot is one department: a manager, 2–3 TLs and their agents | Pilot scope is Phase 1, Phase 2, and the attendance part of Phase 3. Phase 5 waits until the pilot is in use. |
+| 11 | The org is **MirrorFlow Core**, not Sync tables | Schema `core`: orgs, departments, teams, people, reporting lines, acting cover, members, invites, audit. Sync-only tables (schedule rows, attendance, requests, EOD) come later in schema `sync`. Messenger, Coach and Insight can reuse `core`. |
+| 12 | Settings preferences gain a level: device, user, department or org | Department rules (BCEA limits, EOD cut-off, minimum staffing, leave caps) are set once by Ops and stored with the department. |
+
+`core` is not exposed through the REST API. The app talks to it only through `public` functions
+(RPCs), each of which checks scope and role. Row-level security is still on for every `core` table,
+for defence in depth and for realtime later.
 
 ### What decision 4 changed
 
