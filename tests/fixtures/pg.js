@@ -17,7 +17,6 @@ create role anon nologin;
 create role authenticated nologin;
 create role service_role nologin bypassrls;
 create schema auth;
-create schema private;
 create table auth.users (id uuid primary key, email text, email_confirmed_at timestamptz);
 create function auth.uid() returns uuid language sql stable as $$
   select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
@@ -25,33 +24,11 @@ $$;
 grant usage on schema auth to anon, authenticated;
 grant execute on function auth.uid() to anon, authenticated;
 grant usage on schema public to anon, authenticated;
-`;
-
-// The live project's workspaces table and the team-sharing scaffold it had before the org layer,
-// as the retire migration finds them.
-const LEGACY_TEAM_SHARING = `
-create table public.teams (id uuid primary key default gen_random_uuid(), name text not null, created_by uuid not null, created_at timestamptz default now());
-create table public.team_members (team_id uuid references public.teams(id), user_id uuid not null, role text not null default 'member', joined_at timestamptz default now(), primary key (team_id, user_id));
-create table public.workspaces (id uuid primary key default gen_random_uuid(), owner_user_id uuid, team_id uuid references public.teams(id),
-  department_key text not null default 'default', data jsonb not null default '{}', updated_at timestamptz not null default now(), version bigint not null default 1);
-alter table public.teams enable row level security;
-alter table public.team_members enable row level security;
-alter table public.workspaces enable row level security;
-create function private.is_team_member(p_team_id uuid) returns boolean language sql security definer set search_path = '' as $$
-  select exists (select 1 from public.team_members m where m.team_id = p_team_id and m.user_id = auth.uid())
-$$;
-create function private.is_team_owner(p_team_id uuid) returns boolean language sql security definer set search_path = '' as $$
-  select exists (select 1 from public.team_members m where m.team_id = p_team_id and m.user_id = auth.uid() and m.role = 'owner')
-$$;
-grant usage on schema private to authenticated;
-grant execute on function private.is_team_member(uuid), private.is_team_owner(uuid) to authenticated;
-create policy teams_select on public.teams for select using ((created_by = (select auth.uid())) or private.is_team_member(id));
-create policy team_members_select on public.team_members for select using ((user_id = (select auth.uid())) or private.is_team_member(team_id));
-create policy workspaces_select on public.workspaces for select using ((owner_user_id = (select auth.uid())) or private.is_team_member(team_id));
-create policy workspaces_insert on public.workspaces for insert with check ((owner_user_id = (select auth.uid())) or private.is_team_member(team_id));
-create policy workspaces_update on public.workspaces for update using ((owner_user_id = (select auth.uid())) or private.is_team_member(team_id));
-create policy workspaces_delete on public.workspaces for delete using ((owner_user_id = (select auth.uid())) or private.is_team_owner(team_id));
-grant select, insert, update, delete on public.workspaces, public.teams, public.team_members to authenticated;
+-- As on Supabase: whatever is created in public is granted to the API roles by default, and row-level
+-- security (plus explicit revokes) is what restricts it.
+alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
+alter default privileges in schema public grant execute on functions to anon, authenticated, service_role;
 `;
 
 function migrationFiles(names) {
@@ -59,12 +36,14 @@ function migrationFiles(names) {
   return names ? all.filter((f) => names.some((n) => f.includes(n))) : all;
 }
 
-/** A fresh database with the shim and the given migrations (by name fragment) applied in order. */
-async function freshDb({ migrations = ['core_org'], legacy = false } = {}) {
+/**
+ * A fresh database with the shim and migrations applied in order: those whose names contain one of
+ * the given fragments, or every migration in the folder when `migrations` is null.
+ */
+async function freshDb({ migrations = ['core_org'] } = {}) {
   const { PGlite } = await import('@electric-sql/pglite');
   const db = new PGlite();
   await db.exec(SUPABASE_SHIM);
-  if (legacy) await db.exec(LEGACY_TEAM_SHARING);
   for (const file of migrationFiles(migrations)) {
     await db.exec(fs.readFileSync(path.join(MIGRATIONS, file), 'utf8'));
   }
@@ -110,4 +89,9 @@ const isoDay = (offset = 0) => {
   return d.toISOString().slice(0, 10);
 };
 
-module.exports = { freshDb, addUser, as, rpc, errorOf, isoDay, migrationFiles };
+/** Applies one migration file again (to check it is idempotent). */
+async function reapply(db, fragment) {
+  for (const file of migrationFiles([fragment])) await db.exec(fs.readFileSync(path.join(MIGRATIONS, file), 'utf8'));
+}
+
+module.exports = { freshDb, addUser, as, rpc, errorOf, isoDay, migrationFiles, reapply };

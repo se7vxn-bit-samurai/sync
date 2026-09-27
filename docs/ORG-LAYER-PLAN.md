@@ -37,6 +37,22 @@ time; staff live on South African time (SAST). Both clocks matter, on every scre
 (RPCs), each of which checks scope and role. Row-level security is still on for every `core` table,
 for defence in depth and for realtime later.
 
+### Environments and migrations
+
+| Project | Ref | Use |
+|---|---|---|
+| Live | `ifeepocnixqqvayqnnxc` | Real users. Changed only at pilot go-live, by applying the migrations below in order. |
+| Dev | `ycfpalvfnsextknhculd` (`sync-dev`, free plan) | Every migration in `supabase/migrations`, applied in order. Dev-only test accounts: `dev-admin@sync-dev.test` (admin of "Dev Org"), `dev-agent@sync-dev.test` (agent). |
+
+`supabase/migrations` now builds a database from nothing. `20260321000000_baseline.sql` records the
+hand-made starting schema (profiles, workspaces, sign-up trigger) and is a no-op on live. The org layer
+is `20260927090000_core_org.sql`, then `…091000_retire_team_sharing.sql` and
+`…092000_harden_and_index.sql`. `tests/org-db.spec.js` applies them all to PGlite on every test run.
+
+Advisor status on dev after these: the `org_*` functions are callable by signed-in users (by design:
+they are the API, and each checks role and scope). The archive table has row-level security on but
+no policies, which is intentional because only the service role reads it.
+
 ### What decision 4 changed
 
 The first sketch had managers reading only what TLs chose to send (packets). Once managers can

@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { freshDb, addUser, as, rpc, errorOf, isoDay } = require('./fixtures/pg');
+const { freshDb, addUser, as, rpc, errorOf, isoDay, reapply } = require('./fixtures/pg');
 
 // MirrorFlow Core (supabase/migrations/*_core_org.sql) against real Postgres (PGlite), with
 // row-level security and grants enforced as PostgREST would. No browser: one project is enough.
@@ -171,8 +171,23 @@ test.describe('MirrorFlow Core: the shared org', () => {
     expect(await readPeople(db, users.zan)).toEqual([]);
   });
 
+  test('every migration applies in order to an empty database; the baseline is a no-op afterwards', async () => {
+    const db = await freshDb({ migrations: null });
+    const tables = async () => (await db.query("select schemaname || '.' || tablename as t from pg_tables where schemaname in ('public', 'core', 'private') order by 1")).rows.map((r) => r.t);
+    const before = await tables();
+    expect(before).toEqual(expect.arrayContaining(['public.profiles', 'public.workspaces', 'core.people', 'core.reporting_lines', 'private.workspaces_legacy_archive']));
+    expect(before).not.toContain('public.teams');
+    await reapply(db, 'baseline');
+    expect(await tables()).toEqual(before);
+    // Signing up creates the profile.
+    const u = await addUser(db, 'new@x.test');
+    expect((await as(db, u, 'select email from public.profiles')).rows).toEqual([{ email: 'new@x.test' }]);
+    // The org API is for signed-in users only, despite public's default grants.
+    expect(await errorOf(as(db, null, 'select public.org_me()'))).toMatch(/permission denied/);
+  });
+
   test('retiring team sharing keeps every workspace readable and writable by its owner only', async () => {
-    const db = await freshDb({ migrations: ['retire_team'], legacy: true });
+    const db = await freshDb({ migrations: null });
     const a = await addUser(db, 'a@x.test');
     const b = await addUser(db, 'b@x.test');
     await as(db, a, "insert into public.workspaces (owner_user_id, team_id, department_key, data) values ($1, null, '__personal__', '{}')", [a]);
