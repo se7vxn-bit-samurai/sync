@@ -2,9 +2,10 @@
 
 A self-contained, offline-first workforce scheduling app (7th Order Systems / MirrorFlow). It ships as one portable `index.html`, built from the sources in `src/`.
 
-Live at [sync.theguide.club](https://sync.theguide.club) (GitHub Pages, this repo/branch) and also connected to a Vercel project for the same domain.
+Live at [sync.theguide.club](https://sync.theguide.club) (GitHub Pages, from `main`). The Vercel project
+serves the **dev build** instead (see Environments below).
 
-Works fully offline with no account. Signing in with Google (optional) adds sync of your workspace across devices.
+Works fully offline with no account. Signing in (Google on live) adds sync of your workspace across devices.
 
 ## Where the source is
 
@@ -14,9 +15,29 @@ commit where it does not match what `src/` builds.
 
 ```bash
 # edit files under src/, then:
-node build/build.js           # writes index.html
-node build/build.js --check   # verifies index.html == build(src/)  (CI runs this)
+node build/build.js                # writes index.html (live)
+node build/build.js --check        # verifies index.html == build(src/), and that every
+                                   # environment builds and stays on its own server (CI runs this)
+node build/build.js --env dev      # writes dist/dev/index.html (dev; not committed)
 ```
+
+## Environments
+
+One app, built twice. The builds differ only in the `src/env/<name>/` parts: which Supabase project
+they talk to (`env.js` and the CSP in `csp.html`) and which sign-in methods they offer.
+
+| | Live | Dev |
+|---|---|---|
+| Supabase | `ifeepocnixqqvayqnnxc` | `ycfpalvfnsextknhculd` (`sync-dev`) |
+| Served from | sync.theguide.club (GitHub Pages, `deploy.yml`) | the Vercel project (`vercel.json`), Vercel login required |
+| Sign-in | Google | Email + password |
+| Marker | none | amber `DEV · sync-dev` badge, title `DEV · Sync` |
+
+Guards: `--check` fails if either build mentions the other's server; the dev build refuses to start
+on the live address (that origin's browser storage holds real data); `tests/environments.spec.js`
+covers all three. Sign-in methods are a list per environment (`SYNC_AUTH_METHODS` in
+`src/app/state/settings-persistence.js`), so moving an organisation off Google is a config change
+plus enabling the provider in Supabase (`azure` = Microsoft Entra ID is already listed).
 
 The build is a plain concatenation in `build/manifest.json` order, never a bundler — see
 `docs/ARCHITECTURE.md` for why that is a hard requirement.

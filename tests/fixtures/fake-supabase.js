@@ -7,7 +7,8 @@
  * which matters because that bundle is strict-mode.
  *
  * The surface implemented here is exactly what the app calls and nothing more:
- *   auth: getSession, getUser, onAuthStateChange, signInWithOAuth, signOut
+ *   auth: getSession, getUser, onAuthStateChange, signInWithOAuth, signInWithPassword, signUp,
+ *         signOut
  *   from(table): select().eq().eq().maybeSingle(), update().eq()…[.select().maybeSingle()],
  *                insert().select().single(), upsert().select().single()
  *   rpc(fn, args): the org layer's functions (see rpc below)
@@ -30,6 +31,10 @@ function installFakeSupabase(config) {
       failPush: false,
       failPushMessage: 'simulated network failure',
       pushLatencyMs: 0,
+      // Email + password (the dev build): the accounts that exist, and whether sign-up needs the
+      // address confirmed first (no session until then), as with "Confirm email" on.
+      passwords: {},
+      confirmSignUp: false,
     },
     config || {}
   );
@@ -41,6 +46,7 @@ function installFakeSupabase(config) {
     pushes: [],
     profileUpdates: [],
     oauthCalls: 0,
+    passwordCalls: [],
     signOutCalls: [],
   };
 
@@ -163,6 +169,23 @@ function installFakeSupabase(config) {
         // drive the post-redirect state themselves via __fakeSupabase.signIn().
         return { data: { url: 'https://accounts.google.test/o/oauth2/auth' }, error: null };
       },
+      async signInWithPassword({ email, password }) {
+        state.passwordCalls.push({ kind: 'in', email });
+        if (state.cfg.passwords[email] !== password) return { data: { session: null, user: null }, error: { message: 'Invalid login credentials' } };
+        state.session = makeSession(Object.assign({}, state.cfg.user, { email }));
+        state.authListeners.forEach((cb) => cb('SIGNED_IN', state.session));
+        return { data: { session: state.session, user: state.session.user }, error: null };
+      },
+      async signUp({ email, password }) {
+        state.passwordCalls.push({ kind: 'up', email });
+        if (state.cfg.passwords[email] !== undefined) return { data: { session: null, user: null }, error: { message: 'User already registered' } };
+        state.cfg.passwords[email] = password;
+        const user = Object.assign({}, state.cfg.user, { email });
+        if (state.cfg.confirmSignUp) return { data: { session: null, user }, error: null };
+        state.session = makeSession(user);
+        state.authListeners.forEach((cb) => cb('SIGNED_IN', state.session));
+        return { data: { session: state.session, user }, error: null };
+      },
       async signOut(opts) {
         state.signOutCalls.push(opts || null);
         state.session = null;
@@ -222,6 +245,9 @@ function installFakeSupabase(config) {
     },
     oauthCalls() {
       return state.oauthCalls;
+    },
+    passwordCalls() {
+      return state.passwordCalls;
     },
   };
 

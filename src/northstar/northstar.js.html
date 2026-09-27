@@ -2904,7 +2904,7 @@ renderActiveTab=function(){
 };
 
 function nsBrandSweep(){
-  document.title="Sync";
+  document.title=typeof SYNC_ENV!=="undefined"?SYNC_ENV.title:"Sync";
   document.querySelectorAll(".mf-mh-brand,.lc-title").forEach(node=>{node.textContent="Sync";});
 }
 document.addEventListener("DOMContentLoaded",nsBrandSweep);setTimeout(nsBrandSweep,0);

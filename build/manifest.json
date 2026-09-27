@@ -1,8 +1,16 @@
 {
   "note": "Ordered source parts. build.js joins them with \"\\n\" to produce index.html. Order is the file order of the original single-file build and must not be rearranged - see docs/ARCHITECTURE.md.",
   "join": "\n",
+  "envs": {
+    "dev": {
+      "note": "The dev build, for the sync-dev Supabase project. Every env/live/ part is swapped for its env/dev/ twin; nothing else differs. Not committed: vercel.json builds it for the dev host.",
+      "out": "dist/dev/index.html"
+    }
+  },
   "parts": [
     "head/open.html",
+    "env/live/csp.html",
+    "head/meta.html",
     "vendor/xlsx.js",
     "vendor/html2canvas.js",
     "vendor/exceljs.js",
@@ -11,6 +19,7 @@
     "styles/dashboard.css.html",
     "body/markup.html",
     "app/_open.html",
+    "env/live/env.js",
     "app/state/store.js",
     "app/state/exceptions-leave.js",
     "app/state/undo.js",

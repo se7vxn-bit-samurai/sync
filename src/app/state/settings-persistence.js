@@ -430,9 +430,9 @@ function _syncRenderSettingsAccountSection(){
   }
   let h=`<div><div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Account</div>`;
   if(!profile){
-    h+=`<div style="font-size:12px;color:var(--tm);line-height:1.5;margin-bottom:10px">Continue with Google to sync this workspace across devices — connects your existing account, or creates one if you're new. Your work stays fully usable offline either way.</div>`;
+    h+=`<div style="font-size:12px;color:var(--tm);line-height:1.5;margin-bottom:10px">${X(_syncSignInLead())} to sync this workspace across devices — connects your existing account, or creates one if you're new. Your work stays fully usable offline either way.</div>`;
     h+=`<div style="display:flex;gap:6px">`;
-    h+=`<button class="btn bp" style="flex:1;justify-content:center;display:flex;align-items:center;gap:6px" onclick="_syncSignInWithGoogle()">${SYNC_GOOGLE_ICON_SVG}<span>Continue with Google</span></button>`;
+    h+=_syncSignInButtonsHTML('settings');
     h+=`</div>`;
   }else{
     const first=_syncFirstName(profile);
@@ -907,8 +907,8 @@ async function _syncRenderLandingWidget(){
       host.innerHTML=`<div class="lc-sync-signed-in" style="display:flex;align-items:center;gap:8px;width:100%;flex-wrap:wrap"><button onclick="openAccountSettings()" title="Account & sync settings" style="all:unset;display:flex;align-items:center;gap:8px;cursor:pointer;min-width:0;max-width:100%"><span class="lc-sync-email" title="${X(profile.email)}">Hi ${X(first)}</span><span id="syncSaveDotLc" class="sync-save-dot" style="display:none"></span>${_syncStatusPillHtml()}</button></div>`;
     }else{
       host.innerHTML=`
-        <div class="lc-sync-caption">Continue with Google to sync across devices — connects your existing account, or creates one if you're new</div>
-        <button id="syncLcGoogleBtn" class="lc-sync-btn" style="width:100%;justify-content:center" onclick="_syncSignInWithGoogle()">${SYNC_GOOGLE_ICON_SVG}<span>Continue with Google</span></button>
+        <div class="lc-sync-caption">${X(_syncSignInLead())} to sync across devices — connects your existing account, or creates one if you're new</div>
+        ${_syncSignInButtonsHTML('landing')}
         <div id="syncLcError" class="lc-sync-error" style="display:none"></div>`;
     }
   }catch(err){}
@@ -1288,7 +1288,7 @@ function _syncProjectsPanelHtml(){
     if(!online)h+=`<div class="spp-line">Offline — changes stay on this device until you are back online.</div>`;
   }else{
     h+=`<div class="spp-line">Projects are kept in this browser only. Sign in to save them to your account and open them on other devices.</div>`;
-    h+=`<div class="spp-actions"><button type="button" class="btn bp spp-google" onclick="_syncSignInWithGoogle()">${SYNC_GOOGLE_ICON_SVG}<span>Continue with Google</span></button></div>`;
+    h+=`<div class="spp-actions">${_syncSignInButtonsHTML('panel')}</div>`;
   }
   h+='</section>';
   const projects=_syncKnownProjects||[];
@@ -1555,18 +1555,99 @@ async function _syncRetryDeleteFlush(name){
   _syncRenderProjectPicker();
   if(typeof updateDeptStrip==='function')updateDeptStrip();
 }
-async function _syncSignInWithGoogle(){
+// Sign-in methods. SYNC_ENV.auth (src/env/) picks which of these a build offers, in order: the live
+// build offers Google, the dev build email + password. OAuth methods leave the page for the provider
+// and come back signed in (detectSessionInUrl); "password" signs in on the page. Either way
+// onAuthStateChange delivers SIGNED_IN and _syncOnSignedIn takes it from there. Moving an org off
+// Google is a matter of listing another method here and in its env, then enabling the provider on
+// that Supabase project: "azure" is Microsoft Entra ID (work and school accounts).
+const SYNC_AUTH_METHODS={
+  google:{kind:"oauth",provider:"google",label:"Continue with Google",icon:()=>SYNC_GOOGLE_ICON_SVG},
+  azure:{kind:"oauth",provider:"azure",label:"Continue with Microsoft",scopes:"email"},
+  password:{kind:"password",label:"Sign in with email"}
+};
+function _syncAuthMethods(){
+  const list=(typeof SYNC_ENV!=="undefined"&&SYNC_ENV.auth)||["google"];
+  return list.filter(k=>SYNC_AUTH_METHODS[k]);
+}
+// How the "… to sync across devices" line starts: the method's own words when there is only one.
+function _syncSignInLead(){
+  const keys=_syncAuthMethods();
+  const only=keys.length===1?SYNC_AUTH_METHODS[keys[0]]:null;
+  return only&&only.kind==="oauth"?only.label:"Sign in";
+}
+// One button per method, in the markup of the place it sits: "landing", "panel" or "settings".
+function _syncSignInButtonsHTML(where){
+  const buttons=_syncAuthMethods().map(key=>{
+    const m=SYNC_AUTH_METHODS[key];
+    const inner=`${m.icon?m.icon():""}<span>${X(m.label)}</span>`;
+    const click=`_syncSignInWith('${key}',this)`;
+    if(where==="landing")return `<button id="${key==="google"?"syncLcGoogleBtn":"syncLcSignIn_"+key}" class="lc-sync-btn" data-auth="${key}" style="width:100%;justify-content:center" onclick="${click}">${inner}</button>`;
+    if(where==="panel")return `<button type="button" class="btn bp spp-${key}" data-auth="${key}" onclick="${click}">${inner}</button>`;
+    return `<button class="btn bp" data-auth="${key}" style="flex:1;justify-content:center;display:flex;align-items:center;gap:6px" onclick="${click}">${inner}</button>`;
+  });
+  return where==="landing"&&buttons.length>1?`<div style="display:flex;flex-direction:column;gap:6px;width:100%">${buttons.join("")}</div>`:buttons.join("");
+}
+async function _syncSignInWith(key,btn){
+  const m=SYNC_AUTH_METHODS[key];
+  if(!m)return;
+  if(m.kind==="password"){_syncOpenEmailSignIn();return;}
   const errEl=document.getElementById('syncLcError');
-  const btn=document.getElementById('syncLcGoogleBtn')||document.getElementById('syncLcSignInBtn');
   if(errEl){errEl.style.display='none';errEl.textContent='';}
   if(btn)btn.disabled=true;
   try{
-    const{error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin+window.location.pathname}});
+    const options={redirectTo:window.location.origin+window.location.pathname};
+    if(m.scopes)options.scopes=m.scopes;
+    const{error}=await sb.auth.signInWithOAuth({provider:m.provider,options});
     if(error)throw error;
-    // Successful call navigates the whole page to Google — nothing further runs here.
+    // Successful call navigates the whole page to the provider — nothing further runs here.
   }catch(err){
-    if(errEl){errEl.textContent=(err&&err.message)||'Could not start Google sign-in. Try again.';errEl.style.display='block';}
+    const text=(err&&err.message)||`Could not start ${m.label.replace(/^Continue with /,'')} sign-in. Try again.`;
+    if(errEl){errEl.textContent=text;errEl.style.display='block';}
+    else toast(X(text),'warn');
     if(btn)btn.disabled=false;
+  }
+}
+// Email + password, on the page. Both buttons live in one form so Enter signs in and password
+// managers see a login form; the form never submits anywhere (CSP form-action 'none').
+function _syncOpenEmailSignIn(){
+  const field='width:100%;box-sizing:border-box;padding:9px 10px;border-radius:7px;border:1px solid var(--bdr);background:var(--card);color:var(--text);font-size:13px;font-family:inherit';
+  const body=`<form id="syncEmailForm" onsubmit="event.preventDefault();_syncEmailSignIn('in')" style="display:flex;flex-direction:column;gap:8px">
+    <input type="email" id="syncEmailAddr" autocomplete="username" placeholder="Email" aria-label="Email" style="${field}">
+    <input type="password" id="syncEmailPass" autocomplete="current-password" placeholder="Password" aria-label="Password" style="${field}">
+    <div id="syncEmailMsg" role="status" style="display:none;font-size:12px;line-height:1.45"></div>
+    <button type="submit" class="btn bp" id="syncEmailInBtn" style="width:100%;justify-content:center">Sign in</button>
+    <button type="button" class="btn" id="syncEmailUpBtn" style="width:100%;justify-content:center;background:transparent" onclick="_syncEmailSignIn('up')">Create account</button>
+  </form>`;
+  const server=typeof SYNC_ENV!=="undefined"&&SYNC_ENV.name!=="live"?`On the ${SYNC_ENV.name} server`:'';
+  _qolModal('syncEmailModal','Sign in with email',server,body,'');
+  setTimeout(()=>{const el=document.getElementById('syncEmailAddr');if(el)el.focus();},0);
+}
+async function _syncEmailSignIn(mode){
+  const email=((document.getElementById('syncEmailAddr')||{}).value||'').trim();
+  const password=(document.getElementById('syncEmailPass')||{}).value||'';
+  const msg=document.getElementById('syncEmailMsg');
+  const say=(text,good)=>{if(!msg)return;msg.textContent=text;msg.style.display=text?'block':'none';msg.style.color=good?'var(--tm)':'#e5484d';};
+  if(!email||!password){say('Enter your email and a password.');return;}
+  const buttons=['syncEmailInBtn','syncEmailUpBtn'].map(id=>document.getElementById(id)).filter(Boolean);
+  buttons.forEach(b=>{b.disabled=true;});
+  say('');
+  try{
+    if(mode==='up'){
+      const{data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:window.location.origin+window.location.pathname}});
+      if(error)throw error;
+      // No session means the server wants the address confirmed first.
+      if(!data||!data.session){say(`Check ${email} for a confirmation link, then sign in here.`,true);return;}
+    }else{
+      const{error}=await sb.auth.signInWithPassword({email,password});
+      if(error)throw error;
+    }
+    const modal=document.getElementById('syncEmailModal');
+    if(modal)modal.remove();
+  }catch(err){
+    say((err&&err.message)||'Could not sign in. Try again.');
+  }finally{
+    buttons.forEach(b=>{b.disabled=false;});
   }
 }
 

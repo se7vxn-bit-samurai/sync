@@ -1,8 +1,9 @@
 /* ═══════════════════════════════════════════════════════════════
    SUPABASE CLIENT (auth + cloud sync)
    ═══════════════════════════════════════════════════════════════ */
-const SYNC_SUPABASE_URL = "https://ifeepocnixqqvayqnnxc.supabase.co";
-const SYNC_SUPABASE_ANON_KEY = "sb_publishable_XSco-ZVtGD_oikCftxc_yQ_hXqDGJYL";
+// Which server comes from the build's environment (env/live/env.js or env/dev/env.js).
+const SYNC_SUPABASE_URL = SYNC_ENV.supabaseUrl;
+const SYNC_SUPABASE_ANON_KEY = SYNC_ENV.supabaseKey;
 const sb = window.supabase.createClient(SYNC_SUPABASE_URL, SYNC_SUPABASE_ANON_KEY, {auth:{persistSession:true, autoRefreshToken:true, detectSessionInUrl:true}});
 window.sb = sb; // exposed for northstar-core.js (separate <script src> file, shares window scope)
 
@@ -101,7 +102,7 @@ const APP_LEGACY_NAME="MirrorFlow Sync";
 const APP_NAME=APP_PRODUCT;
 const APP_VERSION="v64";
 function applySyncVisibleBrand(){
-  document.title="Sync";
+  document.title=SYNC_ENV.title;
   document.querySelectorAll(".mf-mh-brand,.lc-title").forEach(el=>{el.textContent="Sync";});
   document.querySelectorAll(".wv-brand").forEach(el=>{el.textContent="Sync · WFM";});
 }

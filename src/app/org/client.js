@@ -21,7 +21,7 @@ const ORG_ROLE_RANK={agent:1,tl:2,manager:3,ops:3,hr:3,admin:4};
 const ORG_ERRORS={
   unavailable:"Organisations aren't switched on for this server yet.",
   offline:"Couldn't reach the organisation. Nothing was changed.",
-  not_signed_in:"Sign in with Google first.",
+  not_signed_in:"Sign in first.",
   not_member:"You're not a member of that organisation.",
   forbidden:"Your role in the organisation can't make that change.",
   not_found:"That record no longer exists in the organisation.",
@@ -283,7 +283,7 @@ function orgStatusLine(){
 function orgSettingsHTML(){
   let h="";
   if(!orgState.signedIn){
-    return _setGroup("Sign in",_setNote("An organisation is shared by everyone in it, so it needs a Google sign-in. Sign in from Account to create one, link this project to one, or join with an invite.")+_setButtons([["Go to Account","selectSettingsSection('account')"]]));
+    return _setGroup("Sign in",_setNote("An organisation is shared by everyone in it, so it needs you signed in. Sign in from Account to create one, link this project to one, or join with an invite.")+_setButtons([["Go to Account","selectSettingsSection('account')"]]));
   }
   if(orgState.available===false){
     return _setGroup("Not switched on yet",_setNote(X(ORG_ERRORS.unavailable)+" When it is, you can create an organisation from this project, link projects to it and invite your team. Everything else in Sync works as before."));
@@ -318,7 +318,7 @@ function orgSettingsHTML(){
     const members=new Map((snap.members||[]).map(m=>[m.person_id,m]));
     const mePid=(snap.me||{}).person_id;
     const roles=Object.keys(ORG_ROLE_RANK).filter(r=>ORG_ROLE_RANK[r]<=rank);
-    let t=_setNote("Who can sign in. Anyone with their email on their record joins when they first sign in with Google. For anyone else, create a one-time code.");
+    let t=_setNote("Who can sign in. Anyone with their email on their record joins when they first sign in. For anyone else, create a one-time code.");
     if(orgState.invite){const inv=orgState.invite;t+=`<div class="set-kv" id="orgInviteResult"><b>Code for ${X(inv.name||inv.email||"a new member")}: <span class="mono">${X(inv.code)}</span></b><span>Works once, until ${X(_orgWhen(inv.expires))}.${inv.email?` Or they sign in with ${X(inv.email)}.`:""} Only shown now.</span></div>`;}
     t+=`<div class="cov-tbl-wrap"><table class="cov-tbl set-tbl" id="orgPeople"><thead><tr><th>Name</th><th>Email</th><th>Sign-in</th><th></th></tr></thead><tbody>`;
     (snap.people||[]).slice(0,300).forEach(p=>{
@@ -327,7 +327,7 @@ function orgSettingsHTML(){
       let act="";
       if(!m&&!isMe)act=`<select class="set-sel" id="orgInvRole_${XA(p.id)}" aria-label="${XA("Role for "+p.full_name)}">${roles.map(r=>`<option value="${r}"${r==="agent"?" selected":""}>${X(ORG_ROLE_NAMES[r])}</option>`).join("")}</select><button type="button" class="swin-btn" onclick="orgInvite('${XJS(p.id)}',document.getElementById('orgEmail_${XJS(p.id)}').value,document.getElementById('orgInvRole_${XJS(p.id)}').value)">Invite</button>`;
       else if(m&&rank>=4&&!isMe)act=`<select class="set-sel" aria-label="${XA("Role of "+p.full_name)}" onchange="orgSetMemberRole('${XJS(m.user_id)}',this.value,'${m.status}')">${Object.keys(ORG_ROLE_RANK).map(r=>`<option value="${r}"${r===m.app_role?" selected":""}>${X(ORG_ROLE_NAMES[r])}</option>`).join("")}</select>`;
-      t+=`<tr data-person="${XA(p.full_name)}"><td>${X(p.full_name)}</td><td>${m||isMe?X(p.email||"—"):`<input type="email" class="set-text" style="width:170px" id="orgEmail_${XA(p.id)}" value="${XA(p.email||"")}" placeholder="work or Google email">`}</td><td>${state}</td><td style="white-space:nowrap">${act}</td></tr>`;
+      t+=`<tr data-person="${XA(p.full_name)}"><td>${X(p.full_name)}</td><td>${m||isMe?X(p.email||"—"):`<input type="email" class="set-text" style="width:170px" id="orgEmail_${XA(p.id)}" value="${XA(p.email||"")}" placeholder="their sign-in email">`}</td><td>${state}</td><td style="white-space:nowrap">${act}</td></tr>`;
     });
     t+=`</tbody></table></div>`;
     h+=_setGroup("People and sign-in",t,' id="orgMembers"');
