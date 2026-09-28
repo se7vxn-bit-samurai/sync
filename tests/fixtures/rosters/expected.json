@@ -180,5 +180,17 @@
       "2026-12",
       "2027-01"
     ]
+  },
+  "tpa_team_blocks_clean": {
+    "parser": "parseTeamBlocks",
+    "people": 2,
+    "entries": 238,
+    "confidence": "high",
+    "months": [
+      "2026-10",
+      "2026-11",
+      "2026-12",
+      "2027-01"
+    ]
   }
 }

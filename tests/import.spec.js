@@ -175,3 +175,23 @@ test.describe('import safety net', () => {
     expect(await page.evaluate(() => nsListCanonicalProjects().length)).toBe(0);
   });
 });
+
+test.describe('stacked team-leader week blocks (TPA)', () => {
+  test('previews as two leaders at high confidence and loads them under the banner team', async ({ page }) => {
+    await openFresh(page);
+    await uploadWorkbook(page, path.join(__dirname, 'fixtures', 'rosters', 'tpa_team_blocks_clean.xlsx'));
+    const overlay = page.locator('#parsePreviewOverlay');
+    await expect(overlay).toBeVisible({ timeout: 40_000 });
+    await expect(overlay).toContainText('high');
+    await expect(overlay).toContainText('238');
+    await expect(overlay).toContainText('parseTeamBlocks');
+    await overlay.getByRole('button', { name: /^Load 238 entries/ }).click();
+    await expect.poll(() => page.evaluate(() => S.entries.length), { timeout: 30_000 }).toBe(238);
+    const got = await page.evaluate(() => ({
+      names: [...new Set(S.entries.map((e) => e.name))].sort(),
+      teams: [...new Set(S.entries.map((e) => e.team))],
+      weeks: [...new Set(S.entries.map((e) => e.week))].sort(),
+    }));
+    expect(got).toEqual({ names: ['Bontle', 'Pontsho'], teams: ['Interventions'], weeks: ['W1', 'W2'] });
+  });
+});

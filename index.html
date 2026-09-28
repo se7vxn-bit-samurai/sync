@@ -9156,7 +9156,9 @@ function autoParse(data,sn){
   // parse that reads a fraction of the people another parser found must never
   // be presented as trustworthy, whatever it scored. Scoring changes can
   // reintroduce that silently; this cannot.
-  const richest=candidates.reduce((a,b)=>b.quality.names>a.quality.names?b:a,best);
+  // A rival that scored far below the winner is not evidence of loss: its extra "people" are usually
+  // labels it mistook for names (team codes, roster codes), which is what it scored badly for.
+  const richest=candidates.reduce((a,b)=>b.quality.names>a.quality.names&&b.score>=best.score-20?b:a,best);
   const lossy=richest!==best&&best.quality.names*2<=richest.quality.names;
   let confidence=best.score>=82&&margin>=4?"high":best.score>=62?"medium":"low";
   if(lossy)confidence="low";
