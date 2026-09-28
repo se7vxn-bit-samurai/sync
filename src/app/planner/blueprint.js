@@ -459,7 +459,7 @@ function confirmPosition(name,weekNum){
     const d=new Date(e.date);const mon=new Date(d);mon.setDate(mon.getDate()-((mon.getDay()+6)%7));
     if(!lastMon||mon>lastMon)lastMon=mon;
   });
-  S.plPositions[dk][name]={confirmedWeek:safeWeek,anchorMonday:lastMon?lastMon.toISOString().split("T")[0]:null,groupId:gid||null};
+  S.plPositions[dk][name]={confirmedWeek:safeWeek,anchorMonday:lastMon?localISODate(lastMon):null,groupId:gid||null};
   ren();
 }
 // ── Cycle start override ──

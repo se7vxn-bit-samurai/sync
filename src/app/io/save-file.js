@@ -185,6 +185,7 @@ function restoreFromSaveFile(wb,filename,sourceMeta,opts){
       "allMonths","parseInfo","anDay","anMode","shiftFilter","sumMode","anView","cardShow","flagSettings",
       "agentStatuses","agentNotes","peopleSubTab","peopleDashView","peopleHomeNotes","peopleLogbook","leaderPlanner","anScope","otPlan"];
     restoreKeys.forEach(k=>{if(snap[k]!==undefined)S[k]=snap[k];});
+    S.exportSelection=normalizeExportSelection(S.exportSelection);
     if(!Array.isArray(S.parseInfo))S.parseInfo=[];
     if(restoredValidation.issues.length)S.parseInfo.push({sheet:"Schedule_Data",parser:"canonicalValidator",confidence:restoredValidation.stats.conflicts?"medium":"high",reason:`Validated ${restoredValidation.stats.input} saved rows into ${restoredValidation.stats.output} canonical schedule rows`,count:entries.length,warnings:restoredValidation.issues});
     if(!Array.isArray(S.sourceManifest))S.sourceManifest=[];
@@ -227,34 +228,10 @@ function restoreFromSaveFile(wb,filename,sourceMeta,opts){
       if(p&&!p.date)p.date=null;
     });
 
-    // Fallback: if _app_state had no exceptions, try parsing from Exceptions sheet
-    if(!S.exceptions.length&&wb.SheetNames.includes('Exceptions')){
+    // Fallback: if _app_state had no exceptions, rebuild them from the Activity (or older Exceptions) sheet
+    if(!S.exceptions.length){
       try{
-        const excWs=wb.Sheets['Exceptions'];
-        const excData=XLSX.utils.sheet_to_json(excWs,{defval:'',raw:false});
-        excData.forEach(r=>{
-          if(!r.leader_name||!r.date||r.type==='No exceptions logged')return;
-          const parts=String(r.date).split(/[-\/]/);
-          let dk='';
-          if(parts.length===3){
-            // Try to parse — could be dd-mmm-yyyy or yyyy-mm-dd
-            const d=new Date(r.date);
-            if(!isNaN(d))dk=d.getFullYear()+'-'+P(d.getMonth()+1)+'-'+P(d.getDate());
-          }
-          if(!dk)return;
-          S.exceptions.push({
-            id:'exc_'+Math.random().toString(36).substring(2,8),
-            dept:S.activeDept||'',person:r.leader_name,
-            agentName:r.agent_name||'',leaderId:r.leader_name||'',
-            date:dk,
-            type:r.type||'admin',severity:r.severity||'full-day',
-            hoursLost:parseFloat(r.hours_lost)||0,
-            hoursWorked:parseFloat(r.hours_worked)||0,
-            scheduledHrs:parseFloat(r.scheduled_hours)||0,
-            notes:r.notes||'',loggedAt:r.logged_at||new Date().toISOString(),
-            source:r.source||'imported',authorName:r.author||''
-          });
-        });
+        S.exceptions.push(...readExceptionsFromWorkbook(wb));
         if(S.exceptions.length){
           _touchExceptions();
           toast("Restored "+S.exceptions.length+" exceptions from sheet","info");
@@ -267,7 +244,7 @@ function restoreFromSaveFile(wb,filename,sourceMeta,opts){
 
     // Set dept info
     S.activeDept=isAdditional?_nextAvailableDepartmentName(snap.dept||detectDeptName(filename,[])):(snap.dept||detectDeptName(filename,[]));
-    S.fn=filename;S.wb=wb;S.shs=wb.SheetNames.filter(s=>!s.startsWith("_")&&s!=="Schedule_Data"&&s!=="Notes"&&s!=="Blueprint"&&s!=="Positions");
+    S.fn=filename;S.wb=wb;S.shs=wb.SheetNames.filter(s=>!s.startsWith("_")&&!SAVE_PLUS_DISPLAY_SHEETS.has(s)&&!(S.entries||[]).some(e=>e.name===s));
     S.sh="__all__";S.raw=[];S.rawSheet=S.shs[0]||"";
 
     // Rebuild workspace entry

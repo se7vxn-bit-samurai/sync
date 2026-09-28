@@ -455,7 +455,7 @@ function detectGhostAgents(wb, parsedNames){
   const PARSE_SHEETS=new Set(['horizontal','verticle','vertical','blocks']);
   // Sheets we also skip (known non-agent sheets)
   const SKIP_SHEETS=new Set(['out time','analytics','schedule_data','notes','blueprint','positions',
-    'exceptions','coaching','people','_app_state']);
+    'exceptions','coaching','people','_app_state','summary','weekly_roster','rotation','activity','sources']);
 
   wb.SheetNames.forEach(shName=>{
     const sLow=shName.toLowerCase();

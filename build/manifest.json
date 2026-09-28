@@ -83,6 +83,7 @@
     "app/export/weekly-digest.js",
     "app/exceptions/bulk.js",
     "app/export/exceljs.js",
+    "app/export/workbook-sheets.js",
     "app/state/settings-persistence.js",
     "app/ui/notifications.js",
     "app/change-tracking.js",

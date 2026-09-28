@@ -561,7 +561,7 @@ function _detectShiftPatternsSingle(entries){
       const wkKey=_rotationFpKey(wk.fp);
       const matchIdx=ordered.findIndex(p=>p.key===wkKey);
       if(matchIdx>=0){
-        positions[name]={currentWeek:matchIdx+1,lastMonday:wk.monday.toISOString().split("T")[0]};
+        positions[name]={currentWeek:matchIdx+1,lastMonday:localISODate(wk.monday)};
         matched=true;break;
       }
     }

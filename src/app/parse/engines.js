@@ -13,6 +13,10 @@
    - Mixed shift formats within same file
    Returns {entries, reason} or null if format doesn't match
    ═══════════════════════════════════════════════════════════════ */
+// The file's own "Week N" label is kept as _fileWeek (exported as file_week). `week` stays empty so the
+// rotation engine numbers weeks from shift patterns for every person the same way; a label from the file
+// numbers the calendar, not a person's place in the rotation, and mixing the two gives half-and-half weeks.
+function _withFileWeek(e,label){if(e&&label)e._fileWeek=label;return e;}
 function parseWideHoriz(data){
   if(!data||data.length<2)return null;
   const maxCols=Math.max(...data.slice(0,Math.min(25,data.length)).map(r=>(r||[]).length));
@@ -49,6 +53,19 @@ function parseWideHoriz(data){
     dateCols.push({col:j,date:d,day:dayName});
   }
   if(dateCols.length<10)return null;
+
+  // ── Step 3b: Week labels ("Week 1".."Week 4") on a header row near the dates ──
+  // Each label covers its column up to the next label, so a 4-week cycle repeated across the year
+  // keeps the file's own numbering instead of the app guessing it from shift patterns.
+  const colWk={};
+  for(let r=Math.max(0,dateRowIdx-3);r<=Math.min(data.length-1,dateRowIdx+3);r++){
+    if(r===dateRowIdx)continue;
+    const row=data[r]||[];const marks=[];
+    for(let j=0;j<row.length;j++){const m=String(row[j]==null?"":row[j]).trim().match(/^week\s*(\d{1,2})$/i);if(m)marks.push({col:j,wk:"W"+(+m[1])});}
+    if(marks.length<2)continue;
+    marks.forEach((mk,mi)=>{const end=mi+1<marks.length?marks[mi+1].col:Math.max(...dateCols.map(d=>d.col))+1;for(let c=mk.col;c<end;c++)colWk[c]=mk.wk;});
+    break;
+  }
 
   // ── Step 4: Find data rows (people with shifts) ──
   const dataStartRow=dateRowIdx+1;
@@ -106,19 +123,19 @@ function parseWideHoriz(data){
           // Numeric noise (e.g. hour totals at edge) keeps the firstCol/lastCol guard.
           const isBlank=!cs||cs==="·";
           if(isBlank||(dc.col>=firstCol&&dc.col<=lastCol&&firstCol>=0)){
-            entries.push(mkE(nm,dc.date,dc.day,"OFF","Main",""));
+            entries.push(_withFileWeek(mkE(nm,dc.date,dc.day,"OFF","Main",""),colWk[dc.col]));
           }
           continue;
         }
 
         // Check if it's an off-type value
         if(isOf(cv)&&!pTm(cs)){
-          entries.push(mkE(nm,dc.date,dc.day,cv,"Main",""));
+          entries.push(_withFileWeek(mkE(nm,dc.date,dc.day,cv,"Main",""),colWk[dc.col]));
           continue;
         }
 
         // Regular shift entry
-        entries.push(mkE(nm,dc.date,dc.day,cv,"Main",""));
+        entries.push(_withFileWeek(mkE(nm,dc.date,dc.day,cv,"Main",""),colWk[dc.col]));
       }
     });
   }

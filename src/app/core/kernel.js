@@ -29,6 +29,9 @@ const CSS_ALPHA_EARLY_10=cssAlpha("var(--early)",10);
 const CSS_ALPHA_EARLY_13=cssAlpha("var(--early)",13);
 const CSS_ALPHA_ACCENT_13=cssAlpha("var(--accent)",13);
 function P(n){return String(n).padStart(2,"0");}
+// Local calendar date as YYYY-MM-DD. toISOString() converts to UTC first, which moves a local-midnight
+// date back a day anywhere east of Greenwich.
+function localISODate(d){return d.getFullYear()+"-"+P(d.getMonth()+1)+"-"+P(d.getDate());}
 function stateMonthKeyFromDate(date){return date&&!isNaN(date)?date.getFullYear()+"-"+P(date.getMonth()):"";}
 function fD(d){return P(d.getDate())+"-"+MO[d.getMonth()];}
 function fDF(d){return P(d.getDate())+" "+MO[d.getMonth()]+" "+d.getFullYear();}

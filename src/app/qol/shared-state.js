@@ -566,7 +566,7 @@ function saveExportPreset(name){
 function applyExportPreset(id){
   const p=(S.exportPresets||[]).find(x=>x.id===id);if(!p)return;
   _registerUndoState("Apply export preset",{localStorageKeys:["sc_qol_state",QOL_SHARED_STORAGE_KEY]});
-  S.exportSelection={...(p.selection||{})};
+  S.exportSelection=normalizeExportSelection(p.selection);
   _recordQoLChange("Export preset applied");
   schedulePersist(true);toast("Applied export preset: "+p.name,"ok");
   return true;

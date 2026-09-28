@@ -28,7 +28,7 @@ let S={wb:null,fn:"",shs:[],sh:"",raw:[],entries:[],team:"all",emp:"all",tz:true
   coachBudgetHrs:{},coachManualSessions:[],swaps:[],_swapFormDay:null,_bpDragWeek:null,_bpDropTarget:null,_bpDropDir:null,_sumShowIntel:true,_sumHealthOpen:false,_bpDraft:null,_bpEditMode:false,savedMonths:{},savedViews:[],lastImportReview:null,sourceManifest:[],currentSource:null,pinnedPeople:[],inlineNotes:{},exportPresets:[],changeHistory:[],changeIntelligence:{schema:"mirrorflow.roster-change-intelligence",version:1,history:[],activity:[]},issueInboxState:{records:{},filters:{status:"open",severity:"all",type:"all",person:"all"},history:[]},qolState:null,dashboardLayout:null,dashboardShortcuts:null,plCellOverrides:{},leaveRequests:[],otThresholds:{sick:3,absence:3,capacity:3,gap:-2},exceptions:[],dayClosed:{},anView:"dashboard",dayIntelName:"",dayIntelDate:"",dayIntelSource:"",sumMode:"month",anScope:"month",_alertRailFocus:"all",_helpOpen:false,
   plCoachOpen:true,coachDuration:30,coachBlackouts:{},coachPlan:{},coachHistory:[],plSubTab:"schedule",coachTargetDaily:1,coachTargetMonthly:0,targetHours:0,ratePerHour:0,cache:{},entriesVer:0,exceptionsVer:0,_schemaVersion:1,
   prefs:{},_prefsVer:0,// Settings preferences (src/app/settings/prefs.js): only values that differ from the default
-  exportSelection:{overview:true,leaders:true,analytics:true,scheduleData:true,notes:true,blueprint:true,positions:true,exceptions:true,coaching:true,people:true,changeLog:true},
+  exportSelection:{summary:true,roster:true,scheduleData:true,rotation:true,people:true,activity:true,leaderTabs:false},
   // Phase A — People ops surface
   peopleSubTab:"dashboard",// "dashboard" | "team" | "agents" | "logbook" | "events"
   selectedTL:null,// selected team leader in team view

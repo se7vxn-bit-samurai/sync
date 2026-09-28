@@ -3382,7 +3382,7 @@ let S={wb:null,fn:"",shs:[],sh:"",raw:[],entries:[],team:"all",emp:"all",tz:true
   coachBudgetHrs:{},coachManualSessions:[],swaps:[],_swapFormDay:null,_bpDragWeek:null,_bpDropTarget:null,_bpDropDir:null,_sumShowIntel:true,_sumHealthOpen:false,_bpDraft:null,_bpEditMode:false,savedMonths:{},savedViews:[],lastImportReview:null,sourceManifest:[],currentSource:null,pinnedPeople:[],inlineNotes:{},exportPresets:[],changeHistory:[],changeIntelligence:{schema:"mirrorflow.roster-change-intelligence",version:1,history:[],activity:[]},issueInboxState:{records:{},filters:{status:"open",severity:"all",type:"all",person:"all"},history:[]},qolState:null,dashboardLayout:null,dashboardShortcuts:null,plCellOverrides:{},leaveRequests:[],otThresholds:{sick:3,absence:3,capacity:3,gap:-2},exceptions:[],dayClosed:{},anView:"dashboard",dayIntelName:"",dayIntelDate:"",dayIntelSource:"",sumMode:"month",anScope:"month",_alertRailFocus:"all",_helpOpen:false,
   plCoachOpen:true,coachDuration:30,coachBlackouts:{},coachPlan:{},coachHistory:[],plSubTab:"schedule",coachTargetDaily:1,coachTargetMonthly:0,targetHours:0,ratePerHour:0,cache:{},entriesVer:0,exceptionsVer:0,_schemaVersion:1,
   prefs:{},_prefsVer:0,// Settings preferences (src/app/settings/prefs.js): only values that differ from the default
-  exportSelection:{overview:true,leaders:true,analytics:true,scheduleData:true,notes:true,blueprint:true,positions:true,exceptions:true,coaching:true,people:true,changeLog:true},
+  exportSelection:{summary:true,roster:true,scheduleData:true,rotation:true,people:true,activity:true,leaderTabs:false},
   // Phase A — People ops surface
   peopleSubTab:"dashboard",// "dashboard" | "team" | "agents" | "logbook" | "events"
   selectedTL:null,// selected team leader in team view
@@ -5740,7 +5740,7 @@ function saveExportPreset(name){
 function applyExportPreset(id){
   const p=(S.exportPresets||[]).find(x=>x.id===id);if(!p)return;
   _registerUndoState("Apply export preset",{localStorageKeys:["sc_qol_state",QOL_SHARED_STORAGE_KEY]});
-  S.exportSelection={...(p.selection||{})};
+  S.exportSelection=normalizeExportSelection(p.selection);
   _recordQoLChange("Export preset applied");
   schedulePersist(true);toast("Applied export preset: "+p.name,"ok");
   return true;
@@ -6629,6 +6629,9 @@ const CSS_ALPHA_EARLY_10=cssAlpha("var(--early)",10);
 const CSS_ALPHA_EARLY_13=cssAlpha("var(--early)",13);
 const CSS_ALPHA_ACCENT_13=cssAlpha("var(--accent)",13);
 function P(n){return String(n).padStart(2,"0");}
+// Local calendar date as YYYY-MM-DD. toISOString() converts to UTC first, which moves a local-midnight
+// date back a day anywhere east of Greenwich.
+function localISODate(d){return d.getFullYear()+"-"+P(d.getMonth()+1)+"-"+P(d.getDate());}
 function stateMonthKeyFromDate(date){return date&&!isNaN(date)?date.getFullYear()+"-"+P(date.getMonth()):"";}
 function fD(d){return P(d.getDate())+"-"+MO[d.getMonth()];}
 function fDF(d){return P(d.getDate())+" "+MO[d.getMonth()]+" "+d.getFullYear();}
@@ -7762,7 +7765,7 @@ function _detectShiftPatternsSingle(entries){
       const wkKey=_rotationFpKey(wk.fp);
       const matchIdx=ordered.findIndex(p=>p.key===wkKey);
       if(matchIdx>=0){
-        positions[name]={currentWeek:matchIdx+1,lastMonday:wk.monday.toISOString().split("T")[0]};
+        positions[name]={currentWeek:matchIdx+1,lastMonday:localISODate(wk.monday)};
         matched=true;break;
       }
     }
@@ -8045,6 +8048,10 @@ function assignPatternWeeks(entries,detected,boundary){
    - Mixed shift formats within same file
    Returns {entries, reason} or null if format doesn't match
    ═══════════════════════════════════════════════════════════════ */
+// The file's own "Week N" label is kept as _fileWeek (exported as file_week). `week` stays empty so the
+// rotation engine numbers weeks from shift patterns for every person the same way; a label from the file
+// numbers the calendar, not a person's place in the rotation, and mixing the two gives half-and-half weeks.
+function _withFileWeek(e,label){if(e&&label)e._fileWeek=label;return e;}
 function parseWideHoriz(data){
   if(!data||data.length<2)return null;
   const maxCols=Math.max(...data.slice(0,Math.min(25,data.length)).map(r=>(r||[]).length));
@@ -8081,6 +8088,19 @@ function parseWideHoriz(data){
     dateCols.push({col:j,date:d,day:dayName});
   }
   if(dateCols.length<10)return null;
+
+  // ── Step 3b: Week labels ("Week 1".."Week 4") on a header row near the dates ──
+  // Each label covers its column up to the next label, so a 4-week cycle repeated across the year
+  // keeps the file's own numbering instead of the app guessing it from shift patterns.
+  const colWk={};
+  for(let r=Math.max(0,dateRowIdx-3);r<=Math.min(data.length-1,dateRowIdx+3);r++){
+    if(r===dateRowIdx)continue;
+    const row=data[r]||[];const marks=[];
+    for(let j=0;j<row.length;j++){const m=String(row[j]==null?"":row[j]).trim().match(/^week\s*(\d{1,2})$/i);if(m)marks.push({col:j,wk:"W"+(+m[1])});}
+    if(marks.length<2)continue;
+    marks.forEach((mk,mi)=>{const end=mi+1<marks.length?marks[mi+1].col:Math.max(...dateCols.map(d=>d.col))+1;for(let c=mk.col;c<end;c++)colWk[c]=mk.wk;});
+    break;
+  }
 
   // ── Step 4: Find data rows (people with shifts) ──
   const dataStartRow=dateRowIdx+1;
@@ -8138,19 +8158,19 @@ function parseWideHoriz(data){
           // Numeric noise (e.g. hour totals at edge) keeps the firstCol/lastCol guard.
           const isBlank=!cs||cs==="·";
           if(isBlank||(dc.col>=firstCol&&dc.col<=lastCol&&firstCol>=0)){
-            entries.push(mkE(nm,dc.date,dc.day,"OFF","Main",""));
+            entries.push(_withFileWeek(mkE(nm,dc.date,dc.day,"OFF","Main",""),colWk[dc.col]));
           }
           continue;
         }
 
         // Check if it's an off-type value
         if(isOf(cv)&&!pTm(cs)){
-          entries.push(mkE(nm,dc.date,dc.day,cv,"Main",""));
+          entries.push(_withFileWeek(mkE(nm,dc.date,dc.day,cv,"Main",""),colWk[dc.col]));
           continue;
         }
 
         // Regular shift entry
-        entries.push(mkE(nm,dc.date,dc.day,cv,"Main",""));
+        entries.push(_withFileWeek(mkE(nm,dc.date,dc.day,cv,"Main",""),colWk[dc.col]));
       }
     });
   }
@@ -11454,7 +11474,7 @@ function detectGhostAgents(wb, parsedNames){
   const PARSE_SHEETS=new Set(['horizontal','verticle','vertical','blocks']);
   // Sheets we also skip (known non-agent sheets)
   const SKIP_SHEETS=new Set(['out time','analytics','schedule_data','notes','blueprint','positions',
-    'exceptions','coaching','people','_app_state']);
+    'exceptions','coaching','people','_app_state','summary','weekly_roster','rotation','activity','sources']);
 
   wb.SheetNames.forEach(shName=>{
     const sLow=shName.toLowerCase();
@@ -12653,6 +12673,7 @@ function restoreFromSaveFile(wb,filename,sourceMeta,opts){
       "allMonths","parseInfo","anDay","anMode","shiftFilter","sumMode","anView","cardShow","flagSettings",
       "agentStatuses","agentNotes","peopleSubTab","peopleDashView","peopleHomeNotes","peopleLogbook","leaderPlanner","anScope","otPlan"];
     restoreKeys.forEach(k=>{if(snap[k]!==undefined)S[k]=snap[k];});
+    S.exportSelection=normalizeExportSelection(S.exportSelection);
     if(!Array.isArray(S.parseInfo))S.parseInfo=[];
     if(restoredValidation.issues.length)S.parseInfo.push({sheet:"Schedule_Data",parser:"canonicalValidator",confidence:restoredValidation.stats.conflicts?"medium":"high",reason:`Validated ${restoredValidation.stats.input} saved rows into ${restoredValidation.stats.output} canonical schedule rows`,count:entries.length,warnings:restoredValidation.issues});
     if(!Array.isArray(S.sourceManifest))S.sourceManifest=[];
@@ -12695,34 +12716,10 @@ function restoreFromSaveFile(wb,filename,sourceMeta,opts){
       if(p&&!p.date)p.date=null;
     });
 
-    // Fallback: if _app_state had no exceptions, try parsing from Exceptions sheet
-    if(!S.exceptions.length&&wb.SheetNames.includes('Exceptions')){
+    // Fallback: if _app_state had no exceptions, rebuild them from the Activity (or older Exceptions) sheet
+    if(!S.exceptions.length){
       try{
-        const excWs=wb.Sheets['Exceptions'];
-        const excData=XLSX.utils.sheet_to_json(excWs,{defval:'',raw:false});
-        excData.forEach(r=>{
-          if(!r.leader_name||!r.date||r.type==='No exceptions logged')return;
-          const parts=String(r.date).split(/[-\/]/);
-          let dk='';
-          if(parts.length===3){
-            // Try to parse — could be dd-mmm-yyyy or yyyy-mm-dd
-            const d=new Date(r.date);
-            if(!isNaN(d))dk=d.getFullYear()+'-'+P(d.getMonth()+1)+'-'+P(d.getDate());
-          }
-          if(!dk)return;
-          S.exceptions.push({
-            id:'exc_'+Math.random().toString(36).substring(2,8),
-            dept:S.activeDept||'',person:r.leader_name,
-            agentName:r.agent_name||'',leaderId:r.leader_name||'',
-            date:dk,
-            type:r.type||'admin',severity:r.severity||'full-day',
-            hoursLost:parseFloat(r.hours_lost)||0,
-            hoursWorked:parseFloat(r.hours_worked)||0,
-            scheduledHrs:parseFloat(r.scheduled_hours)||0,
-            notes:r.notes||'',loggedAt:r.logged_at||new Date().toISOString(),
-            source:r.source||'imported',authorName:r.author||''
-          });
-        });
+        S.exceptions.push(...readExceptionsFromWorkbook(wb));
         if(S.exceptions.length){
           _touchExceptions();
           toast("Restored "+S.exceptions.length+" exceptions from sheet","info");
@@ -12735,7 +12732,7 @@ function restoreFromSaveFile(wb,filename,sourceMeta,opts){
 
     // Set dept info
     S.activeDept=isAdditional?_nextAvailableDepartmentName(snap.dept||detectDeptName(filename,[])):(snap.dept||detectDeptName(filename,[]));
-    S.fn=filename;S.wb=wb;S.shs=wb.SheetNames.filter(s=>!s.startsWith("_")&&s!=="Schedule_Data"&&s!=="Notes"&&s!=="Blueprint"&&s!=="Positions");
+    S.fn=filename;S.wb=wb;S.shs=wb.SheetNames.filter(s=>!s.startsWith("_")&&!SAVE_PLUS_DISPLAY_SHEETS.has(s)&&!(S.entries||[]).some(e=>e.name===s));
     S.sh="__all__";S.raw=[];S.rawSheet=S.shs[0]||"";
 
     // Rebuild workspace entry
@@ -17636,11 +17633,11 @@ function _setAlerts(){
 function _setData(){
   const qActs=[['💾 Save+',"expSavePlus('all')"],['📋 Styled report','expCurrentMonth()'],['🖼 Save as image','expPNG()'],['✉ Share roster','genEmail()'],['📋 Weekly digest','genWeeklyDigest()'],['📋 TL day pack','expTLDayPack()'],['📋 Copy EOD','copyEOD()'],['🤖 AI-ready data','expAIcsv()']];
   let h=_setGroup('Quick exports',_setButtons(qActs.map(([l,fn])=>[l,`closeSettings();${fn}`])));
-  const xSel=S.exportSelection||{};
-  const xSheets=[['overview','Overview & stats','Summary table, HC averages, key metrics'],['leaders','Leader schedules','One sheet per TL with full month'],['analytics','Analytics','Absence breakdown, flags, coverage'],['scheduleData','Raw schedule data','All entries in flat tabular format'],['exceptions','Exceptions log','Sick, AWOL, leave, swaps, ERL'],['coaching','Coaching sessions','Session log and history'],['notes','Notes','Team and leader notes'],['blueprint','Blueprint / rotation','W1–WN cycle definition'],['positions','Positions','Role and seat assignments'],['people','People / agents','Agent list and attributes'],['changeLog','Roster change log','Import deltas, coverage impact, and review state']];
-  const allOn=xSheets.every(([k])=>xSel[k]!==false),count=xSheets.filter(([k])=>xSel[k]!==false).length;
-  let b=`<div class="set-xhd"><label><input type="checkbox" ${allOn?'checked':''} onchange="(function(v){const s=S.exportSelection=Object.assign({},S.exportSelection||{});[${xSheets.map(([k])=>"'"+k+"'").join(',')}].forEach(k=>s[k]=v);schedulePersist(true);renderSettings();})(this.checked)"> All sheets</label><button type="button" class="set-link" onclick="openExportPresets()">Presets</button></div>`;
-  b+=`<div class="set-xgrid">${xSheets.map(([k,l,d])=>`<label title="${XA(d)}"><input type="checkbox" ${xSel[k]!==false?'checked':''} onchange="S.exportSelection=Object.assign({},S.exportSelection||{});S.exportSelection['${k}']=this.checked;schedulePersist(true);renderSettings()"> ${X(l)}</label>`).join('')}</div>`;
+  const xSel=normalizeExportSelection(S.exportSelection);
+  const xSheets=[['summary','Summary','Headline numbers, per-leader stats, coverage, health and flags'],['roster','Weekly roster','One row per leader per week, filterable'],['rotation','Rotation','Blueprint cycle and where each leader sits in it'],['people','People','Leaders, agents and their attributes'],['activity','Activity log','Exceptions, notes, coaching, roster changes and import review in one list'],['scheduleData','Raw schedule data','Every day as a flat table, plus source details (needed to re-import)'],['leaderTabs','One tab per leader','Optional: a full schedule tab for each leader']];
+  const allOn=xSheets.filter(([k])=>k!=='leaderTabs').every(([k])=>xSel[k]),count=xSheets.filter(([k])=>xSel[k]).length;
+  let b=`<div class="set-xhd"><label><input type="checkbox" ${allOn?'checked':''} onchange="(function(v){const s=S.exportSelection=Object.assign({},normalizeExportSelection(S.exportSelection));[${xSheets.filter(([k])=>k!=='leaderTabs').map(([k])=>"'"+k+"'").join(',')}].forEach(k=>s[k]=v);schedulePersist(true);renderSettings();})(this.checked)"> All sheets</label><button type="button" class="set-link" onclick="openExportPresets()">Presets</button></div>`;
+  b+=`<div class="set-xgrid">${xSheets.map(([k,l,d])=>`<label title="${XA(d)}"><input type="checkbox" ${xSel[k]?'checked':''} onchange="S.exportSelection=Object.assign({},normalizeExportSelection(S.exportSelection));S.exportSelection['${k}']=this.checked;schedulePersist(true);renderSettings()"> ${X(l)}</label>`).join('')}</div>`;
   b+=`<button type="button" class="swin-btn pri set-wide" onclick="closeSettings();expCustomSelection()">Export ${count} of ${xSheets.length} sheets →</button>`;
   h+=_setGroup('Custom workbook',b);
   h+=_setGroup('File names',SYNC_PREFS.filter(p=>p.s==='data'&&p.g==='File names').map(_setPrefRow).join('')+`<div class="set-kv"><b id="setFileExample">${X(buildFilename('month','xlsx'))}</b><span>Example: a month export today.</span></div>`);
@@ -22576,7 +22573,7 @@ function confirmPosition(name,weekNum){
     const d=new Date(e.date);const mon=new Date(d);mon.setDate(mon.getDate()-((mon.getDay()+6)%7));
     if(!lastMon||mon>lastMon)lastMon=mon;
   });
-  S.plPositions[dk][name]={confirmedWeek:safeWeek,anchorMonday:lastMon?lastMon.toISOString().split("T")[0]:null,groupId:gid||null};
+  S.plPositions[dk][name]={confirmedWeek:safeWeek,anchorMonday:lastMon?localISODate(lastMon):null,groupId:gid||null};
   ren();
 }
 // ── Cycle start override ──
@@ -28222,65 +28219,6 @@ function getExportEntries(scope){
   return ents.map(x=>(!S.tz||x.isOff||!x.ukS)?{...x,saS:null,saE:null}:{...x,saS:u2s(x.ukS,x.date),saE:u2s(x.ukE,x.date)});
 }
 
-function buildSheetOverview(wb,scope){
-  const ws=wb.addWorksheet('Overview',{properties:{tabColor:{argb:ORDO.TITLE}}});
-  ws.views=[{state:'frozen',xSplit:1,ySplit:7,showGridLines:false}];
-  const all=getExportEntries(scope);
-  const em={};all.forEach(e=>{if(!em[e.name])em[e.name]=[];em[e.name].push(e);});
-  for(const k of Object.keys(em))em[k].sort((a,b)=>(a.date||0)-(b.date||0));
-  const names=Object.keys(em).sort();
-  const dept=S.activeDept||'Schedule';const ml=scope==='all'?'All Months':monthLabel();
-  ws.mergeCells('A1:K1');sC(ws.getCell('A1'),{bold:true,fontSize:16,color:'FFFFFFFF',fill:ORDO.TITLE});
-  ws.getCell('A1').value=dept+' · '+ml;ws.getRow(1).height=32;
-  ws.mergeCells('A2:K2');sC(ws.getCell('A2'),{fontSize:9,color:ORDO.LABEL,italic:true});
-  ws.getCell('A2').value=APP_NAME+' · '+APP_COMPANY+' · '+APP_BUILD+' · '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
-  const wk=all.filter(e=>!e.isOff).length,of2=all.filter(e=>e.isOff).length;
-  const tHrs=Math.round(all.reduce((s,e)=>s+(e.isOff?0:calcHrs(S.tz&&e.saS?e.saS:e.ukS,S.tz&&e.saE?e.saE:e.ukE)),0));
-  const avgPP=names.length?Math.round(tHrs/names.length):0;
-  [{n:names.length,l:'Leaders'},{n:wk,l:'Shifts'},{n:of2,l:'Off'},{n:tHrs+'h',l:'Hours'},{n:avgPP+'h',l:'Avg/Person'}].forEach((kpi,i)=>{
-    const col=i*2+1;ws.mergeCells(4,col,4,col+1);ws.mergeCells(5,col,5,col+1);
-    const c=ws.getCell(4,col);c.value=kpi.n;sC(c,{bold:true,fontSize:14,color:ORDO.TITLE,fill:ORDO.BG,border:ORDO.BORDER});
-    const c2=ws.getCell(5,col);c2.value=kpi.l;sC(c2,{fontSize:9,color:ORDO.LABEL,fill:ORDO.BG});
-  });
-  const hdr=['Leader','Mon','Tue','Wed','Thu','Fri','Sat','Sun','Hrs','Shifts','Off'];
-  const hdrRow=ws.addRow(hdr);hdrRow.number=7;
-  hdrRow.eachCell((c,ci)=>{sC(c,{bold:true,color:'FFFFFFFF',fill:ORDO.TITLE,border:ORDO.BORDER,align:ci===1?'left':'center'});});
-  ws.getColumn(1).width=22;for(let i=2;i<=8;i++)ws.getColumn(i).width=14;for(let i=9;i<=11;i++)ws.getColumn(i).width=8;
-  names.forEach(name=>{
-    const ents=em[name];if(!ents||!ents.length)return;
-    const byWeek={};ents.forEach(e=>{if(!e.date)return;const mon=new Date(e.date);mon.setDate(mon.getDate()-((mon.getDay()+6)%7));const k=mon.toISOString().split('T')[0];if(!byWeek[k])byWeek[k]=[];byWeek[k].push(e);});
-    Object.keys(byWeek).sort().forEach((wk,wi)=>{
-      const wEnts=byWeek[wk];const days=Array(7).fill('');const dc=Array(7).fill(ORDO.LABEL);
-      let hrs=0,shifts=0,offs=0;
-      wEnts.forEach(e=>{const dow=(e.date.getDay()+6)%7;if(e.isOff){days[dow]=e.offL||'—';offs++;}else{days[dow]=S.tz?sAD(e):uD(e);dc[dow]=shiftColour(e);hrs+=calcHrs(S.tz&&e.saS?e.saS:e.ukS,S.tz&&e.saE?e.saE:e.ukE);shifts++;}});
-      const r=ws.addRow([wi===0?name:'',...days,Math.round(hrs*10)/10,shifts,offs]);
-      r.eachCell((c,ci)=>{sC(c,{border:ORDO.BORDER});if(ci===1)sC(c,{bold:wi===0,align:'left',border:ORDO.BORDER});else if(ci>=2&&ci<=8){const v=days[ci-2];const isOff=!v||v==='—'||v==='OFF'||v==='LEAVE'||v==='SICK';const isWknd=ci>=7;sC(c,{color:isOff?ORDO.LABEL:dc[ci-2],align:'center',fill:isOff?ORDO.BG:isWknd?ORDO.WEEKEND:undefined,border:ORDO.BORDER});}else sC(c,{align:'center',color:ORDO.LABEL,border:ORDO.BORDER});});
-    });
-  });
-
-  // ── Health score summary row ──
-  if(S.month){
-    const ths=computeTeamHealthScore(S.month);
-    if(ths&&ths.personScores.length){
-      ws.addRow([]);
-      const hsHdr=ws.addRow(['Health Score','Grade','Score','Coverage','Exceptions','Coaching','Hours','Anomalies']);
-      hsHdr.eachCell(c=>{sC(c,{bold:true,color:'FFFFFFFF',fill:ORDO.TITLE,border:ORDO.BORDER});});
-      // Team row
-      const tr=ws.addRow(['TEAM',ths.grade,ths.avg,'','','','','']);
-      sC(tr.getCell(1),{bold:true,border:ORDO.BORDER});
-      sC(tr.getCell(2),{bold:true,color:ths.grade==='A'?ORDO.SECTION:ths.grade==='B'?ORDO.TITLE:ths.grade==='C'?ORDO.GUIDE:ORDO.ALERT,border:ORDO.BORDER});
-      sC(tr.getCell(3),{bold:true,border:ORDO.BORDER});
-      // Per person
-      ths.personScores.sort((a,b)=>b.total-a.total).forEach(ps=>{
-        const r=ws.addRow([ps.name,ps.grade,ps.total,ps.scores.coverage,ps.scores.exceptions,ps.scores.coaching,ps.scores.hours,ps.scores.anomalies]);
-        r.eachCell((c,ci)=>{sC(c,{border:ORDO.BORDER});
-          if(ci===2)sC(c,{bold:true,color:ps.grade==='A'?ORDO.SECTION:ps.grade==='B'?ORDO.TITLE:ps.grade==='C'?ORDO.GUIDE:ORDO.ALERT,border:ORDO.BORDER});
-        });
-      });
-    }
-  }
-}
-
 function buildSheetsPerLeader(wb,scope){
   const all=getExportEntries(scope);const em={};all.forEach(e=>{if(!em[e.name])em[e.name]=[];em[e.name].push(e);});
   for(const k of Object.keys(em))em[k].sort((a,b)=>(a.date||0)-(b.date||0));
@@ -28402,114 +28340,6 @@ function buildSheetsPerLeader(wb,scope){
   }
 }
 
-function buildSheetAnalytics(wb,scope){
-  const ws=wb.addWorksheet('Analytics',{properties:{tabColor:{argb:ORDO.TITLE}}});
-  ws.views=[{showGridLines:false}];
-  const all=getExportEntries(scope);const names=[...new Set(all.map(e=>e.name))].sort();
-  const dept=S.activeDept||'';const ml=scope==='all'?'All Months':monthLabel();
-  ws.mergeCells('A1:H1');sC(ws.getCell('A1'),{bold:true,fontSize:14,color:'FFFFFFFF',fill:ORDO.TITLE});
-  ws.getCell('A1').value='Analytics · '+dept+' · '+ml;ws.getRow(1).height=28;ws.addRow([]);
-  // Per-person summary
-  ws.addRow(['Leader','Team','Shifts','Off','Hours','Avg h/shift','Wknd Shifts','Wk Avg Hrs']).eachCell(c=>{sC(c,{bold:true,color:'FFFFFFFF',fill:ORDO.TITLE,border:ORDO.BORDER});});
-  names.forEach(name=>{
-    const ents=all.filter(e=>e.name===name);const st=cardStats(ents);
-    const wknd=ents.filter(e=>!e.isOff&&(e.day==='Saturday'||e.day==='Sunday')).length;
-    const dates=ents.filter(x=>x.date).map(x=>x.date.getTime());
-    const span=dates.length>=2?Math.max(1,Math.round((Math.max(...dates)-Math.min(...dates))/604800000)):1;
-    ws.addRow([name,ents[0]?.team||'',ents.filter(e=>!e.isOff).length,ents.filter(e=>e.isOff).length,st.hrs,st.avg,wknd,Math.round(st.hrs/span*10)/10]).eachCell(c=>{sC(c,{border:ORDO.BORDER});});
-  });
-  ws.addRow([]);ws.addRow([]);
-  // Shift type breakdown
-  ws.addRow(['Shift Type','Count','%']).eachCell(c=>{sC(c,{bold:true,color:'FFFFFFFF',fill:ORDO.TITLE,border:ORDO.BORDER});});
-  const stC={early:0,mid:0,late:0,wknd:0,off:0};all.forEach(e=>{stC[shiftType(e)]=(stC[shiftType(e)]||0)+1;});
-  const tot=all.length||1;
-  Object.entries(stC).forEach(([k,v])=>{ws.addRow([k,v,Math.round(v/tot*100)+'%']).eachCell(c=>{sC(c,{border:ORDO.BORDER});});});
-  ws.addRow([]);ws.addRow([]);
-  // Day-of-week coverage
-  ws.addRow(['Day','Avg Working','Avg Off','Coverage %']).eachCell(c=>{sC(c,{bold:true,color:'FFFFFFFF',fill:ORDO.TITLE,border:ORDO.BORDER});});
-  ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].forEach(day=>{
-    const de=all.filter(e=>e.day===day);const ud=new Set(de.filter(e=>e.date).map(e=>excKey(e.date))).size||1;
-    const w=de.filter(e=>!e.isOff).length,o=de.filter(e=>e.isOff).length;
-    const r=ws.addRow([day,Math.round(w/ud*10)/10,Math.round(o/ud*10)/10,w+o>0?Math.round(w/(w+o)*100)+'%':'']);
-    r.eachCell(c=>{sC(c,{border:ORDO.BORDER});});
-    if(day==='Saturday'||day==='Sunday')r.getCell(1).font={...r.getCell(1).font,color:{argb:ORDO.GUIDE}};
-  });
-  // Exceptions if any
-  const excs=S.exceptions||[];
-  if(excs.length){
-    ws.addRow([]);ws.addRow([]);
-    ws.addRow(['Exception Type','Count','Hours Lost','People Affected']).eachCell(c=>{sC(c,{bold:true,color:'FFFFFFFF',fill:ORDO.TITLE,border:ORDO.BORDER});});
-    const bt={};excs.forEach(ex=>{if(!bt[ex.type])bt[ex.type]={c:0,h:0,p:new Set()};bt[ex.type].c++;bt[ex.type].h+=ex.hoursLost;bt[ex.type].p.add(ex.person);});
-    Object.entries(bt).sort((a,b)=>b[1].h-a[1].h).forEach(([t,d])=>{
-      const label=(EXC_TYPES.find(x=>x.id===t)||{}).label||t;
-      ws.addRow([label,d.c,Math.round(d.h*10)/10,[...d.p].join(', ')]).eachCell(c=>{sC(c,{border:ORDO.BORDER});});
-    });
-  }
-  for(let i=1;i<=8;i++)ws.getColumn(i).width=i===1?20:16;
-
-  // ── Health Score Summary ──
-  if(S.months&&S.months.length){
-    ws.addRow([]);ws.addRow([]);
-    const healthHdr=ws.addRow(['Health Score Summary']);sC(healthHdr.getCell(1),{bold:true,fontSize:12,color:ORDO.TITLE});
-    ws.addRow([]);
-    // Month-over-month health trend
-    ws.addRow(['Month','Team Grade','Team Score','Leaders'].concat(names.map(n=>n.split(' ')[0]))).eachCell(c=>{sC(c,{bold:true,color:'FFFFFFFF',fill:ORDO.TITLE,border:ORDO.BORDER});});
-    S.months.forEach(mk=>{
-      const ths=computeTeamHealthScore(mk);
-      if(!ths)return;
-      const row=[mk,ths.grade,ths.avg,ths.personScores.length];
-      names.forEach(name=>{
-        const ps=ths.personScores.find(p=>p.name===name);
-        row.push(ps?ps.grade+' '+ps.total:'—');
-      });
-      const r=ws.addRow(row);
-      r.eachCell((c,ci)=>{
-        sC(c,{border:ORDO.BORDER});
-        if(ci===2){const g=ths.grade;sC(c,{bold:true,color:g==='A'?ORDO.SECTION:g==='B'?ORDO.TITLE:g==='C'?ORDO.GUIDE:ORDO.ALERT});}
-      });
-    });
-
-    // Current month health dimensions
-    if(S.month){
-      const ths=computeTeamHealthScore(S.month);
-      if(ths&&ths.personScores.length){
-        ws.addRow([]);
-        ws.addRow(['Health Dimensions · '+monthLabel()]).eachCell(c=>{sC(c,{bold:true,fontSize:11,color:ORDO.TITLE});});
-        ws.addRow(['Leader','Coverage','Exceptions','Coaching','Hours','Anomalies','Total','Grade']).eachCell(c=>{sC(c,{bold:true,color:'FFFFFFFF',fill:ORDO.TITLE,border:ORDO.BORDER});});
-        ths.personScores.sort((a,b)=>b.total-a.total).forEach(ps=>{
-          const r=ws.addRow([ps.name,ps.scores.coverage,ps.scores.exceptions,ps.scores.coaching,ps.scores.hours,ps.scores.anomalies,ps.total,ps.grade]);
-          r.eachCell((c,ci)=>{sC(c,{border:ORDO.BORDER});if(ci===8)sC(c,{bold:true,color:ps.grade==='A'?ORDO.SECTION:ps.grade==='B'?ORDO.TITLE:ps.grade==='C'?ORDO.GUIDE:ORDO.ALERT});});
-        });
-      }
-    }
-  }
-
-  // ── Cross-month patterns ──
-  const patterns=computePatterns();
-  if(patterns.length){
-    ws.addRow([]);ws.addRow([]);
-    const patHdr=ws.addRow(['Cross-Month Patterns']);sC(patHdr.getCell(1),{bold:true,fontSize:12,color:ORDO.TITLE});
-    ws.addRow([]);
-    ws.addRow(['Pattern','Severity','Category','Months','Detail']).eachCell(c=>{sC(c,{bold:true,color:'FFFFFFFF',fill:ORDO.TITLE,border:ORDO.BORDER});});
-    patterns.forEach(p=>{
-      const r=ws.addRow([p.title,p.severity,p.category,p.months?p.months.length:'—',p.detail]);
-      r.eachCell((c,ci)=>{sC(c,{border:ORDO.BORDER});if(ci===2)sC(c,{bold:true,color:p.severity==='high'?ORDO.ALERT:p.severity==='medium'?ORDO.GUIDE:ORDO.LABEL});});
-    });
-  }
-
-  // ── Flags summary ──
-  const flags=computeFlags();
-  if(flags.length){
-    ws.addRow([]);ws.addRow([]);
-    const flagHdr=ws.addRow(['Active Flags']);sC(flagHdr.getCell(1),{bold:true,fontSize:12,color:ORDO.TITLE});
-    ws.addRow([]);
-    ws.addRow(['Flag','Category','Severity','Person','Detail']).eachCell(c=>{sC(c,{bold:true,color:'FFFFFFFF',fill:ORDO.TITLE,border:ORDO.BORDER});});
-    flags.filter(f=>f.category!=='info').forEach(f=>{
-      ws.addRow([f.title,f.category,f.severity,f.person||'Team',f.detail]).eachCell(c=>{sC(c,{border:ORDO.BORDER});});
-    });
-  }
-}
-
 function buildSheetScheduleData(wb){
   const ws=wb.addWorksheet('Schedule_Data',{properties:{tabColor:{argb:ORDO.STRUCT}}});
   ws.views=[{state:'frozen',ySplit:1,showGridLines:false}];
@@ -28549,152 +28379,6 @@ function buildSheetSourceManifest(wb){
   ws.autoFilter={from:'A1',to:'U1'};
   hdr.forEach((h,i)=>{ws.getColumn(i+1).width=Math.min(64,Math.max(12,h.length+2));});
   ws.getColumn(5).width=64;ws.getColumn(6).width=34;ws.getColumn(10).width=38;
-}
-
-function buildSheetNotes(wb){
-  const ws=wb.addWorksheet('Notes',{properties:{tabColor:{argb:ORDO.STRUCT}}});
-  ws.views=[{state:'frozen',ySplit:1,showGridLines:false}];
-  ws.addRow(['date','day_of_week','note_text','word_count']).eachCell(c=>{sC(c,{bold:true});});
-  const noteKeys=Object.keys(S.notes||{}).filter(k=>S.notes[k]).sort();
-  if(!noteKeys.length){ws.addRow(['','','No notes logged for this period',0]);return;}
-  noteKeys.forEach(k=>{
-    const d=new Date(k);const txt=S.notes[k];
-    ws.addRow([safeExcelDate(d),DOW[d.getDay()]||'',txt,(txt||'').split(/\s+/).filter(Boolean).length]);
-    ws.getCell(ws.lastRow.number,1).numFmt='dd-mmm-yyyy';
-  });
-  ws.getColumn(1).width=14;ws.getColumn(2).width=12;ws.getColumn(3).width=60;ws.getColumn(4).width=10;
-}
-
-function buildSheetQoLState(wb){
-  const ws=wb.addWorksheet('QoL_State',{properties:{tabColor:{argb:ORDO.STRUCT}}});
-  ws.addRow(['category','id','label','status','value_json','updated_at']).eachCell(c=>{sC(c,{bold:true,color:'FFFFFFFF',fill:ORDO.TITLE,border:ORDO.BORDER});});
-  sharedQoLRows(buildSharedQoLState()).forEach(row=>{
-    ws.addRow([row.category,row.id,row.label,row.status,row.value_json,row.updated_at]).eachCell(c=>{sC(c,{border:ORDO.BORDER});});
-  });
-  ws.views=[{state:'frozen',ySplit:1,showGridLines:false}];
-  [18,28,34,16,80,24].forEach((w,i)=>{ws.getColumn(i+1).width=w;});
-  ws.getColumn(5).alignment={vertical:'top',wrapText:true};
-  ws.autoFilter={from:'A1',to:'F1'};
-}
-
-function buildSheetChangeLog(wb){
-  const ws=wb.addWorksheet('Change_Log',{properties:{tabColor:{argb:ORDO.STRUCT}}});
-  const headers=['record_id','department','source','generated_at','status','risk','total_changes','high_impact','medium_impact','minimum_coverage','change_type','severity','person','date','title','detail','baseline_source','baseline_at'];
-  ws.addRow(headers).eachCell(c=>{sC(c,{bold:true,color:'FFFFFFFF',fill:ORDO.TITLE,border:ORDO.BORDER});});
-  const history=_normalizeChangeIntelligence(S.changeIntelligence).history;
-  let rowCount=0;
-  history.forEach(record=>{
-    const items=record.changeItems&&record.changeItems.length?record.changeItems:[{type:'summary',severity:record.risk||'none',name:'',date:'',title:record.summary||'No changes',detail:''}];
-    items.forEach(item=>{
-      ws.addRow([record.id||'',record.department||'',record.source||'',record.generatedAt||'',record.status||'open',record.risk||'',record.total||0,record.high||0,record.medium||0,record.minimumCoverage||0,item.type||'',item.severity||'',item.name||'',item.date||'',item.title||'',item.detail||'',record.baselineSource||'',record.baselineAt||'']).eachCell(c=>{sC(c,{border:ORDO.BORDER,vertical:'top'});});
-      rowCount++;
-    });
-  });
-  if(!rowCount)ws.addRow(['','','','','','','','','','','','','','','No roster change comparisons stored yet','','']);
-  [18,18,28,22,14,12,14,14,16,16,20,12,22,14,24,34,28,22].forEach((w,i)=>{ws.getColumn(i+1).width=w;});
-  ws.views=[{state:'frozen',ySplit:1,showGridLines:false}];
-  ws.autoFilter={from:'A1',to:'R1'};
-}
-
-function buildSheetBlueprint(wb){
-  const ws=wb.addWorksheet('Blueprint',{properties:{tabColor:{argb:ORDO.GUIDE}}});
-  ws.views=[{showGridLines:false}];
-  const dk=S.activeDept||'default';const bp=S.plBlueprints[dk];
-  const groups=(bp&&bp.groups&&Object.keys(bp.groups).length)
-    ?Object.entries(bp.groups).map(([gid,g])=>({
-      id:gid,
-      label:(g&&g.label)||gid,
-      cycleLen:(g&&g.cycleLen)||5,
-      weeks:(g&&g.weeks)||{},
-      confirmed:!!(g&&g.confirmed)
-    }))
-    :[{
-      id:'default',
-      label:'Blueprint',
-      cycleLen:bp?bp.cycleLen:(S.rotationDef?S.rotationDef.cycleLen:5),
-      weeks:(bp&&bp.weeks)||{},
-      confirmed:!!(bp&&bp.confirmed)
-    }];
-  ws.mergeCells('A1:H1');const t=ws.getCell('A1');
-  t.value='Rotation Blueprint · '+(S.activeDept||'')+ ' · '+groups.length+' group'+(groups.length!==1?'s':'');
-  sC(t,{bold:true,fontSize:13,color:'FFFFFFFF',fill:ORDO.TITLE});
-  const DSHORT=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  ws.getColumn(1).width=8;for(let i=2;i<=8;i++)ws.getColumn(i).width=14;
-  ws.addRow([]); // row 2 spacer
-  groups.forEach((g,idx)=>{
-    const gr=ws.addRow([`${g.label} · ${g.cycleLen}w · ${g.confirmed?'CONFIRMED ✓':'UNCONFIRMED ⚠'}`]);
-    ws.mergeCells(`A${gr.number}:H${gr.number}`);
-    sC(gr.getCell(1),{bold:true,color:g.confirmed?ORDO.SECTION:ORDO.GUIDE,fill:ORDO.BG});
-    const hr=ws.addRow(['Week',...DSHORT]);
-    hr.eachCell(c=>{sC(c,{bold:true,fill:ORDO.BG,border:ORDO.STRUCT});});
-    for(let w=1;w<=g.cycleLen;w++){
-      const pat=(g.weeks&&g.weeks[w])||{};
-      const vals=['W'+w];
-      for(let d=0;d<7;d++){vals.push(pat[d]||'—');}
-      const r=ws.addRow(vals);
-      r.eachCell((c,ci)=>{
-        if(ci===1)sC(c,{bold:true,color:ORDO.TITLE});
-        else{
-          const v=c.value;
-          sC(c,{color:v==='—'?ORDO.LABEL:ORDO.TITLE,fill:v==='—'?ORDO.BG:undefined,align:'center'});
-        }
-      });
-    }
-    if(idx<groups.length-1)ws.addRow([]);
-  });
-}
-
-function buildSheetPositions(wb){
-  const ws=wb.addWorksheet('Positions',{properties:{tabColor:{argb:ORDO.GUIDE}}});
-  ws.views=[{state:'frozen',ySplit:1,showGridLines:false}];
-  const dk=S.activeDept||'default';const positions=S.plPositions[dk]||{};
-  const bp=S.plBlueprints[dk];
-  const groupLabels={};
-  if(bp&&bp.groups){
-    Object.entries(bp.groups).forEach(([gid,g])=>{groupLabels[gid]=(g&&g.label)||gid;});
-  }
-  ws.addRow(['leader_name','blueprint_group','confirmed_rotation_week','anchor_monday','last_known_date']).eachCell(c=>{sC(c,{bold:true});});
-  const names=[...new Set(S.entries.map(e=>e.name))].sort();
-  names.forEach(name=>{
-    const pos=positions[name];
-    const lastE=S.entries.filter(e=>e.name===name&&e.date).sort((a,b)=>b.date-a.date)[0];
-    const gid=pos&&pos.groupId?pos.groupId:getBlueprintGroupIdForName(dk,name);
-    const gl=gid?(groupLabels[gid]||gid):'';
-    ws.addRow([
-      name,
-      gl,
-      pos?pos.confirmedWeek:'',
-      pos&&pos.anchorMonday?safeExcelDate(new Date(pos.anchorMonday)):'',
-      lastE?safeExcelDate(lastE.date):''
-    ]);
-    const rn=ws.lastRow.number;
-    if(pos&&pos.anchorMonday)ws.getCell(rn,4).numFmt='dd-mmm-yyyy';
-    if(lastE)ws.getCell(rn,5).numFmt='dd-mmm-yyyy';
-  });
-  ws.getColumn(1).width=22;ws.getColumn(2).width=22;ws.getColumn(3).width=24;ws.getColumn(4).width=16;ws.getColumn(5).width=16;
-  // Explainer
-  ws.addRow([]);ws.addRow([]);
-  ws.addRow(['Note: confirmed_rotation_week = the rotation week this person was on at their anchor_monday date.']);
-  sC(ws.getCell(ws.lastRow.number,1),{fontSize:9,color:ORDO.LABEL,italic:true});
-  ws.addRow(['Use Planner → Positions in '+APP_NAME+' to verify and adjust.']);
-  sC(ws.getCell(ws.lastRow.number,1),{fontSize:9,color:ORDO.LABEL,italic:true});
-}
-
-function buildSheetExceptions(wb){
-  const ws=wb.addWorksheet('Exceptions',{properties:{tabColor:{argb:ORDO.SECTION}}});
-  ws.views=[{state:'frozen',ySplit:1,showGridLines:false}];
-  ws.addRow(['date','leader_name','agent_name','type','severity','hours_lost','hours_worked','scheduled_hours','notes','logged_at','source','author']).eachCell(c=>{sC(c,{bold:true,color:'FFFFFFFF',fill:ORDO.TITLE,border:ORDO.BORDER});});
-  const excs=(S.exceptions||[]).sort((a,b)=>a.date.localeCompare(b.date));
-  if(!excs.length){ws.addRow(['','','','No exceptions logged','','','','','','','','']);return;}
-  excs.forEach(ex=>{
-    const parts=ex.date.split('-').map(Number);
-    const d=new Date(parts[0],parts[1]-1,parts[2]);
-    // Reasons for sick, family and no-show events are health-related: left out unless included (people/absence.js).
-    const note=typeof absenceExportNote==="function"?absenceExportNote(ex):(ex.notes||'');
-    ws.addRow([safeExcelDate(d),ex.person||'',ex.agentName||'',ex.type,ex.severity,ex.hoursLost,ex.hoursWorked,ex.scheduledHrs||'',note,ex.loggedAt||'',ex.source||'manual',ex.authorName||'']);
-    ws.getCell(ws.lastRow.number,1).numFmt='dd-mmm-yyyy';
-  });
-  [14,20,20,14,12,10,12,14,30,20,12,16].forEach((w,i)=>{ws.getColumn(i+1).width=w;});
 }
 
 async function expCoachingStandalone(){
@@ -28770,12 +28454,16 @@ function buildSheetPeople(wb){
   ws.mergeCells('A1:H1');sC(ws.getCell('A1'),{bold:true,fontSize:14,color:'FFFFFFFF',fill:ORDO.TITLE});
   ws.getCell('A1').value='People Registry · '+(S.activeDept||'')+(S.rosterFile?' · Roster: '+S.rosterFile.agentCount+' agents':'');ws.getRow(1).height=28;ws.addRow([]);
   // Leaders section
-  ws.addRow(['Leader','Team','Role','Agents','Span','Contract Hrs','Source','Birthday']).eachCell(c=>{sC(c,{bold:true,color:'FFFFFFFF',fill:ORDO.TITLE,border:ORDO.BORDER});});
+  // Agents / Span only mean something once agents are linked to leaders; showing "0" and "-" for every
+  // leader (a leaders-only roster) is noise, so those columns appear only when there are agents.
+  const hasAgents=Object.values(S.people).some(p=>p.role==='agent');
+  ws.addRow(hasAgents?['Leader','Team','Role','Agents','Span','Contract Hrs','Source','Birthday']:['Leader','Team','Role','Contract Hrs','Source','Birthday']).eachCell(c=>{sC(c,{bold:true,color:'FFFFFFFF',fill:ORDO.TITLE,border:ORDO.BORDER});});
   const leaders=getLeaders();
   leaders.forEach(leader=>{
     const ac=getAgentCount(leader.name);
     const soc=getSpanOfControl(leader.name);
-    ws.addRow([leader.name,leader.team||'',leader.role,ac,soc.ratio,leader.contractHours||'',leader.source||'',leader.birthday||'']).eachCell(c=>{sC(c,{border:ORDO.BORDER});});
+    const row=hasAgents?[leader.name,leader.team||'',leader.role,ac,soc.ratio,leader.contractHours||'',leader.source||'',leader.birthday||'']:[leader.name,leader.team||'',leader.role,leader.contractHours||'',leader.source||'',leader.birthday||''];
+    ws.addRow(row).eachCell(c=>{sC(c,{border:ORDO.BORDER});});
   });
   ws.addRow([]);ws.addRow([]);
   // Agents section
@@ -28822,20 +28510,13 @@ async function expSavePlus(scope){
     try{
       const workbook=new ExcelJS.Workbook();
       applyExportMetadata(workbook,'Save+ export',scope);
-      buildSheetOverview(workbook,scope);
-      buildSheetsPerLeader(workbook,scope);
-      buildSheetAnalytics(workbook,scope);
+      buildSheetSummary(workbook,scope);
+      buildSheetWeeklyRoster(workbook,scope);
+      buildSheetRotation(workbook);
+      buildSheetPeople(workbook);
+      buildSheetActivity(workbook);
       buildSheetScheduleData(workbook);
       buildSheetSourceManifest(workbook);
-      buildSheetNotes(workbook);
-      buildSheetQoLState(workbook);
-      buildSheetChangeLog(workbook);
-      buildSheetBlueprint(workbook);
-      buildSheetPositions(workbook);
-      buildSheetExceptions(workbook);
-      buildSheetCoaching(workbook);
-      if((S.coachHistory||[]).length)buildSheetCoachingHistory(workbook);
-      buildSheetPeople(workbook);
       buildSheetAppState(workbook);
       finalisePremiumWorkbook(workbook);
       const buffer=await workbook.xlsx.writeBuffer();
@@ -28849,26 +28530,21 @@ async function expCustomSelection(){
   hExp();
   if(!hasExportData())return false;
   if(!(await ensureExcelJsReady()))return false;
-  const sel=S.exportSelection||{};
-  if(sel.changeLog===undefined)sel.changeLog=true;
+  const sel=normalizeExportSelection(S.exportSelection);
   const keys=Object.keys(sel).filter(k=>sel[k]);
-  if(!keys.length){toast("Nothing selected — tick at least one item in Settings → Exports","warn",3000);return false;}
+  if(!keys.length){toast("Nothing selected — tick at least one item in Settings → Data & exports","warn",3000);return false;}
   return withExportLock('custom',async()=>{
     toast("Building custom export…","info",8000);
     try{
       const workbook=new ExcelJS.Workbook();
       applyExportMetadata(workbook,'Custom export','all');
-      if(sel.overview)buildSheetOverview(workbook,'all');
-      if(sel.leaders)buildSheetsPerLeader(workbook,'all');
-      if(sel.analytics)buildSheetAnalytics(workbook,'all');
-      if(sel.scheduleData){buildSheetScheduleData(workbook);buildSheetSourceManifest(workbook);}
-      if(sel.notes){buildSheetNotes(workbook);buildSheetQoLState(workbook);}
-      if(sel.changeLog)buildSheetChangeLog(workbook);
-      if(sel.blueprint)buildSheetBlueprint(workbook);
-      if(sel.positions)buildSheetPositions(workbook);
-      if(sel.exceptions)buildSheetExceptions(workbook);
-      if(sel.coaching){buildSheetCoaching(workbook);if((S.coachHistory||[]).length)buildSheetCoachingHistory(workbook);}
+      if(sel.summary)buildSheetSummary(workbook,'all');
+      if(sel.roster)buildSheetWeeklyRoster(workbook,'all');
+      if(sel.leaderTabs)buildSheetsPerLeader(workbook,'all');
+      if(sel.rotation)buildSheetRotation(workbook);
       if(sel.people)buildSheetPeople(workbook);
+      if(sel.activity)buildSheetActivity(workbook);
+      if(sel.scheduleData){buildSheetScheduleData(workbook);buildSheetSourceManifest(workbook);}
       const buffer=await workbook.xlsx.writeBuffer();
       const sheetCount=workbook.worksheets.length;
       const label=sheetCount+'_sheets';
@@ -28905,9 +28581,8 @@ async function expCurrentMonth(){
     try{
       const workbook=new ExcelJS.Workbook();
       applyExportMetadata(workbook,'Styled month export','month');
-      buildSheetOverview(workbook,'month');
-      buildSheetsPerLeader(workbook,'month');
-      buildSheetAnalytics(workbook,'month');
+      buildSheetSummary(workbook,'month');
+      buildSheetWeeklyRoster(workbook,'month');
       buildSheetSourceManifest(workbook);
       const buffer=await workbook.xlsx.writeBuffer();
       triggerBlobDownload(new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),buildFilename('Month_Export','xlsx'));
@@ -28915,6 +28590,377 @@ async function expCurrentMonth(){
     }catch(err){console.error(err);toast("Export failed","err");}
   });
 }
+
+/* ═══ CONSOLIDATED EXPORT SHEETS ═══
+   The Save+ / custom workbook used to spread one story across a dozen tabs: Overview + Analytics,
+   one tab per leader, Blueprint + Positions, and separate Exceptions / Notes / Coaching / Change_Log /
+   QoL_State tabs (most of them empty). They are grouped by what a person actually reads:
+
+     Summary        headline numbers, per-leader stats, mix, coverage, health, flags
+     Weekly_Roster  one row per leader per week (replaces the Overview weekly grid and the leader tabs)
+     Rotation       blueprint cycle + where each leader sits in it (Blueprint + Positions)
+     Activity       exceptions, notes, coaching, roster changes and the import review in one log;
+                    omitted entirely when there is nothing to log
+     People         registry (buildSheetPeople)
+     Schedule_Data  flat rows the app re-imports (name and columns are part of the Save+ contract)
+     Sources        import identity (part of the Save+ contract)
+
+   Everything the app needs to restore a Save+ file lives in the hidden _app_state sheets, which already
+   include the shared quality-of-life state, so no QoL_State tab is written. */
+
+const EXPORT_SHEET_KEYS=['summary','roster','scheduleData','rotation','people','activity'];
+
+// Old selections and presets used one key per legacy tab. Map them onto the grouped keys so a saved
+// preset keeps meaning the same thing; a group is on if any of the tabs it absorbed was on.
+function normalizeExportSelection(sel){
+  const s=sel&&typeof sel==='object'?sel:{};
+  const on=k=>s[k]!==false;
+  const has=k=>s[k]!==undefined;
+  const any=(...ks)=>ks.some(k=>on(k));
+  const out={
+    summary:has('summary')?on('summary'):any('overview','analytics'),
+    roster:has('roster')?on('roster'):any('leaders','overview'),
+    scheduleData:on('scheduleData'),
+    rotation:has('rotation')?on('rotation'):any('blueprint','positions'),
+    people:on('people'),
+    activity:has('activity')?on('activity'):any('exceptions','coaching','notes','changeLog'),
+    leaderTabs:!!s.leaderTabs
+  };
+  return out;
+}
+
+function _xlHdr(row,opts){
+  row.eachCell(c=>sC(c,Object.assign({bold:true,color:'FFFFFFFF',fill:ORDO.TITLE,border:ORDO.BORDER},opts||{})));
+}
+function _xlSection(ws,text,span){
+  const r=ws.addRow([text]);
+  ws.mergeCells(r.number,1,r.number,span||8);
+  sC(r.getCell(1),{bold:true,fontSize:12,color:ORDO.TITLE,align:'left'});
+  r.height=22;
+  return r;
+}
+function _xlBand(ws,text,span,size){
+  ws.mergeCells(1,1,1,span);
+  const c=ws.getCell(1,1);c.value=text;
+  sC(c,{bold:true,fontSize:size||16,color:'FFFFFFFF',fill:ORDO.TITLE,align:'left'});
+  ws.getRow(1).height=32;
+}
+function _xlGrade(g){return g==='A'?ORDO.SECTION:g==='B'?ORDO.TITLE:g==='C'?ORDO.GUIDE:ORDO.ALERT;}
+function _xlLocalDate(iso){
+  const p=String(iso||'').split('-').map(Number);
+  return p.length===3&&p.every(Number.isFinite)?new Date(p[0],p[1]-1,p[2]):null;
+}
+function _xlHours(e){return e.isOff?0:calcHrs(S.tz&&e.saS?e.saS:e.ukS,S.tz&&e.saE?e.saE:e.ukE);}
+function _xlMonday(d){const m=new Date(d.getFullYear(),d.getMonth(),d.getDate());m.setDate(m.getDate()-((m.getDay()+6)%7));return m;}
+function _xlPeriod(all){
+  const t=all.filter(e=>e.date).map(e=>e.date.getTime());
+  if(!t.length)return null;
+  return{from:new Date(Math.min(...t)),to:new Date(Math.max(...t))};
+}
+
+/* ── Summary ─────────────────────────────────────────────────────────────── */
+function buildSheetSummary(wb,scope){
+  const ws=wb.addWorksheet('Summary',{properties:{tabColor:{argb:ORDO.TITLE}}});
+  ws.views=[{showGridLines:false}];
+  const all=getExportEntries(scope);
+  const names=[...new Set(all.map(e=>e.name))].sort();
+  const dept=S.activeDept||'Schedule';
+  const ml=scope==='all'?'All months':monthLabel();
+  const period=_xlPeriod(all);
+  const SPAN=10;
+  _xlBand(ws,dept+' · '+ml,SPAN);
+  ws.mergeCells('A2:J2');
+  sC(ws.getCell('A2'),{fontSize:9,color:ORDO.LABEL,italic:true,align:'left'});
+  ws.getCell('A2').value=APP_NAME+' · '+APP_COMPANY+' · '+APP_BUILD+' · times in '+(S.tz?'SA':'UK')+' · exported '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  ws.addRow([]);
+
+  const work=all.filter(e=>!e.isOff),off=all.filter(e=>e.isOff);
+  const tHrs=Math.round(all.reduce((s,e)=>s+_xlHours(e),0));
+  const weeks=new Set(all.filter(e=>e.date).map(e=>_xlMonday(e.date).getTime())).size;
+  const kpis=[
+    [names.length,'Leaders'],[work.length,'Shifts'],[off.length,'Off days'],[tHrs+'h','Hours'],
+    [names.length?Math.round(tHrs/names.length)+'h':'0h','Avg / leader'],
+    [period?fDF(period.from)+' to '+fDF(period.to):'-',weeks+' weeks']
+  ];
+  const widths=[2,2,2,2,2,2];
+  let col=1;
+  kpis.forEach(([v,l],i)=>{
+    const span=i===5?4:2;
+    ws.mergeCells(4,col,4,col+span-1);ws.mergeCells(5,col,5,col+span-1);
+    const c=ws.getCell(4,col);c.value=v;sC(c,{bold:true,fontSize:i===5?11:14,color:ORDO.TITLE,fill:ORDO.BG,border:ORDO.BORDER,align:'center'});
+    const c2=ws.getCell(5,col);c2.value=l;sC(c2,{fontSize:9,color:ORDO.LABEL,fill:ORDO.BG,border:ORDO.BORDER,align:'center'});
+    col+=span;
+  });
+  ws.getRow(4).height=26;
+  ws.addRow([]);
+
+  // Leaders
+  _xlSection(ws,'Leaders',SPAN);
+  _xlHdr(ws.addRow(['Leader','Team','Shifts','Off','Hours','Avg h/shift','Weekend shifts','Avg hrs/wk','Top shift','Current wk']));
+  names.forEach(name=>{
+    const ents=all.filter(e=>e.name===name);const st=cardStats(ents);
+    const wknd=ents.filter(e=>!e.isOff&&(e.day==='Saturday'||e.day==='Sunday')).length;
+    const dates=ents.filter(x=>x.date).map(x=>x.date.getTime());
+    const span=dates.length>=2?Math.max(1,Math.round((Math.max(...dates)-Math.min(...dates))/604800000)):1;
+    const lastWk=ents.filter(e=>e.week&&e.date).sort((a,b)=>b.date-a.date)[0];
+    ws.addRow([name,ents[0]&&ents[0].team||'',ents.filter(e=>!e.isOff).length,ents.filter(e=>e.isOff).length,st.hrs,st.avg,wknd,Math.round(st.hrs/span*10)/10,st.topShift||'',lastWk?lastWk.week:''])
+      .eachCell((c,ci)=>sC(c,{border:ORDO.BORDER,align:ci===1||ci===9?'left':'center'}));
+  });
+  ws.addRow([]);
+
+  // Coverage by weekday (A:D) beside the shift mix (F:H)
+  _xlSection(ws,'Coverage and mix',SPAN);
+  const covHdr=ws.addRow(['Day','Avg working','Avg off','Coverage %','','Shift type','Count','Share']);
+  [1,2,3,4,6,7,8].forEach(i=>sC(covHdr.getCell(i),{bold:true,color:'FFFFFFFF',fill:ORDO.TITLE,border:ORDO.BORDER,align:i===1||i===6?'left':'center'}));
+  const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  const mix={early:0,mid:0,late:0,wknd:0,off:0};
+  all.forEach(e=>{const k=shiftType(e);mix[k]=(mix[k]||0)+1;});
+  const mixRows=Object.entries(mix),tot=all.length||1;
+  days.forEach((day,i)=>{
+    const de=all.filter(e=>e.day===day);
+    const ud=new Set(de.filter(e=>e.date).map(e=>excKey(e.date))).size||1;
+    const w=de.filter(e=>!e.isOff).length,o=de.filter(e=>e.isOff).length;
+    const m=mixRows[i];
+    const r=ws.addRow([day,Math.round(w/ud*10)/10,Math.round(o/ud*10)/10,w+o>0?Math.round(w/(w+o)*100)+'%':'','',m?m[0]:'',m?m[1]:'',m?Math.round(m[1]/tot*100)+'%':'']);
+    [1,2,3,4,6,7,8].forEach(ci=>sC(r.getCell(ci),{border:ORDO.BORDER,align:ci===1||ci===6?'left':'center',color:(ci===1&&i>=5)?ORDO.GUIDE:ORDO.TEXT}));
+  });
+
+  // Health by month
+  if(S.months&&S.months.length&&typeof computeTeamHealthScore==='function'){
+    const rows=[];
+    S.months.forEach(mk=>{
+      const ths=computeTeamHealthScore(mk);
+      if(!ths||!ths.personScores||!ths.personScores.length)return;
+      const r=[monthKeyLabel(mk),ths.grade,ths.avg];
+      names.forEach(n=>{const ps=ths.personScores.find(p=>p.name===n);r.push(ps?ps.grade+' '+ps.total:'-');});
+      rows.push({r,g:ths.grade});
+    });
+    if(rows.length){
+      ws.addRow([]);
+      _xlSection(ws,'Health by month',SPAN);
+      _xlHdr(ws.addRow(['Month','Team grade','Team score'].concat(names)));
+      rows.forEach(({r,g})=>{
+        const row=ws.addRow(r);
+        row.eachCell((c,ci)=>sC(c,{border:ORDO.BORDER,align:ci===1?'left':'center'}));
+        sC(row.getCell(2),{bold:true,color:_xlGrade(g),border:ORDO.BORDER,align:'center'});
+      });
+    }
+  }
+
+  // Exceptions by type
+  const excs=S.exceptions||[];
+  if(excs.length){
+    ws.addRow([]);
+    _xlSection(ws,'Exceptions',SPAN);
+    _xlHdr(ws.addRow(['Type','Count','Hours lost','People affected']));
+    const bt={};excs.forEach(ex=>{if(!bt[ex.type])bt[ex.type]={c:0,h:0,p:new Set()};bt[ex.type].c++;bt[ex.type].h+=ex.hoursLost||0;bt[ex.type].p.add(ex.person);});
+    Object.entries(bt).sort((a,b)=>b[1].h-a[1].h).forEach(([t,d])=>{
+      const label=(EXC_TYPES.find(x=>x.id===t)||{}).label||t;
+      ws.addRow([label,d.c,Math.round(d.h*10)/10,[...d.p].filter(Boolean).join(', ')]).eachCell((c,ci)=>sC(c,{border:ORDO.BORDER,align:ci===1||ci===4?'left':'center'}));
+    });
+  }
+
+  // Patterns and flags share one "Attention" table so they read as one to-do list
+  const attention=[];
+  try{(computePatterns()||[]).forEach(p=>attention.push(['Pattern',p.title,p.severity,p.person||'Team',p.detail]));}catch(e){}
+  try{(computeFlags()||[]).filter(f=>f.category!=='info').forEach(f=>attention.push(['Flag',f.title,f.severity,f.person||'Team',f.detail]));}catch(e){}
+  if(attention.length){
+    ws.addRow([]);
+    _xlSection(ws,'Needs attention',SPAN);
+    _xlHdr(ws.addRow(['Kind','Title','Severity','Who','Detail']));
+    attention.forEach(a=>{
+      const r=ws.addRow(a);
+      r.eachCell((c,ci)=>sC(c,{border:ORDO.BORDER,align:'left'}));
+      sC(r.getCell(3),{bold:true,border:ORDO.BORDER,align:'center',color:a[2]==='high'?ORDO.ALERT:a[2]==='medium'?ORDO.GUIDE:ORDO.LABEL});
+    });
+  }
+
+  ws.getColumn(1).width=24;ws.getColumn(2).width=16;
+  for(let i=3;i<=8;i++)ws.getColumn(i).width=14;
+  ws.getColumn(9).width=16;ws.getColumn(10).width=12;
+  ws.getColumn(5).width=16;
+}
+function monthKeyLabel(mk){
+  const p=String(mk).split('-').map(Number);
+  return p.length===2&&MOFULL[p[1]]?MOFULL[p[1]]+' '+p[0]:String(mk);
+}
+
+/* ── Weekly_Roster ───────────────────────────────────────────────────────── */
+// One row per leader per Monday-week, leader named on every row so it filters and sorts.
+function buildSheetWeeklyRoster(wb,scope){
+  const ws=wb.addWorksheet('Weekly_Roster',{properties:{tabColor:{argb:ORDO.SECTION}}});
+  const all=getExportEntries(scope).filter(e=>e.date);
+  // "File wk" is the week number the source file itself used; shown only when the file had one.
+  const hasFileWk=all.some(e=>e._fileWeek);
+  const tz=S.tz?'SA':'UK';
+  const lead=['Week commencing','Wk'].concat(hasFileWk?['File wk']:[]).concat(['Leader','Team']);
+  const hdr=lead.concat(['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>d+' ('+tz+')'),['Hours','Shifts','Off']);
+  const hr=ws.addRow(hdr);_xlHdr(hr);hr.height=22;
+  const dayStart=lead.length+1;
+  ws.views=[{state:'frozen',xSplit:lead.length-1,ySplit:1,showGridLines:false}];
+  const groups=new Map();
+  all.forEach(e=>{
+    const mon=_xlMonday(e.date);const k=mon.getTime()+'|'+e.name;
+    if(!groups.has(k))groups.set(k,{mon,name:e.name,team:e.team||'',ents:[]});
+    groups.get(k).ents.push(e);
+  });
+  const top=votes=>{const t=Object.entries(votes).sort((a,b)=>b[1]-a[1])[0];return t?t[0]:'';};
+  const rows=[...groups.values()].sort((a,b)=>a.mon-b.mon||a.name.localeCompare(b.name));
+  rows.forEach(g=>{
+    const days=Array(7).fill('');const colour=Array(7).fill(ORDO.LABEL);
+    let hrs=0,shifts=0,offs=0;const wkVotes={},fileVotes={};
+    g.ents.forEach(e=>{
+      const dow=(e.date.getDay()+6)%7;
+      if(e.week)wkVotes[e.week]=(wkVotes[e.week]||0)+1;
+      if(e._fileWeek)fileVotes[e._fileWeek]=(fileVotes[e._fileWeek]||0)+1;
+      if(e.isOff){days[dow]=e.offL||'OFF';offs++;}
+      else{days[dow]=S.tz?sAD(e):uD(e);colour[dow]=shiftColour(e);hrs+=_xlHours(e);shifts++;}
+    });
+    const r=ws.addRow([safeExcelDate(g.mon),top(wkVotes)].concat(hasFileWk?[top(fileVotes)]:[]).concat([g.name,g.team],days,[Math.round(hrs*10)/10,shifts,offs]));
+    r.getCell(1).numFmt='dd-mmm-yyyy';
+    r.eachCell((c,ci)=>{
+      if(ci<dayStart)sC(c,{border:ORDO.BORDER,align:(ci===lead.length-1||ci===lead.length)?'left':'center'});
+      else if(ci<dayStart+7){
+        const di=ci-dayStart,v=days[di];const isOff=!v||/^(OFF|LEAVE|SICK|PH|—|-)$/i.test(v);
+        sC(c,{border:ORDO.BORDER,align:'center',color:isOff?ORDO.LABEL:colour[di],fill:isOff?ORDO.BG:(di>=5?ORDO.WEEKEND:undefined)});
+      }else sC(c,{border:ORDO.BORDER,align:'center',color:ORDO.LABEL});
+    });
+  });
+  const widths=[16,6].concat(hasFileWk?[8]:[]).concat([22,16],Array(7).fill(15),[9,8,6]);
+  widths.forEach((w,i)=>{ws.getColumn(i+1).width=w;});
+  if(rows.length)ws.autoFilter={from:{row:1,column:1},to:{row:rows.length+1,column:hdr.length}};
+}
+
+/* ── Rotation (Blueprint + Positions) ────────────────────────────────────── */
+function buildSheetRotation(wb){
+  const dk=S.activeDept||'default';
+  const bp=S.plBlueprints[dk];
+  const positions=S.plPositions[dk]||{};
+  if(!bp&&!Object.keys(positions).length&&!S.rotationDef)return false;
+  const ws=wb.addWorksheet('Rotation',{properties:{tabColor:{argb:ORDO.GUIDE}}});
+  ws.views=[{showGridLines:false}];
+  const groups=(bp&&bp.groups&&Object.keys(bp.groups).length)
+    ?Object.entries(bp.groups).map(([gid,g])=>({id:gid,label:(g&&g.label)||gid,cycleLen:(g&&g.cycleLen)||5,weeks:(g&&g.weeks)||{},confirmed:!!(g&&g.confirmed)}))
+    :[{id:'default',label:'Blueprint',cycleLen:bp?bp.cycleLen:(S.rotationDef?S.rotationDef.cycleLen:5),weeks:(bp&&bp.weeks)||{},confirmed:!!(bp&&bp.confirmed)}];
+  _xlBand(ws,'Rotation · '+(S.activeDept||'')+' · '+groups.length+' group'+(groups.length!==1?'s':''),9,14);
+  ws.addRow([]);
+  const DSHORT=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  groups.forEach(g=>{
+    const gr=ws.addRow([g.label+' · '+g.cycleLen+'-week cycle · '+(g.confirmed?'confirmed':'not yet confirmed (check in Planner > Blueprint)')]);
+    ws.mergeCells(gr.number,1,gr.number,8);
+    sC(gr.getCell(1),{bold:true,color:g.confirmed?ORDO.SECTION:ORDO.GUIDE,fill:ORDO.BG,align:'left'});
+    _xlHdr(ws.addRow(['Week',...DSHORT]));
+    for(let w=1;w<=g.cycleLen;w++){
+      const pat=g.weeks&&g.weeks[w]||{};
+      const r=ws.addRow(['W'+w,...DSHORT.map((_,d)=>pat[d]||'-')]);
+      r.eachCell((c,ci)=>{
+        if(ci===1)sC(c,{bold:true,color:ORDO.TITLE,border:ORDO.BORDER,align:'center'});
+        else{const off=c.value==='-'||c.value==='OFF';sC(c,{color:off?ORDO.LABEL:ORDO.TITLE,fill:off?ORDO.BG:undefined,border:ORDO.BORDER,align:'center'});}
+      });
+    }
+    ws.addRow([]);
+  });
+  // Positions: which week of the cycle each leader is on, and the Monday that is anchored to.
+  const names=[...new Set(S.entries.map(e=>e.name))].sort();
+  if(names.length){
+    _xlSection(ws,'Where each leader sits in the cycle',9);
+    _xlHdr(ws.addRow(['Leader','Group','Cycle week','Anchored to week commencing','Last scheduled day']));
+    const labels={};
+    if(bp&&bp.groups)Object.entries(bp.groups).forEach(([gid,g])=>{labels[gid]=(g&&g.label)||gid;});
+    names.forEach(name=>{
+      const pos=positions[name];
+      const lastE=S.entries.filter(e=>e.name===name&&e.date).sort((a,b)=>b.date-a.date)[0];
+      const gid=pos&&pos.groupId?pos.groupId:getBlueprintGroupIdForName(dk,name);
+      const anchor=pos&&pos.anchorMonday?_xlLocalDate(pos.anchorMonday):null;
+      const r=ws.addRow([name,gid?(labels[gid]||gid):'',pos?'W'+pos.confirmedWeek:'',anchor?safeExcelDate(anchor):'',lastE?safeExcelDate(lastE.date):'']);
+      r.eachCell(c=>sC(c,{border:ORDO.BORDER,align:'center'}));
+      sC(r.getCell(1),{border:ORDO.BORDER,align:'left'});
+      if(anchor)r.getCell(4).numFmt='dd-mmm-yyyy';
+      if(lastE)r.getCell(5).numFmt='dd-mmm-yyyy';
+    });
+  }
+  ws.getColumn(1).width=24;ws.getColumn(2).width=16;
+  for(let i=3;i<=8;i++)ws.getColumn(i).width=i===4?28:14;
+  return true;
+}
+
+/* ── Activity ────────────────────────────────────────────────────────────── */
+function _activityRows(){
+  const rows=[];
+  const dateOf=s=>{const d=_xlLocalDate(String(s||'').slice(0,10));return d;};
+  (S.exceptions||[]).forEach(ex=>{
+    const note=typeof absenceExportNote==='function'?absenceExportNote(ex):(ex.notes||'');
+    rows.push({d:dateOf(ex.date),kind:'exception',person:ex.person||'',agent:ex.agentName||'',type:ex.type||'',status:ex.severity||'',hours:ex.hoursLost||'',detail:note,at:ex.loggedAt||'',source:ex.source||'manual',author:ex.authorName||''});
+  });
+  Object.keys(S.notes||{}).filter(k=>S.notes[k]).forEach(k=>{
+    rows.push({d:dateOf(k),kind:'note',person:'',agent:'',type:'',status:'',hours:'',detail:S.notes[k],at:'',source:'',author:''});
+  });
+  const plan=S.coachPlan||{};
+  Object.keys(plan).forEach(name=>{
+    const ps=plan[name]||{};if(!ps.date||ps.done)return;
+    const status=ps.missed?'missed':ps.confirmed?'confirmed':'suggested';
+    rows.push({d:dateOf(ps.date),kind:'coaching',person:name,agent:'',type:'planned',status,hours:(S.coachDuration||30)/60,detail:[ps.slotLabel||ps.time||'',ps.slotQuality||''].filter(Boolean).join(' · '),at:'',source:'',author:''});
+  });
+  let hist=[];try{hist=typeof getCoachHistoryForDept==='function'?getCoachHistoryForDept():(S.coachHistory||[]);}catch(e){hist=S.coachHistory||[];}
+  hist.forEach(h=>{
+    rows.push({d:dateOf(h.date),kind:'coaching',person:h.name||'',agent:h.agentName||'',type:h.manual?'manual session':'session',status:h.status||'done',hours:h.duration?Math.round(h.duration/60*100)/100:'',detail:[h.topic,h.actionItem,h.note].filter(Boolean).join(' · '),at:h.completedAt||'',source:h.manual?'manual':'planner',author:''});
+  });
+  try{
+    const ci=_normalizeChangeIntelligence(S.changeIntelligence);
+    ci.history.forEach(rec=>{
+      const items=rec.changeItems&&rec.changeItems.length?rec.changeItems:[];
+      items.forEach(it=>rows.push({d:dateOf(it.date||rec.generatedAt),kind:'roster change',person:it.name||'',agent:'',type:it.type||'',status:it.severity||'',hours:'',detail:[it.title,it.detail].filter(Boolean).join(' · '),at:rec.generatedAt||'',source:rec.source||'',author:''}));
+    });
+  }catch(e){}
+  const ir=S.lastImportReview;
+  if(ir&&ir.source){
+    rows.push({d:dateOf(String(ir.loadedAt||'').slice(0,10)),kind:'import',person:'',agent:'',type:'review',status:ir.confidence||'',hours:'',detail:[ir.source,(ir.entries||0)+' rows',(ir.people||0)+' people'].concat((ir.warnings||[]).slice(0,3)).filter(Boolean).join(' · '),at:ir.loadedAt||'',source:ir.sourceKind||'',author:''});
+  }
+  return rows.sort((a,b)=>((a.d&&a.d.getTime())||0)-((b.d&&b.d.getTime())||0)||a.kind.localeCompare(b.kind));
+}
+function buildSheetActivity(wb){
+  const rows=_activityRows();
+  // An import row alone is already in Sources; a sheet holding only that is noise.
+  if(!rows.some(r=>r.kind!=='import'))return false;
+  const ws=wb.addWorksheet('Activity',{properties:{tabColor:{argb:ORDO.SECTION}}});
+  const hr=ws.addRow(['date','kind','person','agent','type','status','hours','detail','logged_at','source','author']);
+  _xlHdr(hr);ws.views=[{state:'frozen',ySplit:1,showGridLines:false}];
+  rows.forEach(x=>{
+    const r=ws.addRow([x.d?safeExcelDate(x.d):'',x.kind,x.person,x.agent,x.type,x.status,x.hours,x.detail,x.at,x.source,x.author]);
+    if(x.d)r.getCell(1).numFmt='dd-mmm-yyyy';
+    r.eachCell(c=>sC(c,{border:ORDO.BORDER,align:'left',wrap:false}));
+  });
+  [14,14,20,20,16,12,8,60,22,12,16].forEach((w,i)=>{ws.getColumn(i+1).width=w;});
+  ws.autoFilter={from:'A1',to:'K'+(rows.length+1)};
+  return true;
+}
+
+// Restore fallback: rebuild exceptions from an Activity sheet (or the older Exceptions sheet).
+function readExceptionsFromWorkbook(wb){
+  const out=[];
+  const push=(r,personKey,typeKey,sevKey,hrsKey)=>{
+    const d=r.date instanceof Date?r.date:new Date(r.date);
+    if(isNaN(d))return;
+    out.push({
+      id:'exc_'+Math.random().toString(36).substring(2,8),dept:S.activeDept||'',person:r[personKey]||'',
+      agentName:r.agent_name||r.agent||'',leaderId:r[personKey]||'',
+      date:d.getFullYear()+'-'+P(d.getMonth()+1)+'-'+P(d.getDate()),
+      type:r[typeKey]||'admin',severity:r[sevKey]||'full-day',
+      hoursLost:parseFloat(r[hrsKey])||0,hoursWorked:parseFloat(r.hours_worked)||0,scheduledHrs:parseFloat(r.scheduled_hours)||0,
+      notes:r.notes||r.detail||'',loggedAt:r.logged_at||new Date().toISOString(),source:r.source||'imported',authorName:r.author||''
+    });
+  };
+  if(wb.SheetNames.includes('Activity')){
+    XLSX.utils.sheet_to_json(wb.Sheets['Activity'],{defval:''}).forEach(r=>{if(r.kind==='exception'&&r.person)push(r,'person','type','status','hours');});
+  }else if(wb.SheetNames.includes('Exceptions')){
+    XLSX.utils.sheet_to_json(wb.Sheets['Exceptions'],{defval:''}).forEach(r=>{if(r.leader_name&&r.date&&r.type!=='No exceptions logged')push(r,'leader_name','type','severity','hours_lost');});
+  }
+  return out;
+}
+
+// The sheets Save+ writes for people to read. Loading a Save+ file must not treat them as roster sheets.
+const SAVE_PLUS_DISPLAY_SHEETS=new Set(['Summary','Weekly_Roster','Rotation','Activity','People','Sources','Schedule_Data',
+  'Overview','Analytics','Notes','Blueprint','Positions','Exceptions','Coaching','Coaching_History','QoL_State','Change_Log']);
 
 /* ═══ SETTINGS PERSISTENCE (localStorage) ═══ */
 function _readSchemaVersion(raw){
