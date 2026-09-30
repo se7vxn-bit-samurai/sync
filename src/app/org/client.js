@@ -83,9 +83,15 @@ async function orgAfterSignIn(){
   if(orgLinkFor()&&orgState.available)await orgPull({quiet:true}).catch(()=>{});
   _orgAfterChange();
 }
-function orgSignedOut(){Object.assign(orgState,{signedIn:false,checked:false,checkError:"",memberships:[],snapshot:null,audit:null,invite:null,pulledAt:""});}
+function orgSignedOut(){
+  Object.assign(orgState,{signedIn:false,checked:false,checkError:"",memberships:[],snapshot:null,audit:null,invite:null,pulledAt:""});
+  if(typeof orgRenderPublishChip==="function")orgRenderPublishChip();
+}
 function orgOnProjectOpen(){
   orgState.snapshot=null;orgState.audit=null;orgState.invite=null;
+  if(typeof orgPub!=="undefined")Object.assign(orgPub,{latest:null,latestMonth:""});
+  if(typeof orgBridge!=="undefined")Object.assign(orgBridge,{data:null,month:"",error:""});
+  if(typeof orgRenderPublishChip==="function")orgRenderPublishChip();
   if(orgLinkFor()&&orgState.signedIn&&orgState.available!==false)orgPull({quiet:true}).then(_orgAfterChange).catch(()=>{});
 }
 // Pulls the linked org into the open project. Throws on failure; the cache is left as it was.
@@ -115,6 +121,7 @@ function _orgBustCaches(){
   if(typeof invalidateDerivedCache==="function")invalidateDerivedCache();
 }
 function _orgAfterChange(){
+  if(typeof orgRenderPublishChip==="function")orgRenderPublishChip();
   if(typeof rerenderCurrentSurface==="function")rerenderCurrentSurface();
   if(S._settingsOpen&&typeof renderSettings==="function")renderSettings();
 }
@@ -151,7 +158,12 @@ function orgUnlinkProject(){
 }
 async function orgRedeemCode(code){
   if(!String(code||"").trim())return;
-  try{orgState.memberships=(await orgRpc("org_redeem_code",{p_code:code}))||[];toast("Joined the organisation","ok");}
+  try{
+    const out=await orgRpc("org_redeem_code",{p_code:code});
+    // A wrong code comes back as {error} rather than an exception, so the server can count it.
+    if(out&&!Array.isArray(out)&&out.error)throw Object.assign(new Error(out.error),{key:out.error});
+    orgState.memberships=out||[];toast("Joined the organisation","ok");
+  }
   catch(err){toast(orgErrorText(err),"err");}
   _orgAfterChange();
 }
@@ -294,6 +306,8 @@ function orgSettingsHTML(){
   // Your organisations
   let mine=orgState.memberships.length?`<div class="set-types">${orgState.memberships.map(m=>`<div><b>${X(m.org_name)}</b><span>${X(ORG_ROLE_NAMES[m.app_role]||m.app_role)}${m.person_name?` · ${X(m.person_name)}`:""}</span></div>`).join("")}</div>`:_setNote("You're not in an organisation yet.");
   mine+=_setRow({id:"orgCode",label:"Join with an invite code",help:"For people without a work email on their record. The code comes from a team leader or Ops, and works once.",control:`<input type="text" class="set-text" id="orgCode" placeholder="XXXX-XXXX-XXXX" style="width:150px"><button type="button" class="swin-btn" onclick="orgRedeemCode(document.getElementById('orgCode').value)">Join</button>`});
+  const meUrl=typeof orgSyncMeUrl==="function"?orgSyncMeUrl():"";
+  if(meUrl&&orgState.memberships.length)mine+=`<div class="set-kv"><b>Sync Me</b><span>Agents see their own published schedule on their phone, on SA time: <a href="${XA(meUrl)}" target="_blank" rel="noopener" id="orgSyncMeLink">${X(meUrl.replace(/^https?:\/\//,""))}</a></span></div>`;
   h+=_setGroup("Your organisations",mine);
   // This project
   let proj="";
@@ -301,6 +315,7 @@ function orgSettingsHTML(){
   else if(link){
     proj=`<div class="set-kv"><b id="orgLinkStatus">${orgStatusLine()}</b><span>People, reporting lines and acting cover in this project come from the organisation. Changes made here are saved there first, with your name on them, and can be undone from People → Org builder.</span></div>`;
     proj+=_setButtons([["Reload from the organisation","orgReload()"],["Unlink","orgUnlinkProject()"]]);
+    if(rank>=2)proj+=`<div class="set-kv"><b>Rota</b><span id="orgPubLine">${X(orgPub.latestMonth?_orgPubMonthLabel(orgPub.latestMonth)+": "+orgPublishedLine(orgPub.latest):"Nothing reaches agents or managers until you publish it. Publish shows what changes first.")}</span></div>`+_setButtons([["Publish rota…","orgOpenPublish()","pri"]]);
     const local=orgLocalOnlyPeople();
     if(local.length&&rank>=2)proj+=`<div class="set-kv"><b>${local.length} ${local.length===1?"person":"people"} in this project ${local.length===1?"isn't":"aren't"} in the organisation</b><span>${X(local.slice(0,6).join(", "))}${local.length>6?"…":""}</span></div>`+_setButtons([["Add them to the organisation","orgAddLocalPeople()"]]);
   }else{

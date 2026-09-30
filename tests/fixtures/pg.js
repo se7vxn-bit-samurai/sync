@@ -74,11 +74,13 @@ async function rpc(db, uid, fn, args = {}) {
 
 /**
  * What the in-page Supabase double sends for sb.rpc(fn, args) (tests/fixtures/fake-supabase.js),
- * answered by the real function. Arrays become Postgres array literals and objects JSON, as
- * PostgREST would convert them. Returns { data } or { error: { message } }.
+ * answered by the real function. Arrays of plain values become Postgres array literals (uuid[] and
+ * the like); objects and arrays of objects become JSON, as PostgREST converts them. Returns
+ * { data } or { error: { message } }.
  */
 async function rpcFromClient(db, uid, fn, args = {}) {
-  const toParam = (v) => (Array.isArray(v) ? `{${v.map((x) => `"${String(x).replace(/"/g, '\\"')}"`).join(',')}}` : v && typeof v === 'object' ? JSON.stringify(v) : v);
+  const pgArray = (v) => Array.isArray(v) && v.every((x) => x === null || typeof x !== 'object');
+  const toParam = (v) => (pgArray(v) ? `{${v.map((x) => `"${String(x).replace(/"/g, '\\"')}"`).join(',')}}` : v && typeof v === 'object' ? JSON.stringify(v) : v);
   const clean = Object.fromEntries(Object.entries(args).map(([k, v]) => [k, v === undefined ? null : toParam(v)]));
   try {
     return { data: await rpc(db, uid, fn, clean) };

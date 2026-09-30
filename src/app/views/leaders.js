@@ -59,15 +59,20 @@ const LDR_STATUS_TEXT={in:"In",work:"Working",sick:"Sick",leave:"Leave",off:"Off
 
 function rPeopleLeadersView(){
   const today=_coverTodayISO();if(!_ldrUI.date)_ldrUI.date=today;
-  const iso=_ldrUI.date,rows=leadersBoard(iso);
+  const iso=_ldrUI.date;
+  // A linked project can read the board from the organisation instead (src/app/org/bridge.js).
+  const bridge=typeof orgBridgeOn==="function"&&orgBridgeOn(),source=typeof orgBridgeToggleHTML==="function"?orgBridgeToggleHTML():"";
+  let head=`<div class="org-bar"><b>Leaders board</b><span class="swin-nav"><button type="button" class="swin-btn" onclick="ldrShiftDate(-1)" aria-label="Previous day">‹</button><input type="date" id="ldrDate" value="${XA(iso)}" onchange="ldrSetDate(this.value)"><button type="button" class="swin-btn" onclick="ldrShiftDate(1)" aria-label="Next day">›</button></span>`;
+  if(iso!==today)head+=`<button type="button" class="swin-btn" onclick="ldrSetDate('')">Today</button>`;
+  if(!bridge)head+=`<label>Sort <select id="ldrSort" onchange="ldrSetSort(this.value)">${[["attention","Needs attention"],["name","Name"],["size","Team size"]].map(([k,l])=>`<option value="${k}"${_ldrSort()===k?" selected":""}>${l}</option>`).join("")}</select></label>`;
+  head+=source+`</div>`;
+  if(bridge)return orgBridgeViewHTML(iso,head);
+  const rows=leadersBoard(iso);
   const sorters={attention:(a,b)=>b.attention-a.attention||a.leader.localeCompare(b.leader),name:(a,b)=>a.leader.localeCompare(b.leader),size:(a,b)=>b.hc-a.hc||a.leader.localeCompare(b.leader)};
   rows.sort(sorters[_ldrSort()]||sorters.attention);
   const sum=rows.reduce((a,r)=>{a.hc+=r.hc;a.working+=r.working;a.in+=r.counts.in;a.sick+=r.counts.sick;a.leave+=r.counts.leave;a.off+=r.counts.off;a.none+=r.counts.none;a.thin+=r.thin?1:0;a.noCover+=r.noCover?1:0;a.acting+=r.acting?1:0;return a;},{hc:0,working:0,in:0,sick:0,leave:0,off:0,none:0,thin:0,noCover:0,acting:0});
   const hasDept=rows.some(r=>r.dept);
-  let h=`<div class="cov-wrap ldr-wrap">`;
-  h+=`<div class="org-bar"><b>Leaders board</b><span class="swin-nav"><button type="button" class="swin-btn" onclick="ldrShiftDate(-1)" aria-label="Previous day">‹</button><input type="date" id="ldrDate" value="${XA(iso)}" onchange="ldrSetDate(this.value)"><button type="button" class="swin-btn" onclick="ldrShiftDate(1)" aria-label="Next day">›</button></span>`;
-  if(iso!==today)h+=`<button type="button" class="swin-btn" onclick="ldrSetDate('')">Today</button>`;
-  h+=`<label>Sort <select id="ldrSort" onchange="ldrSetSort(this.value)">${[["attention","Needs attention"],["name","Name"],["size","Team size"]].map(([k,l])=>`<option value="${k}"${_ldrSort()===k?" selected":""}>${l}</option>`).join("")}</select></label></div>`;
+  let h=`<div class="cov-wrap ldr-wrap">`+head;
 
   if(!rows.length){
     h+=`<div class="swin-note">No teams on ${X(_swinDayLabel(iso))}. The board needs people with a team leader: add agents in People → Agents, or import an organogram in People → Org.</div></div>`;

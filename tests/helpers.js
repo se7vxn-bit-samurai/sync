@@ -77,7 +77,7 @@ async function openApp(page, config = {}) {
   const errors = [];
   page.on('pageerror', (err) => errors.push(err.message));
   page.__jsErrors = errors;
-  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.goto(config.path || '/', { waitUntil: 'domcontentloaded' });
   // `S` and most app functions are top-level `let`/`function` declarations, which are lexical
   // globals rather than window properties — window.sb is one of the few things explicitly exported,
   // so it is the reliable "the app's scripts have run" signal.

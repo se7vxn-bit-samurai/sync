@@ -1,6 +1,6 @@
 # Sync
 
-A self-contained, offline-first workforce scheduling app (7th Order Systems / MirrorFlow). It ships as one portable `index.html`, built from the sources in `src/`.
+A self-contained, offline-first workforce scheduling app (7th Order Systems / MirrorFlow). It ships as one portable `index.html`, built from the sources in `src/`, plus `me.html` (Sync Me): the light page agents open on their phone to see their own published schedule on SA time.
 
 Live at [sync.theguide.club](https://sync.theguide.club) (GitHub Pages, from `main`). The Vercel project
 serves the **dev build** instead (see Environments below).
@@ -9,17 +9,20 @@ Works fully offline with no account. Signing in (Google on live) adds sync of yo
 
 ## Where the source is
 
-**`src/` in this repo is the source of truth.** `index.html` is built from it and committed,
-because it is the file the deploy publishes. Never edit `index.html` by hand — CI fails any
-commit where it does not match what `src/` builds.
+**`src/` in this repo is the source of truth.** `index.html` and `me.html` are built from it and
+committed, because they are the files the deploy publishes. Never edit either by hand — CI fails any
+commit where they do not match what `src/` builds.
 
 ```bash
 # edit files under src/, then:
-node build/build.js                # writes index.html (live)
-node build/build.js --check        # verifies index.html == build(src/), and that every
-                                   # environment builds and stays on its own server (CI runs this)
-node build/build.js --env dev      # writes dist/dev/index.html (dev; not committed)
+node build/build.js                # writes index.html and me.html (live)
+node build/build.js --check        # verifies both == build(src/), and that every environment
+                                   # builds and stays on its own server (CI runs this)
+node build/build.js --env dev      # writes dist/dev/index.html and dist/dev/me.html (not committed)
 ```
+
+Each output has its own manifest: `build/manifest.json` (index.html) and `build/manifest.me.json`
+(me.html, which shares only the `env/` parts and supabase-js, so it stays around 245 KB).
 
 ## Environments
 
@@ -29,7 +32,7 @@ they talk to (`env.js` and the CSP in `csp.html`) and which sign-in methods they
 | | Live | Dev |
 |---|---|---|
 | Supabase | `ifeepocnixqqvayqnnxc` | `ycfpalvfnsextknhculd` (`sync-dev`) |
-| Served from | sync.theguide.club (GitHub Pages, `deploy.yml`) | the Vercel project (`vercel.json`), Vercel login required |
+| Served from | sync.theguide.club and sync.theguide.club/me.html (GitHub Pages, `deploy.yml`) | the Vercel project (`vercel.json`), Vercel login required |
 | Sign-in | Google | Email + password |
 | Marker | none | amber `DEV · sync-dev` badge, title `DEV · Sync` |
 

@@ -1,0 +1,16 @@
+{
+  "note": "Sync Me (me.html): an agent's own published schedule, phone first. It shares the environment parts (env/live/, swapped per environment like index.html) and supabase-js with index.html, and nothing else. See docs/ORG-LAYER-PLAN.md section 5.1.",
+  "join": "\n",
+  "parts": [
+    "me/head.html",
+    "env/live/csp.html",
+    "me/meta.html",
+    "me/style.css.html",
+    "me/body.html",
+    "vendor/supabase.js",
+    "me/_open.html",
+    "env/live/env.js",
+    "me/app.js",
+    "me/_close.html"
+  ]
+}
