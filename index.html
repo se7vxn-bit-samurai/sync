@@ -8646,6 +8646,117 @@ function parseBlocks(data){
   return entries.filter(Boolean);
 }
 
+
+// ═══ STACKED TEAM-LEADER WEEK BLOCKS PARSER ═══
+// Pattern (TPA / "Interventions" style): one sheet, many stacked one-week blocks.
+//   banner row  : department name ("Interventions") in col A, usually a filled band
+//   header row  : label cols ("Team number","Team Code","Team leader","Roster Code") + Monday..Sunday
+//   date row    : a date under each day name
+//   person rows : one row per team leader; a blank day cell = off (usually a black fill)
+// Label columns drift between blocks (the first block omits headers and carries an employee ID in
+// place of the team code), so roles are resolved per block from headers, then from cell content.
+// Person = the team-leader column; team = the banner (department); roster code wkN -> week "WN".
+function _tbCleanShift(v){return String(v==null?"":v).replace(/\s+/g," ").trim();}
+function _tbRosterWeek(v){const m=String(v||"").trim().match(/^(?:wk|week|w)\s*0*(\d{1,2})$/i);return m?"W"+m[1]:"";}
+function _tbBlockRoles(labelCols,hdr,rows){
+  const roles={};const used=new Set();
+  labelCols.forEach(c=>{
+    const h=String(hdr[c]||"").trim().toLowerCase();
+    if(/leader|agent|staff|\bname\b|\btl\b/.test(h)&&!roles.leader){roles.leader=c;used.add(c);}
+    else if(/roster|rotation|\bwk\b|week/.test(h)&&!roles.roster){roles.roster=c;used.add(c);}
+    else if(/team\s*(code|id)|^code$/.test(h)&&!roles.teamCode){roles.teamCode=c;used.add(c);}
+    else if(/team/.test(h)&&!roles.team){roles.team=c;used.add(c);}
+  });
+  const vals=c=>rows.map(r=>String(r[c]==null?"":r[c]).trim()).filter(Boolean);
+  labelCols.filter(c=>!used.has(c)).forEach(c=>{
+    const v=vals(c);if(!v.length)return;
+    if(!roles.roster&&v.every(x=>_tbRosterWeek(x))){roles.roster=c;return;}
+    if(v.every(x=>/^\d+$/.test(x))){(roles.numeric=roles.numeric||[]).push(c);return;}
+    if(!roles.leader&&v.every(x=>/[A-Za-z]/.test(x)&&!/^team\s*\d+$/i.test(x))){roles.leader=c;return;}
+    if(!roles.team&&v.every(x=>/team/i.test(x))){roles.team=c;}
+  });
+  return roles;
+}
+function parseTeamBlocks(data){
+  const entries=[];if(!data||data.length<4)return entries;
+  const blocks=[];
+  let banner="";
+  for(let i=0;i<data.length;i++){
+    const row=data[i]||[];
+    const dayHits=[];for(let j=0;j<Math.min(row.length,30);j++){const d=nD(row[j]);if(d)dayHits.push({col:j,day:d});}
+    if(dayHits.length<5){
+      // Banner: a lone text cell that is not a header/date/time; the last one above a block names the department
+      const filled=row.map(v=>String(v==null?"":v).trim()).filter(Boolean);
+      if(filled.length===1&&!pDt(filled[0])&&!pTm(filled[0])&&!/^\d+$/.test(filled[0])&&!nD(filled[0]))banner=filled[0];
+      continue;
+    }
+    // Date row = first of the next two rows holding >=5 dates under these day columns
+    let dr=null,drIdx=-1;
+    for(let k=1;k<=2&&i+k<data.length;k++){
+      const cand=data[i+k]||[];if(dayHits.filter(h=>pDt(cand[h.col])).length>=5){dr=cand;drIdx=i+k;break;}
+    }
+    if(!dr)continue;
+    const dateCols=dayHits.map(h=>({col:h.col,day:h.day,date:pDt(dr[h.col])})).filter(d=>d.date);
+    const firstDay=dayHits[0].col;
+    const labelCols=[];for(let c=0;c<firstDay;c++)labelCols.push(c);
+    const rows=[];let r=drIdx+1;
+    for(;r<data.length;r++){
+      const pr=data[r]||[];
+      if(dayHits.filter(h=>nD(pr[h.col])).length>=5)break;
+      const lead=String(pr[0]==null?"":pr[0]).trim();
+      const anyLabel=labelCols.some(c=>String(pr[c]==null?"":pr[c]).trim());
+      const anyShift=dateCols.some(d=>String(pr[d.col]==null?"":pr[d.col]).trim());
+      if(!anyLabel&&!anyShift){ if(rows.length)break; else continue; }
+      rows.push(pr);
+    }
+    // A banner directly above the header row (allow one blank/band row between) names the block's department
+    blocks.push({dept:banner,hdr:row,dateCols,labelCols,rows});
+    i=r-1;banner="";
+  }
+  if(blocks.length<1)return entries;
+  // Resolve roles per block, remember team-code/roster per leader for back-filling unlabelled blocks
+  const perLeader={};
+  blocks.forEach(b=>{
+    b.roles=_tbBlockRoles(b.labelCols,b.hdr,b.rows);
+    b.people=[];
+    b.rows.forEach(pr=>{
+      const nm=b.roles.leader!=null?String(pr[b.roles.leader]||"").trim():"";
+      if(!nm)return;
+      const rw=b.roles.roster!=null?_tbRosterWeek(pr[b.roles.roster]):"";
+      const team=b.roles.team!=null?String(pr[b.roles.team]||"").trim():String(pr[0]||"").trim();
+      b.people.push({name:nm,row:pr,week:rw,team});
+      (perLeader[nm]=perLeader[nm]||[]).push({b,week:rw});
+    });
+  });
+  // Blocks without a roster column: infer the week from the nearest labelled block, but only when
+  // the labelled weeks strictly alternate wk1/wk2 (a 2-week rotation); otherwise leave blank
+  blocks.forEach((b,bi)=>{
+    b.people.forEach(p=>{
+      if(p.week)return;
+      const seq=(perLeader[p.name]||[]);
+      const anchor=seq.find(x=>x.week);if(!anchor)return;
+      const labelled=seq.filter(x=>x.week);
+      const idx=blocks.indexOf(anchor.b),n=+anchor.week.slice(1);
+      const alt=labelled.every(x=>{const d=blocks.indexOf(x.b)-idx;return +x.week.slice(1)===((n-1+d)%2+2)%2+1;});
+      if(!alt||n>2)return;
+      const d=bi-idx;p.week="W"+(((n-1+d)%2+2)%2+1);p.inferred=true;
+    });
+  });
+  const seen=new Set();
+  blocks.forEach(b=>{
+    b.people.forEach(p=>{
+      b.dateCols.forEach(dc=>{
+        const key=p.name+"|"+dc.date.toDateString();if(seen.has(key))return;seen.add(key);
+        const raw=_tbCleanShift(p.row[dc.col]);
+        if(!raw&&!pDt(dc.date))return;
+        const e=mkE(p.name,dc.date,dc.day,raw,b.dept||"Main",p.week);
+        if(e){e.teamLabel=p.team;if(p.inferred)e.weekInferred=true;entries.push(e);}
+      });
+    });
+  });
+  return entries.filter(Boolean);
+}
+
 // ═══ PER-PERSON ALTERNATING ROWS PARSER ═══
 // Pattern: alternating date-row / shift-row pairs. Name extracted from early rows.
 // Rows 1-6 may have a compact summary (month+days / team leader+dates / name+shifts).
@@ -8913,7 +9024,7 @@ function autoParseLegacy(data,sn){
 function _sheetParserFeatures(data,sheetName){
   const rows=(data||[]).length;
   const cols=Math.max(0,...(data||[]).map(row=>(row||[]).length));
-  let maxDatesInRow=0,dayHeaderRows=0,firstColDays=0,firstColDates=0,alternatingRows=0,monthDividerRows=0;
+  let maxDatesInRow=0,dayHeaderRows=0,teamBlockHeaders=0,firstColDays=0,firstColDates=0,alternatingRows=0,monthDividerRows=0;
   const monthWordRe=/^(january|february|march|april|may|june|july|august|september|october|november|december)(?:\s+\d{4})?$/i;
   for(let r=0;r<Math.min(rows,80);r++){
     const row=data[r]||[];let dates=0,days=0,shifts=0;
@@ -8924,7 +9035,7 @@ function _sheetParserFeatures(data,sheetName){
       if(monthWordRe.test(String(row[c]||"").trim()))monthDividerRows++;
     }
     maxDatesInRow=Math.max(maxDatesInRow,dates);
-    if(days>=5)dayHeaderRows++;
+    if(days>=5){dayHeaderRows++;if(/team|leader|roster/i.test(String(row[0]||"")+" "+String(row[2]||"")+" "+String(row[3]||"")))teamBlockHeaders++;}
     if(nD(row[0]))firstColDays++;
     if(pDt(row[0]))firstColDates++;
     if(r>0&&(dates>=3||shifts>=3))alternatingRows++;
@@ -8947,7 +9058,7 @@ function _sheetParserFeatures(data,sheetName){
   for(let r=0;r<Math.min(rows,400);r++){
     try{if(extractRowPeopleNames(data[r]||[],1).length)plausibleNameRows++;}catch(e){}
   }
-  return{rows,cols,maxDatesInRow,dayHeaderRows,firstColDays,firstColDates,alternatingRows,monthDividerRows,orientation,plausibleNameRows,
+  return{rows,cols,maxDatesInRow,dayHeaderRows,teamBlockHeaders,firstColDays,firstColDates,alternatingRows,monthDividerRows,orientation,plausibleNameRows,
     nameHoriz:isHorizSheetName(sheetName),nameVert:isVertSheetName(sheetName)};
 }
 function _entrySetQuality(entries,features){
@@ -8994,9 +9105,18 @@ function _parserAffinity(parser,features){
   }else if(parser==="parseBlocks"){
     if(f.dayHeaderRows>=2)score+=25;
     if(f.orientation!=="vertical")score+=3;
+    // Stacked team-leader blocks put the name in a label column beside "Roster Code"; this parser
+    // would read that code cell as the person, so the dedicated parser should win those sheets.
+    if(f.teamBlockHeaders>=2)score-=12;
+  }else if(parser==="parseTeamBlocks"){
+    if(f.dayHeaderRows>=2&&f.teamBlockHeaders>=2)score+=30;
   }else if(parser==="parsePerson"){
-    if(f.alternatingRows>=4)score+=22;
-    if(f.rows>=14)score+=3;
+    // One person per sheet. Repeated team-labelled week headers mean many people share the sheet,
+    // and the date/shift row pairs are just their rows, so this parser would collapse them to one.
+    if(f.teamBlockHeaders<2){
+      if(f.alternatingRows>=4)score+=22;
+      if(f.rows>=14)score+=3;
+    }
   }else if(parser==="parseRotatingRoleCalendar"){
     if(f.monthDividerRows>=2)score+=25;
     if(f.dayHeaderRows>=1)score+=5;
@@ -9011,6 +9131,7 @@ function _runParserCandidate(parser,data,sheetName,features){
     }else if(parser==="parseHoriz")entries=parseHoriz(data);
     else if(parser==="parseVert")entries=parseVert(data);
     else if(parser==="parseBlocks")entries=parseBlocks(data);
+    else if(parser==="parseTeamBlocks")entries=parseTeamBlocks(data);
     else if(parser==="parsePerson")entries=parsePerson(data,sheetName);
     else if(parser==="parseRotatingRoleCalendar")entries=parseRotatingRoleCalendar(data,sheetName);
     const quality=_entrySetQuality(entries,features),affinity=_parserAffinity(parser,features);
@@ -9027,6 +9148,7 @@ function _parserTiePriority(parser,features){
   if(features.nameHoriz&&parser==="parseHoriz")return 5;
   if(features.nameVert&&parser==="parseVert")return 5;
   if(features.maxDatesInRow>=10&&parser==="parseWideHoriz")return 4;
+  if(features.teamBlockHeaders>=2&&parser==="parseTeamBlocks")return 7;
   if(features.dayHeaderRows>=2&&parser==="parseBlocks")return 3;
   if(features.alternatingRows>=4&&parser==="parsePerson")return 2;
   if(features.monthDividerRows>=2&&parser==="parseRotatingRoleCalendar")return 6;
@@ -9035,7 +9157,7 @@ function _parserTiePriority(parser,features){
 function autoParse(data,sn){
   if(!data||data.length<2)return[];
   const features=_sheetParserFeatures(data,sn);
-  const allParsers=["parseWideHoriz","parseHoriz","parseVert","parseBlocks","parsePerson","parseRotatingRoleCalendar"];
+  const allParsers=["parseWideHoriz","parseHoriz","parseVert","parseBlocks","parseTeamBlocks","parsePerson","parseRotatingRoleCalendar"];
   let parserNames=allParsers.filter(parser=>_parserAffinity(parser,features)>=8);
   if(!parserNames.length)parserNames=allParsers;
   const candidates=parserNames

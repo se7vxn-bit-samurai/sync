@@ -167,5 +167,18 @@
       "2026-09",
       "2026-10"
     ]
+  },
+  "tpa_team_blocks": {
+    "parser": "parseTeamBlocks",
+    "people": 3,
+    "entries": 259,
+    "confidence": "medium",
+    "months": [
+      "2026-09",
+      "2026-10",
+      "2026-11",
+      "2026-12",
+      "2027-01"
+    ]
   }
 }
