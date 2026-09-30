@@ -3,8 +3,8 @@
   "join": "\n",
   "envs": {
     "dev": {
-      "note": "The dev build, for the sync-dev Supabase project. Every env/live/ part is swapped for its env/dev/ twin; nothing else differs. Not committed: vercel.json builds it for the dev host.",
-      "out": "dist/dev/index.html"
+      "note": "The dev build, for the sync-dev Supabase project. Every env/live/ part is swapped for its env/dev/ twin; nothing else differs. Not committed: vercel.json builds it (index.html and me.html) for the dev host.",
+      "out": "dist/dev"
     }
   },
   "parts": [
@@ -15,6 +15,7 @@
     "vendor/html2canvas.js",
     "vendor/exceljs.js",
     "vendor/jszip.js",
+    "vendor/supabase.js",
     "styles/app.css.html",
     "styles/dashboard.css.html",
     "body/markup.html",
@@ -102,6 +103,8 @@
     "app/people/absence.js",
     "app/views/absence.js",
     "app/org/client.js",
+    "app/org/publish.js",
+    "app/org/bridge.js",
     "app/_close.html",
     "northstar/northstar.js.html",
     "assets/v31-templates.js.html",

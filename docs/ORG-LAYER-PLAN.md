@@ -1,6 +1,6 @@
 # Sync Org Layer: plan
 
-Status: local track (L1–L6) built and merged. Phase 1 (org foundation) built and tested; not yet applied to the live project. Update this line as phases land.
+Status: local track (L1–L6) built and merged. Phase 1 (org foundation) and Phase 2 (Publish to org, Sync Me, Bridge v1) built, tested and applied to `sync-dev`; nothing applied to the live project yet. Phase 3 (the live layer) next. Update this line as phases land.
 
 Sync today is one person's workspace, synced as one blob per account. This plan adds an org
 layer on top: agents, team leaders (TLs), managers and ops working in the same organisation,
@@ -843,7 +843,8 @@ scope, and an org edit writes an audit row and can be undone.
 ### Going live (the pilot)
 
 1. Apply the migrations to the live project in order. `baseline` is a no-op there. Then
-   `core_org`, `retire_team_sharing`, `harden_and_index`.
+   `core_org`, `retire_team_sharing`, `harden_and_index`, and Phase 2's `invite_code_limits`,
+   `sync_schedule`, `org_fk_indexes` (section 17).
 2. Re-run the Supabase advisors. Expected: only the by-design notices listed under Environments.
 3. The pilot manager opens their project in Sync. In Settings → Organisation they create the
    organisation from it, choosing themselves under "You are".
@@ -857,8 +858,42 @@ scope, and an org edit writes an audit row and can be undone.
   "Add them to the organisation".
 - Ops and HR see the whole org, not only their department. That's fine for a one-department pilot.
   Department-scoped ops comes with the second department.
-- Invite codes are 48-bit, single-use, and expire after 14 days. There is no rate limit on guesses
-  yet: add one before rolling out beyond the pilot.
+- Invite codes are 48-bit, single-use, and expire after 14 days. Guesses are limited to 10 wrong
+  codes per account per 15 minutes (`invite_code_limits`, Phase 2).
 - Department-level preferences have a table column (`departments.settings`) and an RPC, but no UI
   yet (decision 12).
-- Agents don't use projects: their screen is Sync Me, in Phase 2.
+- Agents don't use projects: their screen is Sync Me (section 17).
+
+---
+
+## 17. Phase 2 status: publish, Sync Me, Bridge v1
+
+Built, tested, and applied to `sync-dev`. The live project is unchanged until pilot go-live.
+
+| Part | Where |
+|---|---|
+| Schema `sync` (decision 7): `publishes` (who published which period, and how much changed) and `schedule_rows` (one published day per person; UK clock plus tz, UTC calculated on write; status and leave type, never a reason) | `supabase/migrations/20260928091000_sync_schedule.sql` |
+| API: `sync_publish_schedule` (preview by default, then write; a publish sets a person's period to exactly what was sent), `sync_schedule` (everyone in the caller's scope), `sync_me` (the caller's own rows, today's leader with acting cover, the publishes behind them) | same |
+| Invite codes: 10 wrong tries per account per 15 minutes; a wrong code now returns `{error}` so the attempt is kept | `…090000_invite_code_limits.sql` |
+| `org_id` indexes the advisor asked for | `…092000_org_fk_indexes.sql` |
+| Publish to org: a month of the project's rows as the Schedule Window reads them (own roster, blueprint, or the leader's rota), for the people in the publisher's scope; the server's change preview first; who is left out and why; "Published 2 Oct 14:05 · Ada Leader" | `src/app/org/publish.js`; masthead chip, Settings → Organisation, command palette |
+| Sync Me (`me.html`): its own build (`build/manifest.me.json`, about 245 KB). Today on SA time with UK underneath, countdown, today's leader (acting cover named); the month's published rows with SA/UK toggle, earlier days folded, next day off, freshness; last copy kept for offline; sign-in per environment | `src/me/` |
+| Two outputs from one build, both checked, both per environment; Pages publishes `me.html`, Vercel builds the dev pair | `build/build.js`, `deploy.yml`, `vercel.json` |
+| Bridge v1: in a linked project, People → Leaders switches between "This project" and "Organisation". The Organisation board is every team in the user's scope from the org's reporting lines and published rows, whichever project each TL keeps: leader today (acting cover named), headcount, working, sick, leave, off, not published, and who published the team's month | `src/app/org/bridge.js`, `src/app/views/leaders.js` |
+| Sign-in failures that come back in the address (an expired email link) say so in words | `_syncAuthRedirectNotice` |
+| Tests | `tests/sync-db.spec.js` (PGlite: publish, republish, scope, acting leader, UTC across the clock change, code limit), `tests/sync-me.spec.js` (me.html against the real migrations), `tests/org-client.spec.js` (Publish in the app) |
+
+Phase 2 exit test, met on PGlite and `sync-dev`: an agent signs in and sees their published month in
+SA time, including across the UK clock change; a manager sees every team in their tree (Bridge v1,
+backed by `sync_schedule`'s scope).
+
+### Known limits
+- An acting TL whose own role is Agent can't publish; their manager or the TL publishes. Acting
+  publish rights come with Phase 3 (Desk).
+- Publishing is whole-month from a project. Live edits to a published row (Phase 4) come later;
+  until then, change the project and publish again: the preview shows exactly what moves.
+- `me.html` is read-only: reporting sick or late, the inbox and requests are Phase 3.
+- Sync Me shows the first organisation an account belongs to. Several organisations per person
+  comes later (section 11).
+- Bridge v1 has no coverage heatmap, approvals, directives or digest yet (Phases 3–4), and reads
+  published rows only: attendance marked in a project isn't in the org until Phase 3.

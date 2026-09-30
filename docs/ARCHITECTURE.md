@@ -8,6 +8,7 @@ by `build/build.js`. Edit `src/`, never `index.html`.
 ```
 src/head/          <head>, PWA manifest
 src/env/           per-environment parts: live/ and dev/ (server, CSP, sign-in methods)
+src/me/            Sync Me (me.html), the agents' phone page: its own manifest, build/manifest.me.json
 src/vendor/        SheetJS, html2canvas, ExcelJS, JSZip — inlined verbatim
 src/styles/        the stylesheets
 src/body/          the markup

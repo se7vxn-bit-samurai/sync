@@ -1604,7 +1604,7 @@ async function _syncSignInWith(key,btn){
   }catch(err){
     const text=(err&&err.message)||`Could not start ${m.label.replace(/^Continue with /,'')} sign-in. Try again.`;
     if(errEl){errEl.textContent=text;errEl.style.display='block';}
-    else toast(X(text),'warn');
+    else toast(text,'warn',6000,{popup:true});
     if(btn)btn.disabled=false;
   }
 }
@@ -1762,10 +1762,28 @@ function _syncOnSignedIn(session){
   // The shared organisation (src/app/org/client.js): link this account to people by email.
   orgAfterSignIn();
 }
+// Supabase sends sign-in failures back in the address (#error=…&error_description=… from an email
+// link, ?error=… from an OAuth provider). Say what happened in plain words and tidy the address,
+// so an expired or already-used link doesn't look like a broken app.
+function _syncAuthRedirectNotice(){
+  const read=s=>{try{return new URLSearchParams(String(s||"").replace(/^[#?]/,""));}catch(e){return new URLSearchParams();}};
+  const hash=read(location.hash),query=read(location.search);
+  const p=hash.get("error")||hash.get("error_code")?hash:query.get("error")?query:null;
+  if(!p)return"";
+  const code=p.get("error_code")||p.get("error")||"";
+  const text=code==="otp_expired"?"That email link has expired or was already used. If you confirmed your address already, just sign in."
+    :(p.get("error_description")||"Sign-in didn't complete. Try again.");
+  const keep=[...query.entries()].filter(([k])=>!/^error/.test(k));
+  try{history.replaceState(null,"",location.pathname+(keep.length?"?"+new URLSearchParams(keep):""));}catch(e){}
+  // The gate runs while the app script is still loading; the notifications module is further down.
+  setTimeout(()=>toast(text,"warn",9000,{popup:true}),0);
+  return text;
+}
 async function _syncAuthGate(){
   // The app is fully usable offline/local-only, so boot unconditionally — auth only adds
   // cross-device sync on top, it never gates access to the app itself.
   nsBootApp();
+  _syncAuthRedirectNotice();
   // Register the listener before the initial getSession() check (Supabase's own recommended
   // order) so a session established while getSession() is still resolving isn't missed.
   sb.auth.onAuthStateChange((event,session)=>{

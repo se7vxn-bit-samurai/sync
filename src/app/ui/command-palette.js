@@ -84,6 +84,7 @@ function _collectCommandPaletteActions(){
   actions.push({id:"inline-notes",label:"Universal notes",hint:"Open inline notes hub",keywords:"notes inline universal handoff comments",run:()=>{openNotesHub();}});
   actions.push({id:"export-presets",label:"Export presets",hint:"Save/apply export selections",keywords:"export presets save plus manager pack sheets",run:()=>{openExportPresets();}});
   actions.push({id:"roster-changes",label:"Roster change intelligence",hint:"Review imported roster deltas and coverage impact",keywords:"roster changes imports baseline coverage handoff",run:()=>{openRosterChangeIntelligence();}});
+  if(typeof orgCanPublish==="function"&&orgCanPublish())actions.push({id:"org-publish",label:"Publish rota to the organisation",hint:"Preview what changes, then send a month to agents and managers",keywords:"publish rota organisation org agents sync me send month",run:()=>{orgOpenPublish();}});
   actions.push({id:"change-history",label:"Undo + change history",hint:"Review and undo recent changes",keywords:"undo history change log audit",run:()=>{openChangeHistory();}});
   actions.push({id:"analytics-alerts",label:"Open Analytics Alerts",hint:"Data quality + operational flags",keywords:"alerts analytics flags data quality",run:()=>{railNavAnalytics("alerts");}});
   actions.push({id:"people-dashboard",label:"Open People Dashboard",hint:"Team people overview",keywords:"people dashboard team agents logbook",run:()=>{railNavPeople("dashboard");}});

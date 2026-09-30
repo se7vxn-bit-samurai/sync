@@ -2964,6 +2964,22 @@ button,.btn,.bi,.bp,.ei,.an-mode-btn,.pl-btn,.agent-status-btn,.qef-type-btn,.ot
 }
 /* People → Org builder, when the project is linked to an organisation */
 .org-linked{background:var(--al);border:1px solid var(--bdr);border-radius:8px;padding:6px 10px}
+.org-pub-chip{margin-right:6px;padding:3px 10px;border-radius:999px;border:1px solid var(--accent);background:transparent;color:var(--accent);font:600 11px/1.4 inherit;font-family:inherit;cursor:pointer;white-space:nowrap}
+.org-pub-chip:hover{background:var(--al)}
+.org-pub{display:flex;flex-direction:column;gap:10px;font-size:13px;line-height:1.45}
+.org-pub-row{display:flex;align-items:center;gap:10px}
+.org-pub-row label{font-weight:600;color:var(--tm)}
+.org-pub-fresh,.org-pub-note{color:var(--tm);font-size:12px}
+.org-pub-err{color:#e5484d}
+.org-pub-sum{padding:8px 10px;border-radius:8px;background:var(--al);border:1px solid var(--bdr)}
+.org-pub-table{width:100%;border-collapse:collapse;font-size:12px}
+.org-pub-table th{text-align:left;color:var(--tm);font-weight:600;padding:4px 6px;border-bottom:1px solid var(--bdr)}
+.org-pub-table td{padding:5px 6px;border-bottom:1px solid var(--bdr);vertical-align:top}
+.org-pub-table td:first-child{white-space:nowrap;font-weight:600}
+.org-pub-more{color:var(--tm)}
+.org-pub-left{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--tm)}
+.org-pub-actions{display:flex;gap:8px}
+.org-pub-actions .btn{flex:1;justify-content:center}
 /* Settings → Appearance → Reduce motion */
 .sync-reduce-motion *,.sync-reduce-motion *::before,.sync-reduce-motion *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 </style>
@@ -5865,6 +5881,7 @@ function _collectCommandPaletteActions(){
   actions.push({id:"inline-notes",label:"Universal notes",hint:"Open inline notes hub",keywords:"notes inline universal handoff comments",run:()=>{openNotesHub();}});
   actions.push({id:"export-presets",label:"Export presets",hint:"Save/apply export selections",keywords:"export presets save plus manager pack sheets",run:()=>{openExportPresets();}});
   actions.push({id:"roster-changes",label:"Roster change intelligence",hint:"Review imported roster deltas and coverage impact",keywords:"roster changes imports baseline coverage handoff",run:()=>{openRosterChangeIntelligence();}});
+  if(typeof orgCanPublish==="function"&&orgCanPublish())actions.push({id:"org-publish",label:"Publish rota to the organisation",hint:"Preview what changes, then send a month to agents and managers",keywords:"publish rota organisation org agents sync me send month",run:()=>{orgOpenPublish();}});
   actions.push({id:"change-history",label:"Undo + change history",hint:"Review and undo recent changes",keywords:"undo history change log audit",run:()=>{openChangeHistory();}});
   actions.push({id:"analytics-alerts",label:"Open Analytics Alerts",hint:"Data quality + operational flags",keywords:"alerts analytics flags data quality",run:()=>{railNavAnalytics("alerts");}});
   actions.push({id:"people-dashboard",label:"Open People Dashboard",hint:"Team people overview",keywords:"people dashboard team agents logbook",run:()=>{railNavPeople("dashboard");}});
@@ -30520,7 +30537,7 @@ async function _syncSignInWith(key,btn){
   }catch(err){
     const text=(err&&err.message)||`Could not start ${m.label.replace(/^Continue with /,'')} sign-in. Try again.`;
     if(errEl){errEl.textContent=text;errEl.style.display='block';}
-    else toast(X(text),'warn');
+    else toast(text,'warn',6000,{popup:true});
     if(btn)btn.disabled=false;
   }
 }
@@ -30678,10 +30695,28 @@ function _syncOnSignedIn(session){
   // The shared organisation (src/app/org/client.js): link this account to people by email.
   orgAfterSignIn();
 }
+// Supabase sends sign-in failures back in the address (#error=…&error_description=… from an email
+// link, ?error=… from an OAuth provider). Say what happened in plain words and tidy the address,
+// so an expired or already-used link doesn't look like a broken app.
+function _syncAuthRedirectNotice(){
+  const read=s=>{try{return new URLSearchParams(String(s||"").replace(/^[#?]/,""));}catch(e){return new URLSearchParams();}};
+  const hash=read(location.hash),query=read(location.search);
+  const p=hash.get("error")||hash.get("error_code")?hash:query.get("error")?query:null;
+  if(!p)return"";
+  const code=p.get("error_code")||p.get("error")||"";
+  const text=code==="otp_expired"?"That email link has expired or was already used. If you confirmed your address already, just sign in."
+    :(p.get("error_description")||"Sign-in didn't complete. Try again.");
+  const keep=[...query.entries()].filter(([k])=>!/^error/.test(k));
+  try{history.replaceState(null,"",location.pathname+(keep.length?"?"+new URLSearchParams(keep):""));}catch(e){}
+  // The gate runs while the app script is still loading; the notifications module is further down.
+  setTimeout(()=>toast(text,"warn",9000,{popup:true}),0);
+  return text;
+}
 async function _syncAuthGate(){
   // The app is fully usable offline/local-only, so boot unconditionally — auth only adds
   // cross-device sync on top, it never gates access to the app itself.
   nsBootApp();
+  _syncAuthRedirectNotice();
   // Register the listener before the initial getSession() check (Supabase's own recommended
   // order) so a session established while getSession() is still resolving isn't missed.
   sb.auth.onAuthStateChange((event,session)=>{
@@ -35834,15 +35869,20 @@ const LDR_STATUS_TEXT={in:"In",work:"Working",sick:"Sick",leave:"Leave",off:"Off
 
 function rPeopleLeadersView(){
   const today=_coverTodayISO();if(!_ldrUI.date)_ldrUI.date=today;
-  const iso=_ldrUI.date,rows=leadersBoard(iso);
+  const iso=_ldrUI.date;
+  // A linked project can read the board from the organisation instead (src/app/org/bridge.js).
+  const bridge=typeof orgBridgeOn==="function"&&orgBridgeOn(),source=typeof orgBridgeToggleHTML==="function"?orgBridgeToggleHTML():"";
+  let head=`<div class="org-bar"><b>Leaders board</b><span class="swin-nav"><button type="button" class="swin-btn" onclick="ldrShiftDate(-1)" aria-label="Previous day">‹</button><input type="date" id="ldrDate" value="${XA(iso)}" onchange="ldrSetDate(this.value)"><button type="button" class="swin-btn" onclick="ldrShiftDate(1)" aria-label="Next day">›</button></span>`;
+  if(iso!==today)head+=`<button type="button" class="swin-btn" onclick="ldrSetDate('')">Today</button>`;
+  if(!bridge)head+=`<label>Sort <select id="ldrSort" onchange="ldrSetSort(this.value)">${[["attention","Needs attention"],["name","Name"],["size","Team size"]].map(([k,l])=>`<option value="${k}"${_ldrSort()===k?" selected":""}>${l}</option>`).join("")}</select></label>`;
+  head+=source+`</div>`;
+  if(bridge)return orgBridgeViewHTML(iso,head);
+  const rows=leadersBoard(iso);
   const sorters={attention:(a,b)=>b.attention-a.attention||a.leader.localeCompare(b.leader),name:(a,b)=>a.leader.localeCompare(b.leader),size:(a,b)=>b.hc-a.hc||a.leader.localeCompare(b.leader)};
   rows.sort(sorters[_ldrSort()]||sorters.attention);
   const sum=rows.reduce((a,r)=>{a.hc+=r.hc;a.working+=r.working;a.in+=r.counts.in;a.sick+=r.counts.sick;a.leave+=r.counts.leave;a.off+=r.counts.off;a.none+=r.counts.none;a.thin+=r.thin?1:0;a.noCover+=r.noCover?1:0;a.acting+=r.acting?1:0;return a;},{hc:0,working:0,in:0,sick:0,leave:0,off:0,none:0,thin:0,noCover:0,acting:0});
   const hasDept=rows.some(r=>r.dept);
-  let h=`<div class="cov-wrap ldr-wrap">`;
-  h+=`<div class="org-bar"><b>Leaders board</b><span class="swin-nav"><button type="button" class="swin-btn" onclick="ldrShiftDate(-1)" aria-label="Previous day">‹</button><input type="date" id="ldrDate" value="${XA(iso)}" onchange="ldrSetDate(this.value)"><button type="button" class="swin-btn" onclick="ldrShiftDate(1)" aria-label="Next day">›</button></span>`;
-  if(iso!==today)h+=`<button type="button" class="swin-btn" onclick="ldrSetDate('')">Today</button>`;
-  h+=`<label>Sort <select id="ldrSort" onchange="ldrSetSort(this.value)">${[["attention","Needs attention"],["name","Name"],["size","Team size"]].map(([k,l])=>`<option value="${k}"${_ldrSort()===k?" selected":""}>${l}</option>`).join("")}</select></label></div>`;
+  let h=`<div class="cov-wrap ldr-wrap">`+head;
 
   if(!rows.length){
     h+=`<div class="swin-note">No teams on ${X(_swinDayLabel(iso))}. The board needs people with a team leader: add agents in People → Agents, or import an organogram in People → Org.</div></div>`;
@@ -36244,9 +36284,15 @@ async function orgAfterSignIn(){
   if(orgLinkFor()&&orgState.available)await orgPull({quiet:true}).catch(()=>{});
   _orgAfterChange();
 }
-function orgSignedOut(){Object.assign(orgState,{signedIn:false,checked:false,checkError:"",memberships:[],snapshot:null,audit:null,invite:null,pulledAt:""});}
+function orgSignedOut(){
+  Object.assign(orgState,{signedIn:false,checked:false,checkError:"",memberships:[],snapshot:null,audit:null,invite:null,pulledAt:""});
+  if(typeof orgRenderPublishChip==="function")orgRenderPublishChip();
+}
 function orgOnProjectOpen(){
   orgState.snapshot=null;orgState.audit=null;orgState.invite=null;
+  if(typeof orgPub!=="undefined")Object.assign(orgPub,{latest:null,latestMonth:""});
+  if(typeof orgBridge!=="undefined")Object.assign(orgBridge,{data:null,month:"",error:""});
+  if(typeof orgRenderPublishChip==="function")orgRenderPublishChip();
   if(orgLinkFor()&&orgState.signedIn&&orgState.available!==false)orgPull({quiet:true}).then(_orgAfterChange).catch(()=>{});
 }
 // Pulls the linked org into the open project. Throws on failure; the cache is left as it was.
@@ -36276,6 +36322,7 @@ function _orgBustCaches(){
   if(typeof invalidateDerivedCache==="function")invalidateDerivedCache();
 }
 function _orgAfterChange(){
+  if(typeof orgRenderPublishChip==="function")orgRenderPublishChip();
   if(typeof rerenderCurrentSurface==="function")rerenderCurrentSurface();
   if(S._settingsOpen&&typeof renderSettings==="function")renderSettings();
 }
@@ -36312,7 +36359,12 @@ function orgUnlinkProject(){
 }
 async function orgRedeemCode(code){
   if(!String(code||"").trim())return;
-  try{orgState.memberships=(await orgRpc("org_redeem_code",{p_code:code}))||[];toast("Joined the organisation","ok");}
+  try{
+    const out=await orgRpc("org_redeem_code",{p_code:code});
+    // A wrong code comes back as {error} rather than an exception, so the server can count it.
+    if(out&&!Array.isArray(out)&&out.error)throw Object.assign(new Error(out.error),{key:out.error});
+    orgState.memberships=out||[];toast("Joined the organisation","ok");
+  }
   catch(err){toast(orgErrorText(err),"err");}
   _orgAfterChange();
 }
@@ -36455,6 +36507,8 @@ function orgSettingsHTML(){
   // Your organisations
   let mine=orgState.memberships.length?`<div class="set-types">${orgState.memberships.map(m=>`<div><b>${X(m.org_name)}</b><span>${X(ORG_ROLE_NAMES[m.app_role]||m.app_role)}${m.person_name?` · ${X(m.person_name)}`:""}</span></div>`).join("")}</div>`:_setNote("You're not in an organisation yet.");
   mine+=_setRow({id:"orgCode",label:"Join with an invite code",help:"For people without a work email on their record. The code comes from a team leader or Ops, and works once.",control:`<input type="text" class="set-text" id="orgCode" placeholder="XXXX-XXXX-XXXX" style="width:150px"><button type="button" class="swin-btn" onclick="orgRedeemCode(document.getElementById('orgCode').value)">Join</button>`});
+  const meUrl=typeof orgSyncMeUrl==="function"?orgSyncMeUrl():"";
+  if(meUrl&&orgState.memberships.length)mine+=`<div class="set-kv"><b>Sync Me</b><span>Agents see their own published schedule on their phone, on SA time: <a href="${XA(meUrl)}" target="_blank" rel="noopener" id="orgSyncMeLink">${X(meUrl.replace(/^https?:\/\//,""))}</a></span></div>`;
   h+=_setGroup("Your organisations",mine);
   // This project
   let proj="";
@@ -36462,6 +36516,7 @@ function orgSettingsHTML(){
   else if(link){
     proj=`<div class="set-kv"><b id="orgLinkStatus">${orgStatusLine()}</b><span>People, reporting lines and acting cover in this project come from the organisation. Changes made here are saved there first, with your name on them, and can be undone from People → Org builder.</span></div>`;
     proj+=_setButtons([["Reload from the organisation","orgReload()"],["Unlink","orgUnlinkProject()"]]);
+    if(rank>=2)proj+=`<div class="set-kv"><b>Rota</b><span id="orgPubLine">${X(orgPub.latestMonth?_orgPubMonthLabel(orgPub.latestMonth)+": "+orgPublishedLine(orgPub.latest):"Nothing reaches agents or managers until you publish it. Publish shows what changes first.")}</span></div>`+_setButtons([["Publish rota…","orgOpenPublish()","pri"]]);
     const local=orgLocalOnlyPeople();
     if(local.length&&rank>=2)proj+=`<div class="set-kv"><b>${local.length} ${local.length===1?"person":"people"} in this project ${local.length===1?"isn't":"aren't"} in the organisation</b><span>${X(local.slice(0,6).join(", "))}${local.length>6?"…":""}</span></div>`+_setButtons([["Add them to the organisation","orgAddLocalPeople()"]]);
   }else{
@@ -36494,6 +36549,291 @@ function orgSettingsHTML(){
     h+=_setGroup("People and sign-in",t,' id="orgMembers"');
   }
   return h;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PUBLISH TO THE ORGANISATION (Phase 2)
+   In a linked project the rota is a draft until it is published. Publishing sends one month of
+   the project's rows (as the Schedule Window reads them: own roster, blueprint, or the leader's
+   rota) for the people in the user's scope. The server works out what changed and shows it first;
+   nothing reaches agents until Publish is pressed. Agents then see their own rows in Sync Me and
+   managers see every team in their tree.
+   ═══════════════════════════════════════════════════════════════ */
+Object.assign(ORG_ERRORS,{
+  forbidden_person:"Some of these people aren't in your part of the organisation.",
+  bad_rows:"Some rows couldn't be read. Nothing was published.",
+  bad_period:"Pick a period of up to two months.",
+  nothing_to_publish:"There's nobody in this project to publish for.",
+  too_many_attempts:"Too many wrong codes. Wait 15 minutes, then try again."
+});
+let orgPub={month:"",busy:"",preview:null,payload:null,latest:null,latestMonth:"",error:""};
+const _ORG_HHMM=/^\d{2}:\d{2}$/;
+
+// Where agents read what was published: me.html next to this page (none when opened from a file).
+function orgSyncMeUrl(){try{return/^https?:$/.test(location.protocol)?new URL("me.html",location.href).href:"";}catch(e){return"";}}
+function orgCanPublish(){return!!orgLinkFor()&&(ORG_ROLE_RANK[orgMyRole()]||0)>=2;}
+function _orgPubMonthOf(d){return d.getFullYear()+"-"+P(d.getMonth()+1);}
+function _orgPubDefaultMonth(){
+  // The month on screen (S.month is "YYYY-M", months counted from 0), else this month.
+  if(S.month){const[y,m]=S.month.split("-").map(Number);if(y&&m>=0)return y+"-"+P(m+1);}
+  return _orgPubMonthOf(new Date());
+}
+function _orgPubRange(month){
+  const[y,m]=String(month).split("-").map(Number);
+  return{from:`${y}-${P(m)}-01`,to:`${y}-${P(m)}-${P(new Date(y,m,0).getDate())}`};
+}
+function _orgPubMonthLabel(month){const[y,m]=String(month).split("-").map(Number);return MOFULL[m-1]+" "+y;}
+
+// One Schedule Window row as the org stores it; null for a date with no row, false when the times
+// can't be read. Status only: leave carries a type, never a reason.
+function _orgPubRow(personId,r){
+  if(r.kind==="none")return null;
+  const row={person_id:personId,date:r.iso,source:r.source==="tl"?"leader":r.source==="blueprint"?"blueprint":"roster"};
+  if(r.kind==="work"){
+    if(!_ORG_HHMM.test(r.ukS)||(r.ukE&&!_ORG_HHMM.test(r.ukE)))return false;
+    return Object.assign(row,{status:"shift",start_local:r.ukS,end_local:r.ukE||null,code:r.status});
+  }
+  if(r.kind==="ph")return Object.assign(row,{status:"holiday",code:"PH"});
+  if(r.status==="Training")return Object.assign(row,{status:"training",code:"Training"});
+  if(r.kind==="leave")return Object.assign(row,{status:"leave",leave_type:"annual",code:"Leave"});
+  if(r.status==="Sick")return Object.assign(row,{status:"leave",leave_type:"sick",code:"Sick"});
+  if(r.status==="WFH")return Object.assign(row,{status:"other",code:"WFH"});
+  return Object.assign(row,{status:"off",code:String(r.code||"OFF").slice(0,40)});
+}
+// Everything a publish of one period sends, plus who was left out and why.
+function orgPublishPayload(from,to){
+  const visible=new Set(((orgState.snapshot||{}).me||{}).visible||[]);
+  const out={from,to,people:[],names:{},rows:[],notInOrg:[],outOfScope:[],unreadable:[]};
+  Object.keys(S.people||{}).sort((a,b)=>a.localeCompare(b)).forEach(name=>{
+    const ref=typeof nsOrgRef==="function"?nsOrgRef(name):null;
+    if(!ref||!ref.id){out.notInOrg.push(name);return;}
+    if(visible.size&&!visible.has(ref.id)){out.outOfScope.push(name);return;}
+    out.people.push(ref.id);out.names[ref.id]=name;
+    swinRows(name,from,to).forEach(r=>{
+      const row=_orgPubRow(ref.id,r);
+      if(row===false)out.unreadable.push(`${name}, ${_swinDayLabel(r.iso)}`);
+      else if(row)out.rows.push(row);
+    });
+  });
+  return out;
+}
+function _orgPubArgs(p,dryRun){
+  return{p_org:orgLinkFor().org_id,p_from:p.from,p_to:p.to,p_people:p.people,p_rows:p.rows,p_note:null,p_dry_run:dryRun};
+}
+
+// The latest publish covering a month, for the freshness line.
+async function orgLoadLatestPublish(month){
+  const link=orgLinkFor();if(!link)return null;
+  const r=_orgPubRange(month);
+  const res=await orgRpc("sync_schedule",{p_org:link.org_id,p_from:r.from,p_to:r.to});
+  orgPub.latest=res&&res.latest||null;orgPub.latestMonth=month;
+  return orgPub.latest;
+}
+function orgPublishedLine(latest){
+  if(!latest)return"Not published yet. Agents and managers can't see this month.";
+  return`Published ${_orgWhen(latest.published_at)}${latest.by?` · ${latest.by}`:""}`;
+}
+
+// ── The dialog ──
+function orgOpenPublish(month){
+  if(!orgCanPublish()){toast(orgLinkFor()?ORG_ERRORS.forbidden:"Link this project to an organisation first (Settings → Organisation)","warn",5000,{popup:true});return;}
+  orgPub=Object.assign(orgPub,{month:month||orgPub.month||_orgPubDefaultMonth(),busy:"",preview:null,payload:null,error:""});
+  _orgPubRender();
+  orgPubPreview();
+}
+function orgPubSetMonth(month){if(!/^\d{4}-\d{2}$/.test(month||""))return;orgPub.month=month;orgPubPreview();}
+async function orgPubPreview(){
+  const month=orgPub.month,range=_orgPubRange(month);
+  orgPub.busy="preview";orgPub.preview=null;orgPub.error="";
+  orgPub.payload=orgPublishPayload(range.from,range.to);
+  _orgPubRender();
+  try{
+    if(!orgPub.payload.people.length)throw Object.assign(new Error("nothing_to_publish"),{key:"nothing_to_publish"});
+    const[preview,latest]=await Promise.all([orgRpc("sync_publish_schedule",_orgPubArgs(orgPub.payload,true)),orgLoadLatestPublish(month).catch(()=>null)]);
+    if(orgPub.month!==month)return;
+    orgPub.preview=preview;orgPub.latest=latest;
+  }catch(err){if(orgPub.month===month)orgPub.error=orgErrorText(err);}
+  if(orgPub.month===month){orgPub.busy="";_orgPubRender();}
+}
+async function orgPubConfirm(){
+  const p=orgPub.payload,pv=orgPub.preview;if(!p||!pv||orgPub.busy)return;
+  orgPub.busy="publish";_orgPubRender();
+  try{
+    const res=await orgRpc("sync_publish_schedule",_orgPubArgs(p,false));
+    orgPub.latest=null;await orgLoadLatestPublish(orgPub.month).catch(()=>null);
+    if(typeof orgBridge!=="undefined")Object.assign(orgBridge,{data:null,month:"",error:""});
+    const modal=document.getElementById("orgPubModal");if(modal)modal.remove();
+    toast(`${_orgPubMonthLabel(orgPub.month)} published: ${res.people_changed} ${res.people_changed===1?"person":"people"} changed, ${res.added+res.removed+res.changed} ${res.added+res.removed+res.changed===1?"day":"days"}`,"ok",6000,{popup:true});
+    orgRenderPublishChip();
+  }catch(err){orgPub.error=orgErrorText(err);}
+  orgPub.busy="";if(document.getElementById("orgPubModal"))_orgPubRender();
+}
+function _orgPubDay(c){
+  const t=x=>!x?"—":x.status==="shift"?`${x.start}${x.end?"–"+x.end:""}`:x.status==="leave"?(x.leave_type==="sick"?"Sick":"Leave"):(x.code||x.status);
+  return c.kind==="added"?`${_swinDayLabel(c.date)}: ${t(c.after)}`:c.kind==="removed"?`${_swinDayLabel(c.date)}: ${t(c.before)} removed`:`${_swinDayLabel(c.date)}: ${t(c.before)} → ${t(c.after)}`;
+}
+function _orgPubBody(){
+  const p=orgPub.payload,pv=orgPub.preview;
+  let h=`<div class="org-pub">`;
+  h+=`<div class="org-pub-row"><label for="orgPubMonth">Month</label><input type="month" id="orgPubMonth" class="set-text" value="${XA(orgPub.month)}" onchange="orgPubSetMonth(this.value)"${orgPub.busy==="publish"?" disabled":""}></div>`;
+  // Only this month's publish: while another month's is still loading, say so rather than show the old one.
+  const fresh=orgPub.latestMonth===orgPub.month?orgPublishedLine(orgPub.latest):orgPub.busy==="preview"?"Checking what's published…":"";
+  h+=`<div class="org-pub-fresh" id="orgPubFresh">${X(fresh)}</div>`;
+  if(orgPub.error)h+=`<div class="org-pub-err" role="alert">${X(orgPub.error)}</div>`;
+  if(orgPub.busy==="preview")h+=`<div class="org-pub-note" role="status">Working out what changes…</div>`;
+  if(pv){
+    const n=pv.added+pv.removed+pv.changed;
+    h+=`<div class="org-pub-sum" id="orgPubSummary">${n?`<b>${pv.people_changed} ${pv.people_changed===1?"person":"people"}</b> change: ${pv.added} ${pv.added===1?"day":"days"} added, ${pv.changed} changed, ${pv.removed} removed. ${pv.unchanged} stay as published.`:orgPub.latestMonth===orgPub.month&&orgPub.latest?`<b>Nothing has changed</b> since ${X(_orgPubMonthLabel(orgPub.month))} was last published.`:`<b>There are no rows</b> to publish for ${X(_orgPubMonthLabel(orgPub.month))}.`}</div>`;
+    const by=new Map();(pv.changes||[]).forEach(c=>{let a=by.get(c.person_id);if(!a){a=[];by.set(c.person_id,a);}a.push(c);});
+    if(by.size){
+      h+=`<table class="org-pub-table"><thead><tr><th>Person</th><th>What changes</th></tr></thead><tbody>`;
+      [...by.entries()].sort((a,b)=>String(p.names[a[0]]||"").localeCompare(String(p.names[b[0]]||""))).forEach(([pid,list])=>{
+        const shown=list.slice(0,4).map(c=>X(_orgPubDay(c))).join("<br>");
+        h+=`<tr data-person="${XA(p.names[pid]||"")}"><td>${X(p.names[pid]||"?")}</td><td>${shown}${list.length>4?`<br><span class="org-pub-more">and ${list.length-4} more</span>`:""}</td></tr>`;
+      });
+      h+=`</tbody></table>`;
+    }
+  }
+  if(p){
+    const left=[];
+    if(p.notInOrg.length)left.push(`<b>Not in the organisation (${p.notInOrg.length}):</b> ${X(p.notInOrg.slice(0,8).join(", "))}${p.notInOrg.length>8?"…":""}. Add them in Settings → Organisation to publish their rows.`);
+    if(p.outOfScope.length)left.push(`<b>Outside your part of the organisation (${p.outOfScope.length}):</b> ${X(p.outOfScope.slice(0,8).join(", "))}${p.outOfScope.length>8?"…":""}. Their own leader publishes them.`);
+    if(p.unreadable.length)left.push(`<b>Times that can't be read (${p.unreadable.length}):</b> ${X(p.unreadable.slice(0,5).join("; "))}${p.unreadable.length>5?"…":""}. Those days are left unpublished.`);
+    if(left.length)h+=`<div class="org-pub-left">${left.map(x=>`<div>${x}</div>`).join("")}</div>`;
+  }
+  const n=pv?pv.added+pv.removed+pv.changed:0;
+  h+=`<div class="org-pub-actions"><button type="button" class="btn bp" id="orgPubBtn" onclick="orgPubConfirm()"${!n||orgPub.busy?" disabled":""}>${orgPub.busy==="publish"?"Publishing…":n?`Publish ${X(_orgPubMonthLabel(orgPub.month))}`:"Nothing to publish"}</button><button type="button" class="btn" style="background:transparent" onclick="document.getElementById('orgPubModal')?.remove()">Cancel</button></div>`;
+  const me=orgSyncMeUrl();
+  h+=`<div class="org-pub-note">Agents see only their own rows, in Sync Me${me?` (<a href="${XA(me)}" target="_blank" rel="noopener">${X(me.replace(/^https?:\/\//,""))}</a>)`:""}. Reasons are never sent: leave goes as leave, sickness as sick.</div>`;
+  return h+`</div>`;
+}
+function _orgPubRender(){
+  const link=orgLinkFor();if(!link)return;
+  const body=document.querySelector("#orgPubModal .qol-modal-body");
+  if(body){body.innerHTML=_orgPubBody();return;}
+  _qolModal("orgPubModal","Publish rota to "+link.org_name,"Everyone in your part of the organisation, from this project",_orgPubBody(),"");
+}
+
+// ── Masthead chip: publish from anywhere in a linked project ──
+function orgRenderPublishChip(){
+  const host=document.getElementById("ha"),old=document.getElementById("orgPublishChip");
+  if(old)old.remove();
+  if(!host||!orgCanPublish()||!S.activeDept)return;
+  const b=document.createElement("button");
+  b.id="orgPublishChip";b.type="button";b.className="org-pub-chip";
+  const month=_orgPubDefaultMonth(),latest=orgPub.latestMonth===month?orgPub.latest:null;
+  b.textContent="Publish";
+  b.title=`Publish ${_orgPubMonthLabel(month)} to ${orgLinkFor().org_name}. ${orgPub.latestMonth===month?orgPublishedLine(latest):""}`.trim();
+  b.onclick=()=>orgOpenPublish();
+  host.insertBefore(b,host.firstChild);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BRIDGE v1 (Phase 2): the Leaders board, from the organisation
+   In a linked project, People → Leaders can read the organisation instead of this project's own
+   files: every team in the user's part of the org (TL and up), from what has been published. For
+   a manager that is every TL's team, whichever project each TL keeps it in. Who leads each team on
+   the date (acting cover included), headcount, working, sick, leave, off, who has nothing
+   published, and who published the team's month and when. Read-only; editing stays in each
+   project until live edits (Phase 4).
+   ═══════════════════════════════════════════════════════════════ */
+let orgBridge={on:false,busy:false,data:null,error:"",month:""};
+
+function orgBridgeAvailable(){return!!orgLinkFor()&&!!orgState.snapshot&&(ORG_ROLE_RANK[orgMyRole()]||0)>=2;}
+function orgBridgeOn(){return orgBridge.on&&orgBridgeAvailable();}
+function orgBridgeSet(on){orgBridge.on=!!on;if(typeof rPeople==="function")rPeople($("ca"));}
+
+// Teams on a date from the org's reporting lines, within the user's scope: leader → members.
+function orgBridgeTeams(snap,iso){
+  const visible=new Set((snap.me||{}).visible||[]),people=new Map((snap.people||[]).map(p=>[p.id,p]));
+  const on=l=>l.kind==="primary"&&l.effective_from<=iso&&(!l.effective_to||l.effective_to>=iso);
+  const lines=(snap.lines||[]).filter(on),teams=new Map();
+  lines.forEach(l=>{
+    const p=people.get(l.person_id);
+    if(!visible.has(l.person_id)||!p||p.status!=="Active")return;
+    let t=teams.get(l.reports_to_id);if(!t){t={leaderId:l.reports_to_id,members:[]};teams.set(l.reports_to_id,t);}
+    t.members.push(l.person_id);
+  });
+  const name=id=>(people.get(id)||{}).full_name||"?";
+  const acting=(snap.acting||[]).filter(a=>a.status==="active"&&a.for_person_id&&a.starts<=iso&&(!a.ends||a.ends>=iso));
+  return[...teams.values()].map(t=>{
+    const cover=acting.find(a=>a.for_person_id===t.leaderId),up=lines.find(l=>l.person_id===t.leaderId);
+    return Object.assign(t,{leader:name(t.leaderId),acting:cover?name(cover.person_id):"",actingRole:cover?cover.acting_role:"",manager:up?name(up.reports_to_id):""});
+  });
+}
+// A published row's state for the board. No row: nothing published for that person and date.
+function _orgBridgeState(r){
+  if(!r)return"none";
+  if(r.status==="shift")return"work";
+  if(r.status==="leave")return r.leave_type==="sick"?"sick":"leave";
+  if(r.status==="training")return"leave";
+  return"off";
+}
+function orgBridgeBoard(iso){
+  const d=orgBridge.data;if(!d||!orgState.snapshot)return[];
+  const today=new Map(),pubs=new Map((d.publishes||[]).map(p=>[p.id,p])),teamPub=new Map();
+  (d.rows||[]).forEach(r=>{if(r.date===iso)today.set(r.person_id,r);});
+  // The latest publish behind any of a person's rows this month.
+  const personPub=new Map();
+  (d.rows||[]).forEach(r=>{const p=pubs.get(r.publish_id),cur=personPub.get(r.person_id);if(p&&(!cur||p.published_at>cur.published_at))personPub.set(r.person_id,p);});
+  return orgBridgeTeams(orgState.snapshot,iso).map(t=>{
+    const counts={work:0,sick:0,leave:0,off:0,none:0};
+    let latest=null;
+    t.members.forEach(id=>{counts[_orgBridgeState(today.get(id))]++;const p=personPub.get(id);if(p&&(!latest||p.published_at>latest.published_at))latest=p;});
+    teamPub.set(t.leaderId,latest);
+    const leaderState=_orgBridgeState(today.get(t.leaderId));
+    return Object.assign(t,{counts,hc:t.members.length,working:counts.work,leaderState,latest,
+      noCover:(leaderState==="sick"||leaderState==="leave")&&!t.acting,
+      attention:(counts.none?20:0)+counts.sick*5+counts.none*2});
+  });
+}
+
+// Loads the month around a date once; moving between days of the same month needs no fetch.
+async function orgBridgeLoad(iso){
+  const link=orgLinkFor(),month=String(iso).slice(0,7);if(!link)return;
+  if(orgBridge.month===month&&(orgBridge.data||orgBridge.busy))return;
+  const r=_orgPubRange(month);
+  Object.assign(orgBridge,{busy:true,error:"",month});
+  try{orgBridge.data=await orgRpc("sync_schedule",{p_org:link.org_id,p_from:r.from,p_to:r.to});}
+  catch(err){orgBridge.data=null;orgBridge.error=orgErrorText(err);}
+  orgBridge.busy=false;
+  if(orgBridgeOn()&&orgBridge.month===month&&typeof rPeople==="function")rPeople($("ca"));
+}
+function orgBridgeReload(){orgBridge.month="";orgBridge.data=null;if(typeof rPeople==="function")rPeople($("ca"));}
+
+// The source switch shown on the Leaders board of a linked project.
+function orgBridgeToggleHTML(){
+  if(!orgBridgeAvailable())return"";
+  const on=orgBridgeOn();
+  return`<span class="swin-seg" role="group" aria-label="Where the board reads from"><button type="button" aria-pressed="${!on}" onclick="orgBridgeSet(false)">This project</button><button type="button" aria-pressed="${on}" id="ldrOrgBtn" onclick="orgBridgeSet(true)">Organisation</button></span>`;
+}
+const ORG_BRIDGE_TEXT={work:"Working",sick:"Sick",leave:"Leave",off:"Off",none:"Not published"};
+
+function orgBridgeViewHTML(iso,headerHTML){
+  const link=orgLinkFor(),month=iso.slice(0,7);
+  if(orgBridge.month!==month||(!orgBridge.data&&!orgBridge.busy&&!orgBridge.error))orgBridgeLoad(iso);
+  let h=`<div class="cov-wrap ldr-wrap">`+headerHTML;
+  h+=`<div class="org-linked" id="bridgeFresh">From <b>${X(link.org_name)}</b>: what has been published for ${X(_orgPubMonthLabel(month))}, for every team in your part of the organisation, whichever project it's kept in. <button type="button" class="swin-btn" onclick="orgBridgeReload()">Reload</button></div>`;
+  if(orgBridge.error)return h+`<div class="swin-note" role="alert">${X(orgBridge.error)}</div></div>`;
+  if(orgBridge.busy||!orgBridge.data)return h+`<div class="swin-note" role="status">Loading the organisation's published rota…</div></div>`;
+  const rows=orgBridgeBoard(iso).sort((a,b)=>b.attention-a.attention||a.leader.localeCompare(b.leader));
+  if(!rows.length)return h+`<div class="swin-note">No teams in your part of the organisation on ${X(_swinDayLabel(iso))}.</div></div>`;
+  const sum=rows.reduce((a,r)=>{a.hc+=r.hc;["work","sick","leave","off","none"].forEach(k=>{a[k]+=r.counts[k];});return a;},{hc:0,work:0,sick:0,leave:0,off:0,none:0});
+  h+=`<div class="swin-stats ldr-sum" id="bridgeSummary">`;
+  [["Teams",rows.length],["Headcount",sum.hc],["Working",sum.work],["Sick",sum.sick],["Leave",sum.leave],["Off",sum.off],["Not published",sum.none]].forEach(([l,v])=>{
+    h+=`<div class="swin-stat${(l==="Sick"||l==="Not published")&&v>0?" warn":""}" data-stat="${l}"><b>${v}</b><span>${l}</span></div>`;
+  });
+  h+=`</div><div class="cov-tbl-wrap"><table class="cov-tbl ldr-tbl" id="bridgeTable"><thead><tr><th>Team</th><th>Leader today</th><th>HC</th><th>Working</th><th>Sick</th><th>Leave</th><th>Off</th><th>Not published</th><th>Published</th></tr></thead><tbody>`;
+  rows.forEach(r=>{
+    h+=`<tr data-leader="${XA(r.leader)}"${r.counts.none?' class="ldr-warn"':""}><td><b>${X(r.leader)}</b>${r.manager?`<div class="org-mgr">↑ ${X(r.manager)}</div>`:""}</td>`;
+    h+=`<td data-col="leader">${r.acting?`<span class="swin-tag t-act">${X(r.acting)} acting</span> `:""}<span class="ldr-st ldr-${r.leaderState==="work"?"work":r.leaderState}">${X(ORG_BRIDGE_TEXT[r.leaderState])}</span>${r.noCover?` <span class="cov-state ldr-nocover">no cover</span>`:""}</td>`;
+    h+=`<td class="mono">${r.hc}</td><td class="mono" data-col="working">${r.counts.work}</td><td class="mono${r.counts.sick?" ldr-hot":""}" data-col="sick">${r.counts.sick}</td><td class="mono" data-col="leave">${r.counts.leave}</td><td class="mono" data-col="off">${r.counts.off}</td>`;
+    h+=`<td class="mono${r.counts.none?" ldr-hot":""}" data-col="none">${r.counts.none}</td>`;
+    h+=`<td data-col="published">${r.latest?`${X(_orgWhen(r.latest.published_at))}${r.latest.by?` <small>${X(r.latest.by)}</small>`:""}`:`<span class="cov-state ldr-nocover">not published</span>`}</td></tr>`;
+  });
+  h+=`</tbody></table></div>`;
+  h+=`<div class="swin-note">Only published rows count here: a team whose leader hasn't published ${X(_orgPubMonthLabel(month))} shows as not published, whatever its project holds. Switch to This project for this project's own files, exceptions and statuses.</div>`;
+  return h+`</div>`;
 }
 
 </script>

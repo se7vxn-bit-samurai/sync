@@ -145,6 +145,83 @@ test.describe('Organisation (shared org layer)', () => {
     expect(page.__jsErrors).toEqual([]);
   });
 
+  test('publishing a month shows what changes first, then only people in scope reach the org', async ({ page }) => {
+    const { db, uid } = await openLinkedApp(page);
+    await createOrg(page);
+    await page.evaluate(() => closeSettings());
+    const month = await page.evaluate(() => _orgPubDefaultMonth());
+    // Once linked, the masthead offers Publish; phones hide the masthead, so there it's in Settings.
+    if (await page.locator('#orgPublishChip').isVisible()) await page.locator('#orgPublishChip').click();
+    else {
+      await page.evaluate(() => openSettings('org'));
+      await page.getByRole('button', { name: 'Publish rota…' }).click();
+    }
+    const modal = page.locator('#orgPubModal');
+    await expect(modal.locator('#orgPubFresh')).toContainText('Not published yet');
+    await expect(modal.locator('#orgPubSummary')).toContainText('change:');
+    // Ada, Omar and Pat have rows of their own; Omar's agents without rows follow his rota.
+    await expect(modal.locator('tr[data-person="Pat Ncube"]')).toBeVisible();
+    await expect(modal.locator('tr[data-person="Kim Senior"]')).toBeVisible();
+    expect((await sql(db, uid, 'select count(*)::int as n from core.people'))[0].n).toBe(8);
+    await modal.locator('#orgPubBtn').click();
+    await expect(modal).toHaveCount(0);
+    const rows = (await db.query("select p.full_name, s.status, s.source, to_char(s.start_local, 'HH24:MI') as start from sync.schedule_rows s join core.people p on p.id = s.person_id")).rows;
+    const who = [...new Set(rows.map((r) => r.full_name))].sort();
+    // Mo created the org, so he is its admin and publishes for everyone; Gina has no rows at all.
+    expect(who).toEqual(['Ada Leader', 'Ben Okafor', 'Kim Senior', 'Omar Reyes', 'Pat Ncube', 'Zanele Dube']);
+    expect(rows.filter((r) => r.full_name === 'Kim Senior').every((r) => r.source === 'leader')).toBe(true);
+    expect(rows.find((r) => r.full_name === 'Ada Leader' && r.status === 'shift').start).toBe('09:00');
+    // Ada's three days of leave go as leave; her agents, who follow her rota, get no row for them.
+    expect(await page.evaluate(([a, b]) => orgPublishPayload(a, b).rows.filter((r) => r.status === 'leave').map((r) => r.leave_type), [iso(2), iso(4)])).toEqual(['annual', 'annual', 'annual']);
+    expect(rows.find((r) => r.full_name === 'Pat Ncube' && r.status === 'shift').start).toBe('08:00');
+
+    // Publishing again with nothing changed says so, and names who published last.
+    await page.evaluate((m) => orgOpenPublish(m), month);
+    await expect(page.locator('#orgPubSummary')).toContainText('Nothing has changed');
+    await expect(page.locator('#orgPubFresh')).toContainText('Mo Manager');
+    await expect(page.locator('#orgPubBtn')).toBeDisabled();
+    expect(page.__jsErrors).toEqual([]);
+  });
+
+  test('Bridge: the Leaders board reads every team from what the organisation has published', async ({ page }) => {
+    await openLinkedApp(page);
+    await createOrg(page);
+    await page.evaluate(() => closeSettings());
+    // Publish this month for everyone in scope, as the dialog would.
+    const today = iso(0), month = today.slice(0, 7);
+    await page.evaluate(async (m) => { const r = _orgPubRange(m); await orgRpc('sync_publish_schedule', _orgPubArgs(orgPublishPayload(r.from, r.to), false)); }, month);
+
+    await page.evaluate(() => railNavPeople('leaders'));
+    await expect(page.locator('#ldrTable')).toBeVisible();
+    await page.locator('#ldrOrgBtn').click();
+    const board = page.locator('#bridgeTable');
+    await expect(board).toBeVisible();
+    await expect(page.locator('#bridgeFresh')).toContainText('Acme BPO');
+    const team = (leader) => board.locator(`tr[data-leader="${leader}"]`);
+    // Ada's and Omar's agents follow their leader's rota, so they were published and are working.
+    await expect(team('Ada Leader').locator('[data-col="working"]')).toHaveText('2');
+    await expect(team('Omar Reyes').locator('[data-col="working"]')).toHaveText('2');
+    await expect(team('Omar Reyes').locator('[data-col="published"]')).toContainText('Mo Manager');
+    // Mo has no rows of his own, so Gina's team has nothing published: it comes first and says so.
+    await expect(board.locator('tbody tr').first()).toHaveAttribute('data-leader', 'Gina Head');
+    await expect(team('Gina Head').locator('[data-col="none"]')).toHaveText('1');
+    await expect(team('Gina Head').locator('[data-col="published"]')).toHaveText('not published');
+    await expect(page.locator('#bridgeSummary [data-stat="Teams"] b')).toHaveText('4');
+
+    // Back to this project's own board.
+    await page.getByRole('button', { name: 'This project' }).click();
+    await expect(page.locator('#ldrTable')).toBeVisible();
+    await expect(board).toHaveCount(0);
+    expect(page.__jsErrors).toEqual([]);
+  });
+
+  test('an expired email link says so in words and leaves a clean address', async ({ page }) => {
+    await openApp(page, { path: '/#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired&sb=' });
+    await expect(page.locator('#toasts .toast').filter({ hasText: 'That email link has expired or was already used' })).toBeVisible();
+    expect(await page.evaluate(() => location.hash + location.search)).toBe('');
+    expect(page.__jsErrors).toEqual([]);
+  });
+
   test('on a server without the org layer, Settings says so and nothing else changes', async ({ page }) => {
     await openLinkedApp(page, { exposeOrg: false });
     expect(await page.evaluate(() => [orgState.available, orgState.checkError])).toEqual([false, '']);

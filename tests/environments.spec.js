@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
-const { assemble, partsFor, serverOf, leaks, ENVS } = require('../build/build');
+const { assemble, partsFor, serverOf, leaks, ENVS, TARGETS } = require('../build/build');
 const { openApp, PROFILE } = require('./helpers');
 
 // Live and dev are the same app built twice (build/build.js --env): they differ only in the env/
@@ -40,6 +40,21 @@ test.describe('Environments', () => {
     expect(csp(dev)).toBe(`'self' https://${DEV_HOST}`);
     // A leak is caught: live code naming the dev server would fail the build.
     expect(leaks('live', live + DEV_HOST)).toEqual([`the live build mentions the dev server (${DEV_HOST})`]);
+  });
+
+  test('Sync Me (me.html) is built the same way: env parts only, its own server, and small', () => {
+    test.skip(test.info().project.name !== 'desktop-chromium', 'build-only check');
+    expect(Object.keys(TARGETS)).toEqual(['index', 'me']);
+    const changed = partsFor('live', 'me').map((p, i) => [p, partsFor('dev', 'me')[i]]).filter(([a, b]) => a !== b);
+    expect(changed).toEqual([['env/live/csp.html', 'env/dev/csp.html'], ['env/live/env.js', 'env/dev/env.js']]);
+    const live = fs.readFileSync(path.join(__dirname, '..', 'me.html'), 'utf8');
+    const dev = assemble('dev', 'me').html;
+    expect(live).toBe(assemble('live', 'me').html);
+    expect([leaks('live', live), leaks('dev', dev)]).toEqual([[], []]);
+    expect(dev).not.toContain(LIVE_HOST);
+    // None of the spreadsheet, image or export engines: a phone page (plan target: under 400 KB).
+    expect(partsFor('live', 'me').filter((p) => /xlsx|exceljs|html2canvas|jszip|packbuilder/.test(p))).toEqual([]);
+    expect(Buffer.byteLength(live)).toBeLessThan(400 * 1024);
   });
 
   test('the live build offers Google only and carries no dev marker', async ({ page }) => {
