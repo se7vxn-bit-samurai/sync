@@ -1466,8 +1466,8 @@ NS.commitWorkbook=nsCommitWorkbook;
 
 function nsRuntimeEntry(record){
   const date=record.date?new Date(record.date+"T00:00:00"):null;
-  const untimed=!record.is_off&&!record.uk_start&&!record.uk_end&&record.raw_source_token===UNTIMED_WEEKDAY_SHIFT;
-  const raw=untimed?UNTIMED_WEEKDAY_SHIFT:record.is_off?(record.off_type||"OFF"):(record.uk_start&&record.uk_end?record.uk_start+"-"+record.uk_end:"");
+  const weekdayBlock=!record.uk_start&&!record.uk_end&&record.raw_source_token===UNTIMED_WEEKDAY_SHIFT;
+  const raw=weekdayBlock?UNTIMED_WEEKDAY_SHIFT:record.is_off?(record.off_type||"OFF"):(record.uk_start&&record.uk_end?record.uk_start+"-"+record.uk_end:"");
   return{name:record.person_name,date,day:record.day_of_week||date&&["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][date.getDay()]||"",week:"",_fileWeek:"",ukS:record.uk_start||null,ukE:record.uk_end||null,saS:record.sa_start||null,saE:record.sa_end||null,isOff:!!record.is_off,offL:record.off_type||"",raw,team:record.team_name||"Main",era:"current",source_id:record.source_id,authority_rank:record.authority_rank,source_type:"canonical"};
 }
 
@@ -1480,7 +1480,7 @@ function nsCommitRuntimeSchedule(sourceMeta,filename){
     const runtimePerson=S.people&&S.people[entry.name]||{},personId=runtimePerson.personId||nsId("NS-P",nsNameKey(entry.name)),roleType=runtimePerson.roleType||runtimePerson.title||(runtimePerson.role==="agent"?"Agent":"Team Leader");
     people.push({person_id:personId,full_name:entry.name,role_type:roleType,job_title:runtimePerson.jobTitle||(/leader|supervisor|manager/i.test(roleType)?roleType:""),home_department:S.activeDept||"",home_team:entry.team||runtimePerson.team||"",reports_to_person_id:runtimePerson.reportsToPersonId||"",manager_name:runtimePerson.teamLeader||"",status:"Active",labels:nsNormalizeLabels(runtimePerson.labels||runtimePerson.roleLabels),notes:"",source_id:source.source_id,authority_rank:source.authority_rank,imported_at:source.loaded_at});
     const iso=date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0");
-    const rawOff=nsClean(entry.offL||entry.raw),inferredOff=/^(E|X|[-–—])$/i.test(rawOff);
+    const rawOff=nsClean(isWeekdayBlockEntry(entry)?entry.raw:entry.offL||entry.raw),inferredOff=/^(E|X|[-–—])$/i.test(rawOff);
     schedule.push({schedule_entry_id:nsId("NS-SCH",personId+"|"+iso),person_id:personId,person_name:entry.name,team_name:entry.team||"",department:S.activeDept||"",date:iso,day_of_week:entry.day||"",uk_start:entry.ukS||"",uk_end:entry.ukE||"",sa_start:entry.saS||"",sa_end:entry.saE||"",is_off:!!entry.isOff,off_type:entry.isOff?(inferredOff?"OFF":entry.offL||"OFF"):"",raw_source_token:rawOff,source_format:inferredOff?"Sync parser; inferred off marker "+rawOff:"Sync parser",source_id:entry.source_id||source.source_id,authority_rank:Number(entry.authority_rank)||source.authority_rank,imported_at:source.loaded_at,shared_schedule_group_id:entry.shared_schedule_group_id||""});
   });
   // Save+ workbooks carry the wider team directory in S.people while their schedule

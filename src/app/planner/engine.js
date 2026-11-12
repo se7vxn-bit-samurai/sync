@@ -5,7 +5,7 @@
 function detectRotations(){
   const byPerson={};
   S.entries.forEach(e=>{
-    if(!e.date||isUntimedWeekdayShift(e))return;
+    if(!e.date||isWeekdayBlockEntry(e))return;
     if(!byPerson[e.name])byPerson[e.name]={team:e.team,weeks:{}};
     const d=new Date(e.date);const mon=new Date(d);mon.setDate(mon.getDate()-((mon.getDay()+6)%7));
     const wk=mon.toISOString().split("T")[0];

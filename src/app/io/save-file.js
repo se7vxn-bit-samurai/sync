@@ -378,7 +378,7 @@ function load(sn,opts){
     }
 
     // Weekday-only onboarding rows are outside the repeating shift rotation.
-    const rotationEntries=S.entries.filter(e=>!isUntimedWeekdayShift(e));
+    const rotationEntries=S.entries.filter(e=>!isWeekdayBlockEntry(e));
     enrichWeekLabels(rotationEntries,S.rotationDef);
     S.entriesVer=(S.entriesVer||0)+1;invalidateDerivedCache();
 

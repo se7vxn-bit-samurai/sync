@@ -351,13 +351,19 @@ function parseWorkbookRosterSheet(wb,sheet,data){
     let untimed=0;
     let unreadable=0;
     for(const {day,week,weekdayOnly} of weeks){
-      const count=week?7:weekdayOnly?5:0;
+      const count=week||weekdayOnly?7:0;
       for(let offset=0;offset<count;offset++){
         const date=days[day+offset-1];
         const weekday=DOW[date.getDay()];
         if(weekdayOnly){
-          entries.push(mkE(canonical,date,weekday,UNTIMED_WEEKDAY_SHIFT,"Main",""));
-          untimed++;
+          const weekend=offset>=5;
+          const entry=mkE(canonical,date,weekday,weekend?"OFF":UNTIMED_WEEKDAY_SHIFT,"Main","");
+          if(entry){
+            // Keep the block marker as provenance so these days stay outside the rotation.
+            entry.raw=UNTIMED_WEEKDAY_SHIFT;
+            entries.push(entry);
+          }
+          if(!weekend)untimed++;
           continue;
         }
         const raw=String(read(band,day+offset)||"").trim();

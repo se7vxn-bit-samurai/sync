@@ -190,8 +190,11 @@ function classifyOff(v){
 // during worksheet normalisation, but are also safe schedule-cell off labels.
 const OFF_CODE_RE=/^(OFF|AL|PH|RDO|PTO|TOIL|WFH|SL|SICK|LEAVE|HOL|HOLIDAY|TBC|TBD|N\/A|NA|ABS|AWOL|E|X|[-–—])$/i;
 const UNTIMED_WEEKDAY_SHIFT="Mon-Fri";
+function isWeekdayBlockEntry(entry){
+  return entry.raw===UNTIMED_WEEKDAY_SHIFT&&!entry.ukS&&!entry.ukE;
+}
 function isUntimedWeekdayShift(entry){
-  return entry.raw===UNTIMED_WEEKDAY_SHIFT&&!entry.isOff&&!entry.ukS&&!entry.ukE;
+  return !entry.isOff&&isWeekdayBlockEntry(entry);
 }
 // v48.3: also recognise bare integers 1–15 as week labels (e.g. Claims file stores 4, not "Week 4")
 function isWk(v){const s=String(v||"").trim();if(/^week\s*\d+$/i.test(s))return true;if(/^\d+$/.test(s)){const n=+s;return n>=1&&n<=15;}return false;}
