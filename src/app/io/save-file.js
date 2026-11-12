@@ -360,12 +360,12 @@ function load(sn,opts){
       S.raw=[];S.entries=[];const seen={};
       S.shs.forEach(shName=>{const ws=S.wb.Sheets[shName];const data=sheetToRosterAOA(ws);if(!S.raw.length)S.raw=data;
       const manualHere=manualOverride&&manualOverride.sheetName===shName;
-      const rawEntries=manualHere?parseManualHoriz(data,manualOverride.headerRowIdx).entries:autoParse(data,shName);
+      const rawEntries=manualHere?parseManualHoriz(data,manualOverride.headerRowIdx).entries:parseWorkbookRosterSheet(S.wb,shName,data);
       rawEntries.forEach(e=>{const k=e.name+"|"+(e.date?e.date.getFullYear()+"-"+P(e.date.getMonth())+"-"+P(e.date.getDate()):"");if(!seen[k]){seen[k]=true;S.entries.push(e);}});});
     } else {
       const ws=S.wb.Sheets[sn];S.raw=sheetToRosterAOA(ws);
       const manualHere=manualOverride&&manualOverride.sheetName===sn;
-      S.entries=manualHere?parseManualHoriz(S.raw,manualOverride.headerRowIdx).entries:autoParse(S.raw,sn);
+      S.entries=manualHere?parseManualHoriz(S.raw,manualOverride.headerRowIdx).entries:parseWorkbookRosterSheet(S.wb,sn,S.raw);
     }
     const dateClean=_sanitizeParsedEntriesForFileDates(S.entries,S.fn,S.shs);
     if(dateClean.removed){
@@ -377,8 +377,9 @@ function load(sn,opts){
       if(shifted)_lastRangeFixResult={shifted,fix:_loadRangeFix};
     }
 
-    // Enrich week labels from Overview personMap if available
-    S.entries=enrichWeekLabels(S.entries,S.rotationDef);
+    // Weekday-only onboarding rows are outside the repeating shift rotation.
+    const rotationEntries=S.entries.filter(e=>!isUntimedWeekdayShift(e));
+    enrichWeekLabels(rotationEntries,S.rotationDef);
     S.entriesVer=(S.entriesVer||0)+1;invalidateDerivedCache();
 
     // ── Cycle boundary detection ──
@@ -393,7 +394,7 @@ function load(sn,opts){
       let legCount=0;S.entries.forEach(e=>{if(e.date&&e.date<mon)legCount++;});
       boundary={cycleStartMonday:mon,method:"user-override",confidence:"high",legacyWeekCount:0,legacyEntryCount:legCount};
     } else {
-      boundary=detectCycleBoundary(S.entries);
+      boundary=detectCycleBoundary(rotationEntries);
     }
 
     // Tag legacy entries
@@ -410,12 +411,12 @@ function load(sn,opts){
     S.rotationDef._boundary=boundary;
 
     // Pattern-first rotation detection — feed only current entries
-    const currentEntries=S.entries.filter(e=>e.era!=="legacy");
-    const detected=detectShiftPatterns(currentEntries.length>=14?currentEntries:S.entries);
+    const currentEntries=rotationEntries.filter(e=>e.era!=="legacy");
+    const detected=detectShiftPatterns(currentEntries.length>=14?currentEntries:rotationEntries);
     if(detected){
       // Assign week numbers to ALL entries (legacy too, for historical reference)
       // but sequence-fill should stop at boundary
-      assignPatternWeeks(S.entries,detected,boundary);
+      assignPatternWeeks(rotationEntries,detected,boundary);
       // Store in rotationDef for downstream use
       S.rotationDef.patterns=detected.patterns;
       S.rotationDef.cycleLen=detected.cycleLen;

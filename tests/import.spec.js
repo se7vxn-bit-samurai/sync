@@ -27,6 +27,76 @@ async function uploadWorkbook(page, file) {
   await page.setInputFiles('#fi', file);
 }
 
+test('merged weekly agent rota keeps weekday labels and skips pre-skill weeks', async ({ page }) => {
+  await openFresh(page);
+  const bytes = await page.evaluate(() => {
+    const dates = Array.from({ length: 21 }, (_, i) => new Date(2026, 10, 9 + i));
+    const shifts = dates.map(date => date.getDay() % 6 ? '0600-1500' : 'RDO');
+    const atWeeks = (...labels) => dates.map((_, i) => i % 7 ? '' : labels[i / 7]);
+    const horizontal = [
+      ['', ...dates.map(date => DOW[date.getDay()].slice(0, 3))],
+      ['', ...dates],
+      ['Alex', ...shifts],
+      ['', ...atWeeks('Week 1', 'Week 2', 'Week 1')],
+      ['Sam', ...atWeeks('-', 'Monday to Friday', '').slice(0, 14), ...shifts.slice(14)],
+      ['', ...atWeeks('', '', 'Week 2')],
+    ];
+    const merges = ['A3:A4', 'A5:A6', 'B4:H4', 'I4:O4', 'P4:V4', 'B5:H6', 'I5:O6', 'P6:V6']
+      .map(range => XLSX.utils.decode_range(range));
+    const transpose = (grid) => grid[0].map((_, col) => grid.map(row => row[col]));
+    const transposeCell = ({ r, c }) => ({ r: c, c: r });
+    const wb = XLSX.utils.book_new();
+    const overview = XLSX.utils.aoa_to_sheet([
+      ['', 'WC', 'WC', 'WC', 'WC', 'WC'],
+      ['', ...Array.from({ length: 5 }, (_, i) => new Date(2026, 10, 9 + i * 7))],
+      ['Alex Example', 'Week 1', 'Week 2', 'Week 1', 'Week 2', 'Week 1'],
+      ['Sam', '-', '-', 'Week 2', 'Week 1', 'Week 2'],
+    ]);
+    XLSX.utils.book_append_sheet(wb, overview, 'Overview');
+    for (const vertical of [true, false]) {
+      const ws = XLSX.utils.aoa_to_sheet(vertical ? transpose(horizontal) : horizontal);
+      ws['!merges'] = vertical ? merges.map(({ s, e }) => ({ s: transposeCell(s), e: transposeCell(e) })) : merges;
+      for (const addr of vertical ? ['C1', 'E1', 'A2'] : ['A3', 'A5', 'B1']) ws[addr].z = 'd-mmm';
+      XLSX.utils.book_append_sheet(wb, ws, vertical ? 'Vertical' : 'Horizontal');
+    }
+    return Array.from(new Uint8Array(XLSX.write(wb, { bookType: 'xlsx', type: 'array' })));
+  });
+  await uploadWorkbook(page, { name: 'Agent View Nov 2026.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: Buffer.from(bytes) });
+  const preview = page.locator('#parsePreviewOverlay');
+  await expect(preview).toContainText('Load 33 entries');
+  await expect(preview).toContainText('5 Mon-Fri shifts have unspecified hours.');
+  await page.locator('#parseLoadBtn').click();
+  await expect(preview).toHaveCount(0);
+  const actual = await page.evaluate(() => {
+    const sam = S.entries.filter(e => e.name === 'Sam').sort((a, b) => a.date - b.date);
+    const weekday = sam[0];
+    const roundTrip = _validateCanonicalScheduleEntries([weekday]).entries[0];
+    return {
+      people: [...new Set(S.entries.map(e => e.name))].sort(),
+      entries: S.entries.length,
+      untimed: sam.filter(isUntimedWeekdayShift).map(e => excKey(e.date)),
+      working: !roundTrip.isOff,
+      times: [roundTrip.ukS, roundTrip.ukE, roundTrip.saS, roundTrip.saE],
+      label: [uD(roundTrip), sAD(roundTrip)],
+      nextShift: [excKey(sam[5].date), sam[5].ukS],
+      rdo: [sam.at(-1).raw, sam.at(-1).isOff],
+    };
+  });
+  expect(actual).toEqual({
+    people: ['Alex Example', 'Sam'],
+    entries: 33,
+    untimed: ['2026-11-16', '2026-11-17', '2026-11-18', '2026-11-19', '2026-11-20'],
+    working: true,
+    times: [null, null, null, null],
+    label: ['Mon-Fri', 'Mon-Fri'],
+    nextShift: ['2026-11-23', '06:00'],
+    rdo: ['RDO', true],
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.locator('#lcProjectPicker .lc-project-row').first().click();
+  await expect.poll(() => page.evaluate(() => S.entries.filter(isUntimedWeekdayShift).map(sAD))).toEqual(Array(5).fill('Mon-Fri'));
+});
+
 test.describe('native SyncSheets import', () => {
   test('a ScheduleHub workbook is detected and previewed before anything is committed', async ({ page }) => {
     await openFresh(page);

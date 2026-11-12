@@ -68,6 +68,8 @@ function _swinRow(iso,d,e,source,leader,excs){
     const k=_swinOffKind(e);
     r.kind=k.kind;r.status=k.status;r.type="off";
     r.code=String(e.offL||"OFF");
+  }else if(isUntimedWeekdayShift(e)){
+    r.kind="work";r.type="mid";r.code=UNTIMED_WEEKDAY_SHIFT;r.status=UNTIMED_WEEKDAY_SHIFT;
   }else if(e.ukS){
     r.kind="work";r.ukS=e.ukS;r.ukE=e.ukE||"";
     r.overnight=!!(r.ukE&&r.ukE<r.ukS);
@@ -111,7 +113,7 @@ function swinRows(name,fromISO,toISO){
 function _swinShiftText(r,clock){
   if(r.kind!=="work")return r.kind==="none"?(r.leaderAway?"TL away":"No row"):r.code;
   const s=clock==="uk"?r.ukS:r.saS,e=clock==="uk"?r.ukE:r.saE;
-  return s+(e?"–"+e:"")+(r.overnight?" (+1)":"");
+  return s?s+(e?"–"+e:"")+(r.overnight?" (+1)":""):r.code;
 }
 // Cover records (people/cover.js) that touch this range, as lines for the header.
 function _swinCoverNotes(name,fromISO,toISO){
@@ -309,7 +311,7 @@ function _swinMiniCalendars(rows,clock){
       const r=byDay.get(d);
       if(!r){h+=`<div class="c out"><b>${d}</b></div>`;continue;}
       const cls=r.kind==="work"?"work s-"+r.type:r.kind;
-      const txt=r.kind==="work"?(clock==="uk"?r.ukS:r.saS):r.kind==="none"?"·":r.kind==="leave"?"LV":r.code.slice(0,4);
+      const txt=r.kind==="work"?((clock==="uk"?r.ukS:r.saS)||r.code):r.kind==="none"?"·":r.kind==="leave"?"LV":r.code.slice(0,4);
       h+=`<div class="c ${cls}${r.iso===todayISO?" today":""}" title="${XA(_swinDayLabel(r.iso)+": "+_swinShiftText(r,clock)+" · "+r.status)}"><b>${d}</b>${X(txt)}</div>`;
     }
     return h+`</div>`;

@@ -182,7 +182,7 @@ function rCal(el){
         // #12: TL colour strip — 3px left border based on effective HC%
         const _tlCls=pct!==null?(pct>=90?'tl-green':pct>=75?'tl-amber':'tl-red'):'';
         mid+=`<div class="roster-item${_tlCls?' '+_tlCls:''}" style="gap:8px;flex-wrap:wrap"><span class="ri-name" style="cursor:pointer;flex:1" onclick="openDayInvestigation('${esc}','${excKey(selDate)}','calendar')">${X(e.name)}${tag}</span>`;
-        mid+=`<span><span class="ri-shift ${shiftCls(e)}">${S.tz?X(sa):X(uk)}</span><span class="ri-hrs">${hrs.toFixed(1)}h</span></span>`;
+        mid+=`<span><span class="ri-shift ${shiftCls(e)}">${S.tz?X(sa):X(uk)}</span>${isUntimedWeekdayShift(e)?"":`<span class="ri-hrs">${hrs.toFixed(1)}h</span>`}</span>`;
         // Swap tag — is this person covering someone today?
         const daySwaps=getSwapsForDay(excKey(selDate));
         const isCovering=daySwaps.find(sw=>sw.coverLeader===e.name);
@@ -475,7 +475,7 @@ function shareDay(){
     lines.push("ON FLOOR ("+working.length+" TL"+(working.length!==1?"s":"")+")");
     working.forEach(e=>{
       const sh=S.tz?sAD(e):uD(e);
-      const hrs=calcHrs(S.tz&&e.saS?e.saS:e.ukS,S.tz&&e.saE?e.saE:e.ukE).toFixed(1)+"h";
+      const hrs=isUntimedWeekdayShift(e)?"":calcHrs(S.tz&&e.saS?e.saS:e.ukS,S.tz&&e.saE?e.saE:e.ukE).toFixed(1)+"h";
       const hc=getHc(e.date,e.name);
       const hcStr=hc.recorded?(hc.total>0?"   "+hc.present+"/"+hc.total+" agents":"   "+hc.present+" present"):"";
       lines.push("  "+e.name.padEnd(22)+" "+sh.padEnd(15)+hrs.padEnd(7)+hcStr);

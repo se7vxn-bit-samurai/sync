@@ -41,7 +41,7 @@ function _parserEntryKey(e){
   const d=new Date(e.date);
   return String(e.name).trim().toLowerCase()+"|"+d.getFullYear()+"-"+P(d.getMonth()+1)+"-"+P(d.getDate());
 }
-function _parserEntrySignature(e){return(e&&e.isOff?"OFF":((e&&e.ukS)||"")+"-"+((e&&e.ukE)||""));}
+function _parserEntrySignature(e){return(e&&e.isOff?"OFF":e&&isUntimedWeekdayShift(e)?UNTIMED_WEEKDAY_SHIFT:((e&&e.ukS)||"")+"-"+((e&&e.ukE)||""));}
 function _validateCanonicalScheduleEntries(source,context){
   const entries=[],seen=new Map(),stats={input:(source||[]).length,output:0,dropped:0,repaired:0,duplicates:0,conflicts:0};
   (source||[]).forEach((original,index)=>{
@@ -57,6 +57,8 @@ function _validateCanonicalScheduleEntries(source,context){
     if(e.isOff){
       if(e.ukS||e.ukE)stats.repaired++;
       e.ukS=null;e.ukE=null;e.saS=null;e.saE=null;e.offL=normalizeOffCategory(e.offL||classifyOff(e.raw)||"OFF");
+    }else if(isUntimedWeekdayShift(e)){
+      e.offL="";e.saS=null;e.saE=null;
     }else if(e.ukS&&e.ukE){
       e.offL="";
       if(!e.saS)e.saS=u2s(e.ukS,e.date);
@@ -147,7 +149,7 @@ function scanFileQuick(wb,filename,manualOverride){
         return;// not a schedule sheet — don't run it through autoParse
       }
       const manualHere=manualOverride&&manualOverride.sheetName===shName;
-      const rawEntries=manualHere?parseManualHoriz(data,manualOverride.headerRowIdx).entries:autoParse(data,shName);
+      const rawEntries=manualHere?parseManualHoriz(data,manualOverride.headerRowIdx).entries:parseWorkbookRosterSheet(wb,shName,data);
       if(manualHere)S.parseInfo.push({sheet:shName,parser:"manualHoriz",confidence:"medium",reason:"Manually mapped from row "+(manualOverride.headerRowIdx+1),count:rawEntries.length,warnings:[]});
       parsedSheets.push({sheet:shName,data,entries:rawEntries,score:Number(rawEntries&&rawEntries[0]&&rawEntries[0]._parserScore)||0});
     });
@@ -186,7 +188,7 @@ function scanFileQuick(wb,filename,manualOverride){
       return(rank[p.confidence]||0)>(rank[b]||0)?p.confidence:b;
     },"low");
     const parsers=[...new Set(parseInfo.map(p=>p.parser))];
-    const warnings=parseInfo.flatMap(p=>p.warnings||[]);
+    const warnings=[...new Set(parseInfo.flatMap(p=>p.warnings||[]))];
 
     // Duplicate name detection
     const dupes=detectDuplicateNames(names);
@@ -203,7 +205,7 @@ function scanFileQuick(wb,filename,manualOverride){
     const autoMergeCandidates=_findAutoMergeCandidates(names);
     // Independent roster pass reads the raw workbook cells, then reconciles them with parsed rows.
     // It deliberately does not create schedule entries: it surfaces missed people for review instead.
-    const rosterEvidence=collectParserAuditEvidence(wb,names);
+    const rosterEvidence=collectParserAuditEvidence(wb,names,parseInfo.flatMap(p=>p.aliases||[]));
     if(rosterEvidence.aliases&&rosterEvidence.aliases.length){const resolvedAliases=new Set(rosterEvidence.aliases.map(alias=>alias.from));ghostAgents=ghostAgents.filter(agent=>!resolvedAliases.has(agent.name));}
     const missingExpectedNames=rosterEvidence.missing;
     if(missingExpectedNames.length)warnings.push(`Roster reconciliation: ${missingExpectedNames.length} expected person${missingExpectedNames.length===1?"":"s"} missing (${missingExpectedNames.join(", ")})`);
@@ -1136,6 +1138,8 @@ function showParsePreview(wb,filename,manualOverride,sourceMeta,opts){
     h+=`</div>`;
   });
   h+=`</div>`;
+  const untimedCount=scan.entries.filter(isUntimedWeekdayShift).length;
+  if(untimedCount)h+=`<div style="padding:8px 18px;border-bottom:1px solid var(--bdr);font-size:12px;color:var(--tm)">${untimedCount} Mon-Fri ${untimedCount===1?"shift has":"shifts have"} unspecified hours.</div>`;
 
   // ── Two-column body ──
   h+=`<div style="display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:0;min-height:0">`;

@@ -6806,6 +6806,10 @@ function classifyOff(v){
 // example E, X, or a dash). Those codes are only promoted from a styled cell
 // during worksheet normalisation, but are also safe schedule-cell off labels.
 const OFF_CODE_RE=/^(OFF|AL|PH|RDO|PTO|TOIL|WFH|SL|SICK|LEAVE|HOL|HOLIDAY|TBC|TBD|N\/A|NA|ABS|AWOL|E|X|[-–—])$/i;
+const UNTIMED_WEEKDAY_SHIFT="Mon-Fri";
+function isUntimedWeekdayShift(entry){
+  return entry.raw===UNTIMED_WEEKDAY_SHIFT&&!entry.isOff&&!entry.ukS&&!entry.ukE;
+}
 // v48.3: also recognise bare integers 1–15 as week labels (e.g. Claims file stores 4, not "Week 4")
 function isWk(v){const s=String(v||"").trim();if(/^week\s*\d+$/i.test(s))return true;if(/^\d+$/.test(s)){const n=+s;return n>=1&&n<=15;}return false;}
 function getWk(v){const s=String(v||"").trim();const m=s.match(/^week\s*(\d+)$/i);if(m)return m[1];if(/^\d+$/.test(s)&&+s>=1&&+s<=15)return s;return null;}
@@ -6986,7 +6990,10 @@ function mkE(name,date,day,raw,team,weekLabel){
   const cs=String(raw||"").trim();
   const cl=classifyCell(raw);
   let off,offL,ukS,ukE,note;
-  if(cl.type==="off"||cl.type==="empty"){
+  if(cs===UNTIMED_WEEKDAY_SHIFT){
+    off=false;ukS=null;ukE=null;offL="";
+    note="Shift hours are unspecified in the source rota.";
+  } else if(cl.type==="off"||cl.type==="empty"){
     off=true;ukS=null;ukE=null;
     offL=normalizeOffCategory(cl.cat||cs||"OFF");
     note="";
@@ -7244,7 +7251,8 @@ function scanOverviewGrid(wb){
     if(wcRow<0)continue;
     // Next meaningful row should have dates and person name
     // In Retentions: row after WC has dates in the WC columns, name in col B
-    // People rows follow with "Week N" values
+    // People rows follow with "Week N" values. In a B1-origin sheet the
+    // name column is index 0 because SheetJS starts at the used range.
     // Find the WC columns
     const wcCols=[];const hdrRow=data[wcRow]||[];
     for(let j=0;j<hdrRow.length;j++){if(String(hdrRow[j]||"").trim().toUpperCase()==="WC")wcCols.push(j);}
@@ -7271,7 +7279,8 @@ function scanOverviewGrid(wb){
     for(let i=wcRow+1;i<Math.min(data.length,wcRow+30);i++){
       if(i===dateSourceRow)continue;// skip the date row
       const row=data[i]||[];
-      const nm=String(row[1]||"").trim();
+      const nameCol=wcCols[0]===1?0:1;
+      const nm=String(row[nameCol]||"").trim();
       if(!nm||nm.length<2||isHeaderRow(nm))continue;
       // Check if this row has "Week N" values in WC cols
       let weekHits=0;
@@ -8241,7 +8250,7 @@ function _uniqueRosterAlias(name,parsedNames){
     .sort((a,b)=>a.distance-b.distance||a.match.localeCompare(b.match));
   return candidates.length===1?candidates[0]:null;
 }
-function collectParserAuditEvidence(wb,parsedNames){
+function collectParserAuditEvidence(wb,parsedNames,verifiedAliases=[]){
   const parsed=new Set(parsedNames||[]),evidence={},nameRows={};
   if(!wb||!wb.Sheets)return{expectedNames:[],missing:[],provenance:{},nameRows:{}};
   (wb.SheetNames||[]).forEach(sheet=>{
@@ -8269,6 +8278,8 @@ function collectParserAuditEvidence(wb,parsedNames){
   const aliases=[],provenance={};
   const expectedNames=[...new Set(rawExpectedNames.map(name=>{
     if(parsed.has(name))return name;
+    const verified=verifiedAliases.find(alias=>alias.from===name&&parsed.has(alias.to));
+    if(verified){aliases.push(verified);return verified.to;}
     const alias=_uniqueRosterAlias(name,parsedNames);
     if(alias){aliases.push({from:name,to:alias.match,distance:alias.distance,reason:"unique one-character roster spelling variant"});return alias.match;}
     return name;
@@ -8317,6 +8328,108 @@ function isHorizSheetName(name){
 function isVertSheetName(name){
   const s=String(name||"").toLowerCase();
   return s.includes("vertical")||s.includes("verticle")||s.includes("vertic");
+}
+
+// The agent-view rota has a merged name band for each person, and two tracks
+// within that band: daily shifts and weekly rotation labels. The vertical
+// view is the transpose of the horizontal view.
+function parseMergedWeeklyRota(data,ws,vertical){
+  const merges=ws["!merges"]||[];
+  const origin=ws["!ref"]&&XLSX.utils.decode_range(ws["!ref"]).s;
+  if(!origin||!merges.length)return null;
+  const read=(band,day)=>{
+    const row=vertical?day:band,col=vertical?band:day;
+    const cell=ws[XLSX.utils.encode_cell({r:origin.r+row,c:origin.c+col})];
+    // SheetJS coerces date-formatted text headers to invalid Dates in its grid.
+    // Read the underlying text for this layout, including the original RDO code.
+    return cell?.t==="s"?cell.v:data[row]?.[col];
+  };
+  const coord=pos=>vertical
+    ?{band:pos.c-origin.c,day:pos.r-origin.r}
+    :{band:pos.r-origin.r,day:pos.c-origin.c};
+  const ranges=new Map(merges.map(({s,e})=>{
+    const start=coord(s);
+    return [start.band+":"+start.day,coord(e)];
+  }));
+  const days=[];
+  for(let index=1;read(0,index)||read(1,index);index++){
+    const date=pDt(read(1,index));
+    const weekday=nD(read(0,index));
+    if(!date||!weekday||weekday!==DOW[date.getDay()])return null;
+    const prior=days.at(-1);
+    if(prior&&new Date(prior.getFullYear(),prior.getMonth(),prior.getDate()+1).getTime()!==date.getTime())return null;
+    days.push(date);
+  }
+  if(!days.length||days.length%7!==0||days[0].getDay()!==1)return null;
+  const people=[];
+  let hasOnboarding=false;
+  for(let band=2;read(band,0);band+=2){
+    const name=cleanPersonName(read(band,0));
+    const nameEnd=ranges.get(band+":0");
+    if(isPersonNoiseLabel(name)||nameEnd?.band!==band+1||nameEnd.day!==0)return null;
+    const weeks=[];
+    for(let day=1;day<=days.length;day+=7){
+      const raw=String(read(band,day)||"").trim();
+      const end=ranges.get(band+":"+day);
+      const mergedWeek=end?.band===band+1&&end.day===day+6;
+      if(mergedWeek&&(/^[-–—]$/.test(raw)||/^mon(?:day)?\s*(?:to|[-–—])\s*fri(?:day)?$/i.test(raw))){
+        const weekdayOnly=!/^[-–—]$/.test(raw);
+        hasOnboarding=true;
+        weeks.push({day,weekdayOnly});
+        continue;
+      }
+      const week=getWk(read(band+1,day));
+      const labelEnd=ranges.get((band+1)+":"+day);
+      if(!week||labelEnd?.band!==band+1||labelEnd.day!==day+6)return null;
+      weeks.push({day,week:"W"+week});
+    }
+    people.push({name,band,weeks});
+  }
+  if(!hasOnboarding||!people.length)return null;
+  return {people,days,read};
+}
+
+function parseWorkbookRosterSheet(wb,sheet,data){
+  const ws=wb.Sheets[sheet];
+  const rota=ws&&(parseMergedWeeklyRota(data,ws,false)||parseMergedWeeklyRota(data,ws,true));
+  if(!rota)return autoParse(data,sheet);
+
+  const {people,days,read}=rota;
+  const overviewNames=Object.keys(scanOverviewGrid(wb)?.personMap||{});
+  const aliases=[];
+  const entries=[];
+  const warnings=[];
+  for(const person of people){
+    const {name,band,weeks}=person;
+    const firstName=name.toLowerCase();
+    const matches=overviewNames.filter(candidate=>candidate.toLowerCase().split(/\s+/)[0]===firstName);
+    const unique=people.filter(other=>other.name.toLowerCase().split(/\s+/)[0]===firstName).length===1;
+    const canonical=unique&&matches.length===1?matches[0]:name;
+    if(name!==canonical)aliases.push({from:name,to:canonical,reason:"unique first name in workbook Overview"});
+    let untimed=0;
+    let unreadable=0;
+    for(const {day,week,weekdayOnly} of weeks){
+      const count=week?7:weekdayOnly?5:0;
+      for(let offset=0;offset<count;offset++){
+        const date=days[day+offset-1];
+        const weekday=DOW[date.getDay()];
+        if(weekdayOnly){
+          entries.push(mkE(canonical,date,weekday,UNTIMED_WEEKDAY_SHIFT,"Main",""));
+          untimed++;
+          continue;
+        }
+        const raw=String(read(band,day+offset)||"").trim();
+        if(raw&&(pTm(raw)||classifyOff(raw)||OFF_CODE_RE.test(raw)))entries.push(mkE(canonical,date,weekday,raw,"Main",week));
+        else unreadable++;
+      }
+    }
+    if(untimed)warnings.push(`${canonical}: ${untimed} Mon-Fri shifts have unspecified hours.`);
+    if(unreadable)warnings.push(`${canonical}: ${unreadable} daily cells have no recognised shift or off code.`);
+  }
+  const parser="parseMergedWeeklyRota";
+  const confidence=warnings.length?"medium":"high";
+  S.parseInfo.push({sheet,parser,confidence,reason:"Merged weekly agent rota",count:entries.length,warnings,aliases});
+  return entries.map(entry=>({...entry,_parserSheet:sheet,_parserEngine:parser,_parserConfidence:confidence}));
 }
 
 function parseHoriz(data){
@@ -9245,6 +9358,7 @@ function handleRosterDrop(e,dropEl){
 function isSaveFile(wb){return wb.SheetNames.some(s=>s==="_app_state");}
 let _pendingLoad=null;// holds {wb, filename, preview} while awaiting confirm
 let _pendingFocusNames=new Set();
+
 /* ═══════════════════════════════════════════════════════════════
    LANDING MODE — dual-mode routing
    'standard' = existing 5-parser engine via proc()
@@ -11055,7 +11169,7 @@ function _parserEntryKey(e){
   const d=new Date(e.date);
   return String(e.name).trim().toLowerCase()+"|"+d.getFullYear()+"-"+P(d.getMonth()+1)+"-"+P(d.getDate());
 }
-function _parserEntrySignature(e){return(e&&e.isOff?"OFF":((e&&e.ukS)||"")+"-"+((e&&e.ukE)||""));}
+function _parserEntrySignature(e){return(e&&e.isOff?"OFF":e&&isUntimedWeekdayShift(e)?UNTIMED_WEEKDAY_SHIFT:((e&&e.ukS)||"")+"-"+((e&&e.ukE)||""));}
 function _validateCanonicalScheduleEntries(source,context){
   const entries=[],seen=new Map(),stats={input:(source||[]).length,output:0,dropped:0,repaired:0,duplicates:0,conflicts:0};
   (source||[]).forEach((original,index)=>{
@@ -11071,6 +11185,8 @@ function _validateCanonicalScheduleEntries(source,context){
     if(e.isOff){
       if(e.ukS||e.ukE)stats.repaired++;
       e.ukS=null;e.ukE=null;e.saS=null;e.saE=null;e.offL=normalizeOffCategory(e.offL||classifyOff(e.raw)||"OFF");
+    }else if(isUntimedWeekdayShift(e)){
+      e.offL="";e.saS=null;e.saE=null;
     }else if(e.ukS&&e.ukE){
       e.offL="";
       if(!e.saS)e.saS=u2s(e.ukS,e.date);
@@ -11161,7 +11277,7 @@ function scanFileQuick(wb,filename,manualOverride){
         return;// not a schedule sheet — don't run it through autoParse
       }
       const manualHere=manualOverride&&manualOverride.sheetName===shName;
-      const rawEntries=manualHere?parseManualHoriz(data,manualOverride.headerRowIdx).entries:autoParse(data,shName);
+      const rawEntries=manualHere?parseManualHoriz(data,manualOverride.headerRowIdx).entries:parseWorkbookRosterSheet(wb,shName,data);
       if(manualHere)S.parseInfo.push({sheet:shName,parser:"manualHoriz",confidence:"medium",reason:"Manually mapped from row "+(manualOverride.headerRowIdx+1),count:rawEntries.length,warnings:[]});
       parsedSheets.push({sheet:shName,data,entries:rawEntries,score:Number(rawEntries&&rawEntries[0]&&rawEntries[0]._parserScore)||0});
     });
@@ -11200,7 +11316,7 @@ function scanFileQuick(wb,filename,manualOverride){
       return(rank[p.confidence]||0)>(rank[b]||0)?p.confidence:b;
     },"low");
     const parsers=[...new Set(parseInfo.map(p=>p.parser))];
-    const warnings=parseInfo.flatMap(p=>p.warnings||[]);
+    const warnings=[...new Set(parseInfo.flatMap(p=>p.warnings||[]))];
 
     // Duplicate name detection
     const dupes=detectDuplicateNames(names);
@@ -11217,7 +11333,7 @@ function scanFileQuick(wb,filename,manualOverride){
     const autoMergeCandidates=_findAutoMergeCandidates(names);
     // Independent roster pass reads the raw workbook cells, then reconciles them with parsed rows.
     // It deliberately does not create schedule entries: it surfaces missed people for review instead.
-    const rosterEvidence=collectParserAuditEvidence(wb,names);
+    const rosterEvidence=collectParserAuditEvidence(wb,names,parseInfo.flatMap(p=>p.aliases||[]));
     if(rosterEvidence.aliases&&rosterEvidence.aliases.length){const resolvedAliases=new Set(rosterEvidence.aliases.map(alias=>alias.from));ghostAgents=ghostAgents.filter(agent=>!resolvedAliases.has(agent.name));}
     const missingExpectedNames=rosterEvidence.missing;
     if(missingExpectedNames.length)warnings.push(`Roster reconciliation: ${missingExpectedNames.length} expected person${missingExpectedNames.length===1?"":"s"} missing (${missingExpectedNames.join(", ")})`);
@@ -12150,6 +12266,8 @@ function showParsePreview(wb,filename,manualOverride,sourceMeta,opts){
     h+=`</div>`;
   });
   h+=`</div>`;
+  const untimedCount=scan.entries.filter(isUntimedWeekdayShift).length;
+  if(untimedCount)h+=`<div style="padding:8px 18px;border-bottom:1px solid var(--bdr);font-size:12px;color:var(--tm)">${untimedCount} Mon-Fri ${untimedCount===1?"shift has":"shifts have"} unspecified hours.</div>`;
 
   // ── Two-column body ──
   h+=`<div style="display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:0;min-height:0">`;
@@ -12843,12 +12961,12 @@ function load(sn,opts){
       S.raw=[];S.entries=[];const seen={};
       S.shs.forEach(shName=>{const ws=S.wb.Sheets[shName];const data=sheetToRosterAOA(ws);if(!S.raw.length)S.raw=data;
       const manualHere=manualOverride&&manualOverride.sheetName===shName;
-      const rawEntries=manualHere?parseManualHoriz(data,manualOverride.headerRowIdx).entries:autoParse(data,shName);
+      const rawEntries=manualHere?parseManualHoriz(data,manualOverride.headerRowIdx).entries:parseWorkbookRosterSheet(S.wb,shName,data);
       rawEntries.forEach(e=>{const k=e.name+"|"+(e.date?e.date.getFullYear()+"-"+P(e.date.getMonth())+"-"+P(e.date.getDate()):"");if(!seen[k]){seen[k]=true;S.entries.push(e);}});});
     } else {
       const ws=S.wb.Sheets[sn];S.raw=sheetToRosterAOA(ws);
       const manualHere=manualOverride&&manualOverride.sheetName===sn;
-      S.entries=manualHere?parseManualHoriz(S.raw,manualOverride.headerRowIdx).entries:autoParse(S.raw,sn);
+      S.entries=manualHere?parseManualHoriz(S.raw,manualOverride.headerRowIdx).entries:parseWorkbookRosterSheet(S.wb,sn,S.raw);
     }
     const dateClean=_sanitizeParsedEntriesForFileDates(S.entries,S.fn,S.shs);
     if(dateClean.removed){
@@ -12860,8 +12978,9 @@ function load(sn,opts){
       if(shifted)_lastRangeFixResult={shifted,fix:_loadRangeFix};
     }
 
-    // Enrich week labels from Overview personMap if available
-    S.entries=enrichWeekLabels(S.entries,S.rotationDef);
+    // Weekday-only onboarding rows are outside the repeating shift rotation.
+    const rotationEntries=S.entries.filter(e=>!isUntimedWeekdayShift(e));
+    enrichWeekLabels(rotationEntries,S.rotationDef);
     S.entriesVer=(S.entriesVer||0)+1;invalidateDerivedCache();
 
     // ── Cycle boundary detection ──
@@ -12876,7 +12995,7 @@ function load(sn,opts){
       let legCount=0;S.entries.forEach(e=>{if(e.date&&e.date<mon)legCount++;});
       boundary={cycleStartMonday:mon,method:"user-override",confidence:"high",legacyWeekCount:0,legacyEntryCount:legCount};
     } else {
-      boundary=detectCycleBoundary(S.entries);
+      boundary=detectCycleBoundary(rotationEntries);
     }
 
     // Tag legacy entries
@@ -12893,12 +13012,12 @@ function load(sn,opts){
     S.rotationDef._boundary=boundary;
 
     // Pattern-first rotation detection — feed only current entries
-    const currentEntries=S.entries.filter(e=>e.era!=="legacy");
-    const detected=detectShiftPatterns(currentEntries.length>=14?currentEntries:S.entries);
+    const currentEntries=rotationEntries.filter(e=>e.era!=="legacy");
+    const detected=detectShiftPatterns(currentEntries.length>=14?currentEntries:rotationEntries);
     if(detected){
       // Assign week numbers to ALL entries (legacy too, for historical reference)
       // but sequence-fill should stop at boundary
-      assignPatternWeeks(S.entries,detected,boundary);
+      assignPatternWeeks(rotationEntries,detected,boundary);
       // Store in rotationDef for downstream use
       S.rotationDef.patterns=detected.patterns;
       S.rotationDef.cycleLen=detected.cycleLen;
@@ -13422,8 +13541,8 @@ function gN(){
   return[...new Set(_empFilterEntries(ent).map(e=>e.name))].sort();
 }
 function gT(){return[...new Set(S.entries.map(e=>e.team))];}
-function uD(e){if(e.isOff)return e.offL||"OFF";if(e.ukS)return e.ukS+"–"+e.ukE;return"—";}
-function sAD(e){if(e.isOff)return e.offL||"OFF";if(e.saS)return e.saS+"–"+e.saE;if(e.ukS)return u2s(e.ukS,e.date)+"–"+u2s(e.ukE,e.date);return"—";}
+function uD(e){if(e.isOff)return e.offL||"OFF";if(e.ukS)return e.ukS+"–"+e.ukE;return isUntimedWeekdayShift(e)?UNTIMED_WEEKDAY_SHIFT:"—";}
+function sAD(e){if(e.isOff)return e.offL||"OFF";if(e.saS)return e.saS+"–"+e.saE;if(e.ukS)return u2s(e.ukS,e.date)+"–"+u2s(e.ukE,e.date);return uD(e);}
 function rCls(e){let c="";if(e.isOff)c+=" or";if(e.day==="Saturday"||e.day==="Sunday")c+=" wr";if(S.hlToday&&isToday(e.date))c+=" today-row";if(e.era==="legacy")c+=" legacy-row";return c;}
 function monthLabel(){if(!S.month)return"All";const[y,m]=S.month.split("-").map(Number);return MOFULL[m]+" "+y;}
 function $(id){return document.getElementById(id);}
@@ -14236,7 +14355,7 @@ function rCal(el){
         // #12: TL colour strip — 3px left border based on effective HC%
         const _tlCls=pct!==null?(pct>=90?'tl-green':pct>=75?'tl-amber':'tl-red'):'';
         mid+=`<div class="roster-item${_tlCls?' '+_tlCls:''}" style="gap:8px;flex-wrap:wrap"><span class="ri-name" style="cursor:pointer;flex:1" onclick="openDayInvestigation('${esc}','${excKey(selDate)}','calendar')">${X(e.name)}${tag}</span>`;
-        mid+=`<span><span class="ri-shift ${shiftCls(e)}">${S.tz?X(sa):X(uk)}</span><span class="ri-hrs">${hrs.toFixed(1)}h</span></span>`;
+        mid+=`<span><span class="ri-shift ${shiftCls(e)}">${S.tz?X(sa):X(uk)}</span>${isUntimedWeekdayShift(e)?"":`<span class="ri-hrs">${hrs.toFixed(1)}h</span>`}</span>`;
         // Swap tag — is this person covering someone today?
         const daySwaps=getSwapsForDay(excKey(selDate));
         const isCovering=daySwaps.find(sw=>sw.coverLeader===e.name);
@@ -14529,7 +14648,7 @@ function shareDay(){
     lines.push("ON FLOOR ("+working.length+" TL"+(working.length!==1?"s":"")+")");
     working.forEach(e=>{
       const sh=S.tz?sAD(e):uD(e);
-      const hrs=calcHrs(S.tz&&e.saS?e.saS:e.ukS,S.tz&&e.saE?e.saE:e.ukE).toFixed(1)+"h";
+      const hrs=isUntimedWeekdayShift(e)?"":calcHrs(S.tz&&e.saS?e.saS:e.ukS,S.tz&&e.saE?e.saE:e.ukE).toFixed(1)+"h";
       const hc=getHc(e.date,e.name);
       const hcStr=hc.recorded?(hc.total>0?"   "+hc.present+"/"+hc.total+" agents":"   "+hc.present+" present"):"";
       lines.push("  "+e.name.padEnd(22)+" "+sh.padEnd(15)+hrs.padEnd(7)+hcStr);
@@ -19892,7 +20011,7 @@ function renderTableSummary(vm){
 }
 function renderTableBody(vm){
   let h=`<div class="ftw" style="border-radius:0 0 10px 10px"><table class="ft"><thead><tr>${buildSortTh('leader','Leader')}${buildSortTh('date','Date')}${buildSortTh('day','Day')}${buildSortTh('uk','UK Time')}${S.tz?buildSortTh('sa','SA Time'):''}${buildSortTh('hrs','Hrs')}${buildSortTh('week','Wk')}${buildSortTh('flags','Flags')}</tr></thead><tbody>`;
-  vm.all.forEach(e=>{const hrs=e.isOff?"":(calcHrs(S.tz&&e.saS?e.saS:e.ukS,S.tz&&e.saE?e.saE:e.ukE)).toFixed(1);const dayExc=e.date?getExcForPerson(e.date,e.name):[];const excIcons=dayExc.map(x=>{const t=EXC_TYPES.find(t=>t.id===x.type);return t?t.icon:'⚠';}).join('');const inspect=e.date?` onclick="openDayInvestigation('${XJS(e.name)}','${excKey(e.date)}','table')" style="cursor:pointer" title="Inspect this day"`:'';h+=`<tr class="${rCls(e)}"><td${inspect}>${X(e.name)}</td><td>${e.date?fDF(e.date):"—"}</td><td>${e.day?e.day.substring(0,3):"—"}</td><td class="${shiftCls(e)}">${e.isOff?offLabel(e):X(uD(e))}</td>${S.tz?`<td class="${shiftCls(e)}">${e.isOff?offLabel(e):X(sAD(e))}</td>`:''}<td class="sc" style="opacity:.5">${hrs}</td><td class="wk-lbl">${e.week||""}</td><td style="font-size:11px">${excIcons}</td></tr>`;});
+  vm.all.forEach(e=>{const hrs=e.isOff||isUntimedWeekdayShift(e)?"":(calcHrs(S.tz&&e.saS?e.saS:e.ukS,S.tz&&e.saE?e.saE:e.ukE)).toFixed(1);const dayExc=e.date?getExcForPerson(e.date,e.name):[];const excIcons=dayExc.map(x=>{const t=EXC_TYPES.find(t=>t.id===x.type);return t?t.icon:'⚠';}).join('');const inspect=e.date?` onclick="openDayInvestigation('${XJS(e.name)}','${excKey(e.date)}','table')" style="cursor:pointer" title="Inspect this day"`:'';h+=`<tr class="${rCls(e)}"><td${inspect}>${X(e.name)}</td><td>${e.date?fDF(e.date):"—"}</td><td>${e.day?e.day.substring(0,3):"—"}</td><td class="${shiftCls(e)}">${e.isOff?offLabel(e):X(uD(e))}</td>${S.tz?`<td class="${shiftCls(e)}">${e.isOff?offLabel(e):X(sAD(e))}</td>`:''}<td class="sc" style="opacity:.5">${hrs}</td><td class="wk-lbl">${e.week||""}</td><td style="font-size:11px">${excIcons}</td></tr>`;});
   return h+`</tbody></table></div>`;
 }
 function rerenderTableBodyBlock(){
@@ -21856,7 +21975,7 @@ function rCapacityWaterfall(y,m,numDays,monthEnt){
 function detectRotations(){
   const byPerson={};
   S.entries.forEach(e=>{
-    if(!e.date)return;
+    if(!e.date||isUntimedWeekdayShift(e))return;
     if(!byPerson[e.name])byPerson[e.name]={team:e.team,weeks:{}};
     const d=new Date(e.date);const mon=new Date(d);mon.setDate(mon.getDate()-((mon.getDay()+6)%7));
     const wk=mon.toISOString().split("T")[0];
@@ -25497,7 +25616,8 @@ function computeFlags(){
       const ents=[...byName[name]].filter(e=>e.date).sort((a,b)=>a.date-b.date);
       for(let i=1;i<ents.length;i++){
         const diff=Math.round((ents[i].date-ents[i-1].date)/864e5);
-        if(diff>1&&diff<8&&!ents[i-1].isOff&&!ents[i].isOff){
+        const weekdayBlockWeekend=diff===3&&ents[i-1].date.getDay()===5&&isUntimedWeekdayShift(ents[i-1]);
+        if(diff>1&&diff<8&&!weekdayBlockWeekend&&!ents[i-1].isOff&&!ents[i].isOff){
           const id="gap|"+name+"|"+excKey(ents[i].date);
           flags.push({id,category:"data",severity:"low",title:"Schedule gap",
             detail:`${name.split(" ")[0]}: ${diff-1} day gap between ${fD(ents[i-1].date)} and ${fD(ents[i].date)}`,
@@ -34548,6 +34668,8 @@ function _swinRow(iso,d,e,source,leader,excs){
     const k=_swinOffKind(e);
     r.kind=k.kind;r.status=k.status;r.type="off";
     r.code=String(e.offL||"OFF");
+  }else if(isUntimedWeekdayShift(e)){
+    r.kind="work";r.type="mid";r.code=UNTIMED_WEEKDAY_SHIFT;r.status=UNTIMED_WEEKDAY_SHIFT;
   }else if(e.ukS){
     r.kind="work";r.ukS=e.ukS;r.ukE=e.ukE||"";
     r.overnight=!!(r.ukE&&r.ukE<r.ukS);
@@ -34591,7 +34713,7 @@ function swinRows(name,fromISO,toISO){
 function _swinShiftText(r,clock){
   if(r.kind!=="work")return r.kind==="none"?(r.leaderAway?"TL away":"No row"):r.code;
   const s=clock==="uk"?r.ukS:r.saS,e=clock==="uk"?r.ukE:r.saE;
-  return s+(e?"–"+e:"")+(r.overnight?" (+1)":"");
+  return s?s+(e?"–"+e:"")+(r.overnight?" (+1)":""):r.code;
 }
 // Cover records (people/cover.js) that touch this range, as lines for the header.
 function _swinCoverNotes(name,fromISO,toISO){
@@ -34789,7 +34911,7 @@ function _swinMiniCalendars(rows,clock){
       const r=byDay.get(d);
       if(!r){h+=`<div class="c out"><b>${d}</b></div>`;continue;}
       const cls=r.kind==="work"?"work s-"+r.type:r.kind;
-      const txt=r.kind==="work"?(clock==="uk"?r.ukS:r.saS):r.kind==="none"?"·":r.kind==="leave"?"LV":r.code.slice(0,4);
+      const txt=r.kind==="work"?((clock==="uk"?r.ukS:r.saS)||r.code):r.kind==="none"?"·":r.kind==="leave"?"LV":r.code.slice(0,4);
       h+=`<div class="c ${cls}${r.iso===todayISO?" today":""}" title="${XA(_swinDayLabel(r.iso)+": "+_swinShiftText(r,clock)+" · "+r.status)}"><b>${d}</b>${X(txt)}</div>`;
     }
     return h+`</div>`;
@@ -38305,7 +38427,9 @@ NS.commitWorkbook=nsCommitWorkbook;
 
 function nsRuntimeEntry(record){
   const date=record.date?new Date(record.date+"T00:00:00"):null;
-  return{name:record.person_name,date,day:record.day_of_week||date&&["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][date.getDay()]||"",week:"",_fileWeek:"",ukS:record.uk_start||null,ukE:record.uk_end||null,saS:record.sa_start||null,saE:record.sa_end||null,isOff:!!record.is_off,offL:record.off_type||"",raw:record.is_off?(record.off_type||"OFF"):(record.uk_start&&record.uk_end?record.uk_start+"-"+record.uk_end:""),team:record.team_name||"Main",era:"current",source_id:record.source_id,authority_rank:record.authority_rank,source_type:"canonical"};
+  const untimed=!record.is_off&&!record.uk_start&&!record.uk_end&&record.raw_source_token===UNTIMED_WEEKDAY_SHIFT;
+  const raw=untimed?UNTIMED_WEEKDAY_SHIFT:record.is_off?(record.off_type||"OFF"):(record.uk_start&&record.uk_end?record.uk_start+"-"+record.uk_end:"");
+  return{name:record.person_name,date,day:record.day_of_week||date&&["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][date.getDay()]||"",week:"",_fileWeek:"",ukS:record.uk_start||null,ukE:record.uk_end||null,saS:record.sa_start||null,saE:record.sa_end||null,isOff:!!record.is_off,offL:record.off_type||"",raw,team:record.team_name||"Main",era:"current",source_id:record.source_id,authority_rank:record.authority_rank,source_type:"canonical"};
 }
 
 function nsCommitRuntimeSchedule(sourceMeta,filename){

@@ -26,7 +26,8 @@ function scanOverviewGrid(wb){
     if(wcRow<0)continue;
     // Next meaningful row should have dates and person name
     // In Retentions: row after WC has dates in the WC columns, name in col B
-    // People rows follow with "Week N" values
+    // People rows follow with "Week N" values. In a B1-origin sheet the
+    // name column is index 0 because SheetJS starts at the used range.
     // Find the WC columns
     const wcCols=[];const hdrRow=data[wcRow]||[];
     for(let j=0;j<hdrRow.length;j++){if(String(hdrRow[j]||"").trim().toUpperCase()==="WC")wcCols.push(j);}
@@ -53,7 +54,8 @@ function scanOverviewGrid(wb){
     for(let i=wcRow+1;i<Math.min(data.length,wcRow+30);i++){
       if(i===dateSourceRow)continue;// skip the date row
       const row=data[i]||[];
-      const nm=String(row[1]||"").trim();
+      const nameCol=wcCols[0]===1?0:1;
+      const nm=String(row[nameCol]||"").trim();
       if(!nm||nm.length<2||isHeaderRow(nm))continue;
       // Check if this row has "Week N" values in WC cols
       let weekHits=0;
