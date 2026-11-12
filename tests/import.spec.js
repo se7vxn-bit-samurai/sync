@@ -27,7 +27,7 @@ async function uploadWorkbook(page, file) {
   await page.setInputFiles('#fi', file);
 }
 
-test('merged weekly agent rota keeps weekday labels and skips pre-skill weeks', async ({ page }) => {
+test('merged weekly agent rota shows onboarding weekdays and weekends and skips pre-skill weeks', async ({ page }) => {
   await openFresh(page);
   const bytes = await page.evaluate(() => {
     const dates = Array.from({ length: 21 }, (_, i) => new Date(2026, 10, 9 + i));
@@ -63,7 +63,7 @@ test('merged weekly agent rota keeps weekday labels and skips pre-skill weeks', 
   });
   await uploadWorkbook(page, { name: 'Agent View Nov 2026.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: Buffer.from(bytes) });
   const preview = page.locator('#parsePreviewOverlay');
-  await expect(preview).toContainText('Load 33 entries');
+  await expect(preview).toContainText('Load 35 entries');
   await expect(preview).toContainText('5 Mon-Fri shifts have unspecified hours.');
   await page.locator('#parseLoadBtn').click();
   await expect(preview).toHaveCount(0);
@@ -78,27 +78,31 @@ test('merged weekly agent rota keeps weekday labels and skips pre-skill weeks', 
       working: !roundTrip.isOff,
       times: [roundTrip.ukS, roundTrip.ukE, roundTrip.saS, roundTrip.saE],
       label: [uD(roundTrip), sAD(roundTrip)],
-      nextShift: [excKey(sam[5].date), sam[5].ukS],
+      blockWeekend: sam.slice(5, 7).map(e => [excKey(e.date), uD(e), sAD(e), e.week]),
+      nextShift: [excKey(sam[7].date), sam[7].ukS],
       rdo: [sam.at(-1).raw, sam.at(-1).isOff],
     };
   });
   expect(actual).toEqual({
     people: ['Alex Example', 'Sam'],
-    entries: 33,
+    entries: 35,
     untimed: ['2026-11-16', '2026-11-17', '2026-11-18', '2026-11-19', '2026-11-20'],
     working: true,
     times: [null, null, null, null],
     label: ['Mon-Fri', 'Mon-Fri'],
+    blockWeekend: [['2026-11-21', 'OFF', 'OFF', ''], ['2026-11-22', 'OFF', 'OFF', '']],
     nextShift: ['2026-11-23', '06:00'],
     rdo: ['RDO', true],
   });
   const department = await page.evaluate(() => S.activeDept);
   // A rendered import can precede the debounced IndexedDB write. Wait for the
   // offline copy to land before testing what a new page can reopen.
-  await expect.poll(async () => (await storedCanonical(page))?.schedule).toBe(33);
+  await expect.poll(async () => (await storedCanonical(page))?.schedule).toBe(35);
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.locator('#lcProjectPicker .lc-project-row').filter({ hasText: department }).click();
   await expect.poll(() => page.evaluate(() => S.entries.filter(isUntimedWeekdayShift).map(sAD))).toEqual(Array(5).fill('Mon-Fri'));
+  expect(await page.evaluate(() => S.entries.filter(e => e.isOff && isWeekdayBlockEntry(e))
+    .map(e => [excKey(e.date), sAD(e)]).sort())).toEqual([['2026-11-21', 'OFF'], ['2026-11-22', 'OFF']]);
 });
 
 test.describe('native SyncSheets import', () => {

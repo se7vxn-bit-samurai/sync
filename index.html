@@ -6807,8 +6807,11 @@ function classifyOff(v){
 // during worksheet normalisation, but are also safe schedule-cell off labels.
 const OFF_CODE_RE=/^(OFF|AL|PH|RDO|PTO|TOIL|WFH|SL|SICK|LEAVE|HOL|HOLIDAY|TBC|TBD|N\/A|NA|ABS|AWOL|E|X|[-–—])$/i;
 const UNTIMED_WEEKDAY_SHIFT="Mon-Fri";
+function isWeekdayBlockEntry(entry){
+  return entry.raw===UNTIMED_WEEKDAY_SHIFT&&!entry.ukS&&!entry.ukE;
+}
 function isUntimedWeekdayShift(entry){
-  return entry.raw===UNTIMED_WEEKDAY_SHIFT&&!entry.isOff&&!entry.ukS&&!entry.ukE;
+  return !entry.isOff&&isWeekdayBlockEntry(entry);
 }
 // v48.3: also recognise bare integers 1–15 as week labels (e.g. Claims file stores 4, not "Week 4")
 function isWk(v){const s=String(v||"").trim();if(/^week\s*\d+$/i.test(s))return true;if(/^\d+$/.test(s)){const n=+s;return n>=1&&n<=15;}return false;}
@@ -8409,13 +8412,19 @@ function parseWorkbookRosterSheet(wb,sheet,data){
     let untimed=0;
     let unreadable=0;
     for(const {day,week,weekdayOnly} of weeks){
-      const count=week?7:weekdayOnly?5:0;
+      const count=week||weekdayOnly?7:0;
       for(let offset=0;offset<count;offset++){
         const date=days[day+offset-1];
         const weekday=DOW[date.getDay()];
         if(weekdayOnly){
-          entries.push(mkE(canonical,date,weekday,UNTIMED_WEEKDAY_SHIFT,"Main",""));
-          untimed++;
+          const weekend=offset>=5;
+          const entry=mkE(canonical,date,weekday,weekend?"OFF":UNTIMED_WEEKDAY_SHIFT,"Main","");
+          if(entry){
+            // Keep the block marker as provenance so these days stay outside the rotation.
+            entry.raw=UNTIMED_WEEKDAY_SHIFT;
+            entries.push(entry);
+          }
+          if(!weekend)untimed++;
           continue;
         }
         const raw=String(read(band,day+offset)||"").trim();
@@ -12979,7 +12988,7 @@ function load(sn,opts){
     }
 
     // Weekday-only onboarding rows are outside the repeating shift rotation.
-    const rotationEntries=S.entries.filter(e=>!isUntimedWeekdayShift(e));
+    const rotationEntries=S.entries.filter(e=>!isWeekdayBlockEntry(e));
     enrichWeekLabels(rotationEntries,S.rotationDef);
     S.entriesVer=(S.entriesVer||0)+1;invalidateDerivedCache();
 
@@ -21975,7 +21984,7 @@ function rCapacityWaterfall(y,m,numDays,monthEnt){
 function detectRotations(){
   const byPerson={};
   S.entries.forEach(e=>{
-    if(!e.date||isUntimedWeekdayShift(e))return;
+    if(!e.date||isWeekdayBlockEntry(e))return;
     if(!byPerson[e.name])byPerson[e.name]={team:e.team,weeks:{}};
     const d=new Date(e.date);const mon=new Date(d);mon.setDate(mon.getDate()-((mon.getDay()+6)%7));
     const wk=mon.toISOString().split("T")[0];
@@ -38427,8 +38436,8 @@ NS.commitWorkbook=nsCommitWorkbook;
 
 function nsRuntimeEntry(record){
   const date=record.date?new Date(record.date+"T00:00:00"):null;
-  const untimed=!record.is_off&&!record.uk_start&&!record.uk_end&&record.raw_source_token===UNTIMED_WEEKDAY_SHIFT;
-  const raw=untimed?UNTIMED_WEEKDAY_SHIFT:record.is_off?(record.off_type||"OFF"):(record.uk_start&&record.uk_end?record.uk_start+"-"+record.uk_end:"");
+  const weekdayBlock=!record.uk_start&&!record.uk_end&&record.raw_source_token===UNTIMED_WEEKDAY_SHIFT;
+  const raw=weekdayBlock?UNTIMED_WEEKDAY_SHIFT:record.is_off?(record.off_type||"OFF"):(record.uk_start&&record.uk_end?record.uk_start+"-"+record.uk_end:"");
   return{name:record.person_name,date,day:record.day_of_week||date&&["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][date.getDay()]||"",week:"",_fileWeek:"",ukS:record.uk_start||null,ukE:record.uk_end||null,saS:record.sa_start||null,saE:record.sa_end||null,isOff:!!record.is_off,offL:record.off_type||"",raw,team:record.team_name||"Main",era:"current",source_id:record.source_id,authority_rank:record.authority_rank,source_type:"canonical"};
 }
 
@@ -38441,7 +38450,7 @@ function nsCommitRuntimeSchedule(sourceMeta,filename){
     const runtimePerson=S.people&&S.people[entry.name]||{},personId=runtimePerson.personId||nsId("NS-P",nsNameKey(entry.name)),roleType=runtimePerson.roleType||runtimePerson.title||(runtimePerson.role==="agent"?"Agent":"Team Leader");
     people.push({person_id:personId,full_name:entry.name,role_type:roleType,job_title:runtimePerson.jobTitle||(/leader|supervisor|manager/i.test(roleType)?roleType:""),home_department:S.activeDept||"",home_team:entry.team||runtimePerson.team||"",reports_to_person_id:runtimePerson.reportsToPersonId||"",manager_name:runtimePerson.teamLeader||"",status:"Active",labels:nsNormalizeLabels(runtimePerson.labels||runtimePerson.roleLabels),notes:"",source_id:source.source_id,authority_rank:source.authority_rank,imported_at:source.loaded_at});
     const iso=date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0");
-    const rawOff=nsClean(entry.offL||entry.raw),inferredOff=/^(E|X|[-–—])$/i.test(rawOff);
+    const rawOff=nsClean(isWeekdayBlockEntry(entry)?entry.raw:entry.offL||entry.raw),inferredOff=/^(E|X|[-–—])$/i.test(rawOff);
     schedule.push({schedule_entry_id:nsId("NS-SCH",personId+"|"+iso),person_id:personId,person_name:entry.name,team_name:entry.team||"",department:S.activeDept||"",date:iso,day_of_week:entry.day||"",uk_start:entry.ukS||"",uk_end:entry.ukE||"",sa_start:entry.saS||"",sa_end:entry.saE||"",is_off:!!entry.isOff,off_type:entry.isOff?(inferredOff?"OFF":entry.offL||"OFF"):"",raw_source_token:rawOff,source_format:inferredOff?"Sync parser; inferred off marker "+rawOff:"Sync parser",source_id:entry.source_id||source.source_id,authority_rank:Number(entry.authority_rank)||source.authority_rank,imported_at:source.loaded_at,shared_schedule_group_id:entry.shared_schedule_group_id||""});
   });
   // Save+ workbooks carry the wider team directory in S.people while their schedule
