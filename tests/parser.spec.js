@@ -78,7 +78,7 @@ test.describe('parser selection', () => {
       const wb = XLSX.read(new Uint8Array(payload), _readOptsForFile({ name: 'tpa.xlsx' }));
       const grid = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' });
       const en = autoParse(grid, wb.SheetNames[0]) || [];
-      const day = (n, iso) => en.find((e) => e.name === n && e.date.toISOString().slice(0, 10) === iso);
+      const day = (n, iso) => en.find((e) => e.name === n && excKey(e.date) === iso);
       const pick = (e) => e && { raw: e.raw, ukS: e.ukS, ukE: e.ukE, off: e.isOff, week: e.week, team: e.team };
       return {
         names: [...new Set(en.map((e) => e.name))].sort(),

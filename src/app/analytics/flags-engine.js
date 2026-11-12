@@ -49,7 +49,8 @@ function computeFlags(){
       const ents=[...byName[name]].filter(e=>e.date).sort((a,b)=>a.date-b.date);
       for(let i=1;i<ents.length;i++){
         const diff=Math.round((ents[i].date-ents[i-1].date)/864e5);
-        if(diff>1&&diff<8&&!ents[i-1].isOff&&!ents[i].isOff){
+        const weekdayBlockWeekend=diff===3&&ents[i-1].date.getDay()===5&&isUntimedWeekdayShift(ents[i-1]);
+        if(diff>1&&diff<8&&!weekdayBlockWeekend&&!ents[i-1].isOff&&!ents[i].isOff){
           const id="gap|"+name+"|"+excKey(ents[i].date);
           flags.push({id,category:"data",severity:"low",title:"Schedule gap",
             detail:`${name.split(" ")[0]}: ${diff-1} day gap between ${fD(ents[i-1].date)} and ${fD(ents[i].date)}`,

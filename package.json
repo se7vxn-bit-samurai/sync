@@ -2,8 +2,9 @@
   "name": "sync-deploy",
   "version": "1.0.0",
   "private": true,
-  "description": "Sync — workflow intelligence. Deployed as a single portable index.html; this package exists only to run the UI/e2e suite.",
+  "description": "Sync — workflow intelligence. Local preview and browser tests for the portable app.",
   "scripts": {
+    "preview": "node build/preview.js",
     "test": "playwright test",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",

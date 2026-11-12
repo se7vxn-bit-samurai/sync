@@ -189,6 +189,10 @@ function classifyOff(v){
 // example E, X, or a dash). Those codes are only promoted from a styled cell
 // during worksheet normalisation, but are also safe schedule-cell off labels.
 const OFF_CODE_RE=/^(OFF|AL|PH|RDO|PTO|TOIL|WFH|SL|SICK|LEAVE|HOL|HOLIDAY|TBC|TBD|N\/A|NA|ABS|AWOL|E|X|[-–—])$/i;
+const UNTIMED_WEEKDAY_SHIFT="Mon-Fri";
+function isUntimedWeekdayShift(entry){
+  return entry.raw===UNTIMED_WEEKDAY_SHIFT&&!entry.isOff&&!entry.ukS&&!entry.ukE;
+}
 // v48.3: also recognise bare integers 1–15 as week labels (e.g. Claims file stores 4, not "Week 4")
 function isWk(v){const s=String(v||"").trim();if(/^week\s*\d+$/i.test(s))return true;if(/^\d+$/.test(s)){const n=+s;return n>=1&&n<=15;}return false;}
 function getWk(v){const s=String(v||"").trim();const m=s.match(/^week\s*(\d+)$/i);if(m)return m[1];if(/^\d+$/.test(s)&&+s>=1&&+s<=15)return s;return null;}
@@ -369,7 +373,10 @@ function mkE(name,date,day,raw,team,weekLabel){
   const cs=String(raw||"").trim();
   const cl=classifyCell(raw);
   let off,offL,ukS,ukE,note;
-  if(cl.type==="off"||cl.type==="empty"){
+  if(cs===UNTIMED_WEEKDAY_SHIFT){
+    off=false;ukS=null;ukE=null;offL="";
+    note="Shift hours are unspecified in the source rota.";
+  } else if(cl.type==="off"||cl.type==="empty"){
     off=true;ukS=null;ukE=null;
     offL=normalizeOffCategory(cl.cat||cs||"OFF");
     note="";

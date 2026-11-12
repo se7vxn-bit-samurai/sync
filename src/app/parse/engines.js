@@ -192,7 +192,7 @@ function _uniqueRosterAlias(name,parsedNames){
     .sort((a,b)=>a.distance-b.distance||a.match.localeCompare(b.match));
   return candidates.length===1?candidates[0]:null;
 }
-function collectParserAuditEvidence(wb,parsedNames){
+function collectParserAuditEvidence(wb,parsedNames,verifiedAliases=[]){
   const parsed=new Set(parsedNames||[]),evidence={},nameRows={};
   if(!wb||!wb.Sheets)return{expectedNames:[],missing:[],provenance:{},nameRows:{}};
   (wb.SheetNames||[]).forEach(sheet=>{
@@ -220,6 +220,8 @@ function collectParserAuditEvidence(wb,parsedNames){
   const aliases=[],provenance={};
   const expectedNames=[...new Set(rawExpectedNames.map(name=>{
     if(parsed.has(name))return name;
+    const verified=verifiedAliases.find(alias=>alias.from===name&&parsed.has(alias.to));
+    if(verified){aliases.push(verified);return verified.to;}
     const alias=_uniqueRosterAlias(name,parsedNames);
     if(alias){aliases.push({from:name,to:alias.match,distance:alias.distance,reason:"unique one-character roster spelling variant"});return alias.match;}
     return name;
@@ -268,6 +270,108 @@ function isHorizSheetName(name){
 function isVertSheetName(name){
   const s=String(name||"").toLowerCase();
   return s.includes("vertical")||s.includes("verticle")||s.includes("vertic");
+}
+
+// The agent-view rota has a merged name band for each person, and two tracks
+// within that band: daily shifts and weekly rotation labels. The vertical
+// view is the transpose of the horizontal view.
+function parseMergedWeeklyRota(data,ws,vertical){
+  const merges=ws["!merges"]||[];
+  const origin=ws["!ref"]&&XLSX.utils.decode_range(ws["!ref"]).s;
+  if(!origin||!merges.length)return null;
+  const read=(band,day)=>{
+    const row=vertical?day:band,col=vertical?band:day;
+    const cell=ws[XLSX.utils.encode_cell({r:origin.r+row,c:origin.c+col})];
+    // SheetJS coerces date-formatted text headers to invalid Dates in its grid.
+    // Read the underlying text for this layout, including the original RDO code.
+    return cell?.t==="s"?cell.v:data[row]?.[col];
+  };
+  const coord=pos=>vertical
+    ?{band:pos.c-origin.c,day:pos.r-origin.r}
+    :{band:pos.r-origin.r,day:pos.c-origin.c};
+  const ranges=new Map(merges.map(({s,e})=>{
+    const start=coord(s);
+    return [start.band+":"+start.day,coord(e)];
+  }));
+  const days=[];
+  for(let index=1;read(0,index)||read(1,index);index++){
+    const date=pDt(read(1,index));
+    const weekday=nD(read(0,index));
+    if(!date||!weekday||weekday!==DOW[date.getDay()])return null;
+    const prior=days.at(-1);
+    if(prior&&new Date(prior.getFullYear(),prior.getMonth(),prior.getDate()+1).getTime()!==date.getTime())return null;
+    days.push(date);
+  }
+  if(!days.length||days.length%7!==0||days[0].getDay()!==1)return null;
+  const people=[];
+  let hasOnboarding=false;
+  for(let band=2;read(band,0);band+=2){
+    const name=cleanPersonName(read(band,0));
+    const nameEnd=ranges.get(band+":0");
+    if(isPersonNoiseLabel(name)||nameEnd?.band!==band+1||nameEnd.day!==0)return null;
+    const weeks=[];
+    for(let day=1;day<=days.length;day+=7){
+      const raw=String(read(band,day)||"").trim();
+      const end=ranges.get(band+":"+day);
+      const mergedWeek=end?.band===band+1&&end.day===day+6;
+      if(mergedWeek&&(/^[-–—]$/.test(raw)||/^mon(?:day)?\s*(?:to|[-–—])\s*fri(?:day)?$/i.test(raw))){
+        const weekdayOnly=!/^[-–—]$/.test(raw);
+        hasOnboarding=true;
+        weeks.push({day,weekdayOnly});
+        continue;
+      }
+      const week=getWk(read(band+1,day));
+      const labelEnd=ranges.get((band+1)+":"+day);
+      if(!week||labelEnd?.band!==band+1||labelEnd.day!==day+6)return null;
+      weeks.push({day,week:"W"+week});
+    }
+    people.push({name,band,weeks});
+  }
+  if(!hasOnboarding||!people.length)return null;
+  return {people,days,read};
+}
+
+function parseWorkbookRosterSheet(wb,sheet,data){
+  const ws=wb.Sheets[sheet];
+  const rota=ws&&(parseMergedWeeklyRota(data,ws,false)||parseMergedWeeklyRota(data,ws,true));
+  if(!rota)return autoParse(data,sheet);
+
+  const {people,days,read}=rota;
+  const overviewNames=Object.keys(scanOverviewGrid(wb)?.personMap||{});
+  const aliases=[];
+  const entries=[];
+  const warnings=[];
+  for(const person of people){
+    const {name,band,weeks}=person;
+    const firstName=name.toLowerCase();
+    const matches=overviewNames.filter(candidate=>candidate.toLowerCase().split(/\s+/)[0]===firstName);
+    const unique=people.filter(other=>other.name.toLowerCase().split(/\s+/)[0]===firstName).length===1;
+    const canonical=unique&&matches.length===1?matches[0]:name;
+    if(name!==canonical)aliases.push({from:name,to:canonical,reason:"unique first name in workbook Overview"});
+    let untimed=0;
+    let unreadable=0;
+    for(const {day,week,weekdayOnly} of weeks){
+      const count=week?7:weekdayOnly?5:0;
+      for(let offset=0;offset<count;offset++){
+        const date=days[day+offset-1];
+        const weekday=DOW[date.getDay()];
+        if(weekdayOnly){
+          entries.push(mkE(canonical,date,weekday,UNTIMED_WEEKDAY_SHIFT,"Main",""));
+          untimed++;
+          continue;
+        }
+        const raw=String(read(band,day+offset)||"").trim();
+        if(raw&&(pTm(raw)||classifyOff(raw)||OFF_CODE_RE.test(raw)))entries.push(mkE(canonical,date,weekday,raw,"Main",week));
+        else unreadable++;
+      }
+    }
+    if(untimed)warnings.push(`${canonical}: ${untimed} Mon-Fri shifts have unspecified hours.`);
+    if(unreadable)warnings.push(`${canonical}: ${unreadable} daily cells have no recognised shift or off code.`);
+  }
+  const parser="parseMergedWeeklyRota";
+  const confidence=warnings.length?"medium":"high";
+  S.parseInfo.push({sheet,parser,confidence,reason:"Merged weekly agent rota",count:entries.length,warnings,aliases});
+  return entries.map(entry=>({...entry,_parserSheet:sheet,_parserEngine:parser,_parserConfidence:confidence}));
 }
 
 function parseHoriz(data){

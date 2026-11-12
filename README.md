@@ -53,6 +53,14 @@ The build is a plain concatenation in `build/manifest.json` order, never a bundl
 To ship: edit `src/`, build, run `npm test`, commit `src/` and `index.html` together, merge to
 `main`. `deploy.yml` checks the build, runs the suite, and publishes only if both pass.
 
+## Local preview
+
+On Windows, double-click **Start Sync Preview.cmd** in the checkout. From a terminal in the checkout, run `npm run preview`. Open [Sync Preview](http://127.0.0.1:4174/) and keep the preview terminal running. The server uses the dev environment and a separate browser storage origin. You can import and reopen schedules while signed out.
+
+After editing `src/`, refresh the preview to see the change. Once you have checked it, run `node build/build.js` and `node build/build.js --check` before committing the source and generated live files.
+
+To open the preview in its own Windows app window, visit the preview in Microsoft Edge and choose **More tools → Apps → Install this site as an app**. Give it the name **Sync Preview**. Start the preview server before opening the installed app.
+
 ## UI / end-to-end tests
 
 The suite here runs against the built `index.html` — the artifact users actually load — so it catches

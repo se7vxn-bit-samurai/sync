@@ -1466,7 +1466,9 @@ NS.commitWorkbook=nsCommitWorkbook;
 
 function nsRuntimeEntry(record){
   const date=record.date?new Date(record.date+"T00:00:00"):null;
-  return{name:record.person_name,date,day:record.day_of_week||date&&["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][date.getDay()]||"",week:"",_fileWeek:"",ukS:record.uk_start||null,ukE:record.uk_end||null,saS:record.sa_start||null,saE:record.sa_end||null,isOff:!!record.is_off,offL:record.off_type||"",raw:record.is_off?(record.off_type||"OFF"):(record.uk_start&&record.uk_end?record.uk_start+"-"+record.uk_end:""),team:record.team_name||"Main",era:"current",source_id:record.source_id,authority_rank:record.authority_rank,source_type:"canonical"};
+  const untimed=!record.is_off&&!record.uk_start&&!record.uk_end&&record.raw_source_token===UNTIMED_WEEKDAY_SHIFT;
+  const raw=untimed?UNTIMED_WEEKDAY_SHIFT:record.is_off?(record.off_type||"OFF"):(record.uk_start&&record.uk_end?record.uk_start+"-"+record.uk_end:"");
+  return{name:record.person_name,date,day:record.day_of_week||date&&["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][date.getDay()]||"",week:"",_fileWeek:"",ukS:record.uk_start||null,ukE:record.uk_end||null,saS:record.sa_start||null,saE:record.sa_end||null,isOff:!!record.is_off,offL:record.off_type||"",raw,team:record.team_name||"Main",era:"current",source_id:record.source_id,authority_rank:record.authority_rank,source_type:"canonical"};
 }
 
 function nsCommitRuntimeSchedule(sourceMeta,filename){
