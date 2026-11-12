@@ -1,25 +1,10 @@
 const { test, expect } = require('@playwright/test');
 const path = require('path');
-const { openApp } = require('./helpers');
+const { openApp, storedCanonical } = require('./helpers');
 
 // An offline schedule must survive a reload without being reopened. The local cache is a project
 // library; activating its sheet remains a deliberate project-picker action.
 const ROSTER = path.join(__dirname, 'fixtures', 'rosters', 'r_20x31.csv');
-
-function storedCanonical(page) {
-  return page.evaluate(() => new Promise((resolve) => {
-    const open = indexedDB.open('sync-northstar');
-    open.onerror = () => resolve(null);
-    open.onsuccess = () => {
-      const db = open.result;
-      try {
-        const get = db.transaction('workspace').objectStore('workspace').get('canonical');
-        get.onsuccess = () => { db.close(); resolve({ schedule: (get.result && get.result.schedule || []).length, people: (get.result && get.result.people || []).length }); };
-        get.onerror = () => { db.close(); resolve(null); };
-      } catch (e) { db.close(); resolve(null); }
-    };
-  }));
-}
 
 async function importRoster(page, keepOffline = true) {
   await openApp(page, { workspaceRow: null });

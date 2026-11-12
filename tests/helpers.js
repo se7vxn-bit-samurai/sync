@@ -180,4 +180,19 @@ async function projectNames(page) {
   return page.$$eval(`${picker.root} ${picker.names}`, (els) => els.map((e) => e.textContent.trim()));
 }
 
-module.exports = { PROFILE, buildWorkspace, workspaceRow, openApp, createTestProject, picker, waitForPicker, projectNames };
+function storedCanonical(page) {
+  return page.evaluate(() => new Promise((resolve) => {
+    const open = indexedDB.open('sync-northstar');
+    open.onerror = () => resolve(null);
+    open.onsuccess = () => {
+      const db = open.result;
+      try {
+        const get = db.transaction('workspace').objectStore('workspace').get('canonical');
+        get.onsuccess = () => { db.close(); resolve({ schedule: (get.result && get.result.schedule || []).length, people: (get.result && get.result.people || []).length }); };
+        get.onerror = () => { db.close(); resolve(null); };
+      } catch (e) { db.close(); resolve(null); }
+    };
+  }));
+}
+
+module.exports = { storedCanonical, PROFILE, buildWorkspace, workspaceRow, openApp, createTestProject, picker, waitForPicker, projectNames };

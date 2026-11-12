@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 const path = require('path');
-const { openApp, PROFILE } = require('./helpers');
+const { openApp, PROFILE, storedCanonical } = require('./helpers');
 
 // The import pipeline is the most destructive code in the app — it rewrites or merges a user's
 // whole workspace — and had no coverage at all. These run the real path: a real .xlsx through the
@@ -92,8 +92,12 @@ test('merged weekly agent rota keeps weekday labels and skips pre-skill weeks', 
     nextShift: ['2026-11-23', '06:00'],
     rdo: ['RDO', true],
   });
+  const department = await page.evaluate(() => S.activeDept);
+  // A rendered import can precede the debounced IndexedDB write. Wait for the
+  // offline copy to land before testing what a new page can reopen.
+  await expect.poll(async () => (await storedCanonical(page))?.schedule).toBe(33);
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await page.locator('#lcProjectPicker .lc-project-row').first().click();
+  await page.locator('#lcProjectPicker .lc-project-row').filter({ hasText: department }).click();
   await expect.poll(() => page.evaluate(() => S.entries.filter(isUntimedWeekdayShift).map(sAD))).toEqual(Array(5).fill('Mon-Fri'));
 });
 
