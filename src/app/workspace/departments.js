@@ -232,6 +232,8 @@ function loadIntoWorkspace(wb,sourceName,opts={}){
   S.plLeave=[];S.plOverrides={};S.plHires=[];S.plRemoved={};S.plEdit=null;
   S.parseInfo=[];S._anomDismissed=false;
   const prevRangeFix=_loadRangeFix;
+  const rosterPeople=opts.unnamedRosterPeople||[];
+  if(rosterPeople.length)unnamedRosterLeaders.set(wb,new Map(rosterPeople.map(({sheet,leader})=>[sheet,leader])));
   _loadRangeFix=opts&&opts.rangeFix?opts.rangeFix:null;
   try{load(S.sh,{deferRender:true,manualOverride:opts.manualOverride||null});}catch(err){rollbackLoad();throw err;}finally{_loadRangeFix=prevRangeFix;}
   if(!S.entries||!S.entries.length){
@@ -242,7 +244,8 @@ function loadIntoWorkspace(wb,sourceName,opts={}){
     const fix=_lastRangeFixResult.fix||{};
     toast(`Date range corrected: ${_monthKeyLabel(fix.sourceStart)} → ${_monthKeyLabel(fix.detectedStart)}`,"ok",3200);
   }
-  const focusResult=_applyFocusToLoadedEntries(opts.focusNames||[],opts.merges||[]);
+  const focusNames=(opts.focusNames||[]).map(name=>rosterPeople.find(person=>person.placeholder===name)?.leader||name);
+  const focusResult=_applyFocusToLoadedEntries(focusNames,opts.merges||[]);
   if(focusResult&&focusResult.removedEntries){
     toast(`Focus loaded ${focusResult.keptNames} leader${focusResult.keptNames!==1?"s":""} · ${focusResult.removedEntries} entries purged`,"ok",3400);
   }
@@ -339,6 +342,10 @@ function loadIntoWorkspace(wb,sourceName,opts={}){
     syncPeopleFromEntries();
     // v51: Auto-extract agent names from schedule data (person-per-sheet and wide-horiz formats only)
     extractAgentsFromSchedule();
+    for(const {leader,agents} of rosterPeople){
+      if(!S.entries.some(entry=>entry.name===leader))continue;
+      for(const name of agents)ensurePerson(name,{role:"agent",teamLeader:leader,source:"roster"});
+    }
     if(focusResult&&focusResult.allowed)_prunePeopleToFocus(focusResult.allowed);
     seedShiftLibrary();
     savePeople();

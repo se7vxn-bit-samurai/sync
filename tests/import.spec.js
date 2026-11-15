@@ -27,6 +27,58 @@ async function uploadWorkbook(page, file) {
   await page.setInputFiles('#fi', file);
 }
 
+test('unnamed dated roster requires a leader and can add agents without their own shifts', async ({ page }) => {
+  await openFresh(page);
+  const bytes = await page.evaluate(async () => {
+    const workbook = new ExcelJS.Workbook();
+    const vertical = workbook.addWorksheet('Vertical');
+    vertical.addRow(['Date', 'Day', 'Shift']);
+    const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const shifts = ['0600 - 1400', '0600 - 1400', '', '', '0600 - 1400', '09:00-1700', '1000 - 1800'];
+    shifts.forEach((shift, index) => {
+      const date = new Date(Date.UTC(2026, 10, 30 + index));
+      const row = vertical.addRow([date, labels[index], shift || null]);
+      row.getCell(1).numFmt = 'm/d/yyyy';
+      if (!shift) row.getCell(3).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF808080' } };
+    });
+    const pattern = workbook.addWorksheet('Weekly pattern');
+    pattern.addRow(['', ...labels]);
+    pattern.addRow(['Week 1', ...shifts]);
+    return Array.from(new Uint8Array(await workbook.xlsx.writeBuffer()));
+  });
+  await uploadWorkbook(page, { name: 'Unnamed Messenger.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: Buffer.from(bytes) });
+  const preview = page.locator('#parsePreviewOverlay');
+  const load = preview.getByRole('button', { name: 'Load 7 entries' });
+  const leader = preview.getByLabel('Team leader', { exact: true });
+  const agents = preview.getByLabel('Agent names (optional)', { exact: true });
+  await expect(load).toBeDisabled();
+  await leader.fill('Alex Example');
+  await expect(load).toBeEnabled();
+  await agents.fill('Sam Example\nSam Example, Jo Example');
+  await load.click();
+  await expect(preview).toHaveCount(0);
+  const actual = await page.evaluate(() => ({
+    schedule: S.entries.map(e => [e.name, excKey(e.date), e.isOff ? e.offL : e.ukS + '-' + e.ukE]),
+    agents: Object.values(S.people).filter(p => p.role === 'agent').map(p => [p.name, p.teamLeader]).sort(),
+  }));
+  expect(actual).toEqual({
+    schedule: [
+      ['Alex Example', '2026-11-30', '06:00-14:00'],
+      ['Alex Example', '2026-12-01', '06:00-14:00'],
+      ['Alex Example', '2026-12-02', 'OFF'],
+      ['Alex Example', '2026-12-03', 'OFF'],
+      ['Alex Example', '2026-12-04', '06:00-14:00'],
+      ['Alex Example', '2026-12-05', '09:00-17:00'],
+      ['Alex Example', '2026-12-06', '10:00-18:00'],
+    ],
+    agents: [['Jo Example', 'Alex Example'], ['Sam Example', 'Alex Example']],
+  });
+  await expect.poll(() => storedCanonical(page)).toEqual({ schedule: 7, people: 3 });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.locator('#lcProjectPicker .lc-project-row').filter({ hasText: 'Unnamed Messenger' }).click();
+  await expect.poll(() => page.evaluate(() => S.people['Jo Example']?.teamLeader)).toBe('Alex Example');
+});
+
 test('merged weekly agent rota shows onboarding weekdays and weekends and skips pre-skill weeks', async ({ page }) => {
   await openFresh(page);
   const bytes = await page.evaluate(() => {

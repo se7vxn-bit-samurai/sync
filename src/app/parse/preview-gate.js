@@ -180,7 +180,11 @@ function scanFileQuick(wb,filename,manualOverride){
     const months=[...ms].sort();
     const work=entries.filter(e=>!e.isOff);
     const off=entries.filter(e=>e.isOff);
-    const deptName=detectDeptName(filename,wb.SheetNames);
+    const unnamedSchedules=parseInfo.filter(p=>p.unnamedSchedule)
+      .filter(p=>entries.some(entry=>entry._parserSheet===p.sheet))
+      .map(p=>({sheet:p.sheet,placeholder:entries.find(entry=>entry._parserSheet===p.sheet).name}));
+    const homeMessenger=unnamedSchedules.length&&/\bhome\b/i.test(filename)&&/\bmessenger\b/i.test(filename);
+    const deptName=homeMessenger?"Home Retentions Messenger":detectDeptName(filename,wb.SheetNames);
 
     // Confidence from parse info
     const bestConf=parseInfo.reduce((b,p)=>{
@@ -231,7 +235,7 @@ function scanFileQuick(wb,filename,manualOverride){
     return{entries,names,months,work:work.length,off:off.length,total:entries.length,
       sheets:shs.length,sheetNames:shs.slice(),deptName,confidence:bestConf,parsers,parseInfo,warnings,dupes,fingerprints,ghostAgents,
       crossSheetNames,autoMergeCandidates,expectedNames:rosterEvidence.expectedNames,missingExpectedNames,provenance:rosterEvidence.provenance,rosterAliases:rosterEvidence.aliases||[],mergedRosterRisks,
-      birthdayDirectory:[...birthdayByName.values()],unlinkedPeople,unresolvedRoleIdentities};
+      birthdayDirectory:[...birthdayByName.values()],unlinkedPeople,unresolvedRoleIdentities,unnamedSchedules};
   }finally{
     _parseYearHint=_prevHint;
   }
@@ -936,6 +940,40 @@ function _detectMonthRangeGuard(scan,filename,sheetNames){
     fix:{mode:"month_shift",deltaMonths,sourceStart:first,sourceEnd:last,detectedStart,detectedEnd:_indexToMonthKey(_monthKeyToIndex(last)+deltaMonths)}
   };
 }
+function _readUnnamedRosterPeople(scan){
+  const schedules=scan?.unnamedSchedules||[];
+  const placeholders=new Set(schedules.map(schedule=>schedule.placeholder));
+  const leaders=new Set((scan?.names||[]).filter(name=>!placeholders.has(name)).map(name=>name.toLowerCase()));
+  const agents=new Set();
+  const assignments=[];
+  const personName=value=>{
+    const name=cleanPersonName(value);
+    if(isPersonNoiseLabel(name)||Object.hasOwn(Object.prototype,name))return "";
+    const identity=window.NorthStar?.classifyIdentity(name);
+    return identity?identity.valid?identity.display:"":name;
+  };
+  for(const [index,schedule] of schedules.entries()){
+    const leader=personName(document.getElementById("unnamedRosterLeader"+index)?.value);
+    if(!leader)return {error:"Enter a team leader name for each unnamed schedule."};
+    if(leaders.has(leader.toLowerCase()))return {error:"Use a different team leader for each schedule."};
+    leaders.add(leader.toLowerCase());
+    const names=(document.getElementById("unnamedRosterAgents"+index)?.value||"").split(/[\n,]+/)
+      .map(name=>name.trim()).filter(Boolean).map(personName);
+    const uniqueNames=[...new Map(names.map(name=>[name.toLowerCase(),name])).values()];
+    assignments.push({...schedule,leader,agents:uniqueNames});
+  }
+  for(const assignment of assignments){
+    for(const name of assignment.agents){
+      const key=name.toLowerCase();
+      if(!name||leaders.has(key)||agents.has(key)){
+        return {error:"Enter valid agent names and assign each person to one team."};
+      }
+      agents.add(key);
+    }
+  }
+  return {assignments};
+}
+
 function _refreshParsePreviewLoadState(){
   const loadBtn=document.getElementById("parseLoadBtn");
   const loadHint=document.getElementById("parseLoadHint");
@@ -947,7 +985,8 @@ function _refreshParsePreviewLoadState(){
   const needsCacheChoice=!!((_pendingLoad&&_pendingLoad.hasCache)&&!_cacheMode);
   const focusStats=_previewFocusStats();
   const needsFocus=!!(_pendingLoad&&focusStats.totalNames&&focusStats.names<1);
-  const canLoad=!needsCacheChoice&&!needsRangeFix&&!needsFocus;
+  const identityError=_readUnnamedRosterPeople(_pendingLoad?.scan).error;
+  const canLoad=!needsCacheChoice&&!needsRangeFix&&!needsFocus&&!identityError;
   if(keepBtn){keepBtn.style.borderColor=_cacheMode==="keep"?"var(--accent)":"rgba(255,255,255,.08)";keepBtn.style.background=_cacheMode==="keep"?"var(--al)":"transparent";}
   if(freshBtn){freshBtn.style.borderColor=_cacheMode==="fresh"?"#dc2626":"rgba(255,255,255,.08)";freshBtn.style.background=_cacheMode==="fresh"?"rgba(220,38,38,.07)":"transparent";}
   if(rangeBtn&&guard){
@@ -977,6 +1016,9 @@ function _refreshParsePreviewLoadState(){
     }else if(needsRangeFix){
       loadHint.textContent='Invalid anchor month detected — click "Use detected range" to continue';
       loadHint.style.color='#f59e0b';
+    }else if(identityError){
+      loadHint.textContent=identityError;
+      loadHint.style.color='#dc2626';
     }else if(needsCacheChoice){
       loadHint.textContent='Select Keep cached data or Fresh start to enable loading';
       loadHint.style.color='var(--tm)';
@@ -1072,7 +1114,7 @@ function showParsePreview(wb,filename,manualOverride,sourceMeta,opts){
   const loadMode=opts&&opts.additional?"add":"replace";
   _pendingLoad={wb,filename,scan,rangeGuard,hasCache:false,manualOverride:manualOverride||null,sourceMeta:sourceMeta||null,mode:loadMode,departmentName:scan.deptName};
   const previewBaseline=loadSnapshot(scan.deptName);
-  _pendingLoad.changePreview=previewBaseline&&previewBaseline.snap
+  _pendingLoad.changePreview=!scan.unnamedSchedules.length&&previewBaseline&&previewBaseline.snap
     ?diffSnapshots(previewBaseline.snap,buildEntrySnapshot(scan.entries||[]),{previousCoverage:previewBaseline.coverage||{},currentCoverage:buildCoverageSnapshot(scan.entries||[]),minimumCoverage:S.covMin})
     :null;
   _pendingLoad.changePreviewBaseline=previewBaseline||null;
@@ -1145,6 +1187,18 @@ function showParsePreview(wb,filename,manualOverride,sourceMeta,opts){
   h+=`<div style="display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:0;min-height:0">`;
   // Left: people found
   h+=`<div style="padding:14px 16px;border-right:1px solid var(--bdr);min-width:0">`;
+  if(scan.unnamedSchedules.length){
+    const fieldStyle="display:block;width:100%;box-sizing:border-box;margin-top:4px;padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);color:var(--text);font:inherit";
+    scan.unnamedSchedules.forEach(({sheet},index)=>{
+      const suffix=scan.unnamedSchedules.length>1?" · "+X(sheet):"";
+      h+=`<div style="display:grid;gap:8px;font-size:12px;margin-bottom:12px">
+        <label>Team leader${suffix}<input id="unnamedRosterLeader${index}" required maxlength="120" oninput="_refreshParsePreviewLoadState()" style="${fieldStyle}"></label>
+        <label>Agent names (optional)${suffix}<textarea id="unnamedRosterAgents${index}" rows="2" placeholder="One name per line, or separate names with commas" oninput="_refreshParsePreviewLoadState()" style="${fieldStyle}"></textarea></label>
+        <span style="font-size:11px;color:var(--tm)">Agents are added to People under this team leader.</span>
+      </div>`;
+    });
+  }
+  if(scan.names.some(name=>!scan.unnamedSchedules.some(schedule=>schedule.placeholder===name))){
   h+=`<div style="font-size:10px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.12em;margin-bottom:7px">People found (${scan.names.length})</div>`;
   h+=`<div style="display:flex;flex-wrap:wrap;gap:4px;max-height:160px;overflow-y:auto">`;
   scan.names.slice(0,60).forEach(n=>{
@@ -1164,6 +1218,7 @@ function showParsePreview(wb,filename,manualOverride,sourceMeta,opts){
   });
   if(scan.names.length>80)h+=`<span style="font-size:10px;color:var(--tm);padding:2px 6px">+${scan.names.length-80} more</span>`;
   h+=`</div></div>`;
+  }
   // Parser info inline
   h+=`<div style="margin-top:10px;display:flex;gap:5px;flex-wrap:wrap;align-items:center">`;
   h+=`<label style="display:flex;align-items:center;gap:5px;padding:3px 7px;border-radius:4px;font-size:10px;background:var(--al);color:var(--tm)">Department <input id="parseDeptName" value="${XA(_pendingLoad.departmentName)}" oninput="setPendingDeptName(this.value)" style="width:150px;max-width:38vw;padding:2px 5px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);color:var(--text);font:inherit"></label>`;
@@ -1391,6 +1446,8 @@ function confirmParsePreview(){
   if(!_pendingLoad)return;
   const pending=_pendingLoad;
   const{wb,filename,rangeGuard}=pending;
+  const rosterPeople=_readUnnamedRosterPeople(pending.scan);
+  if(rosterPeople.error){_refreshParsePreviewLoadState();return;}
   if(!pending.scan||!pending.scan.total){
     _pendingLoad=null;
     toast('No parsed schedule entries to load.','err',4200);
@@ -1455,7 +1512,7 @@ function confirmParsePreview(){
   _cacheMode=null;
   const rangeFix=rangeGuard&&rangeGuard.accepted&&rangeGuard.fix?rangeGuard.fix:null;
   try{
-    loadIntoWorkspace(wb,filename,{cacheKept,keepOfflineCopy,rangeFix,focusNames,ghostNames:[..._pendingGhosts],merges:[..._pendingMerges],scan:pending.scan,manualOverride:pending.manualOverride||null,sourceMeta:pending.sourceMeta||null,departmentName});
+    loadIntoWorkspace(wb,filename,{cacheKept,keepOfflineCopy,rangeFix,focusNames,ghostNames:[..._pendingGhosts],merges:[..._pendingMerges],scan:pending.scan,manualOverride:pending.manualOverride||null,sourceMeta:pending.sourceMeta||null,departmentName,unnamedRosterPeople:rosterPeople.assignments});
     _pendingGhosts=new Set();_pendingMerges=[];_pendingFocusNames=new Set();
   }catch(err){
     console.error("Load failed:",err);
