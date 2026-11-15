@@ -1836,10 +1836,12 @@ function nsSetSharedGroupDuplicate(id,mode){
 
 Object.assign(window,{nsConfirmNativeImport,nsCancelNativeImport,nsSetSharedIdentityDecision,nsUpdateSharedMembers,nsSetSharedGroupDuplicate,nsMarkSharedReview,nsSelectSharedReview,nsBulkSharedDecision,nsOpenSharedIdentityReview,nsCloseSharedIdentityReview,nsApplySharedReview});
 
-function nsCleanIdentityEntries(entries){
+function nsCleanIdentityEntries(entries,unnamedSchedules=[]){
   const kept=[],rejected=[],seen=new Set();
+  const placeholders=new Map(unnamedSchedules.map(({sheet,placeholder})=>[sheet,placeholder]));
   nsArray(entries).forEach(entry=>{
-    const identity=nsClassifyIdentityLabel(entry&&entry.name);
+    const pendingName=entry&&placeholders.get(entry._parserSheet);
+    const identity=pendingName&&pendingName===entry.name?{valid:true,display:pendingName}:nsClassifyIdentityLabel(entry&&entry.name);
     if(!identity.valid){rejected.push({label:identity.raw,reason:identity.reason});return;}
     const cleanEntry=identity.display===entry.name?entry:Object.assign({},entry,{name:identity.display,identity_source_label:entry.name});
     const date=cleanEntry.date instanceof Date?cleanEntry.date.getTime():String(cleanEntry.date||"");
@@ -1851,7 +1853,7 @@ function nsCleanIdentityEntries(entries){
 
 function nsFilterScanIdentities(scan){
   if(!scan||!Array.isArray(scan.entries))return scan;
-  const result=nsCleanIdentityEntries(scan.entries),rejectedLabels=[...new Map(result.rejected.map(item=>[item.label+"|"+item.reason,item])).values()];
+  const result=nsCleanIdentityEntries(scan.entries,scan.unnamedSchedules),rejectedLabels=[...new Map(result.rejected.map(item=>[item.label+"|"+item.reason,item])).values()];
   scan.entries=result.entries;
   scan.names=[...new Set(result.entries.map(entry=>entry.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
   scan.work=result.entries.filter(entry=>!entry.isOff).length;scan.off=result.entries.filter(entry=>entry.isOff).length;scan.total=result.entries.length;

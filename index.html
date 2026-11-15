@@ -5564,7 +5564,22 @@ function captureImportReview(sourceName,scan){
 }
 function openPendingImportReview(){
   if(!_pendingLoad||!_pendingLoad.scan){toast("No import preview is open","info");return;}
-  openImportReview(buildImportReviewRecord(_pendingLoad.filename,Object.assign({},_pendingLoad.scan,{changePreview:_pendingLoad.changePreview||null}),false),{pending:true});
+  const pending=_pendingLoad;
+  let scan=pending.scan;
+  let changePreview=pending.changePreview||null;
+  if(scan.unnamedSchedules?.length){
+    const rosterPeople=_readUnnamedRosterPeople(scan);
+    if(!rosterPeople.error){
+      const names=new Map(rosterPeople.assignments.map(({placeholder,leader})=>[placeholder,leader]));
+      const entries=scan.entries.map(entry=>names.has(entry.name)?{...entry,name:names.get(entry.name)}:entry);
+      scan={...scan,entries,names:scan.names.map(name=>names.get(name)||name)};
+      const baseline=loadSnapshot(pending.departmentName);
+      if(baseline?.snap)changePreview=diffSnapshots(baseline.snap,buildEntrySnapshot(entries),{
+        previousCoverage:baseline.coverage||{},currentCoverage:buildCoverageSnapshot(entries),minimumCoverage:S.covMin
+      });
+    }
+  }
+  openImportReview(buildImportReviewRecord(pending.filename,{...scan,changePreview},false),{pending:true});
 }
 function _pendingReviewDecisionHtml(r,opts){
   const audit=r.parserAudit||{expected:[],missing:[],parsed:r.people,lowVolume:[]};
@@ -5795,6 +5810,7 @@ function openChangeHistory(){
   const rows=filtered.slice(0,120).map(h=>{const category=h.category||_historyCategory(h.label,h.type);const undo=_undoStack.find(u=>u.id===h.id);return`<div class="qol-history-row"><span class="qol-history-cat">${X(category)}</span><div><div class="qol-row-title">${X(h.label)}</div><div class="qol-row-sub">${new Date(h.at).toLocaleString()} · ${X(h.type||"change")}</div></div>${undo?`<button class="qol-row-btn primary" onclick="document.getElementById('qolHistory')?.remove();restoreUndoPoint('${XJS(h.id)}')">Restore</button>`:`<span class="qol-row-sub">record only</span>`}</div>`;}).join("")||`<div class="qol-empty">No change history in this category.</div>`;
   _qolModal("qolHistory","Undo + Change History",`${filtered.length} shown · ${_undoStack.length} restore point${_undoStack.length===1?"":"s"}`,filters+rows,_undoStack.length?`<button class="qol-row-btn primary" onclick="undoLastAction();document.getElementById('qolHistory')?.remove()">Undo last</button>`:"");
 }
+
 function setTab(tab){
   if(tab==="ops"){S.tab="analytics";S.anView="ops";ren();return;}
   // Intel is no longer a top-level tab — it lives as Analytics > Ops
@@ -8392,8 +8408,59 @@ function parseMergedWeeklyRota(data,ws,vertical){
   return {people,days,read};
 }
 
+const unnamedRosterLeaders=new WeakMap();
+
+function parseUnnamedDatedRoster(ws,data,name){
+  const header=data[0]||[];
+  const columns=header.map(value=>String(value||"").trim().toLowerCase());
+  const dateCol=columns.indexOf("date"),dayCol=columns.indexOf("day"),shiftCol=columns.indexOf("shift");
+  if(Math.min(dateCol,dayCol,shiftCol)<0||columns.filter(Boolean).length!==3)return null;
+  const {s:origin}=XLSX.utils.decode_range(ws["!ref"]);
+  const entries=[],seen=new Set(),warnings=[];
+  for(let i=1;i<data.length;i++){
+    const row=data[i]||[];
+    if(!row.some(value=>value!==""&&value!=null))continue;
+    if(row.some((value,col)=>value!==""&&value!=null&&![dateCol,dayCol,shiftCol].includes(col)))return null;
+    const day=nD(row[dayCol]),rawDate=row[dateCol];
+    let date=typeof rawDate==="number"?parseExcelSerialDate(rawDate):pDt(rawDate);
+    if(day&&(!date||DOW[date.getDay()]!==day)){
+      const slash=String(rawDate||"").trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if(slash)date=parseYMDStrict(slash[3],slash[1],slash[2]);
+    }
+    if(!date||!day||day!==DOW[date.getDay()]||seen.has(excKey(date)))return null;
+    seen.add(excKey(date));
+    let raw=String(row[shiftCol]||"").trim();
+    if(!raw){
+      const cell=ws[XLSX.utils.encode_cell({r:origin.r+i,c:origin.c+shiftCol})];
+      if(_isVisualOffStyle(cell?.s))raw="OFF";
+    }
+    if(raw&&(pTm(raw)||classifyOff(raw)||OFF_CODE_RE.test(raw)))entries.push(mkE(name,date,day,raw,"Main",""));
+    else warnings.push(`${fDF(date)} has no recognisable shift or off marker and was skipped.`);
+  }
+  return entries.some(entry=>entry&&!entry.isOff)?{entries:entries.filter(Boolean),warnings}:null;
+}
+
+function isUndatedWeekPattern(data){
+  const header=data[0]||[];
+  if(header.length!==8||header[0]||!header.slice(1).every((value,i)=>nD(value)===DOW[(i+1)%7]))return false;
+  const rows=data.slice(1).filter(row=>row.some(Boolean));
+  return rows.length>0&&rows.every(row=>isWk(row[0])&&row.slice(1).every(cell=>!cell||pTm(cell)||classifyOff(cell)));
+}
+
 function parseWorkbookRosterSheet(wb,sheet,data){
   const ws=wb.Sheets[sheet];
+  const leader=unnamedRosterLeaders.get(wb)?.get(sheet);
+  const unnamed=ws?.["!ref"]&&parseUnnamedDatedRoster(ws,data,leader||`Unnamed shift list (${sheet})`);
+  if(unnamed){
+    S.parseInfo.push({sheet,parser:"parseUnnamedDatedRoster",unnamedSchedule:!leader,
+      confidence:unnamed.warnings.length?"medium":"high",reason:"Dated shift list with no person column",
+      count:unnamed.entries.length,warnings:unnamed.warnings});
+    return unnamed.entries.map(entry=>({...entry,_parserSheet:sheet}));
+  }
+  if(isUndatedWeekPattern(data)){
+    S.parseInfo.push({sheet,parser:"weekPattern",confidence:"high",reason:"Undated weekly pattern",count:0,warnings:[]});
+    return [];
+  }
   const rota=ws&&(parseMergedWeeklyRota(data,ws,false)||parseMergedWeeklyRota(data,ws,true));
   if(!rota)return autoParse(data,sheet);
 
@@ -11317,7 +11384,11 @@ function scanFileQuick(wb,filename,manualOverride){
     const months=[...ms].sort();
     const work=entries.filter(e=>!e.isOff);
     const off=entries.filter(e=>e.isOff);
-    const deptName=detectDeptName(filename,wb.SheetNames);
+    const unnamedSchedules=parseInfo.filter(p=>p.unnamedSchedule)
+      .filter(p=>entries.some(entry=>entry._parserSheet===p.sheet))
+      .map(p=>({sheet:p.sheet,placeholder:entries.find(entry=>entry._parserSheet===p.sheet).name}));
+    const homeMessenger=unnamedSchedules.length&&/\bhome\b/i.test(filename)&&/\bmessenger\b/i.test(filename);
+    const deptName=homeMessenger?"Home Retentions Messenger":detectDeptName(filename,wb.SheetNames);
 
     // Confidence from parse info
     const bestConf=parseInfo.reduce((b,p)=>{
@@ -11368,7 +11439,7 @@ function scanFileQuick(wb,filename,manualOverride){
     return{entries,names,months,work:work.length,off:off.length,total:entries.length,
       sheets:shs.length,sheetNames:shs.slice(),deptName,confidence:bestConf,parsers,parseInfo,warnings,dupes,fingerprints,ghostAgents,
       crossSheetNames,autoMergeCandidates,expectedNames:rosterEvidence.expectedNames,missingExpectedNames,provenance:rosterEvidence.provenance,rosterAliases:rosterEvidence.aliases||[],mergedRosterRisks,
-      birthdayDirectory:[...birthdayByName.values()],unlinkedPeople,unresolvedRoleIdentities};
+      birthdayDirectory:[...birthdayByName.values()],unlinkedPeople,unresolvedRoleIdentities,unnamedSchedules};
   }finally{
     _parseYearHint=_prevHint;
   }
@@ -12073,6 +12144,40 @@ function _detectMonthRangeGuard(scan,filename,sheetNames){
     fix:{mode:"month_shift",deltaMonths,sourceStart:first,sourceEnd:last,detectedStart,detectedEnd:_indexToMonthKey(_monthKeyToIndex(last)+deltaMonths)}
   };
 }
+function _readUnnamedRosterPeople(scan){
+  const schedules=scan?.unnamedSchedules||[];
+  const placeholders=new Set(schedules.map(schedule=>schedule.placeholder));
+  const leaders=new Set((scan?.names||[]).filter(name=>!placeholders.has(name)).map(name=>name.toLowerCase()));
+  const agents=new Set();
+  const assignments=[];
+  const personName=value=>{
+    const name=cleanPersonName(value);
+    if(isPersonNoiseLabel(name)||Object.hasOwn(Object.prototype,name))return "";
+    const identity=window.NorthStar?.classifyIdentity(name);
+    return identity?identity.valid?identity.display:"":name;
+  };
+  for(const [index,schedule] of schedules.entries()){
+    const leader=personName(document.getElementById("unnamedRosterLeader"+index)?.value);
+    if(!leader)return {error:"Enter a team leader name for each unnamed schedule."};
+    if(leaders.has(leader.toLowerCase()))return {error:"Use a different team leader for each schedule."};
+    leaders.add(leader.toLowerCase());
+    const names=(document.getElementById("unnamedRosterAgents"+index)?.value||"").split(/[\n,]+/)
+      .map(name=>name.trim()).filter(Boolean).map(personName);
+    const uniqueNames=[...new Map(names.map(name=>[name.toLowerCase(),name])).values()];
+    assignments.push({...schedule,leader,agents:uniqueNames});
+  }
+  for(const assignment of assignments){
+    for(const name of assignment.agents){
+      const key=name.toLowerCase();
+      if(!name||leaders.has(key)||agents.has(key)){
+        return {error:"Enter valid agent names and assign each person to one team."};
+      }
+      agents.add(key);
+    }
+  }
+  return {assignments};
+}
+
 function _refreshParsePreviewLoadState(){
   const loadBtn=document.getElementById("parseLoadBtn");
   const loadHint=document.getElementById("parseLoadHint");
@@ -12084,7 +12189,8 @@ function _refreshParsePreviewLoadState(){
   const needsCacheChoice=!!((_pendingLoad&&_pendingLoad.hasCache)&&!_cacheMode);
   const focusStats=_previewFocusStats();
   const needsFocus=!!(_pendingLoad&&focusStats.totalNames&&focusStats.names<1);
-  const canLoad=!needsCacheChoice&&!needsRangeFix&&!needsFocus;
+  const identityError=_readUnnamedRosterPeople(_pendingLoad?.scan).error;
+  const canLoad=!needsCacheChoice&&!needsRangeFix&&!needsFocus&&!identityError;
   if(keepBtn){keepBtn.style.borderColor=_cacheMode==="keep"?"var(--accent)":"rgba(255,255,255,.08)";keepBtn.style.background=_cacheMode==="keep"?"var(--al)":"transparent";}
   if(freshBtn){freshBtn.style.borderColor=_cacheMode==="fresh"?"#dc2626":"rgba(255,255,255,.08)";freshBtn.style.background=_cacheMode==="fresh"?"rgba(220,38,38,.07)":"transparent";}
   if(rangeBtn&&guard){
@@ -12114,6 +12220,9 @@ function _refreshParsePreviewLoadState(){
     }else if(needsRangeFix){
       loadHint.textContent='Invalid anchor month detected — click "Use detected range" to continue';
       loadHint.style.color='#f59e0b';
+    }else if(identityError){
+      loadHint.textContent=identityError;
+      loadHint.style.color='#dc2626';
     }else if(needsCacheChoice){
       loadHint.textContent='Select Keep cached data or Fresh start to enable loading';
       loadHint.style.color='var(--tm)';
@@ -12209,7 +12318,7 @@ function showParsePreview(wb,filename,manualOverride,sourceMeta,opts){
   const loadMode=opts&&opts.additional?"add":"replace";
   _pendingLoad={wb,filename,scan,rangeGuard,hasCache:false,manualOverride:manualOverride||null,sourceMeta:sourceMeta||null,mode:loadMode,departmentName:scan.deptName};
   const previewBaseline=loadSnapshot(scan.deptName);
-  _pendingLoad.changePreview=previewBaseline&&previewBaseline.snap
+  _pendingLoad.changePreview=!scan.unnamedSchedules.length&&previewBaseline&&previewBaseline.snap
     ?diffSnapshots(previewBaseline.snap,buildEntrySnapshot(scan.entries||[]),{previousCoverage:previewBaseline.coverage||{},currentCoverage:buildCoverageSnapshot(scan.entries||[]),minimumCoverage:S.covMin})
     :null;
   _pendingLoad.changePreviewBaseline=previewBaseline||null;
@@ -12282,6 +12391,18 @@ function showParsePreview(wb,filename,manualOverride,sourceMeta,opts){
   h+=`<div style="display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:0;min-height:0">`;
   // Left: people found
   h+=`<div style="padding:14px 16px;border-right:1px solid var(--bdr);min-width:0">`;
+  if(scan.unnamedSchedules.length){
+    const fieldStyle="display:block;width:100%;box-sizing:border-box;margin-top:4px;padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);color:var(--text);font:inherit";
+    scan.unnamedSchedules.forEach(({sheet},index)=>{
+      const suffix=scan.unnamedSchedules.length>1?" · "+X(sheet):"";
+      h+=`<div style="display:grid;gap:8px;font-size:12px;margin-bottom:12px">
+        <label>Team leader${suffix}<input id="unnamedRosterLeader${index}" required maxlength="120" oninput="_refreshParsePreviewLoadState()" style="${fieldStyle}"></label>
+        <label>Agent names (optional)${suffix}<textarea id="unnamedRosterAgents${index}" rows="2" placeholder="One name per line, or separate names with commas" oninput="_refreshParsePreviewLoadState()" style="${fieldStyle}"></textarea></label>
+        <span style="font-size:11px;color:var(--tm)">Agents are added to People under this team leader.</span>
+      </div>`;
+    });
+  }
+  if(scan.names.some(name=>!scan.unnamedSchedules.some(schedule=>schedule.placeholder===name))){
   h+=`<div style="font-size:10px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.12em;margin-bottom:7px">People found (${scan.names.length})</div>`;
   h+=`<div style="display:flex;flex-wrap:wrap;gap:4px;max-height:160px;overflow-y:auto">`;
   scan.names.slice(0,60).forEach(n=>{
@@ -12301,6 +12422,7 @@ function showParsePreview(wb,filename,manualOverride,sourceMeta,opts){
   });
   if(scan.names.length>80)h+=`<span style="font-size:10px;color:var(--tm);padding:2px 6px">+${scan.names.length-80} more</span>`;
   h+=`</div></div>`;
+  }
   // Parser info inline
   h+=`<div style="margin-top:10px;display:flex;gap:5px;flex-wrap:wrap;align-items:center">`;
   h+=`<label style="display:flex;align-items:center;gap:5px;padding:3px 7px;border-radius:4px;font-size:10px;background:var(--al);color:var(--tm)">Department <input id="parseDeptName" value="${XA(_pendingLoad.departmentName)}" oninput="setPendingDeptName(this.value)" style="width:150px;max-width:38vw;padding:2px 5px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);color:var(--text);font:inherit"></label>`;
@@ -12528,6 +12650,8 @@ function confirmParsePreview(){
   if(!_pendingLoad)return;
   const pending=_pendingLoad;
   const{wb,filename,rangeGuard}=pending;
+  const rosterPeople=_readUnnamedRosterPeople(pending.scan);
+  if(rosterPeople.error){_refreshParsePreviewLoadState();return;}
   if(!pending.scan||!pending.scan.total){
     _pendingLoad=null;
     toast('No parsed schedule entries to load.','err',4200);
@@ -12592,7 +12716,7 @@ function confirmParsePreview(){
   _cacheMode=null;
   const rangeFix=rangeGuard&&rangeGuard.accepted&&rangeGuard.fix?rangeGuard.fix:null;
   try{
-    loadIntoWorkspace(wb,filename,{cacheKept,keepOfflineCopy,rangeFix,focusNames,ghostNames:[..._pendingGhosts],merges:[..._pendingMerges],scan:pending.scan,manualOverride:pending.manualOverride||null,sourceMeta:pending.sourceMeta||null,departmentName});
+    loadIntoWorkspace(wb,filename,{cacheKept,keepOfflineCopy,rangeFix,focusNames,ghostNames:[..._pendingGhosts],merges:[..._pendingMerges],scan:pending.scan,manualOverride:pending.manualOverride||null,sourceMeta:pending.sourceMeta||null,departmentName,unnamedRosterPeople:rosterPeople.assignments});
     _pendingGhosts=new Set();_pendingMerges=[];_pendingFocusNames=new Set();
   }catch(err){
     console.error("Load failed:",err);
@@ -13285,6 +13409,8 @@ function loadIntoWorkspace(wb,sourceName,opts={}){
   S.plLeave=[];S.plOverrides={};S.plHires=[];S.plRemoved={};S.plEdit=null;
   S.parseInfo=[];S._anomDismissed=false;
   const prevRangeFix=_loadRangeFix;
+  const rosterPeople=opts.unnamedRosterPeople||[];
+  if(rosterPeople.length)unnamedRosterLeaders.set(wb,new Map(rosterPeople.map(({sheet,leader})=>[sheet,leader])));
   _loadRangeFix=opts&&opts.rangeFix?opts.rangeFix:null;
   try{load(S.sh,{deferRender:true,manualOverride:opts.manualOverride||null});}catch(err){rollbackLoad();throw err;}finally{_loadRangeFix=prevRangeFix;}
   if(!S.entries||!S.entries.length){
@@ -13295,7 +13421,8 @@ function loadIntoWorkspace(wb,sourceName,opts={}){
     const fix=_lastRangeFixResult.fix||{};
     toast(`Date range corrected: ${_monthKeyLabel(fix.sourceStart)} → ${_monthKeyLabel(fix.detectedStart)}`,"ok",3200);
   }
-  const focusResult=_applyFocusToLoadedEntries(opts.focusNames||[],opts.merges||[]);
+  const focusNames=(opts.focusNames||[]).map(name=>rosterPeople.find(person=>person.placeholder===name)?.leader||name);
+  const focusResult=_applyFocusToLoadedEntries(focusNames,opts.merges||[]);
   if(focusResult&&focusResult.removedEntries){
     toast(`Focus loaded ${focusResult.keptNames} leader${focusResult.keptNames!==1?"s":""} · ${focusResult.removedEntries} entries purged`,"ok",3400);
   }
@@ -13392,6 +13519,10 @@ function loadIntoWorkspace(wb,sourceName,opts={}){
     syncPeopleFromEntries();
     // v51: Auto-extract agent names from schedule data (person-per-sheet and wide-horiz formats only)
     extractAgentsFromSchedule();
+    for(const {leader,agents} of rosterPeople){
+      if(!S.entries.some(entry=>entry.name===leader))continue;
+      for(const name of agents)ensurePerson(name,{role:"agent",teamLeader:leader,source:"roster"});
+    }
     if(focusResult&&focusResult.allowed)_prunePeopleToFocus(focusResult.allowed);
     seedShiftLibrary();
     savePeople();
@@ -38806,10 +38937,12 @@ function nsSetSharedGroupDuplicate(id,mode){
 
 Object.assign(window,{nsConfirmNativeImport,nsCancelNativeImport,nsSetSharedIdentityDecision,nsUpdateSharedMembers,nsSetSharedGroupDuplicate,nsMarkSharedReview,nsSelectSharedReview,nsBulkSharedDecision,nsOpenSharedIdentityReview,nsCloseSharedIdentityReview,nsApplySharedReview});
 
-function nsCleanIdentityEntries(entries){
+function nsCleanIdentityEntries(entries,unnamedSchedules=[]){
   const kept=[],rejected=[],seen=new Set();
+  const placeholders=new Map(unnamedSchedules.map(({sheet,placeholder})=>[sheet,placeholder]));
   nsArray(entries).forEach(entry=>{
-    const identity=nsClassifyIdentityLabel(entry&&entry.name);
+    const pendingName=entry&&placeholders.get(entry._parserSheet);
+    const identity=pendingName&&pendingName===entry.name?{valid:true,display:pendingName}:nsClassifyIdentityLabel(entry&&entry.name);
     if(!identity.valid){rejected.push({label:identity.raw,reason:identity.reason});return;}
     const cleanEntry=identity.display===entry.name?entry:Object.assign({},entry,{name:identity.display,identity_source_label:entry.name});
     const date=cleanEntry.date instanceof Date?cleanEntry.date.getTime():String(cleanEntry.date||"");
@@ -38821,7 +38954,7 @@ function nsCleanIdentityEntries(entries){
 
 function nsFilterScanIdentities(scan){
   if(!scan||!Array.isArray(scan.entries))return scan;
-  const result=nsCleanIdentityEntries(scan.entries),rejectedLabels=[...new Map(result.rejected.map(item=>[item.label+"|"+item.reason,item])).values()];
+  const result=nsCleanIdentityEntries(scan.entries,scan.unnamedSchedules),rejectedLabels=[...new Map(result.rejected.map(item=>[item.label+"|"+item.reason,item])).values()];
   scan.entries=result.entries;
   scan.names=[...new Set(result.entries.map(entry=>entry.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
   scan.work=result.entries.filter(entry=>!entry.isOff).length;scan.off=result.entries.filter(entry=>entry.isOff).length;scan.total=result.entries.length;

@@ -331,8 +331,59 @@ function parseMergedWeeklyRota(data,ws,vertical){
   return {people,days,read};
 }
 
+const unnamedRosterLeaders=new WeakMap();
+
+function parseUnnamedDatedRoster(ws,data,name){
+  const header=data[0]||[];
+  const columns=header.map(value=>String(value||"").trim().toLowerCase());
+  const dateCol=columns.indexOf("date"),dayCol=columns.indexOf("day"),shiftCol=columns.indexOf("shift");
+  if(Math.min(dateCol,dayCol,shiftCol)<0||columns.filter(Boolean).length!==3)return null;
+  const {s:origin}=XLSX.utils.decode_range(ws["!ref"]);
+  const entries=[],seen=new Set(),warnings=[];
+  for(let i=1;i<data.length;i++){
+    const row=data[i]||[];
+    if(!row.some(value=>value!==""&&value!=null))continue;
+    if(row.some((value,col)=>value!==""&&value!=null&&![dateCol,dayCol,shiftCol].includes(col)))return null;
+    const day=nD(row[dayCol]),rawDate=row[dateCol];
+    let date=typeof rawDate==="number"?parseExcelSerialDate(rawDate):pDt(rawDate);
+    if(day&&(!date||DOW[date.getDay()]!==day)){
+      const slash=String(rawDate||"").trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if(slash)date=parseYMDStrict(slash[3],slash[1],slash[2]);
+    }
+    if(!date||!day||day!==DOW[date.getDay()]||seen.has(excKey(date)))return null;
+    seen.add(excKey(date));
+    let raw=String(row[shiftCol]||"").trim();
+    if(!raw){
+      const cell=ws[XLSX.utils.encode_cell({r:origin.r+i,c:origin.c+shiftCol})];
+      if(_isVisualOffStyle(cell?.s))raw="OFF";
+    }
+    if(raw&&(pTm(raw)||classifyOff(raw)||OFF_CODE_RE.test(raw)))entries.push(mkE(name,date,day,raw,"Main",""));
+    else warnings.push(`${fDF(date)} has no recognisable shift or off marker and was skipped.`);
+  }
+  return entries.some(entry=>entry&&!entry.isOff)?{entries:entries.filter(Boolean),warnings}:null;
+}
+
+function isUndatedWeekPattern(data){
+  const header=data[0]||[];
+  if(header.length!==8||header[0]||!header.slice(1).every((value,i)=>nD(value)===DOW[(i+1)%7]))return false;
+  const rows=data.slice(1).filter(row=>row.some(Boolean));
+  return rows.length>0&&rows.every(row=>isWk(row[0])&&row.slice(1).every(cell=>!cell||pTm(cell)||classifyOff(cell)));
+}
+
 function parseWorkbookRosterSheet(wb,sheet,data){
   const ws=wb.Sheets[sheet];
+  const leader=unnamedRosterLeaders.get(wb)?.get(sheet);
+  const unnamed=ws?.["!ref"]&&parseUnnamedDatedRoster(ws,data,leader||`Unnamed shift list (${sheet})`);
+  if(unnamed){
+    S.parseInfo.push({sheet,parser:"parseUnnamedDatedRoster",unnamedSchedule:!leader,
+      confidence:unnamed.warnings.length?"medium":"high",reason:"Dated shift list with no person column",
+      count:unnamed.entries.length,warnings:unnamed.warnings});
+    return unnamed.entries.map(entry=>({...entry,_parserSheet:sheet}));
+  }
+  if(isUndatedWeekPattern(data)){
+    S.parseInfo.push({sheet,parser:"weekPattern",confidence:"high",reason:"Undated weekly pattern",count:0,warnings:[]});
+    return [];
+  }
   const rota=ws&&(parseMergedWeeklyRota(data,ws,false)||parseMergedWeeklyRota(data,ws,true));
   if(!rota)return autoParse(data,sheet);
 

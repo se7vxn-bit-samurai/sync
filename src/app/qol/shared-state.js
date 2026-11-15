@@ -374,7 +374,22 @@ function captureImportReview(sourceName,scan){
 }
 function openPendingImportReview(){
   if(!_pendingLoad||!_pendingLoad.scan){toast("No import preview is open","info");return;}
-  openImportReview(buildImportReviewRecord(_pendingLoad.filename,Object.assign({},_pendingLoad.scan,{changePreview:_pendingLoad.changePreview||null}),false),{pending:true});
+  const pending=_pendingLoad;
+  let scan=pending.scan;
+  let changePreview=pending.changePreview||null;
+  if(scan.unnamedSchedules?.length){
+    const rosterPeople=_readUnnamedRosterPeople(scan);
+    if(!rosterPeople.error){
+      const names=new Map(rosterPeople.assignments.map(({placeholder,leader})=>[placeholder,leader]));
+      const entries=scan.entries.map(entry=>names.has(entry.name)?{...entry,name:names.get(entry.name)}:entry);
+      scan={...scan,entries,names:scan.names.map(name=>names.get(name)||name)};
+      const baseline=loadSnapshot(pending.departmentName);
+      if(baseline?.snap)changePreview=diffSnapshots(baseline.snap,buildEntrySnapshot(entries),{
+        previousCoverage:baseline.coverage||{},currentCoverage:buildCoverageSnapshot(entries),minimumCoverage:S.covMin
+      });
+    }
+  }
+  openImportReview(buildImportReviewRecord(pending.filename,{...scan,changePreview},false),{pending:true});
 }
 function _pendingReviewDecisionHtml(r,opts){
   const audit=r.parserAudit||{expected:[],missing:[],parsed:r.people,lowVolume:[]};
